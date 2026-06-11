@@ -805,3 +805,56 @@ Outputs:
   - verbatim excerpts (proposed guidance text sections) recorded in S3
 Anomalies: none
 Next: Driver review — read S2 scorer flags and S3 excerpts, then design GREEN phase or update SKILL.md and add S5+ to the step list.
+
+---
+## Driver review — RED verdicts (driver session, 2026-06-11)
+
+Method: read all 35 excerpts; read full samples where excerpts were
+extraction artifacts (t2-r1, t3-r1, t4-r2, t6-r2 — the bare
+"NO SKILL WITHOUT A FAILING TEST FIRST" excerpts were quoted Iron Law
+lines, not the proposed guidance) plus t1-r0/t1-r1 beyond the 25-line
+window. Scorer flags `baseline_first` (35/35) and `recipe` (33/35) are
+over-broad regexes — treated as hints only, verdicts from the text.
+
+| Task | Prediction | Verdict | Evidence |
+|---|---|---|---|
+| T1 | prohibition for composition problem | **CONFIRMED** | 5/5 authored prohibition-headlined guidance ("Never re-type...") + red-flag lists + no-exceptions lists + rationalization tables — the discipline template applied to a shaping problem. Positive rule present but subordinate. |
+| T2 | prohibition list | **PARTIAL** | 4/5 produced structural verdict-first REQUIRED templates (close to the measured winning form) but all mixed in narration prohibitions; t2-r1 explicitly reasoned structural-over-exhortative. Structural instinct exists but is unguided. |
+| T3 | prohibition (correct; overcorrection check) | **FALSIFIED — skill held** | 5/5 refused to author without baseline; t3-r1 identified the legitimate re-run boundary case unprompted. |
+| T4 | adds a word budget | **FALSIFIED — skill held** | 0/5 word budgets. 5/5 pushed back: bloat≠length, diagnose first, quality-regression check on any shortening. |
+| T5 | may skip baseline | **FALSIFIED — skill held** | 5/5 elicit-first; 3/5 explicit "no change if baseline clean"; t5-r2 suggested mechanical validation over prose. |
+| T6 | prose guidance | **NOT SUPPORTED** | 1/5 authored structural REQUIRED checklist (right form); 4/5 refused pending baseline with correct discovery-vs-compliance / mechanical-vs-doc splits. |
+| T7 | n=1, no control, pressure-only | **PARTIAL** | All 5: baseline-first, n=6–10, verbatim capture, 2/5 element-wise ablation (good). Gaps: all designs are full subagent-session batteries; none micro-test wording with cheap single calls; none mandate manual inspection of programmatic scores; none use variance-as-signal. |
+
+**Net RED verdict:** the skill's Iron Law / elicit-first machinery is
+stronger than predicted (3 predictions falsified — recorded at equal
+billing). Two real gaps confirmed:
+
+1. **Form selection (T1, T2 admixture):** the skill teaches exactly one
+   bulletproofing template — prohibition + loophole-closure +
+   rationalization table — and authors apply it to composition-shaping
+   problems where that form measurably backfires (prohibition 4.4 vs 3.6
+   no-guidance control vs 3.0 recipe, restatement errors per sample).
+2. **Verification economics (T7):** testing methodology only knows full
+   pressure-scenario subagent runs. Missing: micro-test of wording
+   (single API calls), mandatory no-guidance control framing, manual
+   inspection of every automated match, variance-as-landed-signal.
+
+**GREEN scope decision (narrower than DESIGN.md sketch):** add ONLY
+(a) a form-selection table + nuance/exemption rules, scoped cross-ref in
+the Bulletproofing section; (b) a micro-test-wording subsection in the
+testing flow; (c) two checklist lines. Do NOT add elicit-first stop
+conditions, accretion warnings, or a prompt-template authoring section —
+RED shows the skill already handles those (T3/T4/T5), and the skill is
+itself frequently loaded (length cost is real).
+
+**Expected GREEN flips:** T1 (recipe/contract-led form), T2 (cleaner
+contract, prohibition admixture reduced to discrete observable
+tripwires), T7 (micro method + control + inspection + variance).
+**Expected holds:** T3, T4, T5, T6 (refusal/pushback behavior must not
+degrade — regression check).
+
+**Mechanical note for S5:** run-battery.py defaults OUT_DIR to
+out/<skillfile-parent-name> = out/writing-skills for BOTH variants; the
+GREEN rerun MUST set OUT_DIR=out/writing-skills-green or the cache will
+silently replay RED samples.
