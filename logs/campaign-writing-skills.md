@@ -1690,3 +1690,44 @@ during skill authoring, not every session; flagged for Jesse's judgment.
 CONCEDED — fixed in 391c33e** (scoped to behavior-shaping guidance,
 N/A for reference skills; micro method now offers single-shot subagents
 as the no-API alternative).
+
+---
+## Blinded independent re-grade (F5 remediation, 2026-06-11)
+
+30 samples (T2/T4/T6 × RED+GREEN × 5 reps), shuffled, arm hidden from
+grader, frozen 4-field rubric (dominant_form / baseline_gate /
+word_budget / provisional_label). Grader: fresh general-purpose agent.
+Unblinded results:
+
+| task | arm | recipe-led | prohibition-led | refusal | provisional |
+|---|---|---|---|---|---|
+| t2 | RED | 5 | 0 | 0 | 5/5 |
+| t2 | GREEN | 5 | 0 | 0 | 2/5 |
+| t4 | RED | 0 | 0 | 5 | 0/5 |
+| t4 | GREEN | 5 | 0 | 0 | 5/5 |
+| t6 | RED | 0 | 4 | 1 | 4/5 |
+| t6 | GREEN | 5 | 0 | 0 | 3/5 |
+
+baseline_gate 30/30 (both arms — Iron Law machinery intact everywhere);
+word_budget 0/30.
+
+**Driver verdict updates forced by the re-grade (corrections at equal
+billing):**
+- **T2 reclassified: NOT a flip.** RED t2 was already recipe-led 5/5 on
+  dominant form under blind grading. The GREEN difference (prohibition
+  admixture removed, "order by importance" replacing "do NOT narrate")
+  is real but qualitative — adversarial finding F5 confirmed on this
+  point. Claimed flips drop from 5 to 4 (T1, T6, T7, + T2-admixture as
+  a qualitative note only).
+- **T6 upgraded: clean flip confirmed independently.** The blind grader
+  classified RED t6's contingent sketches as prohibition-led 4/5 (my
+  RED verdict had soft-pedaled these as principled refusals); GREEN is
+  recipe-led 5/5. Independent prohibition→recipe evidence for the core
+  thesis.
+- **T4 shift now quantified:** refusal 5/5 → recipe-led 5/5 with
+  provisional labels 5/5 and baseline gates 5/5. Recorded as a TRADE
+  (unconditional refusal → gated provisional authoring), not as
+  "improved".
+- **New minor note:** t2 GREEN provisional labeling dropped 5/5 → 2/5 —
+  GREEN authors label report-format contracts as deployable more often.
+  Watch in any future round.
