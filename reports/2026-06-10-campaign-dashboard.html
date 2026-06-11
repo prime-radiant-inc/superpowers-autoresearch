@@ -1,0 +1,108 @@
+<!doctype html><meta charset="utf-8">
+<title>SDD optimization campaign — 2026-06-10</title>
+<style>
+body{font:14px/1.45 -apple-system,sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222}
+h1{font-size:1.4rem} h2{font-size:1.05rem;margin-top:1.6rem;border-bottom:1px solid #ddd;padding-bottom:.2rem}
+table{border-collapse:collapse;width:100%} th,td{padding:3px 8px;text-align:left;font-size:13px}
+th{border-bottom:2px solid #999} td{border-bottom:1px solid #eee}
+.r{text-align:right} .bar{height:11px;border-radius:2px;display:inline-block}
+tr.baseline td:nth-child(2){color:#9e3a3a;font-weight:600}
+tr.final td:nth-child(2){color:#2e7d4f;font-weight:600}
+tr.exp td:nth-child(2){color:#3a6a8a}
+.kpi{display:inline-block;margin:0 1.4rem .6rem 0;font-size:13px;color:#555} .kpi b{display:block;font-size:1.5rem;color:#111}
+.note{background:#f6f3e8;border-left:3px solid #c9b458;padding:.5rem .8rem;font-size:13px}
+</style>
+<h1>SDD review-dispatch optimization — experiment dashboard (2026-06-10)</h1>
+<div>
+<span class="kpi"><b>46</b> eval runs today</span>
+<span class="kpi"><b>$410</b> eval spend</span>
+<span class="kpi"><b>487M</b> tokens</span>
+<span class="kpi"><b>24.7h</b> agent wall-clock</span>
+<span class="kpi"><b>~$23</b> micro-tests (est.)</span>
+</div>
+<p class="note"><b>Variance note:</b> identical configs re-run differ by ±20% (44.4 vs 57.1 min); compare ranges, not single rows. Row colors: <span style="color:#9e3a3a">baseline</span> / iteration / <span style="color:#3a6a8a">experiment</span> / <span style="color:#2e7d4f">final config</span>.</p>
+<h2>go-fractals (primary test scenario)</h2><table><tr><th>UTC</th><th>config</th><th>verdict</th><th class="r">min</th><th class="r">Mtok</th><th class="r">$</th><th>cost</th></tr>
+<tr class="baseline"><td>002653Z</td><td>origin/dev baseline</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">64.9</td><td class="r">21.2</td><td class="r">16.07</td><td><div class="bar" style="width:164px;background:#9e3a3a"></div></td></tr>
+<tr class="iter"><td>003436Z</td><td>task-scoped v1 (driver flake)</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">29.8</td><td class="r">7.6</td><td class="r">7.90</td><td><div class="bar" style="width:80px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>010511Z</td><td>task-scoped v1</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">42.8</td><td class="r">14.5</td><td class="r">15.61</td><td><div class="bar" style="width:159px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>041922Z</td><td>quality-hardened</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">69.9</td><td class="r">32.2</td><td class="r">17.14</td><td><div class="bar" style="width:175px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>054305Z</td><td>iter 1: turn guidance</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">68.2</td><td class="r">22.9</td><td class="r">17.59</td><td><div class="bar" style="width:180px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>065838Z</td><td>iter 2: merged task reviewer</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">47.5</td><td class="r">15.7</td><td class="r">13.55</td><td><div class="bar" style="width:138px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>104434Z</td><td>iter 3: frozen e355795</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">44.4</td><td class="r">13.4</td><td class="r">11.67</td><td><div class="bar" style="width:119px;background:#8a7a3a"></div></td></tr>
+<tr class="exp"><td>161736Z</td><td>validation re-run (d4dbf44)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">57.1</td><td class="r">20.0</td><td class="r">14.63</td><td><div class="bar" style="width:149px;background:#3a6a8a"></div></td></tr>
+<tr class="exp"><td>163928Z</td><td>E1 lean-controller</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">50.2</td><td class="r">13.7</td><td class="r">11.73</td><td><div class="bar" style="width:120px;background:#3a6a8a"></div></td></tr>
+<tr class="exp"><td>163930Z</td><td>E2 file-handoffs (model-decay accident)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">47.0</td><td class="r">14.9</td><td class="r">17.43</td><td><div class="bar" style="width:178px;background:#3a6a8a"></div></td></tr>
+<tr class="exp"><td>165219Z</td><td>E4 durable-progress</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">48.4</td><td class="r">15.8</td><td class="r">13.37</td><td><div class="bar" style="width:136px;background:#3a6a8a"></div></td></tr>
+<tr class="exp"><td>171746Z</td><td>E3 pipelined (parallel calls)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">49.0</td><td class="r">14.1</td><td class="r">13.43</td><td><div class="bar" style="width:137px;background:#3a6a8a"></div></td></tr>
+<tr class="final"><td>174422Z</td><td>COMBO</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">54.7</td><td class="r">14.4</td><td class="r">12.81</td><td><div class="bar" style="width:131px;background:#2e7d4f"></div></td></tr>
+<tr class="exp"><td>180941Z</td><td>E3b pipelined (background)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">53.6</td><td class="r">17.8</td><td class="r">14.84</td><td><div class="bar" style="width:151px;background:#3a6a8a"></div></td></tr>
+<tr class="final"><td>191021Z</td><td>COMBO repeat (gate)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">54.1</td><td class="r">16.6</td><td class="r">14.31</td><td><div class="bar" style="width:146px;background:#2e7d4f"></div></td></tr>
+</table>
+<h2>svelte-todo</h2><table><tr><th>UTC</th><th>config</th><th>verdict</th><th class="r">min</th><th class="r">Mtok</th><th class="r">$</th><th>cost</th></tr>
+<tr class="iter"><td>002653Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">5.8</td><td class="r">2.0</td><td class="r">2.14</td><td><div class="bar" style="width:17px;background:#8a7a3a"></div></td></tr>
+<tr class="baseline"><td>003432Z</td><td>origin/dev baseline</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">79.7</td><td class="r">27.3</td><td class="r">20.98</td><td><div class="bar" style="width:170px;background:#9e3a3a"></div></td></tr>
+<tr class="iter"><td>004050Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">28.6</td><td class="r">9.1</td><td class="r">7.40</td><td><div class="bar" style="width:60px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>011032Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">5.3</td><td class="r">1.8</td><td class="r">2.73</td><td><div class="bar" style="width:22px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>015739Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">47.5</td><td class="r">15.6</td><td class="r">12.60</td><td><div class="bar" style="width:102px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>024622Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">7.6</td><td class="r">2.6</td><td class="r">2.61</td><td><div class="bar" style="width:21px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>025508Z</td><td>task-scoped v1</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">54.5</td><td class="r">17.2</td><td class="r">22.18</td><td><div class="bar" style="width:180px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>041922Z</td><td>quality-hardened</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">82.8</td><td class="r">29.2</td><td class="r">22.00</td><td><div class="bar" style="width:178px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>075303Z</td><td>iter 1</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">73.5</td><td class="r">25.4</td><td class="r">19.42</td><td><div class="bar" style="width:157px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>093503Z</td><td>iter 2</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">66.2</td><td class="r">22.4</td><td class="r">18.16</td><td><div class="bar" style="width:147px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>104434Z</td><td>iter 3: frozen e355795</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">62.8</td><td class="r">19.7</td><td class="r">15.76</td><td><div class="bar" style="width:127px;background:#8a7a3a"></div></td></tr>
+<tr class="final"><td>191023Z</td><td>COMBO (gate)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">55.0</td><td class="r">19.3</td><td class="r">14.99</td><td><div class="bar" style="width:121px;background:#2e7d4f"></div></td></tr>
+</table>
+<h2>planted-defect (scenario was being developed during early runs — fails are scenario iterations, not regressions)</h2><table><tr><th>UTC</th><th>config</th><th>verdict</th><th class="r">min</th><th class="r">Mtok</th><th class="r">$</th><th>cost</th></tr>
+<tr class="iter"><td>010638Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">8.9</td><td class="r">2.5</td><td class="r">2.51</td><td><div class="bar" style="width:136px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>014843Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">8.1</td><td class="r">3.6</td><td class="r">2.62</td><td><div class="bar" style="width:142px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>041922Z</td><td>scenario-dev iteration</td><td style="color:#b33;font-weight:600">fail</td><td class="r">12.4</td><td class="r">3.1</td><td class="r">3.31</td><td><div class="bar" style="width:180px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>044959Z</td><td>scenario-dev iteration</td><td style="color:#888;font-weight:600">indeterminate</td><td class="r">11.6</td><td class="r">3.8</td><td class="r">2.85</td><td><div class="bar" style="width:154px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>075303Z</td><td>scenario-dev iteration</td><td style="color:#b33;font-weight:600">fail</td><td class="r">7.8</td><td class="r">2.1</td><td class="r">2.32</td><td><div class="bar" style="width:126px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>090920Z</td><td>scenario-dev iteration</td><td style="color:#b33;font-weight:600">fail</td><td class="r">7.9</td><td class="r">2.3</td><td class="r">2.34</td><td><div class="bar" style="width:127px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>092037Z</td><td>scenario-dev iteration</td><td style="color:#b33;font-weight:600">fail</td><td class="r">8.4</td><td class="r">2.5</td><td class="r">2.59</td><td><div class="bar" style="width:140px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>093503Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">10.5</td><td class="r">2.6</td><td class="r">2.14</td><td><div class="bar" style="width:116px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>104434Z</td><td>scenario-dev iteration</td><td style="color:#b33;font-weight:600">fail</td><td class="r">6.8</td><td class="r">1.6</td><td class="r">1.73</td><td><div class="bar" style="width:93px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>115041Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">13.0</td><td class="r">3.2</td><td class="r">3.12</td><td><div class="bar" style="width:169px;background:#8a7a3a"></div></td></tr>
+<tr class="final"><td>191024Z</td><td>COMBO (gate)</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">10.2</td><td class="r">2.9</td><td class="r">2.77</td><td><div class="bar" style="width:150px;background:#2e7d4f"></div></td></tr>
+</table>
+<h2>rejects-extra-features</h2><table><tr><th>UTC</th><th>config</th><th>verdict</th><th class="r">min</th><th class="r">Mtok</th><th class="r">$</th><th>cost</th></tr>
+<tr class="baseline"><td>002653Z</td><td>origin/dev baseline</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">6.3</td><td class="r">1.9</td><td class="r">1.88</td><td><div class="bar" style="width:165px;background:#9e3a3a"></div></td></tr>
+<tr class="iter"><td>003352Z</td><td>task-scoped v1</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">6.1</td><td class="r">3.4</td><td class="r">2.04</td><td><div class="bar" style="width:180px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>075303Z</td><td>iter 1</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">5.5</td><td class="r">2.1</td><td class="r">1.37</td><td><div class="bar" style="width:121px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>105312Z</td><td>iter 3</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">5.0</td><td class="r">2.0</td><td class="r">1.31</td><td><div class="bar" style="width:115px;background:#8a7a3a"></div></td></tr>
+</table>
+<h2>spec-reviewer-catches-planted-flaws</h2><table><tr><th>UTC</th><th>config</th><th>verdict</th><th class="r">min</th><th class="r">Mtok</th><th class="r">$</th><th>cost</th></tr>
+<tr class="iter"><td>003312Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">0.9</td><td class="r">0.2</td><td class="r">0.50</td><td><div class="bar" style="width:179px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>010440Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">0.9</td><td class="r">0.2</td><td class="r">0.44</td><td><div class="bar" style="width:158px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>080012Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">2.4</td><td class="r">0.2</td><td class="r">0.50</td><td><div class="bar" style="width:179px;background:#8a7a3a"></div></td></tr>
+<tr class="iter"><td>110001Z</td><td>scenario-dev iteration</td><td style="color:#2e7d4f;font-weight:600">pass</td><td class="r">0.9</td><td class="r">0.2</td><td class="r">0.50</td><td><div class="bar" style="width:180px;background:#8a7a3a"></div></td></tr>
+</table>
+
+<h2>Confirmed wins (landed on branch through 43a6ee2)</h2>
+<ul>
+<li><b>Final-review package</b> — final reviewer 33 turns/23 tools → <b>6/3</b>, at opus prices (opus bill −19%).</li>
+<li><b>REQUIRED <code>model:</code> template line</b> — dispatch-model discipline 57/57 across gates; prose version decayed once (+$5 run).</li>
+<li><b>Progress ledger</b> (.git/sdd/progress.md) — compaction-proof state; controller adopted it beyond spec (Minor-findings roll-up, final verdict).</li>
+<li><b>Unique collateral names</b> (.git/sdd/review-&lt;sha&gt;..&lt;sha&gt;.diff) — worktree/submodule-safe, verified.</li>
+<li><b>Dispatch composition recipe + reviewer risk budget</b> — micro-tested; gates green.</li>
+<li><b>Omnibus final fixer / scoped fix tests / anti-snowball</b> — from real-session mining; no eval cost.</li>
+</ul>
+
+<h2>Tested &amp; declined (negative results, full data in evals docs/experiments/)</h2>
+<ul>
+<li><b>Controller turn batching</b> — 0 multi-tool messages in every run, with and without guidance; 46% of controller turns are thinking/narration. Prompt-immune.</li>
+<li><b>Pipelining via parallel tool calls (E3)</b> — 0 paired dispatches in 29.</li>
+<li><b>Pipelining via background dispatch (E3b)</b> — adopted 7/28, but benefit &lt; ±6 min noise floor; added coordination tokens.</li>
+<li><b>"Do not restate" prohibition</b> — backfired (see micro 1); replaced by composition recipe.</li>
+<li><b>File-handoff context savings</b> — mechanism adopted 100%, but savings ~$1/run, not the modeled ~50%: the controller's restatement is mostly genuine curation.</li>
+</ul>
+
+<h2>Micro-tests (prompt-wording experiments — API calls, est. cost)</h2>
+<table>
+<tr><th>test</th><th>question</th><th>samples</th><th>result</th><th class="r">~$</th></tr>
+<tr><td>micro&nbsp;1</td><td>dispatch composition: prohibition vs positive recipe</td><td>25 × opus</td><td><b>recipe wins</b> 3.0 (zero variance) vs prohibition 4.4 vs control 3.6 — prohibition worse than nothing; nuance clause regressed winner to 3.8</td><td class="r">4</td></tr>
+<tr><td>micro&nbsp;2</td><td>reviewer test-rerun directive: prohibition vs positive</td><td>15 × opus</td><td>both 0/5 violations, control 3/5 — <b>discrete prohibitions hold</b>; kept shorter wording</td><td class="r">3</td></tr>
+<tr><td>micro&nbsp;3a</td><td>writing-plans placeholders, no pressure</td><td>20 × opus</td><td><b>inconclusive</b> — 0 placeholders in all variants incl. control</td><td class="r">8</td></tr>
+<tr><td>micro&nbsp;3b</td><td>writing-plans placeholders, 10 tasks + word-budget pressure</td><td>20 × opus</td><td>running</td><td class="r">8</td></tr>
+</table>
+<p style="color:#777;font-size:12px">Sources: evals/results/*-20260610T*; experiment log evals/docs/experiments/2026-06-10-sdd-cost-experiments.md; spec docs/superpowers/specs/2026-06-09-…-design.md (iterations 1-5). Generated Wed Jun 10 14:14:54 PDT 2026.</p>

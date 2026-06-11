@@ -1,0 +1,143 @@
+<!doctype html><html><head><meta charset="utf-8"><title>SDD Experiments — Decision Log</title><style>
+body{background:#0f172a;color:#e2e8f0;font:14px/1.5 -apple-system,system-ui,sans-serif;margin:0;padding:32px;max-width:1060px}
+h1{font-size:22px;margin:0 0 4px} .sub{color:#94a3b8;margin-bottom:20px}
+.lineage{background:#1e293b;border-radius:12px;padding:18px 22px;margin-bottom:28px;font-size:13px;line-height:2.1}
+.lineage b{color:#7dd3fc}
+.chip{display:inline-block;padding:2px 10px;border-radius:10px;font-weight:600;font-size:12px;margin:0 3px}
+.win{background:#14532d;color:#86efac}.dead{background:#7f1d1d;color:#fca5a5}.neutral{background:#374151;color:#d1d5db}
+.recon{background:#1e3a8a;color:#93c5fd}.ref{background:#334155;color:#cbd5e1}.cal{background:#713f12;color:#fcd34d}
+.card{background:#1e293b;border-radius:12px;padding:16px 20px;margin-bottom:14px;border-left:5px solid #334155}
+.card.c-win{border-left-color:#22c55e}.card.c-dead{border-left-color:#ef4444}.card.c-neutral{border-left-color:#9ca3af}
+.card.c-recon{border-left-color:#3b82f6}.card.c-ref{border-left-color:#64748b}.card.c-cal{border-left-color:#f59e0b}
+.hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hd h2{font-size:16px;margin:0;color:#f1f5f9} .hd .disp{margin-left:auto;color:#94a3b8;font-size:12px}
+.what{color:#cbd5e1;font-size:13px;margin:6px 0 8px} .what b{color:#e2e8f0}
+table{border-collapse:collapse;margin:6px 0 2px;font-size:13px}
+th{text-align:left;color:#94a3b8;font-size:11px;text-transform:uppercase;padding:3px 14px 3px 0}
+td{padding:3px 14px 3px 0;font-variant-numeric:tabular-nums}
+.good{color:#4ade80}.bad{color:#f87171}.flat{color:#94a3b8}
+.why{color:#94a3b8;font-size:12.5px;margin-top:6px}
+.sect{font-size:13px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.08em;margin:30px 0 10px}
+</style></head><body>
+<h1>SDD Experiments — Decision Log</h1>
+<div class="sub">Each card: what changed, measured against the config it built on AND the original baseline. Coding-agent dollars on go-fractals unless noted. 63 runs total, ~$633.</div>
+
+<div class="lineage">
+<b>Lineage:</b><br>
+<span class="chip ref">baseline (dev) — fractals $16.07 · svelte $20.98</span> →
+<span class="chip win">redesign iters 1–5 — one task-reviewer per task</span> →
+<span class="chip win">+ E1 package, E2 model line, E4 ledger, file handoffs = <b>combo (PR #1717)</b> — $11.67–14.84</span><br>
+probes off combo: <span class="chip neutral">A briefs ablation — neutral</span>
+<span class="chip win">B crisp plan — $9.51–12.65</span>
+<span class="chip recon">C sonnet controller — $6.68–8.05, gates owed</span>
+<span class="chip dead">D haiku reviewers — quality fails</span>
+<span class="chip cal">E svelte n=2 — claim widened</span><br>
+killed along the way: <span class="chip dead">E3 pipelining</span> <span class="chip dead">turn batching</span> <span class="chip dead">"don't restate" prohibition</span>
+</div>
+
+<div class="sect">The shipped config (PR #1717)</div>
+
+<div class="card c-ref"><div class="hd"><span class="chip ref">REFERENCE</span><h2>Baseline — dev branch as shipped</h2><span class="disp">5 runs</span></div>
+<div class="what">Two reviewers per task (spec, then quality), each re-deriving the diff with git commands; no model discipline in dispatches.</div>
+<table><tr><th>scenario</th><th>cost</th><th>time</th><th>tokens</th></tr>
+<tr><td>go-fractals</td><td>$16.07</td><td>64.9 min</td><td>21.2M</td></tr>
+<tr><td>svelte-todo</td><td>$20.98</td><td>79.7 min</td><td>27.3M</td></tr>
+<tr><td>rejects-extra-features</td><td>$1.88</td><td colspan=2></td></tr></table></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>Redesign (iterations 1–5) — task-scoped review dispatch</h2><span class="disp">landed · the PR's core · 15 runs</span></div>
+<div class="what"><b>Changed:</b> one task-reviewer per task carrying both verdicts (spec + quality); reviewer reads a generated review-package file instead of re-running git; scope budget + escape-hatch tuning. <b>Built on:</b> baseline.</div>
+<table><tr><th>scenario</th><th>this</th><th>vs baseline</th></tr>
+<tr><td>go-fractals</td><td>$12.81–14.31</td><td class="good">−11 to −20%（−32% time, −37% tokens at freeze)</td></tr>
+<tr><td>svelte-todo</td><td>≈$15.74</td><td class="good">−25% $ (−21% time, −28% tokens)</td></tr>
+<tr><td>all 5 gate scenarios</td><td>pass</td><td class="flat">quality held</td></tr></table>
+<div class="why">Why it wins: one reviewer dispatch instead of two, and the package file turns reviews from ~9 turns / 6.4 tool calls into ~3 turns / 1 read.</div></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>E1 — give the FINAL reviewer a package too</h2><span class="disp">merged into combo · 2 runs</span></div>
+<div class="what"><b>Changed:</b> final whole-branch reviewer gets <code>review-package MERGE_BASE HEAD</code> instead of re-deriving the branch diff. <b>Built on:</b> redesign.</div>
+<table><tr><th>metric</th><th>this</th><th>vs parent</th></tr>
+<tr><td>final-review turns / tools</td><td>6 / 3</td><td class="good">was 33 / 23</td></tr>
+<tr><td>opus (controller-model) bill</td><td></td><td class="good">−19%</td></tr></table></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>E2 — REQUIRED model: line in dispatch templates</h2><span class="disp">merged into combo · 1 run</span></div>
+<div class="what"><b>Changed:</b> nothing yet — this run <i>exposed the failure</i>: with guidance-only model selection, dispatches from Task 3 onward silently inherited opus. <b>Built on:</b> redesign + file handoffs.</div>
+<table><tr><th>metric</th><th>guidance only</th><th>with REQUIRED line</th></tr>
+<tr><td>explicit-model dispatches</td><td class="bad">decayed to (default)=opus, +$5</td><td class="good">26/26, 31/31, 34/34, 57/57 across later runs</td></tr></table></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>E4 — durable progress ledger</h2><span class="disp">merged into combo · 1 run</span></div>
+<div class="what"><b>Changed:</b> controller appends task completion to <code>&lt;git-dir&gt;/sdd/progress.md</code>; checks it at skill start. <b>Built on:</b> redesign.</div>
+<table><tr><th>metric</th><th>result</th></tr>
+<tr><td>ledger adoption / run cost</td><td class="good">maintained unprompted, cost in-band</td></tr>
+<tr><td>failure it insures against</td><td class="flat">real session re-dispatched ~22 done tasks post-compaction (269 dispatches)</td></tr></table></div>
+
+<div class="card c-neutral"><div class="hd"><span class="chip neutral">SMALL WIN, KEPT</span><h2>File handoffs — task-brief + report files</h2><span class="disp">merged into combo · 1 run + ablation A</span></div>
+<div class="what"><b>Changed:</b> implementer reads a per-task brief file and writes a report file; ≤15-line final messages. <b>Built on:</b> redesign.</div>
+<table><tr><th>metric</th><th>modeled</th><th>measured</th></tr>
+<tr><td>resident-context savings</td><td>~50%</td><td class="flat">~$1/run (dispatch prompts −9%, tool-result chars −16%)</td></tr></table>
+<div class="why">Kept anyway: exact values live in one file (fidelity), enables conflict detection, survives compaction. Confirmed cost-neutral by ablation A below.</div></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>Combo — everything merged (this is PR #1717's final config)</h2><span class="disp">shipped · 3 gate runs + 9-run band</span></div>
+<div class="what"><b>Changed:</b> redesign + E1 + E2 + E4 + file handoffs + dispatch recipe + reviewer risk budget. <b>Built on:</b> all of the above.</div>
+<table><tr><th>scenario</th><th>this</th><th>vs baseline</th><th>vs redesign</th></tr>
+<tr><td>go-fractals (n=9)</td><td>$11.67–14.84</td><td class="good">−8 to −27%</td><td class="flat">≈flat $; adds durability + discipline</td></tr>
+<tr><td>svelte-todo (n=2)</td><td>$14.99–20.30</td><td class="good">−3 to −29%</td><td class="flat">range overlaps</td></tr>
+<tr><td>planted-defect + guardrails</td><td>pass</td><td class="flat">quality held</td></tr></table></div>
+
+<div class="sect">Killed along the way (negative results, recorded so nobody re-buys them)</div>
+
+<div class="card c-dead"><div class="hd"><span class="chip dead">DEAD</span><h2>E3 — pipelined reviews</h2><span class="disp">declined · 2 runs</span></div>
+<div class="what"><b>Changed:</b> asked the controller to dispatch next implementer + reviewer in one message / in background. <b>Built on:</b> redesign.</div>
+<table><tr><th>variant</th><th>result</th></tr>
+<tr><td>parallel tool calls</td><td class="bad">0 paired dispatches in 29 — controller emits exactly one tool call per message, prompt-immune</td></tr>
+<tr><td>run_in_background</td><td class="bad">adopted 7/28 but $14.84 (band top) — reviews only ~30-60s, benefit below ±20% run noise</td></tr></table></div>
+
+<div class="card c-dead"><div class="hd"><span class="chip dead">DEAD</span><h2>Turn batching &amp; "don't restate the brief" (micro-tested)</h2><span class="disp">declined · measured inside E-runs + 25 API micro-samples</span></div>
+<div class="what"><b>Changed:</b> guidance to combine bookkeeping calls; prohibition on restating spec values in dispatches.</div>
+<table><tr><th>variant</th><th>result</th></tr>
+<tr><td>turn batching</td><td class="bad">0 multi-tool messages ever, with or without guidance; 46% of controller turns are thinking-only</td></tr>
+<tr><td>"do not restate" prohibition</td><td class="bad">4.4 values re-typed vs 3.6 with NO guidance — backfired</td></tr>
+<tr><td>positive 5-part recipe instead</td><td class="good">3.0, zero variance — this is what landed</td></tr></table></div>
+
+<div class="sect">Batch A–E — probes off combo (overnight, strict-cost ladder)</div>
+
+<div class="card c-neutral"><div class="hd"><span class="chip neutral">NEUTRAL</span><h2>A — do the brief/report files cost money?</h2><span class="disp">ablation, settles a question · 4 runs</span></div>
+<div class="what"><b>Changed:</b> combo MINUS the brief/report mechanism (everything else kept). <b>Built on:</b> combo.</div>
+<table><tr><th>scenario</th><th>lean (no briefs)</th><th>combo same night</th><th>combo band</th></tr>
+<tr><td>go-fractals ×3</td><td>$11.61 / 12.27 / 13.25</td><td>$14.10</td><td class="flat">$11.67–14.84 — fully overlapping</td></tr></table>
+<div class="why">Verdict: briefs are free. They stay for fidelity + compaction durability. Also resolves "was the 44.4-min run a better config?" — no, tail draw.</div></div>
+
+<div class="card c-win"><div class="hd"><span class="chip win">WIN</span><h2>B — crisp plan (strict-cost L1)</h2><span class="disp">validated → future writing-plans PR · 3 runs</span></div>
+<div class="what"><b>Changed:</b> the PLAN, not the skill: 10 tasks → 7 right-sized, ## Global Constraints header, per-task Interfaces: lines. Same combo config. <b>Built on:</b> combo.</div>
+<table><tr><th>metric</th><th>crisp plan</th><th>vs combo (10-task plan)</th><th>vs baseline</th></tr>
+<tr><td>go-fractals cost ×3</td><td>$9.51 / 12.65 / 12.65</td><td class="good">mean −$1.5 (−12%)</td><td class="good">−21 to −41%</td></tr>
+<tr><td>dispatches</td><td>20 / 21 / 24</td><td class="good">was 28 (−21%)</td><td></td></tr>
+<tr><td>quality gates</td><td>3/3 pass, fix waves flat</td><td class="flat">no review-granularity loss</td><td></td></tr></table>
+<div class="why">Open half: getting writing-plans to PRODUCE such plans (this used a hand-written one).</div></div>
+
+<div class="card c-recon"><div class="hd"><span class="chip recon">WIN PENDING GATES</span><h2>C — sonnet controller (strict-cost L2)</h2><span class="disp">recon positive · 3 runs (1 infra fail)</span></div>
+<div class="what"><b>Changed:</b> the controller SESSION runs sonnet instead of opus (subagent tiers unchanged, chosen by the controller). <b>Built on:</b> combo.</div>
+<table><tr><th>metric</th><th>sonnet controller</th><th>vs combo</th><th>vs baseline</th></tr>
+<tr><td>go-fractals ×2</td><td>$6.68 / $8.05</td><td class="good">≈−40%</td><td class="good">≈−55%</td></tr>
+<tr><td>tokens</td><td>12.6M / 16.1M</td><td class="flat">inside band — no turn inflation</td><td></td></tr>
+<tr><td>judgment</td><td colspan=2 class="flat">loops + omnibus + re-reviews held; caught go-mod-tidy dropping cobra</td><td></td></tr></table>
+<div class="why">Not shipped: zero BLOCKED/⚠️ events arose, so escalation judgment is untested. Needs a broken-plan scenario + N=5 + judgment audit. (The $0.13 fail found a real quorum seeding bug, since fixed.)</div></div>
+
+<div class="card c-dead"><div class="hd"><span class="chip dead">DEAD</span><h2>D — haiku task reviewers (strict-cost L3)</h2><span class="disp">disproven, as pre-registered · 6 runs</span></div>
+<div class="what"><b>Changed:</b> Model Selection forces task reviewers onto the cheapest tier. <b>Built on:</b> combo.</div>
+<table><tr><th>metric</th><th>haiku reviewers</th><th>combo</th></tr>
+<tr><td>planted-defect scenario ×5</td><td class="bad">2 pass / 1 indet / 2 fail</td><td class="good">5/5 pass</td></tr>
+<tr><td>defects cleanly flagged at severity</td><td class="bad">0 of 10</td><td class="good">scenario's whole point</td></tr>
+<tr><td>fractals cost</td><td>$9.61 (−$2-3)</td><td class="flat">the "saving" IS the laxness: fewer findings → fewer fix waves</td></tr></table>
+<div class="why">Sharpest finding: haiku doesn't miss silently — it advocates for defects (DRY praised as YAGNI; assert-nothing test "plan-compliant"; found-then-downgraded with the exact prohibited rationale).</div></div>
+
+<div class="card c-cal"><div class="hd"><span class="chip cal">CLAIM CALIBRATION</span><h2>E — svelte second run</h2><span class="disp">honesty, not optimization · 1 run</span></div>
+<div class="what"><b>Changed:</b> nothing — re-ran combo on svelte to turn a single-run claim into a range.</div>
+<table><tr><th>metric</th><th>run 1</th><th>run 2</th><th>baseline</th></tr>
+<tr><td>svelte cost</td><td>$14.99</td><td>$20.30 (9 fix waves)</td><td class="flat">$20.98 — overlaps at top</td></tr></table>
+<div class="why">PR now claims the range. Time/tokens stay clearly better; cost is honestly "usually better, sometimes ≈flat".</div></div>
+
+<div class="sect">Infrastructure runs (not win/lose experiments)</div>
+<div class="card c-ref"><div class="hd"><span class="chip ref">TOOLING</span><h2>Planted-defect scenario development (11 runs) + guardrail matrix (6 runs)</h2></div>
+<div class="what">Building and tuning the quality gates themselves: the planted-defect scenario went v1→v3, fixing five distinct ways the defect got suppressed (controller pre-judging, severity pre-rating, reviewer calibration, implementer framing, a wrong eval bar). The guardrail scenarios (rejects-extra-features, planted-flaws) ran repeatedly to confirm each config kept passing.</div></div>
+
+<div class="sub" style="margin-top:22px">Batch A–E wall-clock ran under up to 7-way parallel load — dollars and tokens are the trustworthy columns. Full run-level detail: evals-matrix.html (chronological) / evals-by-experiment.html (grouped).</div>
+</body></html>

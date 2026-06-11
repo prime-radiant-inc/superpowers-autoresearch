@@ -1,0 +1,215 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Build-Loop Autoresearch — 25 Experiments</title><style>
+body{background:#0f172a;color:#e2e8f0;font:15px/1.6 -apple-system,system-ui,sans-serif;margin:0;padding:36px auto;max-width:860px;margin:auto;padding:36px 24px}
+h1{font-size:24px;margin:0 0 6px} .sub{color:#94a3b8;margin-bottom:8px;font-size:14px}
+.intro{color:#cbd5e1;font-size:14px;border-left:3px solid #7dd3fc;padding:10px 16px;background:#1e293b;border-radius:6px;margin:18px 0 30px}
+.exp{margin:0 0 30px;background:#1e293b;border-radius:12px;padding:20px 24px}
+.exp h2{font-size:17px;margin:0 0 2px;color:#f1f5f9} .eid{color:#7dd3fc;font-weight:700;margin-right:8px}
+.badge{display:inline-block;padding:2px 11px;border-radius:10px;font-size:11.5px;font-weight:700;letter-spacing:.03em;vertical-align:2px;margin-left:10px}
+dt{color:#7dd3fc;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-top:12px}
+dd{margin:3px 0 0;color:#d8e0ea} .pred dd{color:#94a3b8;font-style:italic}
+h3{color:#7dd3fc;font-size:14px;text-transform:uppercase;letter-spacing:.08em;margin:40px 0 12px}
+.backlog{color:#94a3b8;font-size:14px}
+</style></head><body>
+<h1>Build-Loop Autoresearch — the 25 Experiments</h1>
+<div class="sub">2026-06-11 · opus as coordinator throughout · every hypothesis pre-registered with a prediction · ~$165</div>
+<div class="intro">Method: mine existing run artifacts first (free), micro-test phrasings with controls next (~$1–5), spend full eval runs only where the cheaper tiers couldn't answer (~$7–15 each). Every automated score got a manual inspection pass — which caught and corrected three measurement bugs mid-loop (a grep counting template echoes as findings, a harness that never inlined the diff it claimed to test, a scorer regex blind across newlines). One retracted verdict was re-measured clean. Quality gates (planted-defect scenario) guard every config change; negative results get equal billing.</div>
+
+<h3>Mining the corpus — ten experiments from runs we already had</h3>
+<div class="exp"><h2><span class="eid">E02</span>Do Interfaces blocks cut implementer exploration?<span class="badge" style="background:#7f1d1d;color:#fca5a5">REFUTED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Whether the per-task Interfaces blocks (exact signatures consumed/produced) reduce how much implementers poke around the codebase before editing.</dd>
+<dt>How</dt><dd>Mined per-subagent tool-call profiles from completed runs: elicited plans (with Interfaces) vs control plans (without), complete code held constant.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Elicited implementers make fewer pre-edit reads.</dd></div>
+<dt>What happened</dt><dd>No reduction: 1.9 pre-edit explores with Interfaces vs 1.3–1.5 without. But the mining surfaced something bigger — the transcription effect quantified: implementers on complete-code plans run 17–24 turns with 1.3–1.9 explores, vs 36.7 turns and 5.6 explores on prose plans. The plan&#x27;s code, not its interface annotations, is what keeps implementers on rails.</dd>
+<dt>So what</dt><dd>Interfaces earn their keep elsewhere (fix-wave reduction, cross-task consistency) — not navigation.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E04</span>Does the controller waste money reading report files?<span class="badge" style="background:#374151;color:#d1d5db">ALREADY OPTIMAL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>The brief/report file design intends to keep bulk text out of the controller&#x27;s context. Does the controller defeat it by reading the reports anyway?</dd>
+<dt>How</dt><dd>Counted controller Read calls touching report files across five runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Controller reads report files in under 30% of tasks.</dd></div>
+<dt>What happened</dt><dd>0–1 report-file reads per run across all five runs. The handoff design works exactly as intended.</dd>
+<dt>So what</dt><dd>Lead closed — no saving available.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E07</span>Is the implementer self-review step worth its turns?<span class="badge" style="background:#7f1d1d;color:#fca5a5">REFUTED (THE GREP LIED)</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Implementers self-review before handoff. Does that step catch enough to justify its cost?</dd>
+<dt>How</dt><dd>Grepped 87 implementer transcripts for self-review findings — then manually read every match, per the methodology rule.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Self-review catches something in &gt;25% of tasks.</dd></div>
+<dt>What happened</dt><dd>The grep claimed 9 catches in 87. Manual inspection killed 8 of them as template echoes in dispatch prompts. True catch rate: 1 in 87 — an unanchored .gitignore entry that would have blocked staging. In the complete-code regime there is almost nothing for self-review to catch.</dd>
+<dt>So what</dt><dd>Kept anyway: one averted fix wave (~$0.75) per ~87 tasks roughly pays for the turns, and catching before review is far cheaper than after. No change.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E08</span>Can fix subagents run on the cheapest tier?<span class="badge" style="background:#14532d;color:#86efac">CONFIRMED AS-IS</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Post-review fixes are usually mechanical. Do haiku fixers hold up?</dd>
+<dt>How</dt><dd>Mined every fix dispatch across the whole run corpus: model used, run outcome.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Holds; small saving.</dd></div>
+<dt>What happened</dt><dd>34 haiku fix dispatches across passing runs — controllers already tier fixes down on their own. The one bad incident (a fixer&#x27;s go mod tidy silently removed cobra) was caught by the existing fix-report contract.</dd>
+<dt>So what</dt><dd>No skill change needed; the behavior already exists and the safety net already works.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E14</span>Is dispatch cache behavior healthy?<span class="badge" style="background:#374151;color:#d1d5db">ALREADY OPTIMAL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>If subagent dispatches were cache-missing, reordering could save money.</dd>
+<dt>How</dt><dd>Mined token-usage records from controller transcripts.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>cache_read dwarfs uncached input; no win available.</dd></div>
+<dt>What happened</dt><dd>Cache reads 7.7–30.7M vs only 19–31k uncached input tokens. Cache health is excellent; the cost axis is resident-context size, not hit rate.</dd>
+<dt>So what</dt><dd>Lead closed.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E15</span>Can reviewers be squeezed further?<span class="badge" style="background:#374151;color:#d1d5db">ALREADY AT FLOOR</span></h2>
+<dl>
+<dt>What it tested</dt><dd>The reviewer risk budget was tuned earlier. Is there anything left?</dd>
+<dt>How</dt><dd>Mined reviewer subagent profiles across complete-code runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>No win available; close the lead.</dd></div>
+<dt>What happened</dt><dd>Reviews run 4.7–5.0 turns / 2.7–3.0 tools everywhere packages exist (prose-plan runs: 10.1 turns / 6.8 tools). The package did the work; the budget binds.</dd>
+<dt>So what</dt><dd>Lead closed.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E18</span>Does coding-agent verbosity drive QA-agent cost?<span class="badge" style="background:#7f1d1d;color:#fca5a5">REFUTED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>If the eval QA agent&#x27;s cost tracked the coding agent&#x27;s message volume, terse final messages would cut eval costs too.</dd>
+<dt>How</dt><dd>Correlated gauntlet token spend against coding-run duration across 30 fractals runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>QA tokens correlate with coding final-message volume.</dd></div>
+<dt>What happened</dt><dd>QA cost tracks duration (r=0.43) — the QA agent polls the screen. Message volume is irrelevant.</dd>
+<dt>So what</dt><dd>Faster runs cut eval costs automatically; nothing else to do.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E19</span>Is TodoWrite + ledger double bookkeeping?<span class="badge" style="background:#7f1d1d;color:#fca5a5">PREMISE REFUTED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>The skill asks for todos and a progress ledger. Dropping todos might save controller calls.</dd>
+<dt>How</dt><dd>Counted TodoWrite calls in controller transcripts.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Todos redundant with the ledger for ≤10-task plans.</dd></div>
+<dt>What happened</dt><dd>Zero TodoWrite calls in any measured run — controllers already run ledger-only. Bonus: controller tool calls scale with task count (49 on a 7-task plan vs 74 on a 10-task plan).</dd>
+<dt>So what</dt><dd>No duplication exists to remove.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E20</span>Is the TDD-evidence block in reports load-bearing?<span class="badge" style="background:#14532d;color:#86efac">CONFIRMED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Implementer reports carry RED/GREEN test transcripts. Do reviewers actually use them?</dd>
+<dt>How</dt><dd>Searched 87 reviewer transcripts for references to the TDD evidence.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Reviewers cite it; keep.</dd></div>
+<dt>What happened</dt><dd>41% of reviewer transcripts reference the TDD evidence.</dd>
+<dt>So what</dt><dd>Keep. Removing it would be felt.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E23</span>Does the controller still re-derive context per dispatch?<span class="badge" style="background:#374151;color:#d1d5db">FIXED ALREADY</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Before this campaign, real sessions had 42k-char dispatch prompts of pasted history. Did the recipe + briefs actually fix it?</dd>
+<dt>How</dt><dd>Measured dispatch-prompt sizes across runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Measurable but small.</dd></div>
+<dt>What happened</dt><dd>Implementer dispatch prompts now average 2.5k chars on elicited plans (4.6k on prose; 42k in the pathological pre-fix sessions). The remaining mass is the prompt template skeleton itself.</dd>
+<dt>So what</dt><dd>Re-derivation is gone. Any further trim is a template-minification question (E13, backlog).</dd>
+</dl></div>
+<h3>Micro-tests — phrasings against controls, dollars at a time</h3>
+<div class="exp"><h2><span class="eid">E11</span>Can sonnet write the plans?<span class="badge" style="background:#7f1d1d;color:#fca5a5">DIED ON STRUCTURE</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Plan-writing is judgment-dense and pre-registered to stay at opus. How exactly does a cheaper planner fail?</dd>
+<dt>How</dt><dd>5 sonnet plans from the same design + guidance, scored against opus baselines.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Sonnet plans miss constraints/interfaces fidelity.</dd></div>
+<dt>What happened</dt><dd>Fidelity held perfectly (constraints 5/5, gradient verbatim, interfaces on every task) — mechanical guidance adoption is model-robust. But 4 of 5 plans collapsed to 3 tasks (sonnet mean 3.6 vs opus 5.8): the planner chose coarser review gates. The judgment loss showed up in structure, not in copying.</dd>
+<dt>So what</dt><dd>Plan-writing stays at opus, with sharper evidence for why.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E17</span>Do plan word-budgets help or hurt?<span class="badge" style="background:#7f1d1d;color:#fca5a5">CONFIRMED HARMFUL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>A length target might trim plan flab cheaply.</dd>
+<dt>How</dt><dd>5 plans with a 1,200-word prose budget (code explicitly exempted) vs 5 baseline.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Test-assertion count falls before prose does.</dd></div>
+<dt>What happened</dt><dd>Severe: test signals fell 53.8 → 20.6 (−62%) and code fences 39 → 14 — even though baseline prose was already under the budget and code was exempted. The model read &#x27;economy&#x27; as licence for austerity everywhere, cutting exactly the load-bearing content.</dd>
+<dt>So what</dt><dd>Never add length targets to writing-plans. Same mechanism as the earlier nuance-clause regression.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E21</span>Can reviewer reports lose their preamble?<span class="badge" style="background:#14532d;color:#86efac">WIN −41%</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Reviewer final messages narrate process before delivering verdicts. A &#x27;your final message IS the report&#x27; contract might trim that.</dd>
+<dt>How</dt><dd>Micro-test on a real brief+report+diff fixture, 5 reps per arm, sonnet. First attempt had a harness flaw (the diff never inlined) — verdict retracted and re-measured clean.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>−10–20% reviewer output tokens, verdicts intact.</dd></div>
+<dt>What happened</dt><dd>−41% (1,160 → 687 tokens), spec verdicts 5/5 in both arms. Accidental bonus: the fixture mispaired Task 2&#x27;s brief with Task 3&#x27;s diff — and both arms correctly flagged the mismatch. Reviewers genuinely cross-check brief against diff.</dd>
+<dt>So what</dt><dd>Adopted into the E27 stack.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E25</span>Can reviewers work from the diff package alone?<span class="badge" style="background:#7f1d1d;color:#fca5a5">DANGEROUS — BRIEF IS LOAD-BEARING</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Dropping the brief and report from reviewer inputs would simplify dispatches.</dd>
+<dt>How</dt><dd>Micro-test: same fixture with brief and report removed, 5 reps.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Both needed; close the lead.</dd></div>
+<dt>What happened</dt><dd>Package-only reviewers delivered confident spec verdicts 5/5 — but silently redefined &#x27;spec&#x27; to mean just the global constraints. Zero of five flagged that the brief was missing. The confidence survived; the basis didn&#x27;t.</dd>
+<dt>So what</dt><dd>Keep all three inputs. Same failure family as cheap-reviewer rationalization: silent scope-shrinkage.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E26</span>Can a recipe shrink controller narration?<span class="badge" style="background:#14532d;color:#86efac">WORKS, SMALL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>46% of controller turns are thinking/narration. Message count is prompt-immune — but per-message length might not be.</dd>
+<dt>How</dt><dd>Micro-test of a mid-workflow controller moment with tools provided, with and without a one-line-narration recipe; opus, 5 reps each.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Small win or nothing.</dd></div>
+<dt>What happened</dt><dd>162 → 74 narration chars per turn (−54%) with zero variance — and the healthy verify-the-implementer&#x27;s-claims behavior survived inside the one line. Worth ~$0.1–0.3/run.</dd>
+<dt>So what</dt><dd>A freebie; adopted into the E27 stack.</dd>
+</dl></div>
+<h3>Full runs — where only real execution answers</h3>
+<div class="exp"><h2><span class="eid">E01</span>What do critical-sections-only plans cost to execute?<span class="badge" style="background:#713f12;color:#fcd34d">REFUTED — CONFOUNDED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Jesse&#x27;s question: what if plans carry only the critical code instead of everything inline?</dd>
+<dt>How</dt><dd>Generated critical-only plans (only 1 in 5 genuinely complied — opus resists withholding code), executed the genuine specimen twice.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Between complete-code and prose: $9–12, 3–6 fix waves.</dd></div>
+<dt>What happened</dt><dd>$5.21/$5.11 — the cheapest runs ever measured. But the genuine specimen had also self-merged to 3 tasks: per-implementer effort did double exactly as predicted (35 turns vs 17–24), there were just fewer implementers. Task count swamped code policy; the price is coarser review gates.</dd>
+<dt>So what</dt><dd>Spawned E28 to isolate code policy at constant structure. Also: eliciting this regime at all is hard (1/5 compliance).</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E28</span>Code policy at constant structure<span class="badge" style="background:#14532d;color:#86efac">REFUTED — BODIES ARE MARGINAL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>The clean version of E01: the same 7-task elicited plan with implementation bodies stripped to one-line descriptions — tests, interfaces, and structure untouched.</dd>
+<dt>How</dt><dd>Controlled fixture edit (10 bodies stripped, 19 test assertions kept), 2 runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Costlier than $6.34–8.49; implementer effort doubles across 7 tasks.</dd></div>
+<dt>What happened</dt><dd>$7.78/$8.54 — inside the with-bodies range. Implementer turns rose only 7%: the test code pins the work; writing code to satisfy given tests is nearly as guided as transcribing. Fix waves ticked up (1 → 3–4).</dd>
+<dt>So what</dt><dd>The plan-content hierarchy, measured: tests + interfaces + structure are load-bearing; implementation bodies are ~40% of plan length for roughly nothing. A defensible writing-plans relaxation.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E03</span>Haiku implementers under complete-code plans<span class="badge" style="background:#713f12;color:#fcd34d">VIABLE, SMALLER THAN HOPED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>If implementation is transcription, the cheapest tier should manage it — with sonnet reviewers as the quality gate.</dd>
+<dt>How</dt><dd>Conditional guidance (&#x27;when the plan text contains the complete code…&#x27;), 2 runs on the elicited plan.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Gates hold; −$2–3/run.</dd></div>
+<dt>What happened</dt><dd>$6.34/$7.33 vs sonnet implementers&#x27; $6.34/$8.49 — overlapping; the real saving is ~$0.5–1 because haiku&#x27;s turn inflation (30 vs 17–24) ate half the price gap. Gates held; one classic haiku sloppiness (committed a build binary) was caught by review. One drift: the final review ran sonnet.</dd>
+<dt>So what</dt><dd>Worth keeping in the stack with the final-review tier pinned; not the big rock.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E22</span>Does the conditional tier guidance discriminate?<span class="badge" style="background:#14532d;color:#86efac">CONFIRMED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>The E03 wording licenses haiku only when the plan carries complete code. On a prose plan, does the controller correctly refuse?</dd>
+<dt>How</dt><dd>Same config, prose 10-task fixture, 1 run.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>Controller picks sonnet implementers; if it picks haiku anyway, expect a blowup.</dd></div>
+<dt>What happened</dt><dd>9 of 10 implementers went to sonnet — the one haiku was the genuinely mechanical task. $12.59, normal prose band, gates green.</dd>
+<dt>So what</dt><dd>The conditional wording is shippable: it gates on exactly the right condition.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E05</span>Narrower review-package context (-U3 vs -U10)<span class="badge" style="background:#374151;color:#d1d5db">NEUTRAL</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Does shrinking diff context push reviewers back into reading files?</dd>
+<dt>How</dt><dd>review-package patched to -U3, 1 run.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>-U3 forces file reads back up; keep -U10.</dd></div>
+<dt>What happened</dt><dd>Reviewer profile byte-identical (5.0 turns / 3.0 tools), cost in-band. On small diffs the width doesn&#x27;t matter — and the package is read once by sonnet, so there was no spend to recover anyway.</dd>
+<dt>So what</dt><dd>Keep -U10 as large-diff insurance. Lead closed.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E06</span>Cap the controller&#x27;s thinking budget<span class="badge" style="background:#7f1d1d;color:#fca5a5">BACKFIRED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Mining showed ~2/3 of controller output tokens are invisible (redacted thinking) — the single biggest controller spend. Cap it?</dd>
+<dt>How</dt><dd>MAX_THINKING_TOKENS=1024 injected into the launcher (verified in the binary first; careful contamination window), 2 runs.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>−15–25% controller cost; judgment must stay clean.</dd></div>
+<dt>What happened</dt><dd>Costs in-band ($7.15/$8.10) but controller messages rose 92 → 128/138 and output tokens nearly doubled (66k → 118–123k). Thinking buys turn efficiency; suppress it and the controller compensates with more steps and re-derivation. Gates held — it isn&#x27;t harmful, just useless.</dd>
+<dt>So what</dt><dd>Do not cap thinking. The turn floor rises to meet you.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E09</span>Controller surveys the plan instead of reading it<span class="badge" style="background:#713f12;color:#fcd34d">PARTIAL — HABIT WON</span></h2>
+<dl>
+<dt>What it tested</dt><dd>With briefs delivering tasks, the controller only needs headings + constraints: a task-brief --list mode.</dd>
+<dt>How</dt><dd>Implemented --list (smoke-tested on real plans), guidance added, 1 run.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>−$0.5–1/run of resident context.</dd></div>
+<dt>What happened</dt><dd>The controller ran --list once… then read plan.md twice anyway. Cost in-band, saving unrealized. The read-the-plan habit beat one guidance line.</dd>
+<dt>So what</dt><dd>Dropped for now — the ceiling (~$1) doesn&#x27;t justify more runs; phrasing iteration is future micro-work.</dd>
+</dl></div>
+<div class="exp"><h2><span class="eid">E24</span>Fixture realism at svelte scale<span class="badge" style="background:#14532d;color:#86efac">CONFIRMED −24%</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Fractals showed hand-written fixture plans execute ~2× costlier than real skill output. Does it replicate on the bigger scenario?</dd>
+<dt>How</dt><dd>Generated an elicited svelte plan — discovering first that the hand fixture had gold-plated an E2E suite the design never asked for; amended the design so scopes match. 2 runs incl. Playwright.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>$10–13 vs the hand fixture&#x27;s $14.99–20.30.</dd></div>
+<dt>What happened</dt><dd>$12.40/$14.38 (mean $13.39) vs ~$17.6 — a −24% replication, milder than fractals&#x27; 2× because heavier intrinsic UI/E2E work dilutes plan effects.</dd>
+<dt>So what</dt><dd>Fixture-realism finding stands across scales. Also: baseline svelte numbers always included unrequested scope.</dd>
+</dl></div>
+<h3>The composition</h3>
+<div class="exp"><h2><span class="eid">E27</span>The integrated ship candidate<span class="badge" style="background:#14532d;color:#86efac">CANDIDATE ESTABLISHED</span></h2>
+<dl>
+<dt>What it tested</dt><dd>Do the loop&#x27;s wins compose? Opus controller + elicited plan + conditional haiku implementers + terse reviewer contract + narration recipe + final-review tier pin.</dd>
+<dt>How</dt><dd>Stack clone, 2 fractals runs + 3 planted-defect quality gates.</dd>
+<div class="pred"><dt>Pre-registered prediction</dt><dd>All green; fractals ≤ $6.</dd></div>
+<dt>What happened</dt><dd>Fractals $6.24/$6.60 (combo on hand plans: $11.67–14.84). Quality gates 2 of 3 — the one fail was a clean reviewer miss on DRY plus a stricter judge reading; inspecting the reviewer&#x27;s 2,620-char report exonerated the terse contract as the suppressor.</dd>
+<dt>So what</dt><dd>The candidate exists and costs half the shipped config. The N=5 gate battery is still owed before any of it becomes skill text.</dd>
+</dl></div>
+<h3>Backlog — registered, not run (the 25 minimum was reached without them)</h3><p class='backlog'><b>E10</b> Report contract 15→8 lines · <b>E12</b> Coarser step granularity · <b>E13</b> Prompt-template minification · <b>E16</b> Best-stack composition on svelte</p>
+<div class="intro" style="margin-top:30px"><b>Where it nets out:</b> the ship-candidate stack runs go-fractals at $6.24–6.60 against the shipped config's $11.67–14.84 — but most of that gap belongs to executing real, complete plans rather than the hand-written prose fixtures all earlier numbers were measured on. The durable lessons: tests+interfaces+structure are what make a plan cheap to execute; thinking is load-bearing, don't cap it; word budgets eat tests; cheap models fail by advocating, not by going quiet; and half of all leads close as "the current design already had this right" — which is exactly what the log is for.</div>
+</body></html>
