@@ -1822,3 +1822,34 @@ New findings and driver responses:
 **Sole remaining pre-PR gate: F4** — one real Claude Code session with
 the revised skill loaded, authoring guidance for a fresh composition
 problem. Awaiting Jesse's go/no-go.
+
+---
+## F4 real-session test — pre-registration (2026-06-11, before the session runs)
+
+Setup: scratch repo /tmp/f4-session-test (git-initialized) posing as an
+internal on-call skill library; the REVISED writing-skills (worktree
+9887c17) installed as the PROJECT skill `.claude/skills/writing-skills/`
+and named authoritative in README. Target: `skills/writing-runbooks/
+SKILL.md` (fresh fixture). Session: real Claude Code worker via
+claude-session-driver, opus, --dangerously-skip-permissions, superpowers
+plugin and all of Jesse's global config present (that interference is
+the point of the test).
+
+Task (fresh composition problem, no form-table vocabulary): incident
+runbooks come out as prose narratives interleaving diagnosis commentary
+with the commands to run, so on-call engineers can't execute them under
+pressure mid-incident. Ask: add guidance to writing-runbooks so runbooks
+come out executable.
+
+Pre-registered success criteria:
+1. The session engages the PROJECT writing-skills (verify via events /
+   transcript; if it loads only the installed plugin's old version, the
+   run is CONTAMINATED — rerun, don't grade).
+2. Classifies the failure as shaping and the proposed guidance is
+   recipe/contract-led (what a runbook step IS), not prohibition-led.
+3. Iron Law honored: no unverified deploy — baseline demanded and/or the
+   edit explicitly gated/labeled provisional; verification plan includes
+   a no-guidance control.
+4. No regression: no plan/word budgets, no rationalization-table-for-
+   shaping misfire.
+Failure on 2 or 3 = F4 fails and the revision goes back to REFACTOR.
