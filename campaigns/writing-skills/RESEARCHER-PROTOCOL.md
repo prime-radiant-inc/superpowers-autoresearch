@@ -7,7 +7,8 @@ mechanical execution and faithful recording. These rules are strict.
 
 ## Your loop
 
-1. Read `logs/campaign-log.md` for current state; resume at the first
+1. Read the campaign log at `../../logs/campaign-writing-skills.md`
+   (relative to this directory) for current state; resume at the first
    incomplete step. Append-only — never rewrite earlier entries.
 2. Execute the current step EXACTLY as written in the step list below.
 3. Record results in the log after every step: command run, output
