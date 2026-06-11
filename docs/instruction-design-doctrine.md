@@ -3,9 +3,17 @@
 When negative instructions backfire vs work, and how to settle wording
 questions cheaply. Measured on superpowers SDD guidance, 2026-06-10/11
 (opus, 5+ reps per phrasing, programmatic scoring + manual inspection,
-no-guidance controls). Evidence: superpowers-evals
-`docs/experiments/2026-06-10-sdd-cost-experiments.md` and
-`docs/experiments/2026-06-11-build-loop-autoresearch.md`.
+no-guidance controls). Evidence:
+- **Raw per-arm samples** (prohibition/recipe/control etc., 5 reps each):
+  `raw/dispatch-composition-micro/` in this repo (rescued from
+  `/tmp/sdd-exp/micro`); follow-up micros in `raw/follow-up-micros/`.
+- **Experiment narratives:** superpowers-evals
+  `docs/experiments/2026-06-10-sdd-cost-experiments.md` and
+  `2026-06-11-build-loop-autoresearch.md` — NOTE: these live on the
+  local evals branch `sdd-l1-elicited-plan` (worktree
+  `superpowers/.claude/worktrees/sdd-review-dispatch/evals`), not yet on
+  evals main. Until that branch lands, this repo's raw/ + logs/ are the
+  durable copies.
 
 ## Classify the instruction before "fixing" it
 
@@ -53,8 +61,10 @@ control — it distinguishes works / backfires / can't-elicit. Manually
 inspect every flagged match (agents quoting the rule they follow are
 false positives; so are template echoes). If the control doesn't fail,
 STOP: inconclusive-by-zero ≠ pass; don't author guidance for failures you
-can't elicit. Method doc: superpowers-evals
-`docs/superpowers/skills/micro-testing-prompt-guidance.md`.
+can't elicit. Working method implementations: `harnesses/*.py` and
+`campaigns/writing-skills/run-battery.py` in this repo. (An earlier
+draft cited a superpowers-evals method doc that was never written —
+corrected 2026-06-11 after adversarial review.)
 
 ## Prompt-immune floors (don't fight these with wording)
 

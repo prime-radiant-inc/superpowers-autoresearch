@@ -1619,3 +1619,74 @@ belongs to the writing-plans thread, not this skill.
 +33 lines). Awaiting Jesse's review of the diff before any PR; per repo
 rules the PR (target `dev`) requires before/after eval evidence — this
 log is that evidence.
+
+---
+## Adversarial review round 1 + driver corrections (2026-06-11)
+
+Jesse requested an adversarial subagent review of the diff and the
+campaign. Findings and driver responses, in full:
+
+**F1 (BLOCKER, "primary data untraceable"): PARTIALLY REFUTED, REST FIXED.**
+The raw per-arm samples exist (`/tmp/sdd-exp/micro/out/`, arms
+A-negative/B-source-of-truth/C-recipe/C2-reference/D-control × 5 reps)
+and are now rescued into this repo at `raw/dispatch-composition-micro/`
+(plus follow-up micros). The experiment narrative with the 4.4/3.6/3.0
+numbers exists at sdd-review-dispatch worktree
+`evals/docs/experiments/2026-06-10-sdd-cost-experiments.md` (local
+branch sdd-l1-elicited-plan, lines 53–59) — the reviewer searched a
+different checkout. CONCEDED: the doctrine doc's citations pointed at
+paths that don't exist on evals main plus a method doc never written —
+both citations corrected. CONCEDED: in-skill prose hardened a noisy
+result ("measurably dilutes"); fixed to "consistent → noisy" and the
+head-to-head claim is now scoped to its context with a
+micro-test-your-own-case instruction (worktree commit 391c33e).
+
+**F2 (BLOCKER, "test-set leakage / echo compliance"): CONCEDED IN PART;
+held-out battery running.** The table's examples do name T1/T2/T4/T6's
+failures, and GREEN samples quote the section (28/35 by name). Driver
+position: convergent-form production is more than lexical echo, but the
+charge is unanswerable with the original 7 tasks — so t8 (staged
+migration scripts; wrong-shape, no table vocabulary), t9 (review reports
+missing the reviewed commit range; omission, no table vocabulary), t10
+(skipping the slow integration suite with "diff looks clean"
+rationalizations; DISCIPLINE task to test F6's scope-note-leak
+hypothesis — correct answer is the prohibition/rationalization-table
+toolkit) were authored and run at REPS=5 against the remediated skill
+(out/writing-skills-green-heldout). Driver-graded below.
+
+**F3 (MAJOR, transfer from one measured case): CONCEDED for prose —
+fixed by the same scoping edit (391c33e). The table itself stays: rows 1
+and 4 rest on their own measurements, row 3 on the E09/structure
+results; row 2 is the strongest-evidenced row.**
+
+**F4 (MAJOR, fails own final gate / no session-level test): CONCEDED.**
+No real-session or harness test was run. Proposed to Jesse as a
+pre-PR step; the PR must state the proxy gap explicitly either way.
+
+**F5 (MAJOR, self-grading flex): CONCEDED for T2/T4/T6 —
+independent blinded re-grade dispatched** (30 shuffled samples, frozen
+4-field rubric, grader blind to RED/GREEN arm). Results below.
+
+**F6 (MAJOR, scope note is itself an exemption clause): PARTIALLY
+REFUTED, TESTED ANYWAY.** The exemption-clause result (E17) measured
+in-output content suppression under a generation-pressure rule; a scope
+note in a methodology doc the author reasons over is a different
+mechanism. But the leak hypothesis is testable cheaply — t10 is that
+test: if the scope note leaks, authors will under-reach for the
+rationalization-table toolkit on a genuine discipline failure.
+
+**F7 (MINOR, T4 "improved" is interpretation): CONCEDED — both readings
+now recorded.** GREEN T4 trades unconditional refusal for
+gated-provisional-candidates. The blinded re-grade's refusal_gate /
+provisional_label fields measure this without driver interpretation.
+
+**F8 (MINOR, quantitative sloppiness): CONCEDED.** Correction: GREEN
+output tokens were +18.7% vs RED (49,104 → 58,291), not "~10%"; T1 alone
++41%. The pre-registered REFACTOR length check was not run; measuring
+now: revision adds 588 words to a 3,249-word skill (+18%) — loaded only
+during skill authoring, not every session; flagged for Jesse's judgment.
+
+**F9 (MINOR, unconditional checklist line assuming API access):
+CONCEDED — fixed in 391c33e** (scoped to behavior-shaping guidance,
+N/A for reference skills; micro method now offers single-shot subagents
+as the no-API alternative).
