@@ -1,0 +1,17 @@
+You are implementing Task 5 of the Go fractals CLI project (working dir: `/work/fractals-cli`). Tasks 1-4 are complete: the Go module, cobra CLI framework, and the sierpinski algorithm + subcommand are all in place and committed. HEAD is clean.
+
+**Your task brief is at `/work/fractals-cli/.git/sdd/task-5-brief.md`.** It contains the full Task 5 spec verbatim. Your requirements and their exact values are in the brief — use them verbatim: the package path, the `Render` signature, the complex-plane region bounds (-2.5 to 1.0 real, -1.0 to 1.0 imaginary), the character gradient string `" .:-=+*#%@"`, and the three required test cases. Do not paraphrase or substitute any of these.
+
+**Scope:** This task is the Mandelbrot *algorithm only* — `internal/mandelbrot/mandelbrot.go` and its test file. Do NOT wire up a CLI subcommand; that is Task 6. Mirror the structure and conventions established in `internal/sierpinski/` (read that package first to match style: package layout, how `Generate` returns `[]string`, test idioms).
+
+**TDD is required.** Write the tests first, watch them fail, then implement until they pass. Commit in logical steps (tests, then implementation, or red/green as you prefer) with clear messages.
+
+**Design notes / clarifications:**
+- Follow `design.md` if it adds detail on Mandelbrot rendering beyond the brief; the brief and design.md govern, this dispatch only resolves ambiguity.
+- The signature is `Render(width, height, maxIter int, char string) []string`. The `char` parameter: when empty (`""`), use the full gradient mapping iteration counts to `" .:-=+*#%@"`; when a single character is provided, that interpretation belongs to Task 7, but build `Render` so a non-empty `char` uses that single character for in-set/filled points rather than the gradient. Keep this behavior simple and testable now since the signature already includes `char`.
+- For the gradient: points that reach `maxIter` (in the set) should map to the last/densest gradient char; low iteration counts map toward the leading space. Decide a clean, deterministic mapping and document it in a comment.
+- Output is `[]string` — one string per row, each of length `width`, `height` rows total. The test for output dimensions depends on this exactness.
+
+**Verify:** `go test ./internal/mandelbrot/...` passes. Also confirm `go build ./...` still succeeds.
+
+Write your full implementation report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return only: status, the commits you made, a one-line test summary, and any concerns.

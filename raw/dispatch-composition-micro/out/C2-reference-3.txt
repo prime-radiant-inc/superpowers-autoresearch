@@ -1,0 +1,13 @@
+You are implementing Task 5 of the Go "fractals" CLI project (working dir `/work/fractals-cli`). This task adds the Mandelbrot set rendering algorithm as a pure package in `internal/mandelbrot/`; a later task will wire it to a CLI subcommand. The project uses Go 1.21, follows TDD (write failing tests first), and Tasks 1–4 (project setup, cobra CLI, sierpinski algorithm + subcommand) are already complete on a clean HEAD.
+
+Read this first — it is your requirements, with the exact values to use verbatim: `/work/fractals-cli/.git/sdd/task-5-brief.md`. The function signature, the complex-plane region bounds, the character gradient, and the three test cases are all specified there; use them exactly as written.
+
+Interface notes from earlier work that the brief cannot know:
+- The existing sierpinski package (`internal/sierpinski/sierpinski.go`) uses the convention of returning `[]string` (one string per output line) from its `Generate` function. Match that same line-slice convention for `Render` so the future CLI integration is consistent. Your `Render` signature is given in the brief — follow it.
+- Keep this package pure (no cobra, no printing, no os.Exit) — the brief's scope is algorithm + tests only. Validation and CLI wiring are separate later tasks.
+
+Ambiguity I want resolved:
+- The brief's `char string` parameter is documented as "single char if provided" alongside the gradient `" .:-=+*#%@"`. For *this* task, implement the gradient mapping as the primary behavior and have a non-empty `char` substitute that single string for all in-set (filled) points. Don't over-build flag parsing here — just make the parameter behave: empty string → use the 10-character gradient from your brief; non-empty string → use it for filled points. The CLI-facing `--char` semantics are finalized in Task 7, so keep the implementation simple and test-driven.
+- For the "known point inside set (0,0) maps to max-iteration character" test: (0,0) reaches maxIter, so it should map to the *last* character of the gradient (`@`). Confirm your row/column-to-complex mapping actually places a sample at/near these points given the region bounds and dimensions — pick test width/height that make the assertion robust, but keep the region bounds exactly as in the brief.
+
+When done, write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. The report should cover: what you implemented, the TDD sequence (tests-first evidence), the final `go test ./internal/mandelbrot/...` result, any design decisions (especially how you mapped points and handled the `char` parameter), and any concerns for downstream tasks. Return to me only: status, the commit(s) you made, a one-line test summary, and any concerns.

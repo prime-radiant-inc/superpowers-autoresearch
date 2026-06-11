@@ -1,0 +1,686 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI (`note`) managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, TDD.
+
+## Setup
+
+```bash
+mkdir notes-cli && cd notes-cli
+git init
+mkdir -p src test
+npm init -y
+npm pkg set type=module
+npm pkg set bin.note=./bin/note.js
+mkdir bin
+```
+
+Create `bin/note.js`:
+
+```js
+#!/usr/bin/env node
+import { run } from '../src/cli.js';
+run(process.argv.slice(2)).then(code => process.exit(code));
+```
+
+```bash
+chmod +x bin/note.js
+git add -A && git commit -m "scaffold"
+```
+
+**Conventions used throughout:**
+- A note: `{ id, text, tags: string[], created: <ISO string> }`.
+- `id` is an 8-char hex string from `crypto.randomUUID().slice(0,8)`.
+- Commands are pure functions taking `(args, deps)` where `deps = { store, out, err }`. `out`/`err` are functions collecting lines. They return an exit code (0 success, 1 failure).
+- This lets tests inject a fake store and capture output.
+
+---
+
+## Task 1: Storage module
+
+**Files:** `src/store.js`, `test/store.test.js`
+
+Storage reads/writes `~/.notes/notes.json` containing `{ notes: [] }`. Corrupt/missing files are treated as empty.
+
+Write `test/store.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createStore } from '../src/store.js';
+
+function tmp() { return join(mkdtempSync(join(tmpdir(), 'notes-')), 'notes.json'); }
+
+test('empty when file missing', () => {
+  const s = createStore(tmp());
+  assert.deepEqual(s.all(), []);
+});
+
+test('add then read back', () => {
+  const p = tmp();
+  const s = createStore(p);
+  s.replace([{ id: 'a1', text: 'hi', tags: [], created: 'now' }]);
+  assert.deepEqual(createStore(p).all(), [{ id: 'a1', text: 'hi', tags: [], created: 'now' }]);
+});
+
+test('corrupt file treated as empty', () => {
+  const p = tmp();
+  writeFileSync(p, 'not json{{{');
+  assert.deepEqual(createStore(p).all(), []);
+});
+```
+
+Run: `node --test` → fails (no module).
+
+Write `src/store.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
+
+export function defaultPath() {
+  return join(homedir(), '.notes', 'notes.json');
+}
+
+export function createStore(path = defaultPath()) {
+  function load() {
+    try {
+      const data = JSON.parse(readFileSync(path, 'utf8'));
+      if (data && Array.isArray(data.notes)) return data.notes;
+      return [];
+    } catch {
+      return [];
+    }
+  }
+  return {
+    all() { return load(); },
+    replace(notes) {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, JSON.stringify({ notes }, null, 2));
+    },
+  };
+}
+```
+
+Run: `node --test` → 3 passing.
+
+```bash
+git add -A && git commit -m "storage module"
+```
+
+---
+
+## Shared helpers (created with Task 2, used later)
+
+`src/shared.js` holds id-lookup and filtering/format helpers. We build it incrementally but define it fully now to avoid churn:
+
+```js
+export function findNote(notes, id) {
+  return notes.find(n => n.id === id);
+}
+
+export function filterNotes(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter(n => n.tags.includes(tag));
+}
+
+export function formatLine(n) {
+  const tags = n.tags.length ? ` [${n.tags.join(', ')}]` : '';
+  return `${n.id}  ${n.text}${tags}`;
+}
+```
+
+Create this file now and commit:
+
+```bash
+git add -A && git commit -m "shared helpers"
+```
+
+Helper `test/shared.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { findNote, filterNotes, formatLine } from '../src/shared.js';
+
+const ns = [
+  { id: '1', text: 'a', tags: ['x'], created: 'c' },
+  { id: '2', text: 'b', tags: [], created: 'c' },
+];
+test('findNote', () => assert.equal(findNote(ns, '2').text, 'b'));
+test('findNote missing', () => assert.equal(findNote(ns, '9'), undefined));
+test('filter by tag', () => assert.deepEqual(filterNotes(ns, 'x').map(n=>n.id), ['1']));
+test('filter none', () => assert.equal(filterNotes(ns).length, 2));
+test('formatLine tags', () => assert.equal(formatLine(ns[0]), '1  a [x]'));
+test('formatLine no tags', () => assert.equal(formatLine(ns[1]), '2  b'));
+```
+
+Run `node --test` → 6 passing. Commit.
+
+---
+
+## CLI dispatcher (built alongside Task 2)
+
+`src/cli.js` parses argv, builds deps, dispatches. Define now:
+
+```js
+import { createStore } from './store.js';
+
+const lines = [];
+function makeDeps() {
+  const out = [];
+  const errs = [];
+  return {
+    store: createStore(),
+    out: s => out.push(s),
+    err: s => errs.push(s),
+    _out: out,
+    _err: errs,
+  };
+}
+
+export async function run(argv, deps = makeDeps()) {
+  const [cmd, ...rest] = argv;
+  const { commands } = await import('./commands.js');
+  const fn = commands[cmd];
+  let code;
+  if (!fn) {
+    deps.err(`unknown command: ${cmd}`);
+    code = 1;
+  } else {
+    code = fn(rest, deps);
+  }
+  deps._out.forEach(l => console.log(l));
+  deps._err.forEach(l => console.error(l));
+  return code;
+}
+```
+
+`src/commands.js` aggregates command functions:
+
+```js
+import { add } from './cmd-add.js';
+import { show } from './cmd-show.js';
+import { rm } from './cmd-rm.js';
+import { tag } from './cmd-tag.js';
+import { untag } from './cmd-untag.js';
+import { list } from './cmd-list.js';
+import { search } from './cmd-search.js';
+import { count } from './cmd-count.js';
+import { exportCmd } from './cmd-export.js';
+
+export const commands = {
+  add, show, rm, tag, untag, list, search, count,
+  export: exportCmd,
+};
+```
+
+Don't commit `commands.js` yet — it imports files that don't exist. We add each import as its task lands. **Start `commands.js` with only the `add` import**, growing it per task. For Task 2, write it with just `add`.
+
+A small arg-parsing helper in `src/args.js`:
+
+```js
+export function parseTag(rest) {
+  const i = rest.indexOf('--tag');
+  let tag;
+  if (i !== -1) { tag = rest[i + 1]; rest = rest.slice(0, i); }
+  return { tag, positional: rest };
+}
+```
+
+Commit `cli.js`, `args.js` when Task 2 lands.
+
+---
+
+## Task 2: `add`
+
+**Files:** `src/cmd-add.js`, `test/add.test.js`
+
+Test `test/add.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { add } from '../src/cmd-add.js';
+
+function fakeStore(init = []) {
+  let notes = init;
+  return { all: () => notes, replace: n => { notes = n; }, _notes: () => notes };
+}
+function deps(store) { const o=[],e=[]; return { store, out:s=>o.push(s), err:s=>e.push(s), _o:o, _e:e }; }
+
+test('add prints id and stores', () => {
+  const s = fakeStore(); const d = deps(s);
+  const code = add(['hello'], d);
+  assert.equal(code, 0);
+  assert.equal(s._notes().length, 1);
+  assert.equal(s._notes()[0].text, 'hello');
+  assert.match(d._o[0], /^[0-9a-f]{8}$/);
+});
+
+test('add with tag', () => {
+  const s = fakeStore(); const d = deps(s);
+  add(['hi', '--tag', 'work'], d);
+  assert.deepEqual(s._notes()[0].tags, ['work']);
+});
+
+test('empty text fails', () => {
+  const s = fakeStore(); const d = deps(s);
+  const code = add([''], d);
+  assert.equal(code, 1);
+  assert.match(d._e[0], /empty/);
+});
+
+test('missing text fails', () => {
+  const s = fakeStore(); const d = deps(s);
+  assert.equal(add([], d), 1);
+});
+```
+
+Run → fails. Write `src/cmd-add.js`:
+
+```js
+import { randomUUID } from 'node:crypto';
+import { parseTag } from './args.js';
+
+export function add(rest, { store, out, err }) {
+  const { tag, positional } = parseTag(rest);
+  const text = (positional[0] ?? '').trim();
+  if (!text) { err('text cannot be empty'); return 1; }
+  const note = {
+    id: randomUUID().slice(0, 8),
+    text,
+    tags: tag ? [tag] : [],
+    created: new Date().toISOString(),
+  };
+  store.replace([...store.all(), note]);
+  out(note.id);
+  return 0;
+}
+```
+
+Run → 4 passing.
+
+```bash
+git add -A && git commit -m "add command + cli wiring"
+```
+
+---
+
+## Task 3: `show`
+
+**Files:** `src/cmd-show.js`, `test/show.test.js`. Add `show` import to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { show } from '../src/cmd-show.js';
+
+const note = { id: 'a1b2c3d4', text: 'hi', tags: ['x'], created: '2024-01-01T00:00:00.000Z' };
+function fakeStore(n=[note]){ return { all:()=>n, replace(){} }; }
+function deps(s){ const o=[],e=[]; return { store:s, out:x=>o.push(x), err:x=>e.push(x), _o:o, _e:e }; }
+
+test('show prints fields', () => {
+  const d = deps(fakeStore());
+  assert.equal(show(['a1b2c3d4'], d), 0);
+  assert.match(d._o.join('\n'), /hi/);
+  assert.match(d._o.join('\n'), /x/);
+  assert.match(d._o.join('\n'), /2024-01-01/);
+});
+
+test('unknown id fails', () => {
+  const d = deps(fakeStore());
+  assert.equal(show(['nope'], d), 1);
+  assert.match(d._e[0], /not found/);
+});
+```
+
+Run → fails. Write `src/cmd-show.js`:
+
+```js
+import { findNote } from './shared.js';
+
+export function show(rest, { store, out, err }) {
+  const note = findNote(store.all(), rest[0]);
+  if (!note) { err(`note not found: ${rest[0]}`); return 1; }
+  out(`id:      ${note.id}`);
+  out(`text:    ${note.text}`);
+  out(`tags:    ${note.tags.join(', ')}`);
+  out(`created: ${note.created}`);
+  return 0;
+}
+```
+
+Add `import { show } from './cmd-show.js';` and `show,` to `commands.js`. Run → passing. Commit `m "show command"`.
+
+---
+
+## Task 4: `rm`
+
+**Files:** `src/cmd-rm.js`, `test/rm.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { rm } from '../src/cmd-rm.js';
+
+const note = { id: 'a1', text: 'hi', tags: [], created: 'c' };
+function fakeStore(init=[note]){ let n=init; return { all:()=>n, replace:x=>{n=x;}, _n:()=>n }; }
+function deps(s){ const o=[],e=[]; return { store:s, out:x=>o.push(x), err:x=>e.push(x), _o:o, _e:e }; }
+
+test('rm deletes', () => {
+  const s = fakeStore(); const d = deps(s);
+  assert.equal(rm(['a1'], d), 0);
+  assert.equal(s._n().length, 0);
+});
+
+test('rm unknown fails', () => {
+  const s = fakeStore(); const d = deps(s);
+  assert.equal(rm(['x'], d), 1);
+  assert.match(d._e[0], /not found/);
+  assert.equal(s._n().length, 1);
+});
+```
+
+Run → fails. Write `src/cmd-rm.js`:
+
+```js
+import { findNote } from './shared.js';
+
+export function rm(rest, { store, out, err }) {
+  const id = rest[0];
+  if (!findNote(store.all(), id)) { err(`note not found: ${id}`); return 1; }
+  store.replace(store.all().filter(n => n.id !== id));
+  out(`deleted ${id}`);
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "rm command"`.
+
+---
+
+## Task 5: `tag`
+
+**Files:** `src/cmd-tag.js`, `test/tag.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { tag } from '../src/cmd-tag.js';
+
+function note(){ return { id:'a1', text:'hi', tags:[], created:'c' }; }
+function fakeStore(init){ let n=init; return { all:()=>n, replace:x=>{n=x;}, _n:()=>n }; }
+function deps(s){ const o=[],e=[]; return { store:s, out:x=>o.push(x), err:x=>e.push(x), _o:o, _e:e }; }
+
+test('tag adds', () => {
+  const s = fakeStore([note()]); const d = deps(s);
+  assert.equal(tag(['a1','work'], d), 0);
+  assert.deepEqual(s._n()[0].tags, ['work']);
+});
+
+test('tag duplicate is idempotent', () => {
+  const s = fakeStore([{ id:'a1', text:'hi', tags:['work'], created:'c' }]);
+  const d = deps(s);
+  tag(['a1','work'], d);
+  assert.deepEqual(s._n()[0].tags, ['work']);
+});
+
+test('tag unknown id fails', () => {
+  const s = fakeStore([note()]); const d = deps(s);
+  assert.equal(tag(['x','t'], d), 1);
+  assert.match(d._e[0], /not found/);
+});
+```
+
+Run → fails. Write `src/cmd-tag.js`:
+
+```js
+import { findNote } from './shared.js';
+
+export function tag(rest, { store, out, err }) {
+  const [id, t] = rest;
+  const notes = store.all();
+  const note = findNote(notes, id);
+  if (!note) { err(`note not found: ${id}`); return 1; }
+  if (!note.tags.includes(t)) {
+    const updated = notes.map(n =>
+      n.id === id ? { ...n, tags: [...n.tags, t] } : n);
+    store.replace(updated);
+  }
+  out(`tagged ${id} with ${t}`);
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "tag command"`.
+
+---
+
+## Task 6: `untag`
+
+**Files:** `src/cmd-untag.js`, `test/untag.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { untag } from '../src/cmd-untag.js';
+
+function fakeStore(init){ let n=init; return { all:()=>n, replace:x=>{n=x;}, _n:()=>n }; }
+function deps(s){ const o=[],e=[]; return { store:s, out:x=>o.push(x), err:x=>e.push(x), _o:o, _e:e }; }
+
+test('untag removes', () => {
+  const s = fakeStore([{ id:'a1', text:'h', tags:['work','x'], created:'c' }]);
+  const d = deps(s);
+  assert.equal(untag(['a1','work'], d), 0);
+  assert.deepEqual(s._n()[0].tags, ['x']);
+});
+
+test('untag missing tag still succeeds', () => {
+  const s = fakeStore([{ id:'a1', text:'h', tags:[], created:'c' }]);
+  const d = deps(s);
+  assert.equal(untag(['a1','nope'], d), 0);
+  assert.match(d._o[0], /no tag/);
+});
+
+test('untag unknown id fails', () => {
+  const s = fakeStore([]); const d = deps(s);
+  assert.equal(untag(['x','t'], d), 1);
+});
+```
+
+Run → fails. Write `src/cmd-untag.js`:
+
+```js
+import { findNote } from './shared.js';
+
+export function untag(rest, { store, out, err }) {
+  const [id, t] = rest;
+  const notes = store.all();
+  const note = findNote(notes, id);
+  if (!note) { err(`note not found: ${id}`); return 1; }
+  if (!note.tags.includes(t)) { out(`no tag ${t} on ${id}`); return 0; }
+  const updated = notes.map(n =>
+    n.id === id ? { ...n, tags: n.tags.filter(x => x !== t) } : n);
+  store.replace(updated);
+  out(`untagged ${id}`);
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "untag command"`.
+
+---
+
+## Task 7: `list`
+
+**Files:** `src/cmd-list.js`, `test/list.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { list } from '../src/cmd-list.js';
+
+const ns = [
+  { id:'1', text:'a', tags:['x'], created:'c' },
+  { id:'2', text:'b', tags:[], created:'c' },
+];
+function fakeStore(n=ns){ return { all:()=>n, replace(){} }; }
+function deps(s){ const o=[],e=[]; return { store:s, out:x=>o.push(x), err:x=>e.push(x), _o:o }; }
+
+test('list all', () => {
+  const d = deps(fakeStore());
+  assert.equal(list([], d), 0);
+  assert.equal(d._o.length, 2);
+  assert.equal(d._o[0], '1  a [x]');
+});
+
+test('list filtered by tag', () => {
+  const d = deps(fakeStore());
+  list(['--tag','x'], d);
+  assert.deepEqual(d._o, ['1  a [x]']);
+});
+
+test('list empty prints nothing', () => {
+  const d = deps(fakeStore([]));
+  list([], d);
+  assert.equal(d._o.length, 0);
+});
+```
+
+Run → fails. Write `src/cmd-list.js`:
+
+```js
+import { parseTag } from './args.js';
+import { filterNotes, formatLine } from './shared.js';
+
+export function list(rest, { store, out }) {
+  const { tag } = parseTag(rest);
+  for (const n of filterNotes(store.all(), tag)) out(formatLine(n));
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "list command"`.
+
+---
+
+## Task 8: `search`
+
+**Files:** `src/cmd-search.js`, `test/search.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { search } from '../src/cmd-search.js';
+
+const ns = [
+  { id:'1', text:'hello world', tags:[], created:'c' },
+  { id:'2', text:'goodbye', tags:[], created:'c' },
+];
+function fakeStore(n=ns){ return { all:()=>n, replace(){} }; }
+function deps(s){ const o=[]; return { store:s, out:x=>o.push(x), err(){}, _o:o }; }
+
+test('search matches substring', () => {
+  const d = deps(fakeStore());
+  assert.equal(search(['hello'], d), 0);
+  assert.deepEqual(d._o, ['1  hello world']);
+});
+
+test('search case-insensitive', () => {
+  const d = deps(fakeStore());
+  search(['GOODBYE'], d);
+  assert.deepEqual(d._o, ['2  goodbye']);
+});
+
+test('search no match prints nothing', () => {
+  const d = deps(fakeStore());
+  search(['zzz'], d);
+  assert.equal(d._o.length, 0);
+});
+```
+
+Run → fails. Write `src/cmd-search.js`:
+
+```js
+import { formatLine } from './shared.js';
+
+export function search(rest, { store, out }) {
+  const term = (rest[0] ?? '').toLowerCase();
+  for (const n of store.all()) {
+    if (n.text.toLowerCase().includes(term)) out(formatLine(n));
+  }
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "search command"`.
+
+---
+
+## Task 9: `count`
+
+**Files:** `src/cmd-count.js`, `test/count.test.js`. Add to `commands.js`.
+
+Test:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { count } from '../src/cmd-count.js';
+
+const ns = [
+  { id:'1', text:'a', tags:['x'], created:'c' },
+  { id:'2', text:'b', tags:[], created:'c' },
+];
+function fakeStore(n=ns){ return { all:()=>n, replace(){} }; }
+function deps(s){ const o=[]; return { store:s, out:x=>o.push(x), err(){}, _o:o }; }
+
+test('count all', () => {
+  const d = deps(fakeStore());
+  assert.equal(count([], d), 0);
+  assert.equal(d._o[0], '2');
+});
+
+test('count filtered', () => {
+  const d = deps(fakeStore());
+  count(['--tag','x'], d);
+  assert.equal(d._o[0], '1');
+});
+```
+
+Run → fails. Write `src/cmd-count.js`:
+
+```js
+import { parseTag } from './args.js';
+import { filterNotes } from './shared.js';
+
+export function count(rest, { store, out }) {
+  const { tag } = parseTag(rest);
+  out(String(filterNotes(store.all(), tag).length));
+  return 0;
+}
+```
+
+Add to `commands.js`. Run → passing. Commit `m "count command"`.
+
+---
+
+## Task 10: `export`
+
+**Files:** `src/cmd-export.js`,

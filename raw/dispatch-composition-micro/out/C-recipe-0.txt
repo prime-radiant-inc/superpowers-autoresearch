@@ -1,0 +1,20 @@
+You are implementing Task 5 of the "fractals" Go CLI project — a tool that renders ASCII fractals via cobra subcommands. Tasks 1-4 are done: the project is set up, the cobra CLI framework exists, and the sierpinski algorithm and its subcommand are complete. Your task adds the Mandelbrot set rendering algorithm as a standalone package (the CLI subcommand for it comes in a later task, so you only build and test the package here).
+
+Read this first — it is your requirements, with the exact values to use verbatim:
+`/work/fractals-cli/.git/sdd/task-5-brief.md`
+
+It contains the function signature, the complex-plane region bounds, the character gradient string, and the three required test cases. Use those values exactly as written.
+
+Context from earlier tasks that the brief cannot know:
+- Module path is `github.com/superpowers-test/fractals`; create the new package at `internal/mandelbrot/` to mirror the existing `internal/sierpinski/` package layout.
+- TDD is required by this plan. Follow the existing sierpinski package as a style reference: write the tests first (red), then implement `Render` to make them pass (green), committing in that order.
+
+Resolving an ambiguity in the brief:
+- The brief says map iteration count to the gradient `" .:-=+*#%@"` "or single char if provided." For this task, implement the gradient mapping as the default behavior when `char` is empty (`""`), and use the single provided character for all "in-set" / filled points when `char` is non-empty. The CLI wiring and the dedicated single-char tests come in later tasks (6 and 7) — here just make `Render` honor both modes and keep the signature exactly `Render(width, height, maxIter int, char string) []string`.
+- For the gradient, map a point's escape iteration count to an index into the 10-character gradient (points that never escape, i.e. reach maxIter, should map to the last character `@`; quick-escaping points map toward the leading space). Document your exact mapping in a comment.
+
+Scope: only create `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`. Do not touch the CLI, main.go, or other packages.
+
+Verify before reporting: `go test ./internal/mandelbrot/...` passes, and `go build ./...` succeeds.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. The report must cover: what you implemented, the test approach and results, your exact iteration-to-gradient mapping, and any concerns or deviations. Return to me only: status, the commit hashes, a one-line test summary, and any concerns.

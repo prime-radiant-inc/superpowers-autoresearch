@@ -1,0 +1,726 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a local link-shortener database stored as JSON at `~/.shorten/links.json`. It has three commands: `add`, `resolve`, and `list`. All three share a single storage module.
+
+**Tech constraints:**
+- Node 20+ only, no external dependencies (standard library only).
+- Tests with `node:test` (the built-in test runner).
+- TDD: every code change starts with a failing test.
+
+**Project layout we will create:**
+
+```
+link-shortener/
+├── package.json
+├── bin/
+│   └── shorten.js          # CLI entry point (executable)
+├── src/
+│   ├── storage.js          # shared JSON read/write + data helpers
+│   ├── commands.js         # add / resolve / list logic
+│   └── codegen.js          # random code generator
+└── test/
+    ├── storage.test.js
+    ├── commands.test.js
+    └── cli.test.js
+```
+
+**Data model.** The JSON file holds a single object:
+
+```json
+{
+  "version": 1,
+  "links": [
+    { "code": "abc123", "url": "https://example.com" }
+  ]
+}
+```
+
+`links` is an **array** (not a map) so that insertion order is preserved deterministically for the `list` command.
+
+---
+
+## Prerequisites / Environment Setup
+
+Before Task 1, create the project skeleton and verify Node version.
+
+### Step 0.1 — Verify Node version
+
+Run:
+
+```bash
+node --version
+```
+
+Expected output: a version string `v20.x.x` or higher (e.g. `v20.11.0` or `v22.3.0`). If it prints `v18` or lower, stop and install Node 20+.
+
+### Step 0.2 — Create directory structure and package.json
+
+Run:
+
+```bash
+mkdir -p link-shortener/bin link-shortener/src link-shortener/test
+cd link-shortener
+```
+
+Create `package.json` with exactly this content:
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+Notes:
+- `"type": "module"` means all `.js` files use ESM (`import`/`export`).
+- `"scripts.test"` runs the built-in Node test runner against every `*.test.js` under `test/`.
+
+### Step 0.3 — Verify the test runner works (empty run)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected output: Node reports it found no test files (it prints a summary with `tests 0`), exit code 0. Something like:
+
+```
+ℹ tests 0
+ℹ pass 0
+ℹ fail 0
+```
+
+If you instead see a syntax error about `import`, double-check `"type": "module"` is in `package.json`.
+
+---
+
+## Task 1: Shared storage module
+
+The storage module is the foundation used by all three commands. It handles: resolving the file path, creating the directory/file on first use, reading (with corrupt-file handling), and writing.
+
+**Public API of `src/storage.js`:**
+
+| Function | Signature | Behavior |
+|---|---|---|
+| `getStorePath()` | `() => string` | Returns the absolute path `~/.shorten/links.json`. Respects `process.env.SHORTEN_HOME` override (for tests). |
+| `load()` | `async () => { version: number, links: Array<{code,url}> }` | Reads and parses the JSON file. Returns a fresh empty store if the file does not exist. Throws a `CorruptStoreError` if the file exists but is invalid. |
+| `save(store)` | `async (store) => void` | Creates the directory if needed and writes the store as pretty JSON. |
+
+We also export a custom error class `CorruptStoreError`.
+
+### Step 1.1 — Write failing test for `getStorePath`
+
+Create `test/storage.test.js` with this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import { getStorePath } from '../src/storage.js';
+
+test('getStorePath defaults to ~/.shorten/links.json', () => {
+  const saved = process.env.SHORTEN_HOME;
+  delete process.env.SHORTEN_HOME;
+  try {
+    const expected = path.join(os.homedir(), '.shorten', 'links.json');
+    assert.equal(getStorePath(), expected);
+  } finally {
+    if (saved !== undefined) process.env.SHORTEN_HOME = saved;
+  }
+});
+
+test('getStorePath honors SHORTEN_HOME override', () => {
+  const saved = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = '/tmp/fake-home';
+  try {
+    assert.equal(getStorePath(), path.join('/tmp/fake-home', 'links.json'));
+  } finally {
+    if (saved === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = saved;
+  }
+});
+```
+
+### Step 1.2 — Run the test (expect failure)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: failure because `src/storage.js` does not exist yet. You will see an error like `Cannot find module '.../src/storage.js'` and `fail 2` (or the run aborts on import). This confirms the test is wired up.
+
+### Step 1.3 — Implement `getStorePath`
+
+Create `src/storage.js` with this content:
+
+```js
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+
+export class CorruptStoreError extends Error {
+  constructor(filePath, cause) {
+    super(`Store file is corrupt: ${filePath}`);
+    this.name = 'CorruptStoreError';
+    this.filePath = filePath;
+    this.cause = cause;
+  }
+}
+
+const STORE_DIR = () =>
+  process.env.SHORTEN_HOME ?? path.join(os.homedir(), '.shorten');
+
+export function getStorePath() {
+  return path.join(STORE_DIR(), 'links.json');
+}
+
+function emptyStore() {
+  return { version: 1, links: [] };
+}
+```
+
+Note: `emptyStore` and `CorruptStoreError` are added now because the next steps use them. `fs` is imported now because `load`/`save` (next steps) need it.
+
+### Step 1.4 — Run the test (expect pass)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the two `getStorePath` tests pass. Output includes `pass 2`, `fail 0`.
+
+### Step 1.5 — Commit
+
+Run:
+
+```bash
+git init -q 2>/dev/null; git add -A && git commit -q -m "storage: getStorePath with SHORTEN_HOME override"
+```
+
+(`git init` is harmless if already initialized.)
+
+### Step 1.6 — Write failing tests for `load` and `save`
+
+Append the following to `test/storage.test.js` (keep existing content above it; add new imports at the top — see note). First, update the import block at the very top of the file so it reads:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import { getStorePath, load, save, CorruptStoreError } from '../src/storage.js';
+```
+
+Then append these tests to the end of the file:
+
+```js
+// Helper: make a fresh temp SHORTEN_HOME for a single test.
+async function withTempHome(fn) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'shorten-'));
+  const saved = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    await fn(dir);
+  } finally {
+    if (saved === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = saved;
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+}
+
+test('load returns empty store when file does not exist', async () => {
+  await withTempHome(async () => {
+    const store = await load();
+    assert.deepEqual(store, { version: 1, links: [] });
+  });
+});
+
+test('save then load round-trips data', async () => {
+  await withTempHome(async () => {
+    const store = { version: 1, links: [{ code: 'abc123', url: 'https://x.com' }] };
+    await save(store);
+    const loaded = await load();
+    assert.deepEqual(loaded, store);
+  });
+});
+
+test('save creates the directory if missing', async () => {
+  await withTempHome(async (dir) => {
+    // dir exists (mkdtemp), but the file does not. Remove dir to force creation.
+    await fs.rm(dir, { recursive: true, force: true });
+    await save({ version: 1, links: [] });
+    const stat = await fs.stat(getStorePath());
+    assert.ok(stat.isFile());
+  });
+});
+
+test('load throws CorruptStoreError on invalid JSON', async () => {
+  await withTempHome(async () => {
+    await fs.mkdir(path.dirname(getStorePath()), { recursive: true });
+    await fs.writeFile(getStorePath(), '{ not valid json', 'utf8');
+    await assert.rejects(() => load(), CorruptStoreError);
+  });
+});
+
+test('load throws CorruptStoreError when links is not an array', async () => {
+  await withTempHome(async () => {
+    await fs.mkdir(path.dirname(getStorePath()), { recursive: true });
+    await fs.writeFile(getStorePath(), JSON.stringify({ version: 1, links: {} }), 'utf8');
+    await assert.rejects(() => load(), CorruptStoreError);
+  });
+});
+```
+
+### Step 1.7 — Run the tests (expect failure)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the two `getStorePath` tests still pass; the five new tests fail because `load` and `save` are not exported yet (you'll see `TypeError: load is not a function` or similar). Confirm `fail 5`.
+
+### Step 1.8 — Implement `load` and `save`
+
+Append to `src/storage.js` (after `emptyStore`):
+
+```js
+export async function load() {
+  const filePath = getStorePath();
+  let raw;
+  try {
+    raw = await fs.readFile(filePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return emptyStore();
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new CorruptStoreError(filePath, err);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new CorruptStoreError(filePath);
+  }
+
+  return { version: parsed.version ?? 1, links: parsed.links };
+}
+
+export async function save(store) {
+  const filePath = getStorePath();
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const json = JSON.stringify(store, null, 2) + '\n';
+  await fs.writeFile(filePath, json, 'utf8');
+}
+```
+
+### Step 1.9 — Run the tests (expect pass)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: all 7 storage tests pass. Output includes `pass 7`, `fail 0`.
+
+### Step 1.10 — Commit
+
+Run:
+
+```bash
+git add -A && git commit -q -m "storage: load/save with corrupt-file handling"
+```
+
+---
+
+## Task 2: Code generator + `add` and `resolve` commands
+
+This task implements the random code generator and the `add` and `resolve` command functions. These are pure logic functions (no `process.exit`, no console) so they are easy to test; the CLI wiring comes in Task 3.
+
+**Public API of `src/codegen.js`:**
+
+| Function | Signature | Behavior |
+|---|---|---|
+| `generateCode()` | `() => string` | Returns a random 6-character string from `[a-z0-9]`. |
+
+**Public API of `src/commands.js` (this task adds two of three):**
+
+| Function | Signature | Behavior |
+|---|---|---|
+| `addCommand({ url, code })` | `async ({url, code?}) => string` | Validates URL, picks/validates code, stores it, returns the code. Throws `ValidationError` on bad input or duplicate code. |
+| `resolveCommand({ code })` | `async ({code}) => string` | Returns the URL for a code, or throws `NotFoundError`. |
+
+We export error classes `ValidationError` and `NotFoundError` from `src/commands.js`.
+
+### Step 2.1 — Write failing test for `generateCode`
+
+Create `test/commands.test.js` with this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { generateCode } from '../src/codegen.js';
+
+test('generateCode returns 6 lowercase-alphanumeric chars', () => {
+  for (let i = 0; i < 50; i++) {
+    const code = generateCode();
+    assert.match(code, /^[a-z0-9]{6}$/);
+  }
+});
+
+test('generateCode is reasonably random (not constant)', () => {
+  const seen = new Set();
+  for (let i = 0; i < 50; i++) seen.add(generateCode());
+  assert.ok(seen.size > 1, 'expected more than one distinct code');
+});
+```
+
+### Step 2.2 — Run the test (expect failure)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: storage tests still pass; new tests fail with `Cannot find module '.../src/codegen.js'`.
+
+### Step 2.3 — Implement `generateCode`
+
+Create `src/codegen.js` with this content:
+
+```js
+import crypto from 'node:crypto';
+
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+export function generateCode() {
+  // crypto.randomInt avoids modulo bias and needs no external deps.
+  let out = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    out += ALPHABET[crypto.randomInt(ALPHABET.length)];
+  }
+  return out;
+}
+```
+
+### Step 2.4 — Run the test (expect pass)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: codegen tests pass alongside storage tests. `fail 0`.
+
+### Step 2.5 — Commit
+
+Run:
+
+```bash
+git add -A && git commit -q -m "codegen: 6-char alphanumeric code generator"
+```
+
+### Step 2.6 — Write failing tests for `addCommand` and `resolveCommand`
+
+Append to `test/commands.test.js`. First update the top import block so it reads:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import { generateCode } from '../src/codegen.js';
+import {
+  addCommand,
+  resolveCommand,
+  ValidationError,
+  NotFoundError,
+} from '../src/commands.js';
+import { load } from '../src/storage.js';
+```
+
+Then append these tests to the end of the file:
+
+```js
+async function withTempHome(fn) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'shorten-cmd-'));
+  const saved = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    await fn(dir);
+  } finally {
+    if (saved === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = saved;
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+}
+
+test('addCommand stores a URL and returns the given code', async () => {
+  await withTempHome(async () => {
+    const code = await addCommand({ url: 'https://example.com', code: 'mycode' });
+    assert.equal(code, 'mycode');
+    const store = await load();
+    assert.deepEqual(store.links, [{ code: 'mycode', url: 'https://example.com' }]);
+  });
+});
+
+test('addCommand generates a 6-char code when none given', async () => {
+  await withTempHome(async () => {
+    const code = await addCommand({ url: 'https://example.com' });
+    assert.match(code, /^[a-z0-9]{6}$/);
+    const store = await load();
+    assert.equal(store.links.length, 1);
+    assert.equal(store.links[0].code, code);
+  });
+});
+
+test('addCommand rejects an invalid URL', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => addCommand({ url: 'not a url' }),
+      ValidationError
+    );
+    const store = await load();
+    assert.equal(store.links.length, 0);
+  });
+});
+
+test('addCommand rejects non-http(s) URLs', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => addCommand({ url: 'ftp://example.com' }),
+      ValidationError
+    );
+  });
+});
+
+test('addCommand rejects a duplicate code', async () => {
+  await withTempHome(async () => {
+    await addCommand({ url: 'https://a.com', code: 'dup' });
+    await assert.rejects(
+      () => addCommand({ url: 'https://b.com', code: 'dup' }),
+      ValidationError
+    );
+    const store = await load();
+    assert.equal(store.links.length, 1);
+    assert.equal(store.links[0].url, 'https://a.com');
+  });
+});
+
+test('addCommand rejects an invalid custom code', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => addCommand({ url: 'https://a.com', code: 'has spaces!' }),
+      ValidationError
+    );
+  });
+});
+
+test('resolveCommand returns the stored URL', async () => {
+  await withTempHome(async () => {
+    await addCommand({ url: 'https://example.com', code: 'mycode' });
+    const url = await resolveCommand({ code: 'mycode' });
+    assert.equal(url, 'https://example.com');
+  });
+});
+
+test('resolveCommand throws NotFoundError for unknown code', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => resolveCommand({ code: 'nope' }),
+      NotFoundError
+    );
+  });
+});
+```
+
+### Step 2.7 — Run the tests (expect failure)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: storage and codegen tests pass; the new command tests fail with `Cannot find module '.../src/commands.js'`.
+
+### Step 2.8 — Implement `commands.js` (add + resolve)
+
+Create `src/commands.js` with this content:
+
+```js
+import { load, save } from './storage.js';
+import { generateCode } from './codegen.js';
+
+export class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+const CODE_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+const MAX_GEN_ATTEMPTS = 100;
+
+function validateUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new ValidationError(`Invalid URL: ${url}`);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new ValidationError(
+      `URL must use http or https: ${url}`
+    );
+  }
+}
+
+function validateCode(code) {
+  if (!CODE_RE.test(code)) {
+    throw new ValidationError(
+      `Invalid code "${code}": use 1-64 chars of [a-zA-Z0-9_-]`
+    );
+  }
+}
+
+export async function addCommand({ url, code }) {
+  validateUrl(url);
+
+  const store = await load();
+  const existing = new Set(store.links.map((l) => l.code));
+
+  let finalCode = code;
+  if (finalCode === undefined || finalCode === null) {
+    let attempts = 0;
+    do {
+      finalCode = generateCode();
+      attempts++;
+      if (attempts > MAX_GEN_ATTEMPTS) {
+        throw new Error('Could not generate a unique code; store too full');
+      }
+    } while (existing.has(finalCode));
+  } else {
+    validateCode(finalCode);
+    if (existing.has(finalCode)) {
+      throw new ValidationError(`Code already exists: ${finalCode}`);
+    }
+  }
+
+  store.links.push({ code: finalCode, url });
+  await save(store);
+  return finalCode;
+}
+
+export async function resolveCommand({ code }) {
+  const store = await load();
+  const found = store.links.find((l) => l.code === code);
+  if (!found) {
+    throw new NotFoundError(`Unknown code: ${code}`);
+  }
+  return found.url;
+}
+```
+
+### Step 2.9 — Run the tests (expect pass)
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: all storage, codegen, and command tests pass. `fail 0`.
+
+### Step 2.10 — Commit
+
+Run:
+
+```bash
+git add -A && git commit -q -m "commands: add and resolve with URL/code validation"
+```
+
+---
+
+## Task 3: `list` command + CLI entry point
+
+This task adds the `listCommand` function (which shares storage access with `resolve`) and the `bin/shorten.js` CLI that parses argv and dispatches to the command functions, formatting output and exit codes.
+
+**Added to `src/commands.js`:**
+
+| Function | Signature | Behavior |
+|---|---|---|
+| `listCommand()` | `async () => Array<{code,url}>` | Returns all links in insertion order. |
+
+**CLI behavior (`bin/shorten.js`):**
+
+- `shorten add <url> [--code <code>]` → prints the code, exit 0.
+- `shorten resolve <code>` → prints the URL, exit 0; on unknown code prints error to stderr, exit 1.
+- `shorten list` → prints `code\turl` one per line, exit 0.
+- Validation errors → stderr message, exit 1.
+- Corrupt store → stderr message, exit 1.
+- Unknown/missing command → usage to stderr, exit 2.
+
+### Step 3.1 — Write failing test for `listCommand`
+
+Append to `test/commands.test.js`. Update the import from `../src/commands.js` so it reads:
+
+```js
+import {
+  addCommand,
+  resolveCommand,
+  listCommand,
+  ValidationError,
+  NotFoundError,
+} from '../src/commands.js';
+```
+
+Then append this test to the end of the file:
+
+```js
+test('listCommand returns links in insertion order', async () => {
+  await withTempHome(async () => {
+    await addCommand({ url: 'https://a.com', code: 'aaa' });
+    await addCommand({ url: 'https://b.com', code: 'bbb' });
+    await addCommand({ url: 'https://c.com', code: 'ccc' });
+    const links = await listCommand();
+    assert.deepEqual(links, [
+      { code: 'aaa', url: 'https://a.com' },
+      { code: 'bbb', url: 'https://b.com' },
+      { code: 

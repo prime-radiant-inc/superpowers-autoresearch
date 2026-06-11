@@ -1,0 +1,15 @@
+You are implementing Task 5 of the Go "fractals" CLI project (working dir `/work/fractals-cli`). This task adds the Mandelbrot set ASCII renderer as a pure algorithm package in `internal/mandelbrot/`. It is the algorithm-only counterpart to the already-complete sierpinski package; CLI wiring comes in a later task, so this task touches only `internal/mandelbrot/`.
+
+Read this first — it is your requirements, with the exact values to use verbatim: `/work/fractals-cli/.git/sdd/task-5-brief.md`. The complex-plane bounds, the character gradient string, the function signature, and the three test cases are all specified there; use them exactly as written.
+
+Context from earlier tasks that the brief cannot know:
+- The repo follows strict TDD. Write the tests first, watch them fail, then implement. This is required by the plan and enforced in review.
+- The completed `internal/sierpinski` package is your reference for conventions: package layout, returning `[]string` of lines (one string per row, top to bottom), and test style (table-driven where it fits). Match its idioms.
+- Module path is `github.com/superpowers-test/fractals`, Go 1.21. This task is library-only — do not add a CLI subcommand or touch `internal/cli/`.
+
+A few points of resolution on the brief:
+- The signature in your brief is `Render(width, height, maxIter int, char string) []string` — note `char` is a `string`, not a rune. When `char` is non-empty, use it for all in-set (filled) points; when it is empty (`""`), use the gradient `" .:-=+*#%@"` from your brief, mapping iteration count across the 10 characters. Decide and document (in your report) exactly how you bucket iteration counts onto the 10-character gradient, and make sure the two gradient-related test cases in your brief — the "inside set (0,0) -> max-iteration character" and "outside set (2,0) -> low-iteration character" cases — pin down the endpoints of that mapping so the behavior is locked by tests.
+- The "inside set" character in your brief's gradient is the last character `@`, and the "low-iteration" end is the leading space/`.`; let the tests assert against those specific characters rather than a vague "high/low" notion.
+- For the `char string` mode, the "outside set" points should remain blank/space — only filled points get the custom char — so the custom-char test (added in Task 7) will behave sanely; if the brief is silent on outside points in single-char mode, default outside points to a space.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return only: status, the commit hash(es), a one-line test summary, and any concerns. In the report file include: what you built, the exact iteration-to-gradient bucketing scheme you chose, how each brief test case is covered, the TDD red→green evidence, and anything the next (CLI) task needs to know about the signature or behavior.

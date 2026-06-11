@@ -1,0 +1,16 @@
+You are implementing Task 5 of the fractals CLI project: the Mandelbrot set ASCII rendering algorithm. This is a pure algorithm package in `internal/mandelbrot/` — the CLI subcommand that calls it comes in a later task (Task 6), so this task is library code plus tests only.
+
+Read this first — `/work/fractals-cli/.git/sdd/task-5-brief.md`. It is your requirements, including the exact values to use verbatim: the function signature, the complex-plane region bounds, the character gradient, and the three required test cases. Treat the brief as the single source of truth for all literal values.
+
+Project conventions established in earlier tasks (the brief cannot know these):
+- Module path is `github.com/superpowers-test/fractals`; this package lives at `internal/mandelbrot/`.
+- The sibling `internal/sierpinski` package follows the pattern of returning `[]string` where each element is one output row — match that style here (which the brief's signature already does).
+- Go 1.21, TDD is required by the plan: write the failing tests first, then implement until they pass.
+
+Points to resolve from the brief:
+- The brief's signature is `Render(width, height, maxIter int, char string) []string` and separately says to map iteration count to the gradient `" .:-=+*#%@"` "or single char if provided". Interpret `char` as: when it is the empty string `""`, use the full gradient; when it is a non-empty string, use that character for every rendered cell. This keeps the signature usable by Task 6's `--char` flag (default `""`). Use the gradient string exactly as written in your brief — note it begins with a space and is 10 characters long.
+- For the test "known point inside set (0,0) maps to max-iteration character": (0,0) stays bounded, so it reaches `maxIter`; assert it maps to the last gradient character (`@`). For "point outside set (2,0)": it escapes immediately (low iteration count), so assert it maps to a low-gradient character such as the leading space. Write these assertions against whatever cell the complex coordinates (0,0) and (2,0) map to given your region-to-grid mapping; do the coordinate math explicitly rather than hardcoding indices.
+
+Verify with `go test ./internal/mandelbrot/...` before reporting.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return only: status, the commit(s) you made, a one-line test summary, and any concerns. The report file should contain the detail: files changed, design decisions (especially the empty-string-vs-gradient handling and your coordinate mapping), test cases and their results, and anything the next task's implementer needs to know about the `Render` interface.

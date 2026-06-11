@@ -1,0 +1,18 @@
+You are implementing Task 5 of the Go "fractals" CLI project. Working directory: `/work/fractals-cli`. Go 1.21.
+
+**Your brief is at `/work/fractals-cli/.git/sdd/task-5-brief.md`.** Read it first. It contains your complete requirements and their exact values verbatim — the function signature `Render(width, height, maxIter int, char string) []string`, the complex plane region (-2.5 to 1.0 real, -1.0 to 1.0 imaginary), the character gradient `" .:-=+*#%@"`, and the three required test cases. Use those values exactly as written; do not paraphrase or substitute them.
+
+**TDD is required by the plan.** Write each test first, watch it fail, then implement. Commit in logical increments.
+
+**Where this fits:** Tasks 1-4 are complete and reviewed — the project skeleton, cobra CLI, and the sierpinski package + subcommand all exist. This task is the pure algorithm package only: create `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`. Do NOT wire any CLI subcommand — that is Task 6. Look at `internal/sierpinski/sierpinski.go` for the established package conventions (style, doc comments, return shape as `[]string` of lines) and mirror them so the codebase stays consistent.
+
+**Design notes / how I'm resolving ambiguity in the brief:**
+- The `char string` parameter: when non-empty, use that single string for all in-set (max-iteration) points; when empty (`""`), use the gradient. For this task the brief's tests cover the gradient path and known points — implement both behaviors now since the signature includes `char`, but the dedicated custom-char tests belong to Task 7, so keep your test coverage to exactly the three cases the brief lists.
+- "Maps to max-iteration character": a point that never escapes after `maxIter` iterations should map to the last/densest gradient character (`@`). A point that escapes immediately maps to the first gradient character (a space or near it). Make sure your gradient indexing is bounded so a fully-escaped or fully-bounded point can't index out of range.
+- Output dimension test: `len(result) == height` and each line's length `== width`.
+
+Do not touch any files outside `internal/mandelbrot/`.
+
+**Verification:** `go test ./internal/mandelbrot/...` must pass. Also confirm `go build ./...` still succeeds.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return only: status, the commits you made, a one-line test summary, and any concerns.

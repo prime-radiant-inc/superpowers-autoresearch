@@ -1,0 +1,35 @@
+You are implementing one task in the "fractals" Go CLI project, following TDD as required by the plan.
+
+Read your task brief first: **/work/fractals-cli/.git/sdd/task-5-brief.md** — it contains the full task text. Do not ask me for the task details; they are in the brief.
+
+## Context
+
+Working dir: `/work/fractals-cli`. Go 1.21, cobra. Tasks 1–4 are complete and reviewed; HEAD is clean. You are building the Mandelbrot **algorithm package only** — CLI wiring is Task 6, do not touch `internal/cli/` or `cmd/`.
+
+Relevant established conventions from earlier tasks:
+- Module path is `github.com/superpowers-test/fractals`.
+- The sierpinski package (`internal/sierpinski`) returns rendered output as `[]string` (one line per slice element). Follow the same shape for mandelbrot: `Render(width, height, maxIter int, char string) []string`.
+- This task creates `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`. The `--char` flag's empty-vs-single-char behavior is finalized in Task 7; for now implement the signature so that an empty `char` string selects the gradient `" .:-=+*#%@"` and a non-empty `char` uses that character for filled points. Just make the function behave sensibly per the brief; full custom-char tests come later.
+
+Notes on the brief's verification points:
+- The complex plane region is real −2.5 to 1.0, imaginary −1.0 to 1.0.
+- Map iteration count to the gradient `" .:-=+*#%@"`.
+- "Point inside set (0,0) maps to max-iteration character" — i.e. a point that never escapes should map to the last/densest gradient char (`@`). "Point outside set (2,0)" should escape immediately and map to a low-iteration char. Write your tests to assert this behavior at the specific output cells those complex coordinates fall into, or test the underlying iteration mapping directly — your choice, as long as it satisfies the intent.
+
+Follow TDD: write failing tests first, then implement. Commit logically (tests + implementation can be one commit or split, your judgment).
+
+## Scope limits
+
+- Only create/modify files under `internal/mandelbrot/`.
+- Do not wire any CLI subcommand and do not modify existing files.
+
+## Verification
+
+- `go test ./internal/mandelbrot/...` passes.
+- `go build ./...` still succeeds.
+
+## Reporting
+
+Write your full report to **/work/fractals-cli/.git/sdd/task-5-report.md** (design decisions, how you handled the inside/outside-set test assertions, any deviations or ambiguities).
+
+Return to me only: status, the commit hash(es), a one-line test summary, and any concerns.

@@ -1,0 +1,736 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, TDD.
+
+## Project Setup
+
+Before Task 1, run:
+
+```bash
+mkdir notes-cli && cd notes-cli
+npm init -y
+mkdir -p src test
+node --version   # expect v20.x or higher
+```
+
+Edit `package.json` to add:
+
+```json
+"type": "module",
+"bin": { "note": "./src/cli.js" },
+"scripts": { "test": "node --test" }
+```
+
+## Architecture
+
+- `src/storage.js` — load/save notes, generate ids. The only module touching the filesystem.
+- `src/lib.js` — pure helpers (id lookup, filtering, formatting).
+- `src/commands/<name>.js` — one function per command. Each takes `(args, deps)` where `deps = { storage }` so tests can inject a fake.
+- `src/cli.js` — arg parsing + dispatch.
+
+A **note** is `{ id: string, text: string, tags: string[], created: string }` (`created` is ISO 8601).
+
+---
+
+## Task 1: Storage module
+
+**Files:** `src/storage.js`, `test/storage.test.js`
+
+### Step 1 — Failing test
+
+`test/storage.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createStorage } from '../src/storage.js';
+
+function tempStore() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return { file: join(dir, 'notes.json'), dir };
+}
+
+test('load returns empty array when file missing', () => {
+  const { file, dir } = tempStore();
+  const s = createStorage(file);
+  assert.deepStrictEqual(s.load(), []);
+  rmSync(dir, { recursive: true });
+});
+
+test('save then load round-trips', () => {
+  const { file, dir } = tempStore();
+  const s = createStorage(file);
+  s.save([{ id: 'a', text: 'hi', tags: [], created: '2020' }]);
+  assert.deepStrictEqual(s.load(), [{ id: 'a', text: 'hi', tags: [], created: '2020' }]);
+  rmSync(dir, { recursive: true });
+});
+
+test('load returns empty array on corrupt JSON', () => {
+  const { file, dir } = tempStore();
+  writeFileSync(file, '{not json');
+  const s = createStorage(file);
+  assert.deepStrictEqual(s.load(), []);
+  rmSync(dir, { recursive: true });
+});
+
+test('newId returns a non-empty unique-ish string', () => {
+  const { file, dir } = tempStore();
+  const s = createStorage(file);
+  assert.notStrictEqual(s.newId(), s.newId());
+  rmSync(dir, { recursive: true });
+});
+```
+
+Run: `node --test` → expect failures (module not found).
+
+### Step 2 — Implement
+
+`src/storage.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+
+export const DEFAULT_FILE = join(homedir(), '.notes', 'notes.json');
+
+export function createStorage(file = DEFAULT_FILE) {
+  return {
+    load() {
+      try {
+        const data = JSON.parse(readFileSync(file, 'utf8'));
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    },
+    save(notes) {
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, JSON.stringify(notes, null, 2));
+    },
+    newId() {
+      return randomUUID().slice(0, 8);
+    },
+  };
+}
+```
+
+Run `node --test` → expect 4 passing. Commit: `git add -A && git commit -m "storage module"`.
+
+---
+
+## Task 2: lib helpers
+
+**Files:** `src/lib.js`, `test/lib.test.js`
+
+These pure helpers are reused by later tasks: `findNote`, `filterNotes`, `formatLine`.
+
+### Step 1 — Failing test
+
+`test/lib.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { findNote, filterNotes, formatLine } from '../src/lib.js';
+
+const notes = [
+  { id: 'a1', text: 'buy milk', tags: ['shop'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'b2', text: 'call mom', tags: ['family'], created: '2020-01-02T00:00:00.000Z' },
+];
+
+test('findNote returns the matching note', () => {
+  assert.strictEqual(findNote(notes, 'a1').text, 'buy milk');
+});
+
+test('findNote throws for unknown id', () => {
+  assert.throws(() => findNote(notes, 'zz'), /not found/);
+});
+
+test('filterNotes with no tag returns all', () => {
+  assert.strictEqual(filterNotes(notes, undefined).length, 2);
+});
+
+test('filterNotes by tag', () => {
+  const r = filterNotes(notes, 'family');
+  assert.strictEqual(r.length, 1);
+  assert.strictEqual(r[0].id, 'b2');
+});
+
+test('formatLine shows id, text, tags', () => {
+  assert.strictEqual(formatLine(notes[0]), 'a1  buy milk  [shop]');
+});
+```
+
+Run: `node --test` → expect failures.
+
+### Step 2 — Implement
+
+`src/lib.js`:
+
+```js
+export function findNote(notes, id) {
+  const note = notes.find((n) => n.id === id);
+  if (!note) throw new Error(`Note ${id} not found`);
+  return note;
+}
+
+export function filterNotes(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter((n) => n.tags.includes(tag));
+}
+
+export function formatLine(note) {
+  return `${note.id}  ${note.text}  [${note.tags.join(', ')}]`;
+}
+```
+
+Run `node --test` → 5 passing. Commit: `git commit -am "lib helpers"`.
+
+---
+
+## Command convention
+
+Each command exports `run(args, { storage })`, returning a string to print (or throwing an `Error` whose message is shown). `args` is an object produced by the CLI parser (Task 12). Tests inject a fake storage:
+
+```js
+function fakeStorage(initial = []) {
+  let notes = initial;
+  return {
+    load: () => notes,
+    save: (n) => { notes = n; },
+    newId: () => 'id1',
+  };
+}
+```
+
+Put this helper at the top of each command test file.
+
+---
+
+## Task 3: `add`
+
+**Files:** `src/commands/add.js`, `test/add.test.js`
+
+### Step 1 — Failing test
+
+`test/add.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/add.js';
+
+function fakeStorage(initial = []) {
+  let notes = initial;
+  return { load: () => notes, save: (n) => { notes = n; }, newId: () => 'id1', _all: () => notes };
+}
+
+test('add stores note and returns id', () => {
+  const s = fakeStorage();
+  const out = run({ text: 'hello', tag: undefined }, { storage: s });
+  assert.strictEqual(out, 'id1');
+  assert.strictEqual(s._all()[0].text, 'hello');
+  assert.deepStrictEqual(s._all()[0].tags, []);
+});
+
+test('add with tag', () => {
+  const s = fakeStorage();
+  run({ text: 'x', tag: 'work' }, { storage: s });
+  assert.deepStrictEqual(s._all()[0].tags, ['work']);
+});
+
+test('add rejects empty text', () => {
+  assert.throws(() => run({ text: '   ', tag: undefined }, { storage: fakeStorage() }), /empty/);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/add.js`:
+
+```js
+export function run({ text, tag }, { storage }) {
+  if (!text || !text.trim()) throw new Error('Note text cannot be empty');
+  const notes = storage.load();
+  const note = {
+    id: storage.newId(),
+    text: text.trim(),
+    tags: tag ? [tag] : [],
+    created: new Date().toISOString(),
+  };
+  notes.push(note);
+  storage.save(notes);
+  return note.id;
+}
+```
+
+Run → 3 passing. Commit: `git commit -am "add command"`.
+
+---
+
+## Task 4: `show`
+
+**Files:** `src/commands/show.js`, `test/show.test.js`
+
+### Step 1 — Failing test
+
+`test/show.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/show.js';
+
+const note = { id: 'a1', text: 'buy milk', tags: ['shop'], created: '2020-01-01T00:00:00.000Z' };
+function fakeStorage(initial = [note]) {
+  let notes = initial;
+  return { load: () => notes, save: (n) => { notes = n; }, newId: () => 'x' };
+}
+
+test('show prints text, tags, created', () => {
+  const out = run({ id: 'a1' }, { storage: fakeStorage() });
+  assert.match(out, /buy milk/);
+  assert.match(out, /shop/);
+  assert.match(out, /2020-01-01/);
+});
+
+test('show throws for unknown id', () => {
+  assert.throws(() => run({ id: 'zz' }, { storage: fakeStorage() }), /not found/);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/show.js`:
+
+```js
+import { findNote } from '../lib.js';
+
+export function run({ id }, { storage }) {
+  const note = findNote(storage.load(), id);
+  return [
+    `id:      ${note.id}`,
+    `text:    ${note.text}`,
+    `tags:    ${note.tags.join(', ')}`,
+    `created: ${note.created}`,
+  ].join('\n');
+}
+```
+
+Run → 2 passing. Commit: `git commit -am "show command"`.
+
+---
+
+## Task 5: `rm`
+
+**Files:** `src/commands/rm.js`, `test/rm.test.js`
+
+### Step 1 — Failing test
+
+`test/rm.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/rm.js';
+
+function fakeStorage(initial) {
+  let notes = initial;
+  return { load: () => notes, save: (n) => { notes = n; }, newId: () => 'x', _all: () => notes };
+}
+
+test('rm deletes the note', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: [], created: '2020' }]);
+  run({ id: 'a1' }, { storage: s });
+  assert.strictEqual(s._all().length, 0);
+});
+
+test('rm throws for unknown id', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: [], created: '2020' }]);
+  assert.throws(() => run({ id: 'zz' }, { storage: s }), /not found/);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/rm.js`:
+
+```js
+import { findNote } from '../lib.js';
+
+export function run({ id }, { storage }) {
+  const notes = storage.load();
+  findNote(notes, id); // throws if unknown
+  storage.save(notes.filter((n) => n.id !== id));
+  return `Deleted ${id}`;
+}
+```
+
+Run → 2 passing. Commit: `git commit -am "rm command"`.
+
+---
+
+## Task 6: `tag`
+
+**Files:** `src/commands/tag.js`, `test/tag.test.js`
+
+### Step 1 — Failing test
+
+`test/tag.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/tag.js';
+
+function fakeStorage(initial) {
+  let notes = initial;
+  return { load: () => notes, save: (n) => { notes = n; }, newId: () => 'x', _all: () => notes };
+}
+
+test('tag adds a tag', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: [], created: '2020' }]);
+  run({ id: 'a1', tag: 'work' }, { storage: s });
+  assert.deepStrictEqual(s._all()[0].tags, ['work']);
+});
+
+test('tag is idempotent (no duplicates)', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: ['work'], created: '2020' }]);
+  run({ id: 'a1', tag: 'work' }, { storage: s });
+  assert.deepStrictEqual(s._all()[0].tags, ['work']);
+});
+
+test('tag throws for unknown id', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: [], created: '2020' }]);
+  assert.throws(() => run({ id: 'zz', tag: 'x' }, { storage: s }), /not found/);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/tag.js`:
+
+```js
+import { findNote } from '../lib.js';
+
+export function run({ id, tag }, { storage }) {
+  const notes = storage.load();
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  storage.save(notes);
+  return `Tagged ${id} with ${tag}`;
+}
+```
+
+Run → 3 passing. Commit: `git commit -am "tag command"`.
+
+---
+
+## Task 7: `untag`
+
+**Files:** `src/commands/untag.js`, `test/untag.test.js`
+
+### Step 1 — Failing test
+
+`test/untag.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/untag.js';
+
+function fakeStorage(initial) {
+  let notes = initial;
+  return { load: () => notes, save: (n) => { notes = n; }, newId: () => 'x', _all: () => notes };
+}
+
+test('untag removes a tag', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: ['work', 'home'], created: '2020' }]);
+  run({ id: 'a1', tag: 'work' }, { storage: s });
+  assert.deepStrictEqual(s._all()[0].tags, ['home']);
+});
+
+test('untag missing tag is a no-op (no throw)', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: ['home'], created: '2020' }]);
+  run({ id: 'a1', tag: 'work' }, { storage: s });
+  assert.deepStrictEqual(s._all()[0].tags, ['home']);
+});
+
+test('untag throws for unknown id', () => {
+  const s = fakeStorage([{ id: 'a1', text: 't', tags: [], created: '2020' }]);
+  assert.throws(() => run({ id: 'zz', tag: 'x' }, { storage: s }), /not found/);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/untag.js`:
+
+```js
+import { findNote } from '../lib.js';
+
+export function run({ id, tag }, { storage }) {
+  const notes = storage.load();
+  const note = findNote(notes, id);
+  note.tags = note.tags.filter((t) => t !== tag);
+  storage.save(notes);
+  return `Removed ${tag} from ${id}`;
+}
+```
+
+Run → 3 passing. Commit: `git commit -am "untag command"`.
+
+---
+
+## Task 8: `list`
+
+**Files:** `src/commands/list.js`, `test/list.test.js`
+
+### Step 1 — Failing test
+
+`test/list.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/list.js';
+
+const notes = [
+  { id: 'a1', text: 'buy milk', tags: ['shop'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'b2', text: 'call mom', tags: ['family'], created: '2020-01-02T00:00:00.000Z' },
+];
+function fakeStorage() {
+  return { load: () => notes, save() {}, newId: () => 'x' };
+}
+
+test('list shows all notes one per line', () => {
+  const out = run({ tag: undefined }, { storage: fakeStorage() });
+  assert.strictEqual(out.split('\n').length, 2);
+  assert.match(out, /a1  buy milk  \[shop\]/);
+});
+
+test('list filters by tag', () => {
+  const out = run({ tag: 'family' }, { storage: fakeStorage() });
+  assert.strictEqual(out, 'b2  call mom  [family]');
+});
+
+test('list empty returns empty string', () => {
+  const s = { load: () => [], save() {}, newId: () => 'x' };
+  assert.strictEqual(run({ tag: undefined }, { storage: s }), '');
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/list.js`:
+
+```js
+import { filterNotes, formatLine } from '../lib.js';
+
+export function run({ tag }, { storage }) {
+  return filterNotes(storage.load(), tag).map(formatLine).join('\n');
+}
+```
+
+Run → 3 passing. Commit: `git commit -am "list command"`.
+
+---
+
+## Task 9: `search`
+
+**Files:** `src/commands/search.js`, `test/search.test.js`
+
+### Step 1 — Failing test
+
+`test/search.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/search.js';
+
+const notes = [
+  { id: 'a1', text: 'buy milk', tags: ['shop'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'b2', text: 'call mom', tags: ['family'], created: '2020-01-02T00:00:00.000Z' },
+];
+function fakeStorage() {
+  return { load: () => notes, save() {}, newId: () => 'x' };
+}
+
+test('search matches substring in text', () => {
+  const out = run({ term: 'milk' }, { storage: fakeStorage() });
+  assert.strictEqual(out, 'a1  buy milk  [shop]');
+});
+
+test('search is case-insensitive', () => {
+  const out = run({ term: 'MOM' }, { storage: fakeStorage() });
+  assert.match(out, /call mom/);
+});
+
+test('search no match returns empty string', () => {
+  assert.strictEqual(run({ term: 'zzz' }, { storage: fakeStorage() }), '');
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/search.js`:
+
+```js
+import { formatLine } from '../lib.js';
+
+export function run({ term }, { storage }) {
+  const lc = term.toLowerCase();
+  return storage.load()
+    .filter((n) => n.text.toLowerCase().includes(lc))
+    .map(formatLine)
+    .join('\n');
+}
+```
+
+Run → 3 passing. Commit: `git commit -am "search command"`.
+
+---
+
+## Task 10: `count`
+
+**Files:** `src/commands/count.js`, `test/count.test.js`
+
+### Step 1 — Failing test
+
+`test/count.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/count.js';
+
+const notes = [
+  { id: 'a1', text: 'x', tags: ['shop'], created: '2020' },
+  { id: 'b2', text: 'y', tags: ['family'], created: '2020' },
+];
+function fakeStorage() {
+  return { load: () => notes, save() {}, newId: () => 'x' };
+}
+
+test('count returns total as string', () => {
+  assert.strictEqual(run({ tag: undefined }, { storage: fakeStorage() }), '2');
+});
+
+test('count filters by tag', () => {
+  assert.strictEqual(run({ tag: 'shop' }, { storage: fakeStorage() }), '1');
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/count.js`:
+
+```js
+import { filterNotes } from '../lib.js';
+
+export function run({ tag }, { storage }) {
+  return String(filterNotes(storage.load(), tag).length);
+}
+```
+
+Run → 2 passing. Commit: `git commit -am "count command"`.
+
+---
+
+## Task 11: `export`
+
+**Files:** `src/commands/export.js`, `test/export.test.js`
+
+### Step 1 — Failing test
+
+`test/export.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { run } from '../src/commands/export.js';
+
+const notes = [
+  { id: 'a1', text: 'x', tags: ['shop'], created: '2020' },
+  { id: 'b2', text: 'y', tags: ['family'], created: '2020' },
+];
+function fakeStorage() {
+  return { load: () => notes, save() {}, newId: () => 'x' };
+}
+
+test('export returns JSON array of all notes', () => {
+  const out = run({ tag: undefined }, { storage: fakeStorage() });
+  assert.deepStrictEqual(JSON.parse(out), notes);
+});
+
+test('export filters by tag', () => {
+  const out = run({ tag: 'shop' }, { storage: fakeStorage() });
+  assert.deepStrictEqual(JSON.parse(out), [notes[0]]);
+});
+```
+
+Run → failures.
+
+### Step 2 — Implement
+
+`src/commands/export.js`:
+
+```js
+import { filterNotes } from '../lib.js';
+
+export function run({ tag }, { storage }) {
+  return JSON.stringify(filterNotes(storage.load(), tag), null, 2);
+}
+```
+
+Run → 2 passing. Commit: `git commit -am "export command"`.
+
+---
+
+## Task 12: CLI parser & dispatch
+
+**Files:** `src/cli.js`, `test/cli.test.js`
+
+The parser turns `process.argv` into the `args` object each command expects. Positional names per command: `add`→`text`, `show/rm`→`id`, `tag/untag`→`id`+`tag`, `search`→`term`. `--tag <v>` becomes `args.tag`.
+
+### Step 1 — Failing test
+
+`test/cli.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { parse } from '../src/cli.js';
+
+test('parse add with tag flag', () => {
+  assert.deepStrictEqual(
+    parse(['add', 'hello world', '--tag', 'work']),
+    { command: 'add', args: { text: 'hello world', tag: 'work' } }
+  );
+});
+
+test('parse show with id', () => {
+  assert.deepStrictEqual(parse(['show', 'a1']), { command: 'show', args: { id: 'a1' } });

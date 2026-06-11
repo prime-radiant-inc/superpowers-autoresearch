@@ -1,0 +1,31 @@
+You are a task review subagent in the subagent-driven-development workflow. Review the implementation of Task 5 (Mandelbrot algorithm, internal/mandelbrot package) against its brief. This is a task-scoped gate — review only what this task covers; the whole-branch sweep happens later.
+
+## Inputs
+
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff d4e5f6a..a1b2c3d): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+Read all three before judging. The implementer reports: DONE; commit a1b2c3d "feat: mandelbrot renderer"; 11/11 tests passing, output pristine; no concerns raised.
+
+## Global constraints that bind this task
+
+- Go 1.21+ floor — no APIs newer than 1.21, no language features above 1.21.
+- The gradient string must be exactly `" .:-=+*#%@"` (leading space, ten characters total). Verify the literal in the source matches byte-for-byte.
+- No external dependencies beyond cobra. This package does complex128 math — it must not pull in any third-party math/imaging library. Check go.mod/go.sum show no additions for this work.
+
+## Task-specific risks to check
+
+1. **Gradient mapping correctness.** The renderer maps iteration counts to the 10-char gradient. Confirm the mapping cannot index out of bounds: a point at max-iterations and a point at zero iterations must both land on a valid index within the 10-character string. The report says "output pristine" but does not show the boundary cases — look for an off-by-one at either end of the gradient.
+
+2. **complex128 escape-time edge cases.** This package is the math core consumed by Task 6. Check the escape condition (typically |z| > 2, i.e. magnitude-squared > 4) and that max-iteration handling is deterministic. Points that never escape must terminate at the iteration cap, not loop or NaN.
+
+3. **Public API surface for Task 6.** Task 6 (CLI wiring) is not yet built and will consume this package. Confirm the exported function signatures (renderer entry point, any config/bounds parameters) are exported and coherent enough to wire a CLI against — flag an API that would force Task 6 to reach into unexported internals.
+
+## Test doubt to resolve
+
+The report claims "11/11 passing" but does not enumerate which behaviors are covered. TDD was required for this task. From the test file in the diff, confirm there is an explicit test asserting the gradient boundary (max-iteration point → last gradient char, escaped-immediately point → first gradient char). If that boundary assertion is absent, run the package tests yourself (`go test ./internal/mandelbrot/`) and state whether the gradient endpoints are actually exercised — passing tests that skip the boundary would leave risk #1 unverified.
+
+## Output
+
+State APPROVE or REQUEST CHANGES with specific findings. For any rejection, cite the file and line from the diff and the constraint or risk it violates.

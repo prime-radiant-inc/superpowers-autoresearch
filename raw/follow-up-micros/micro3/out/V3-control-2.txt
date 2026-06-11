@@ -1,0 +1,749 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We're building a Node.js CLI tool called `shorten` that manages a local link-shortener database stored as JSON at `~/.shorten/links.json`. The tool has three commands: `add`, `resolve`, and `list`. All three share a common storage module.
+
+### Tech constraints
+- **Node 20+**, no third-party dependencies (standard library only).
+- Tests with `node:test` (the built-in test runner).
+- **TDD required**: write a failing test, run it, implement, run again, commit.
+
+### Architecture
+
+```
+link-shortener/
+├── package.json
+├── src/
+│   ├── storage.js      # shared: load/save/add/get/list against JSON file
+│   └── cli.js          # argument parsing + command dispatch
+├── bin/
+│   └── shorten.js      # executable entry point
+└── test/
+    ├── storage.test.js
+    └── cli.test.js
+```
+
+- `storage.js` exports pure-ish functions that take an explicit file path (so tests can use a temp file instead of the real `~/.shorten/links.json`).
+- `cli.js` exports a `run(argv, { storePath })` function returning `{ code, stdout, stderr }`-style results so it's testable without spawning processes.
+- `bin/shorten.js` is a thin wrapper: resolves the real store path, calls `run`, writes to stdout/stderr, sets exit code.
+
+### Storage data shape
+
+The JSON file holds an **array** of entries to preserve insertion order:
+
+```json
+[
+  { "code": "abc123", "url": "https://example.com" },
+  { "code": "x9y8z7", "url": "https://nodejs.org" }
+]
+```
+
+We use an array (not an object map) because `list` must print "in the order added", and object key order, while usually insertion-ordered in V8, is not something we want to rely on semantically.
+
+---
+
+## Project setup (do this first)
+
+Create the project skeleton before Task 1.
+
+**Create `package.json`:**
+
+```json
+{
+  "name": "link-shortener",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+We use `"type": "module"` so all `.js` files are ES modules (`import`/`export`).
+
+**Create the directory structure:**
+
+```bash
+mkdir -p src bin test
+```
+
+**Verify setup:**
+
+```bash
+node --version
+```
+
+Expected: `v20.x.x` or higher.
+
+```bash
+npm test
+```
+
+Expected output (no tests yet):
+
+```
+# tests 0
+# pass 0
+# fail 0
+```
+
+(Node may print a message like "Could not find any test files" depending on version — that's fine; we'll add tests next.)
+
+**Commit:**
+
+```bash
+git init
+git add package.json
+git commit -m "Initial project setup"
+```
+
+---
+
+## Task 1: Shared storage module
+
+This is the foundation. Both `add`, `resolve`, and `list` use it. We build it first with full test coverage.
+
+The storage module (`src/storage.js`) will export:
+- `load(storePath)` → returns array of entries; handles missing file (returns `[]`) and corrupt file (throws a clear, identifiable error).
+- `save(storePath, entries)` → writes entries to disk, creating the directory if needed.
+- `addEntry(storePath, code, url)` → loads, checks for duplicate code, appends, saves. Throws on duplicate.
+- `getEntry(storePath, code)` → loads, returns the matching entry or `undefined`.
+- `listEntries(storePath)` → loads, returns all entries in order.
+
+We also export a custom error class `StorageError` so the CLI layer can distinguish "expected" failures (duplicate code, corrupt file) from unexpected bugs.
+
+### Step 1.1: Write failing tests for `load` and `save`
+
+**Create `test/storage.test.js`:**
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { load, save, StorageError } from '../src/storage.js';
+
+async function makeTempDir() {
+  return mkdtemp(join(tmpdir(), 'shorten-test-'));
+}
+
+test('load returns empty array when file does not exist', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    const entries = await load(storePath);
+    assert.deepEqual(entries, []);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('save then load round-trips the data', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    const data = [{ code: 'abc123', url: 'https://example.com' }];
+    await save(storePath, data);
+    const loaded = await load(storePath);
+    assert.deepEqual(loaded, data);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('save creates the parent directory if missing', async () => {
+  const dir = await makeTempDir();
+  try {
+    // nested path that does not exist yet
+    const storePath = join(dir, 'nested', 'deeper', 'links.json');
+    await save(storePath, []);
+    const loaded = await load(storePath);
+    assert.deepEqual(loaded, []);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('load throws StorageError on corrupt JSON', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    await writeFile(storePath, '{ this is not json', 'utf8');
+    await assert.rejects(
+      () => load(storePath),
+      (err) => {
+        assert.ok(err instanceof StorageError);
+        assert.match(err.message, /corrupt/i);
+        return true;
+      },
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('load throws StorageError when JSON is not an array', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    await writeFile(storePath, '{"code":"x"}', 'utf8');
+    await assert.rejects(
+      () => load(storePath),
+      (err) => {
+        assert.ok(err instanceof StorageError);
+        return true;
+      },
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+**Run it:**
+
+```bash
+npm test
+```
+
+Expected: failure because `src/storage.js` does not exist yet, e.g.:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../src/storage.js'
+```
+
+### Step 1.2: Implement `load`, `save`, and `StorageError`
+
+**Create `src/storage.js`:**
+
+```js
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+
+/**
+ * Error type for expected, user-facing storage problems
+ * (corrupt file, duplicate code, etc.).
+ */
+export class StorageError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'StorageError';
+  }
+}
+
+/**
+ * Load entries from the store file.
+ * Returns [] if the file does not exist.
+ * Throws StorageError if the file is corrupt or not an array.
+ */
+export async function load(storePath) {
+  let raw;
+  try {
+    raw = await readFile(storePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new StorageError(
+      `Link database at ${storePath} is corrupt (invalid JSON).`,
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new StorageError(
+      `Link database at ${storePath} is corrupt (expected an array).`,
+    );
+  }
+
+  return parsed;
+}
+
+/**
+ * Save entries to the store file, creating the parent directory if needed.
+ */
+export async function save(storePath, entries) {
+  await mkdir(dirname(storePath), { recursive: true });
+  const json = JSON.stringify(entries, null, 2);
+  await writeFile(storePath, json, 'utf8');
+}
+```
+
+**Run it:**
+
+```bash
+npm test
+```
+
+Expected: all 5 tests pass.
+
+```
+# tests 5
+# pass 5
+# fail 0
+```
+
+**Commit:**
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add storage load/save with corrupt-file handling"
+```
+
+### Step 1.3: Write failing tests for `addEntry`, `getEntry`, `listEntries`
+
+**Append to `test/storage.test.js`** (add these tests at the end of the file, and update the import line at the top):
+
+Change the top import line from:
+
+```js
+import { load, save, StorageError } from '../src/storage.js';
+```
+
+to:
+
+```js
+import {
+  load,
+  save,
+  addEntry,
+  getEntry,
+  listEntries,
+  StorageError,
+} from '../src/storage.js';
+```
+
+Then append:
+
+```js
+test('addEntry stores a new code/url and getEntry retrieves it', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    await addEntry(storePath, 'abc123', 'https://example.com');
+    const entry = await getEntry(storePath, 'abc123');
+    assert.deepEqual(entry, { code: 'abc123', url: 'https://example.com' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('getEntry returns undefined for unknown code', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    const entry = await getEntry(storePath, 'nope');
+    assert.equal(entry, undefined);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('addEntry throws StorageError on duplicate code', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    await addEntry(storePath, 'dup', 'https://one.com');
+    await assert.rejects(
+      () => addEntry(storePath, 'dup', 'https://two.com'),
+      (err) => {
+        assert.ok(err instanceof StorageError);
+        assert.match(err.message, /already exists/i);
+        return true;
+      },
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('listEntries returns all entries in insertion order', async () => {
+  const dir = await makeTempDir();
+  try {
+    const storePath = join(dir, 'links.json');
+    await addEntry(storePath, 'one', 'https://1.com');
+    await addEntry(storePath, 'two', 'https://2.com');
+    await addEntry(storePath, 'three', 'https://3.com');
+    const entries = await listEntries(storePath);
+    assert.deepEqual(entries, [
+      { code: 'one', url: 'https://1.com' },
+      { code: 'two', url: 'https://2.com' },
+      { code: 'three', url: 'https://3.com' },
+    ]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+**Run it:**
+
+```bash
+npm test
+```
+
+Expected: the 5 previous tests pass; the 4 new tests fail because `addEntry`, `getEntry`, `listEntries` are not exported (`TypeError: addEntry is not a function`).
+
+### Step 1.4: Implement `addEntry`, `getEntry`, `listEntries`
+
+**Append to `src/storage.js`:**
+
+```js
+/**
+ * Add a new entry. Throws StorageError if the code already exists.
+ */
+export async function addEntry(storePath, code, url) {
+  const entries = await load(storePath);
+  if (entries.some((e) => e.code === code)) {
+    throw new StorageError(`Code "${code}" already exists.`);
+  }
+  entries.push({ code, url });
+  await save(storePath, entries);
+  return { code, url };
+}
+
+/**
+ * Return the entry for a code, or undefined if not found.
+ */
+export async function getEntry(storePath, code) {
+  const entries = await load(storePath);
+  return entries.find((e) => e.code === code);
+}
+
+/**
+ * Return all entries in insertion order.
+ */
+export async function listEntries(storePath) {
+  return load(storePath);
+}
+```
+
+**Run it:**
+
+```bash
+npm test
+```
+
+Expected: all 9 tests pass.
+
+```
+# tests 9
+# pass 9
+# fail 0
+```
+
+**Commit:**
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add addEntry/getEntry/listEntries to storage"
+```
+
+---
+
+## Task 2: `add` and `resolve` commands (CLI core)
+
+Now we build the CLI dispatch layer with the `add` and `resolve` commands. (`list` comes in Task 3 since it reuses the same plumbing.)
+
+The CLI module exports a single `run(argv, options)` function:
+- `argv` is the array of arguments **after** `node bin/shorten.js` (i.e. `['add', 'https://x.com', '--code', 'foo']`).
+- `options` is `{ storePath }` — injected so tests use a temp file.
+- Returns `{ exitCode, stdout, stderr }` where `stdout`/`stderr` are strings (the wrapper prints them). This keeps `run` free of side effects on the real console, which makes testing clean.
+
+We also need a code generator: a 6-character alphanumeric random code. We'll put it in `cli.js`.
+
+### URL validation
+
+"Validate the URL somehow": we use the standard-library `URL` constructor and require the protocol to be `http:` or `https:`. If `new URL(url)` throws, or the protocol isn't http(s), it's invalid.
+
+### Step 2.1: Write failing tests for `add` and `resolve`
+
+**Create `test/cli.test.js`:**
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { run } from '../src/cli.js';
+import { getEntry } from '../src/storage.js';
+
+async function makeTempStore() {
+  const dir = await mkdtemp(join(tmpdir(), 'shorten-cli-'));
+  return { dir, storePath: join(dir, 'links.json') };
+}
+
+test('add with explicit --code stores the url and prints the code', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['add', 'https://example.com', '--code', 'mycode'], {
+      storePath,
+    });
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stdout.trim(), 'mycode');
+    const entry = await getEntry(storePath, 'mycode');
+    assert.deepEqual(entry, { code: 'mycode', url: 'https://example.com' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add without --code generates a 6-char alphanumeric code', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['add', 'https://example.com'], { storePath });
+    assert.equal(result.exitCode, 0);
+    const code = result.stdout.trim();
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const entry = await getEntry(storePath, code);
+    assert.equal(entry.url, 'https://example.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects an invalid URL', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['add', 'not-a-url'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /invalid url/i);
+    assert.equal(result.stdout, '');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects a non-http(s) URL', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['add', 'ftp://example.com'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /invalid url/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add fails on duplicate code', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    await run(['add', 'https://one.com', '--code', 'dup'], { storePath });
+    const result = await run(['add', 'https://two.com', '--code', 'dup'], {
+      storePath,
+    });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /already exists/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add fails when url argument is missing', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['add'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /usage/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve prints the stored url for a known code', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    await run(['add', 'https://example.com', '--code', 'known'], { storePath });
+    const result = await run(['resolve', 'known'], { storePath });
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stdout.trim(), 'https://example.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve fails for an unknown code', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['resolve', 'nope'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /unknown code/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve fails when code argument is missing', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['resolve'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /usage/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('unknown command fails with usage', async () => {
+  const { dir, storePath } = await makeTempStore();
+  try {
+    const result = await run(['frobnicate'], { storePath });
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /usage/i);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+**Run it:**
+
+```bash
+npm test
+```
+
+Expected: storage tests still pass; all cli tests fail because `src/cli.js` does not exist (`ERR_MODULE_NOT_FOUND`).
+
+### Step 2.2: Implement `cli.js` with `add` and `resolve`
+
+**Create `src/cli.js`:**
+
+```js
+import { randomBytes } from 'node:crypto';
+
+import { addEntry, getEntry, StorageError } from './storage.js';
+
+const USAGE = [
+  'Usage:',
+  '  shorten add <url> [--code <code>]',
+  '  shorten resolve <code>',
+  '  shorten list',
+].join('\n');
+
+const CODE_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+/**
+ * Generate a random 6-character alphanumeric code.
+ */
+export function generateCode(length = 6) {
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  }
+  return out;
+}
+
+/**
+ * Validate a URL: must parse and use http(s).
+ * Returns true if valid, false otherwise.
+ */
+export function isValidUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+/**
+ * Parse a flag like --code <value> out of an args array.
+ * Returns { value, rest } where rest is args with the flag removed.
+ * If the flag is absent, value is undefined.
+ */
+function extractFlag(args, flagName) {
+  const idx = args.indexOf(flagName);
+  if (idx === -1) {
+    return { value: undefined, rest: args };
+  }
+  const value = args[idx + 1];
+  const rest = [...args.slice(0, idx), ...args.slice(idx + 2)];
+  return { value, rest };
+}
+
+function ok(stdout = '') {
+  return { exitCode: 0, stdout, stderr: '' };
+}
+
+function fail(stderr) {
+  return { exitCode: 1, stdout: '', stderr };
+}
+
+async function cmdAdd(args, storePath) {
+  const { value: flagCode, rest } = extractFlag(args, '--code');
+  const url = rest[0];
+
+  if (!url) {
+    return fail(USAGE);
+  }
+  if (!isValidUrl(url)) {
+    return fail(`Invalid URL: ${url}`);
+  }
+
+  const code = flagCode || generateCode();
+
+  try {
+    await addEntry(storePath, code, url);
+  } catch (err) {
+    if (err instanceof StorageError) {
+      return fail(err.message);
+    }
+    throw err;
+  }
+
+  return ok(`${code}\n`);
+}
+
+async function cmdResolve(args, storePath) {
+  const code = args[0];
+  if (!code) {
+    return fail(USAGE);
+  }
+
+  let entry;
+  try {
+    entry = await getEntry(storePath, code);
+  } catch (err) {
+    if (err instanceof StorageError) {
+      return fail(err.message);
+    }
+    throw err;
+  }
+
+  if (!entry) {
+    return fail(`Unknown code: ${code}`);
+  }
+  return ok(`${entry.url}\n`);
+}
+
+/**
+ * Run the CLI. argv is the args after the script name.
+ * options.storePath is the path to the JSON database.
+ * Returns { exitCode, stdout, stderr }.
+ */
+export async function run(argv, { storePath }) {
+  const [command, ...rest] = argv;
+
+  switch (command) {
+    case 'add':
+      return cmdAdd(rest, storePath);
+    case 'resolve':
+      return cmdResolve(rest, storePath);
+    default:

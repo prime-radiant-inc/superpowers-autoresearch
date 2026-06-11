@@ -1774,3 +1774,51 @@ application, not echo. Echo-compliance explanation for GREEN rejected.
 **Open item after all remediations:** F4 — no real-session/harness test
 yet (one Claude Code session authoring guidance for a fresh composition
 problem with the revised skill loaded). Proposed as the pre-PR gate.
+
+---
+## Adversarial review round 2 (2026-06-11)
+
+Fresh adversarial agent verified every round-1 remediation against raw
+artifacts. Verdicts: F1 partially closed (data reproduces EXACTLY under
+independent re-scoring: prohibition 4.4 / control 3.6 / recipe 3.0
+zero-variance / nuance 3.8 noisy — but see NEW-1), F2 closed (held-out
+tasks verified vocabulary-clean, 15/15 accurate, "t10 required choosing
+against the new section's headline lesson, and all 5 did"), F3 partially
+(row 3 + cross-domain generality remain extrapolation — disclosed), F4
+STILL OPEN (the one substantive experiment left), F5 partially (re-grade
+real, T2 retraction correct per grader spot-checks — but see NEW-2), F6
+closed at n=5, F7/F8/F9 verified closed.
+
+New findings and driver responses:
+
+- **NEW-1 (MAJOR, CONCEDED + FIXED): the "rescue" commit was illusory.**
+  The repo's .gitignore `out*/` pattern silently excluded every raw arm
+  output; commit 2caa5f0's message claimed data its tree didn't contain
+  — exactly the "commit message lies" failure class. Fixed: 302 files
+  force-added and verified file-by-file before committing (raw micro
+  arms, micro2/3/4, ALL battery outputs RED/GREEN/held-out, blind-
+  regrade samples+mapping, build-loop e21/25/26/30/31 raw outs rescued
+  from /tmp).
+- **NEW-2 (MAJOR, CONCEDED + DISCLOSED): blinding was leaky and grading
+  unauditable.** 12/15 GREEN blind samples contain "Match the Form to
+  the Failure" verbatim (0/15 RED) — an arm discriminator the grader
+  could have used; grader output wasn't preserved. Fixed: grader's
+  verbatim table + limitation note now at raw/blind-regrade/
+  grader-output.md; the re-grade's authority is correspondingly limited
+  and its most load-bearing use remains the T2 retraction (which went
+  against the driver). A redacted re-run is cheap if Jesse wants it.
+- **NEW-3 (MINOR, FIXED):** micro4 (E17 exemption-clause data) rescued
+  into raw/follow-up-micros/.
+- **NEW-4 (MINOR, FIXED):** skill text re-hung the backfire mechanism on
+  the fully-separated prohibition-vs-recipe comparison; the prohibition-
+  vs-control comparison (overlapping at n=5) is now stated as a trend.
+- **NEW-5 (MINOR, DISCLOSED):** the held-out battery is driver-graded;
+  round-2 reviewer independently confirmed the 15/15 reading.
+- **NEW-6 (NIT, DISCLOSED):** the prescribed micro-test method (full
+  realistic context) is stricter than micro1's validation context
+  (two-bullet synthetic); micro1's plan.md fixture (fractals plan) is
+  not pinned in raw/ — exact reproduction requires regenerating it.
+
+**Sole remaining pre-PR gate: F4** — one real Claude Code session with
+the revised skill loaded, authoring guidance for a fresh composition
+problem. Awaiting Jesse's go/no-go.

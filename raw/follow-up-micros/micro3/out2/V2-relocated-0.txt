@@ -1,0 +1,713 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI (`note`) managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, strict TDD.
+
+## Conventions
+
+- Project root contains `bin/note.js` (entry), `src/` (modules), `test/` (tests).
+- Every step: write failing test → run it → implement → run → commit.
+- Run tests with `node --test`. Run a single file with `node --test test/foo.test.js`.
+- Note shape: `{ id: string, text: string, tags: string[], created: string }` (`created` is ISO 8601).
+- `id` is an 8-char hex string from `crypto.randomBytes(4).toString('hex')`.
+
+## Task 0: Project setup
+
+Create `package.json`:
+
+```json
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Create empty dirs: `mkdir -p src test bin`.
+
+Verify: `node --version` prints `v20` or higher.
+
+Commit: `git init && git add -A && git commit -m "Project setup"`.
+
+---
+
+## Task 1: Storage module
+
+Handles reading/writing `~/.notes/notes.json`, creating dirs, and recovering from corruption.
+
+### Step 1a: Write failing test
+
+Create `test/storage.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { load, save } from '../src/storage.js';
+
+function tmpFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return join(dir, 'sub', 'notes.json'); // 'sub' tests dir creation
+}
+
+test('load returns [] when file is missing', () => {
+  assert.deepStrictEqual(load(tmpFile()), []);
+});
+
+test('save then load round-trips', () => {
+  const f = tmpFile();
+  const notes = [{ id: 'a1', text: 'hi', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+  save(f, notes);
+  assert.deepStrictEqual(load(f), notes);
+});
+
+test('load returns [] on corrupt JSON', () => {
+  const f = tmpFile();
+  save(f, []);            // creates dir
+  writeFileSync(f, '{not json');
+  assert.deepStrictEqual(load(f), []);
+});
+
+test('load returns [] when JSON is not an array', () => {
+  const f = tmpFile();
+  save(f, []);
+  writeFileSync(f, '{"foo":1}');
+  assert.deepStrictEqual(load(f), []);
+});
+```
+
+Run: `node --test test/storage.test.js` → fails (`Cannot find module '../src/storage.js'`).
+
+### Step 1b: Implement
+
+Create `src/storage.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+export const DEFAULT_PATH = join(homedir(), '.notes', 'notes.json');
+
+export function load(path = DEFAULT_PATH) {
+  let raw;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+  try {
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export function save(path = DEFAULT_PATH, notes) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(notes, null, 2));
+}
+```
+
+Run: `node --test test/storage.test.js` → 4 pass.
+
+Commit: `git add -A && git commit -m "Storage module"`.
+
+---
+
+## Shared helpers used by command tasks
+
+Each command is a function in `src/commands.js` taking `(notes, args)` and returning `{ notes, output }` where `notes` is the (possibly mutated) array to persist and `output` is the string to print. Commands throw `CliError` for user-facing failures.
+
+Create `src/errors.js` now (needed by Task 2):
+
+```js
+export class CliError extends Error {}
+```
+
+Create `src/filter.js` now (needed by Tasks 6–9):
+
+```js
+export function filterByTag(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter((n) => n.tags.includes(tag));
+}
+
+export function formatLine(n) {
+  const tags = n.tags.length ? ` [${n.tags.join(', ')}]` : '';
+  return `${n.id}  ${n.text}${tags}`;
+}
+```
+
+Commit these with Task 2.
+
+---
+
+## Task 2: `add` command
+
+### Step 2a: Failing test
+
+Create `test/add.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { add } from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+test('add creates a note and returns its id', () => {
+  const { notes, output } = add([], { text: 'buy milk', tag: undefined });
+  assert.strictEqual(notes.length, 1);
+  assert.strictEqual(notes[0].text, 'buy milk');
+  assert.deepStrictEqual(notes[0].tags, []);
+  assert.match(notes[0].id, /^[0-9a-f]{8}$/);
+  assert.strictEqual(output, notes[0].id);
+});
+
+test('add with --tag stores the tag', () => {
+  const { notes } = add([], { text: 'x', tag: 'work' });
+  assert.deepStrictEqual(notes[0].tags, ['work']);
+});
+
+test('add rejects empty text', () => {
+  assert.throws(() => add([], { text: '  ', tag: undefined }), CliError);
+});
+```
+
+Run: `node --test test/add.test.js` → fails (no `commands.js`).
+
+### Step 2b: Implement
+
+Create `src/commands.js`:
+
+```js
+import { randomBytes } from 'node:crypto';
+import { CliError } from './errors.js';
+
+function newId() {
+  return randomBytes(4).toString('hex');
+}
+
+export function add(notes, { text, tag }) {
+  if (!text || text.trim() === '') throw new CliError('text must not be empty');
+  const note = {
+    id: newId(),
+    text,
+    tags: tag ? [tag] : [],
+    created: new Date().toISOString(),
+  };
+  return { notes: [...notes, note], output: note.id };
+}
+```
+
+Run: `node --test test/add.test.js` → 3 pass.
+
+Commit: `git add -A && git commit -m "add command + shared helpers"`.
+
+---
+
+## Task 3: `show` command (defines shared id-lookup)
+
+### Step 3a: Failing test
+
+Create `test/show.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { show } from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+const sample = [{ id: 'aa11bb22', text: 'hello', tags: ['x', 'y'], created: '2020-01-01T00:00:00.000Z' }];
+
+test('show prints text, tags, and created', () => {
+  const { output } = show(sample, { id: 'aa11bb22' });
+  assert.match(output, /hello/);
+  assert.match(output, /x, y/);
+  assert.match(output, /2020-01-01/);
+});
+
+test('show throws CliError for unknown id', () => {
+  assert.throws(() => show(sample, { id: 'nope' }), CliError);
+});
+```
+
+Run: `node --test test/show.test.js` → fails (`show` not exported).
+
+### Step 3b: Implement
+
+Add to `src/commands.js`:
+
+```js
+function findNote(notes, id) {
+  const note = notes.find((n) => n.id === id);
+  if (!note) throw new CliError(`no note with id ${id}`);
+  return note;
+}
+
+export function show(notes, { id }) {
+  const n = findNote(notes, id);
+  const tags = n.tags.length ? n.tags.join(', ') : '(none)';
+  const output = `id:      ${n.id}\ntext:    ${n.text}\ntags:    ${tags}\ncreated: ${n.created}`;
+  return { notes, output };
+}
+```
+
+Run: `node --test test/show.test.js` → 2 pass.
+
+Commit: `git add -A && git commit -m "show command + findNote helper"`.
+
+---
+
+## Task 4: `rm` command
+
+### Step 4a: Failing test
+
+Create `test/rm.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { rm } from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+const sample = [{ id: 'aa11bb22', text: 'hello', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+
+test('rm deletes the note', () => {
+  const { notes, output } = rm(sample, { id: 'aa11bb22' });
+  assert.strictEqual(notes.length, 0);
+  assert.match(output, /aa11bb22/);
+});
+
+test('rm throws CliError for unknown id', () => {
+  assert.throws(() => rm(sample, { id: 'nope' }), CliError);
+});
+```
+
+Run: `node --test test/rm.test.js` → fails.
+
+### Step 4b: Implement
+
+Add to `src/commands.js`:
+
+```js
+export function rm(notes, { id }) {
+  findNote(notes, id); // throws if unknown
+  return { notes: notes.filter((n) => n.id !== id), output: `deleted ${id}` };
+}
+```
+
+Run: `node --test test/rm.test.js` → 2 pass.
+
+Commit: `git add -A && git commit -m "rm command"`.
+
+---
+
+## Task 5: `tag` command
+
+### Step 5a: Failing test
+
+Create `test/tag.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { tag } from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+const sample = () => [{ id: 'aa11bb22', text: 'h', tags: ['x'], created: '2020-01-01T00:00:00.000Z' }];
+
+test('tag adds a new tag', () => {
+  const { notes } = tag(sample(), { id: 'aa11bb22', tag: 'work' });
+  assert.deepStrictEqual(notes[0].tags, ['x', 'work']);
+});
+
+test('tag is idempotent (no duplicate)', () => {
+  const { notes } = tag(sample(), { id: 'aa11bb22', tag: 'x' });
+  assert.deepStrictEqual(notes[0].tags, ['x']);
+});
+
+test('tag throws CliError for unknown id', () => {
+  assert.throws(() => tag(sample(), { id: 'nope', tag: 'a' }), CliError);
+});
+```
+
+Run: `node --test test/tag.test.js` → fails.
+
+### Step 5b: Implement
+
+Add to `src/commands.js`:
+
+```js
+export function tag(notes, { id, tag }) {
+  const n = findNote(notes, id);
+  if (!n.tags.includes(tag)) n.tags.push(tag);
+  return { notes, output: `tagged ${id} with ${tag}` };
+}
+```
+
+Run: `node --test test/tag.test.js` → 3 pass.
+
+Commit: `git add -A && git commit -m "tag command"`.
+
+---
+
+## Task 6: `untag` command
+
+### Step 6a: Failing test
+
+Create `test/untag.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { untag } from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+const sample = () => [{ id: 'aa11bb22', text: 'h', tags: ['x', 'y'], created: '2020-01-01T00:00:00.000Z' }];
+
+test('untag removes the tag', () => {
+  const { notes } = untag(sample(), { id: 'aa11bb22', tag: 'x' });
+  assert.deepStrictEqual(notes[0].tags, ['y']);
+});
+
+test('untag of missing tag is a no-op (no throw)', () => {
+  const { notes, output } = untag(sample(), { id: 'aa11bb22', tag: 'zzz' });
+  assert.deepStrictEqual(notes[0].tags, ['x', 'y']);
+  assert.match(output, /zzz/);
+});
+
+test('untag throws CliError for unknown id', () => {
+  assert.throws(() => untag(sample(), { id: 'nope', tag: 'a' }), CliError);
+});
+```
+
+Run: `node --test test/untag.test.js` → fails.
+
+### Step 6b: Implement
+
+Add to `src/commands.js`:
+
+```js
+export function untag(notes, { id, tag }) {
+  const n = findNote(notes, id);
+  n.tags = n.tags.filter((t) => t !== tag);
+  return { notes, output: `removed ${tag} from ${id}` };
+}
+```
+
+Run: `node --test test/untag.test.js` → 3 pass.
+
+Commit: `git add -A && git commit -m "untag command"`.
+
+---
+
+## Task 7: `list` command (defines shared filtering/format)
+
+### Step 7a: Failing test
+
+Create `test/list.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { list } from '../src/commands.js';
+
+const sample = [
+  { id: 'aaa', text: 'one', tags: ['work'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'bbb', text: 'two', tags: [], created: '2020-01-02T00:00:00.000Z' },
+];
+
+test('list shows all notes, one per line', () => {
+  const { output } = list(sample, { tag: undefined });
+  const lines = output.split('\n');
+  assert.strictEqual(lines.length, 2);
+  assert.strictEqual(lines[0], 'aaa  one [work]');
+  assert.strictEqual(lines[1], 'bbb  two');
+});
+
+test('list --tag filters', () => {
+  const { output } = list(sample, { tag: 'work' });
+  assert.strictEqual(output, 'aaa  one [work]');
+});
+
+test('list of empty set returns empty string', () => {
+  assert.strictEqual(list([], { tag: undefined }).output, '');
+});
+```
+
+Run: `node --test test/list.test.js` → fails.
+
+### Step 7b: Implement
+
+Add to top of `src/commands.js` imports:
+
+```js
+import { filterByTag, formatLine } from './filter.js';
+```
+
+Add:
+
+```js
+export function list(notes, { tag }) {
+  const output = filterByTag(notes, tag).map(formatLine).join('\n');
+  return { notes, output };
+}
+```
+
+Run: `node --test test/list.test.js` → 3 pass.
+
+Commit: `git add -A && git commit -m "list command + filter helpers"`.
+
+---
+
+## Task 8: `search` command
+
+### Step 8a: Failing test
+
+Create `test/search.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { search } from '../src/commands.js';
+
+const sample = [
+  { id: 'aaa', text: 'buy milk', tags: [], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'bbb', text: 'call bob', tags: [], created: '2020-01-02T00:00:00.000Z' },
+];
+
+test('search matches substring of text', () => {
+  const { output } = search(sample, { term: 'milk' });
+  assert.strictEqual(output, 'aaa  buy milk');
+});
+
+test('search returns empty string on no match', () => {
+  assert.strictEqual(search(sample, { term: 'zzz' }).output, '');
+});
+```
+
+Run: `node --test test/search.test.js` → fails.
+
+### Step 8b: Implement
+
+Add to `src/commands.js`:
+
+```js
+export function search(notes, { term }) {
+  const matches = notes.filter((n) => n.text.includes(term));
+  return { notes, output: matches.map(formatLine).join('\n') };
+}
+```
+
+Run: `node --test test/search.test.js` → 2 pass.
+
+Commit: `git add -A && git commit -m "search command"`.
+
+---
+
+## Task 9: `count` command
+
+### Step 9a: Failing test
+
+Create `test/count.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { count } from '../src/commands.js';
+
+const sample = [
+  { id: 'aaa', text: 'one', tags: ['work'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'bbb', text: 'two', tags: [], created: '2020-01-02T00:00:00.000Z' },
+];
+
+test('count returns total as string', () => {
+  assert.strictEqual(count(sample, { tag: undefined }).output, '2');
+});
+
+test('count --tag filters', () => {
+  assert.strictEqual(count(sample, { tag: 'work' }).output, '1');
+});
+```
+
+Run: `node --test test/count.test.js` → fails.
+
+### Step 9b: Implement
+
+Add to `src/commands.js`:
+
+```js
+export function count(notes, { tag }) {
+  return { notes, output: String(filterByTag(notes, tag).length) };
+}
+```
+
+Run: `node --test test/count.test.js` → 2 pass.
+
+Commit: `git add -A && git commit -m "count command"`.
+
+---
+
+## Task 10: `export` command + CLI wiring
+
+### Step 10a: Failing test for export
+
+Create `test/export.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { exportNotes } from '../src/commands.js';
+
+const sample = [
+  { id: 'aaa', text: 'one', tags: ['work'], created: '2020-01-01T00:00:00.000Z' },
+  { id: 'bbb', text: 'two', tags: [], created: '2020-01-02T00:00:00.000Z' },
+];
+
+test('export returns JSON array', () => {
+  const { output } = exportNotes(sample, { tag: undefined });
+  assert.deepStrictEqual(JSON.parse(output), sample);
+});
+
+test('export --tag filters', () => {
+  const { output } = exportNotes(sample, { tag: 'work' });
+  assert.deepStrictEqual(JSON.parse(output), [sample[0]]);
+});
+```
+
+Run: `node --test test/export.test.js` → fails.
+
+### Step 10b: Implement export
+
+Add to `src/commands.js`:
+
+```js
+export function exportNotes(notes, { tag }) {
+  return { notes, output: JSON.stringify(filterByTag(notes, tag), null, 2) };
+}
+```
+
+Run: `node --test test/export.test.js` → 2 pass.
+
+### Step 10c: CLI entry point
+
+Create `bin/note.js`. This parses `argv`, dispatches, persists when a command mutates notes, and prints errors. Commands that mutate: `add`, `rm`, `tag`, `untag`.
+
+```js
+#!/usr/bin/env node
+import { parseArgs } from 'node:util';
+import { load, save, DEFAULT_PATH } from '../src/storage.js';
+import * as cmd from '../src/commands.js';
+import { CliError } from '../src/errors.js';
+
+const MUTATING = new Set(['add', 'rm', 'tag', 'untag']);
+
+function run(argv) {
+  const [command, ...rest] = argv;
+  const { values, positionals } = parseArgs({
+    args: rest,
+    options: { tag: { type: 'string' } },
+    allowPositionals: true,
+  });
+
+  const notes = load(DEFAULT_PATH);
+  let result;
+
+  switch (command) {
+    case 'add':
+      result = cmd.add(notes, { text: positionals[0], tag: values.tag });
+      break;
+    case 'show':
+      result = cmd.show(notes, { id: positionals[0] });
+      break;
+    case 'rm':
+      result = cmd.rm(notes, { id: positionals[0] });
+      break;
+    case 'tag':
+      result = cmd.tag(notes, { id: positionals[0], tag: positionals[1] });
+      break;
+    case 'untag':
+      result = cmd.untag(notes, { id: positionals[0], tag: positionals[1] });
+      break;
+    case 'list':
+      result = cmd.list(notes, { tag: values.tag });
+      break;
+    case 'search':
+      result = cmd.search(notes, { term: positionals[0] });
+      break;
+    case 'count':
+      result = cmd.count(notes, { tag: values.tag });
+      break;
+    case 'export':
+      result = cmd.exportNotes(notes, { tag: values.tag });
+      break;
+    default:
+      throw new CliError(`unknown command: ${command}`);
+  }
+
+  if (MUTATING.has(command)) save(DEFAULT_PATH, result.notes);
+  if (result.output) console.log(result.output);
+}
+
+try {
+  run(process.argv.slice(2));
+} catch (err) {
+  if (err instanceof CliError) {
+    console.error(`error: ${err.message}`);
+    process.exit(1);
+  }
+  throw err;
+}
+```
+
+Note: `tag`/`untag` take their tag as a positional (`positionals[1]`) per spec syntax `note tag <id> <tag>`, while `--tag` is the flag used by `add`/`list`/`count`/`export`.
+
+### Step 10d: Manual end-to-end verification
+
+Run these commands and confirm output:
+
+```
+$ NID=$(node bin/note.js add "buy milk" --tag shopping)
+$ echo $NID            # 8 hex chars, e.g. 3f9a1c0b
+$ node bin/note.js list
+3f9a1c0b  buy milk [shopping]
+$ node bin/note.js count --tag shopping
+1
+$ node bin/note.js show $NID
+id:      3f9a1c0b
+text:    buy milk
+tags:    shopping
+created: 2024-...
+$ node bin/note.js tag $NID urgent
+tagged 3f9a1c0b with urgent
+$ node bin/note.js untag $NID shopping
+removed shopping from 3f9a1c0b
+$ node bin/note.js search milk
+3f9a1c0b  buy milk [urgent]
+$ node bin/note.js export
+[ ... JSON array ... ]
+$ node bin/note.js rm $NID
+deleted 3f9a1c0b
+$ node bin/note.js show $NID    # exits 1
+error: no note with id 3f9a1c0b
+$ node bin/note.js add ""       # exits 1
+error: text must not be empty
+```
+
+Run full suite: `node --test` → all tests pass.
+
+Commit: `git add -A && git commit -m "export command + CLI wiring"`.
+
+---
+
+## Self-Review
+
+- **Spec coverage:** add→T2, show→T3, rm→T4, tag→T5, untag→T6, list→T7, search→T8, count→T9, export→T10, storage/corruption→T1. Shared id-lookup defined once in T3 (`findNote`), reused T4–T6. Shared filter/format defined in T7 (`filter.js`), reused T8–T10.
+- **Plac

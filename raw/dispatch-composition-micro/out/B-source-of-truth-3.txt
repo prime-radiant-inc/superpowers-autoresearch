@@ -1,0 +1,20 @@
+You are implementing Task 5 of the Go fractals CLI project. Follow TDD strictly (required by the plan): write tests first, watch them fail, then implement.
+
+**Your brief:** `/work/fractals-cli/.git/sdd/task-5-brief.md` — this is your single source of truth for requirements and their exact values. Use the region bounds (-2.5 to 1.0 real, -1.0 to 1.0 imaginary), the gradient string `" .:-=+*#%@"`, the function signature `Render(width, height, maxIter int, char string) []string`, and the three required test cases verbatim from the brief. Don't paraphrase the magic values.
+
+**Where this fits:** Tasks 1-4 are complete — the project skeleton, cobra CLI, and the sierpinski algorithm + subcommand all exist and are reviewed. This task is the Mandelbrot *algorithm only* (`internal/mandelbrot/`). It is a pure library package with no CLI wiring — the `mandelbrot` subcommand comes in Task 6, so don't touch `internal/cli/` or `main.go`. Working dir is `/work/fractals-cli`, module `github.com/superpowers-test/fractals`, Go 1.21.
+
+**Reference for style:** look at `internal/sierpinski/sierpinski.go` and its test file to match the existing package conventions (how `Generate` returns `[]string`, test structure, etc.) before you write the mandelbrot equivalents.
+
+**Resolving ambiguity in the brief — apply these decisions:**
+- The `char string` parameter: when empty (`""`), use the full gradient `" .:-=+*#%@"` mapping iteration count to gradient index. When a non-empty char is provided, the gradient behavior for that case is fully specified in Task 7, not here — for Task 5, just implement the empty-char gradient path correctly. Keep the signature accepting `char string` as given so the parameter is wired in, but you only need the gradient path tested and working for this task.
+- "Known point inside set (0,0) maps to max-iteration character" means: the point at complex (0,0) does not escape within maxIter, so it maps to the *last* gradient character (`@`). "Outside set (2,0)" escapes quickly and maps to a *low*-iteration character (near the start of the gradient, e.g. the space/`.`). Assert the specific character your mapping produces; pick whichever exact gradient index your formula yields and assert that — just make the inside-vs-outside distinction unambiguous.
+- For the dimensions test: assert `len(result) == height` and every line has `len(line) == width`.
+
+**Scope boundaries:** create only `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`. No CLI changes.
+
+**Verify before reporting:** `go test ./internal/mandelbrot/...` passes, and `go build ./...` still succeeds.
+
+**Commit** your work when green, with a clear message referencing Task 5.
+
+**Report:** write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return to me only: status, commit SHA(s), a one-line test summary, and any concerns (especially anything about the iteration→gradient index mapping that Task 6/7 will need to know).

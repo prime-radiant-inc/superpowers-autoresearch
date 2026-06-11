@@ -1,0 +1,19 @@
+You are implementing Task 5 of the "fractals" Go CLI — a tool that renders ASCII fractals. This task adds the Mandelbrot set rendering algorithm as a pure library package in `internal/mandelbrot/`. It is the algorithm core only; a later task wires it to a CLI subcommand, so keep this package free of any cobra/CLI dependencies.
+
+**Read this first — it is your requirements:** `/work/fractals-cli/.git/sdd/task-5-brief.md`. It contains the exact function signature, the complex-plane region bounds, the character gradient string, and the specific test cases you must implement, all to be used verbatim. Do not substitute your own values.
+
+Context from completed work (the brief cannot know this):
+- The module path is `github.com/superpowers-test/fractals`.
+- Tasks 1–4 are complete: project setup, cobra CLI framework, and the sierpinski algorithm + CLI subcommand. The existing `internal/sierpinski/` package is a good reference for package style and test layout — mirror its conventions (test file naming, table-driven tests, package naming) where reasonable.
+- HEAD is clean. Do not modify any existing files; this task only adds `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`.
+
+TDD is required by the plan: write the failing tests first, then implement `Render` to make them pass.
+
+Ambiguity resolution (apply these where the brief leaves a choice):
+- The signature is `Render(width, height, maxIter int, char string) []string`. When `char` is the empty string `""`, use the iteration-count-to-gradient mapping with the gradient `" .:-=+*#%@"`. When `char` is a non-empty string, this task does not need to fully implement custom-char behavior (that is Task 7) — but design `Render` so a non-empty `char` is a sane place to hook in single-character rendering; do not let a non-empty char crash. Keep the gradient path correct and fully tested now, since the brief's tests target gradient behavior.
+- For the gradient mapping, points that reach `maxIter` (inside the set) map to the last/densest gradient character (`@`); points that escape immediately map to the first character (space). The brief's test cases for point (0,0) inside and (2,0) outside define the exact expected characters — follow those.
+- Return exactly `height` lines, each of exactly `width` characters.
+
+When done, write your full implementation report to `/work/fractals-cli/.git/sdd/task-5-report.md`. The report must cover: what you implemented, the final `Render` signature and behavior, how the gradient/empty-char distinction is handled, the test cases you wrote and their results, and any concerns or assumptions for downstream tasks (especially Task 6 CLI wiring and Task 7 custom-char). 
+
+Return to me only: status (done/blocked), the commit(s) you made, a one-line test summary, and any concerns.

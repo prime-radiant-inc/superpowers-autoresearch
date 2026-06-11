@@ -1,0 +1,637 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI (`note`) managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, strict TDD.
+
+## Conventions
+
+- All source in `src/`, tests in `test/`. Entry point `bin/note.js`.
+- Note shape: `{ id: string, text: string, tags: string[], created: string }` where `id` is an 8-char hex string and `created` is an ISO timestamp.
+- Each task: write failing test → run it (see it fail) → implement → run (see it pass) → commit.
+- Run a single test file with `node --test test/<name>.test.js`. Run all with `node --test`.
+
+---
+
+## Task 0: Project setup
+
+Create the repo skeleton.
+
+`package.json`:
+```json
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Create directories:
+```bash
+mkdir -p src test bin
+git init && git add -A && git commit -m "chore: project skeleton"
+```
+
+Expected: `git log` shows one commit.
+
+---
+
+## Task 1: Storage layer
+
+The storage module reads/writes the JSON file and handles corruption. **Tests use a temp file**, not the real home dir, via an injected path.
+
+### Test — `test/storage.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { loadNotes, saveNotes } from '../src/storage.js';
+
+function tmpFile() {
+  return join(mkdtempSync(join(tmpdir(), 'notes-')), 'notes.json');
+}
+
+test('loadNotes returns [] when file missing', () => {
+  assert.deepEqual(loadNotes(tmpFile()), []);
+});
+
+test('saveNotes then loadNotes round-trips', () => {
+  const f = tmpFile();
+  const notes = [{ id: 'aa', text: 'hi', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+  saveNotes(f, notes);
+  assert.ok(existsSync(f));
+  assert.deepEqual(loadNotes(f), notes);
+});
+
+test('loadNotes throws on corrupt JSON', () => {
+  const f = tmpFile();
+  writeFileSync(f, '{ not json');
+  assert.throws(() => loadNotes(f), /corrupt/i);
+});
+
+test('loadNotes throws when top-level is not an array', () => {
+  const f = tmpFile();
+  writeFileSync(f, '{"a":1}');
+  assert.throws(() => loadNotes(f), /corrupt/i);
+});
+```
+
+Run: `node --test test/storage.test.js` → fails (module missing).
+
+### Implement — `src/storage.js`
+```js
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
+
+export const DEFAULT_PATH = join(homedir(), '.notes', 'notes.json');
+
+export function loadNotes(path = DEFAULT_PATH) {
+  if (!existsSync(path)) return [];
+  const raw = readFileSync(path, 'utf8');
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`Storage file is corrupt (invalid JSON): ${path}`);
+  }
+  if (!Array.isArray(data)) {
+    throw new Error(`Storage file is corrupt (expected an array): ${path}`);
+  }
+  return data;
+}
+
+export function saveNotes(notes, path = DEFAULT_PATH) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(notes, null, 2));
+}
+```
+
+Note: tests call `saveNotes(f, notes)` — fix the signature to `saveNotes(notes, path)`. Update test call to `saveNotes(notes, f)`. Re-run.
+
+Run: `node --test test/storage.test.js` → 4 pass.
+Commit: `git commit -am "feat: storage layer with corruption handling"`
+
+---
+
+## Shared helpers (built incrementally, tested via commands)
+
+Create `src/helpers.js` now with id lookup and filtering used by later tasks:
+
+```js
+import { randomBytes } from 'node:crypto';
+
+export function newId() {
+  return randomBytes(4).toString('hex'); // 8 hex chars
+}
+
+// Throws a user-facing error if not found.
+export function findNote(notes, id) {
+  const note = notes.find((n) => n.id === id);
+  if (!note) throw new Error(`No note with id: ${id}`);
+  return note;
+}
+
+// Returns notes filtered by optional tag.
+export function filterByTag(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter((n) => n.tags.includes(tag));
+}
+
+// "id  text  [tag1, tag2]"
+export function formatLine(n) {
+  const tags = n.tags.length ? `  [${n.tags.join(', ')}]` : '';
+  return `${n.id}  ${n.text}${tags}`;
+}
+```
+
+These are covered by the command tests below. Commit with Task 2.
+
+---
+
+## Command architecture
+
+Each command is a function `(args, deps) => string` returning output text. `deps` is `{ path }` so tests inject a temp file. `bin/note.js` dispatches and prints. This keeps commands pure and testable.
+
+`src/commands/` holds one file per command. Create `src/parseArgs.js`:
+
+```js
+// Splits argv into { positionals, flags }. Supports "--tag value".
+export function parseArgs(argv) {
+  const positionals = [];
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].startsWith('--')) {
+      flags[argv[i].slice(2)] = argv[i + 1];
+      i++;
+    } else {
+      positionals.push(argv[i]);
+    }
+  }
+  return { positionals, flags };
+}
+```
+
+---
+
+## Task 2: `add`
+
+### Test — `test/add.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { loadNotes } from '../src/storage.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('add stores a note and returns its id', () => {
+  const path = tmp();
+  const out = add({ positionals: ['hello'], flags: {} }, { path });
+  const notes = loadNotes(path);
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].text, 'hello');
+  assert.equal(out, notes[0].id);
+});
+
+test('add with --tag stores the tag', () => {
+  const path = tmp();
+  add({ positionals: ['hi'], flags: { tag: 'work' } }, { path });
+  assert.deepEqual(loadNotes(path)[0].tags, ['work']);
+});
+
+test('add rejects empty text', () => {
+  assert.throws(() => add({ positionals: [''], flags: {} }, { path: tmp() }), /text/i);
+  assert.throws(() => add({ positionals: [], flags: {} }, { path: tmp() }), /text/i);
+});
+```
+
+Run: `node --test test/add.test.js` → fails.
+
+### Implement — `src/commands/add.js`
+```js
+import { loadNotes, saveNotes } from '../storage.js';
+import { newId } from '../helpers.js';
+
+export function add({ positionals, flags }, { path }) {
+  const text = positionals[0];
+  if (!text || text.trim() === '') throw new Error('Note text must not be empty');
+  const note = { id: newId(), text, tags: flags.tag ? [flags.tag] : [], created: new Date().toISOString() };
+  const notes = loadNotes(path);
+  notes.push(note);
+  saveNotes(notes, path);
+  return note.id;
+}
+```
+
+Run → 3 pass. Commit: `git commit -am "feat: add command + helpers"`
+
+---
+
+## Task 3: `show`
+
+### Test — `test/show.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { show } from '../src/commands/show.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('show prints text, tags, created', () => {
+  const path = tmp();
+  const id = add({ positionals: ['hi'], flags: { tag: 'x' } }, { path });
+  const out = show({ positionals: [id], flags: {} }, { path });
+  assert.match(out, /hi/);
+  assert.match(out, /x/);
+  assert.match(out, /\d{4}-\d{2}-\d{2}/);
+});
+
+test('show fails on unknown id', () => {
+  assert.throws(() => show({ positionals: ['nope'], flags: {} }, { path: tmp() }), /No note with id/);
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/show.js`
+```js
+import { loadNotes } from '../storage.js';
+import { findNote } from '../helpers.js';
+
+export function show({ positionals }, { path }) {
+  const note = findNote(loadNotes(path), positionals[0]);
+  const tags = note.tags.length ? note.tags.join(', ') : '(none)';
+  return `${note.text}\nTags: ${tags}\nCreated: ${note.created}`;
+}
+```
+
+Run → 2 pass. Commit: `git commit -am "feat: show command"`
+
+---
+
+## Task 4: `rm`
+
+### Test — `test/rm.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { rm } from '../src/commands/rm.js';
+import { loadNotes } from '../src/storage.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('rm deletes the note', () => {
+  const path = tmp();
+  const id = add({ positionals: ['bye'], flags: {} }, { path });
+  rm({ positionals: [id], flags: {} }, { path });
+  assert.equal(loadNotes(path).length, 0);
+});
+
+test('rm fails on unknown id', () => {
+  assert.throws(() => rm({ positionals: ['nope'], flags: {} }, { path: tmp() }), /No note with id/);
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/rm.js`
+```js
+import { loadNotes, saveNotes } from '../storage.js';
+import { findNote } from '../helpers.js';
+
+export function rm({ positionals }, { path }) {
+  const notes = loadNotes(path);
+  const note = findNote(notes, positionals[0]); // throws if unknown
+  saveNotes(notes.filter((n) => n.id !== note.id), path);
+  return `Deleted ${note.id}`;
+}
+```
+
+Run → 2 pass. Commit: `git commit -am "feat: rm command"`
+
+---
+
+## Task 5: `tag`
+
+### Test — `test/tag.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { tag } from '../src/commands/tag.js';
+import { loadNotes } from '../src/storage.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('tag adds a tag', () => {
+  const path = tmp();
+  const id = add({ positionals: ['hi'], flags: {} }, { path });
+  tag({ positionals: [id, 'work'], flags: {} }, { path });
+  assert.deepEqual(loadNotes(path)[0].tags, ['work']);
+});
+
+test('tag is idempotent (no duplicates)', () => {
+  const path = tmp();
+  const id = add({ positionals: ['hi'], flags: {} }, { path });
+  tag({ positionals: [id, 'work'], flags: {} }, { path });
+  tag({ positionals: [id, 'work'], flags: {} }, { path });
+  assert.deepEqual(loadNotes(path)[0].tags, ['work']);
+});
+
+test('tag fails on unknown id', () => {
+  assert.throws(() => tag({ positionals: ['nope', 't'], flags: {} }, { path: tmp() }), /No note with id/);
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/tag.js`
+```js
+import { loadNotes, saveNotes } from '../storage.js';
+import { findNote } from '../helpers.js';
+
+export function tag({ positionals }, { path }) {
+  const [id, t] = positionals;
+  const notes = loadNotes(path);
+  const note = findNote(notes, id);
+  if (!note.tags.includes(t)) note.tags.push(t);
+  saveNotes(notes, path);
+  return `Tagged ${id} with ${t}`;
+}
+```
+
+Run → 3 pass. Commit: `git commit -am "feat: tag command"`
+
+---
+
+## Task 6: `untag`
+
+### Test — `test/untag.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { tag } from '../src/commands/tag.js';
+import { untag } from '../src/commands/untag.js';
+import { loadNotes } from '../src/storage.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('untag removes a tag', () => {
+  const path = tmp();
+  const id = add({ positionals: ['hi'], flags: {} }, { path });
+  tag({ positionals: [id, 'work'], flags: {} }, { path });
+  untag({ positionals: [id, 'work'], flags: {} }, { path });
+  assert.deepEqual(loadNotes(path)[0].tags, []);
+});
+
+test('untag on missing tag is a no-op (no throw)', () => {
+  const path = tmp();
+  const id = add({ positionals: ['hi'], flags: {} }, { path });
+  assert.doesNotThrow(() => untag({ positionals: [id, 'absent'], flags: {} }, { path }));
+  assert.deepEqual(loadNotes(path)[0].tags, []);
+});
+
+test('untag fails on unknown id', () => {
+  assert.throws(() => untag({ positionals: ['nope', 't'], flags: {} }, { path: tmp() }), /No note with id/);
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/untag.js`
+```js
+import { loadNotes, saveNotes } from '../storage.js';
+import { findNote } from '../helpers.js';
+
+export function untag({ positionals }, { path }) {
+  const [id, t] = positionals;
+  const notes = loadNotes(path);
+  const note = findNote(notes, id);
+  note.tags = note.tags.filter((x) => x !== t);
+  saveNotes(notes, path);
+  return `Removed ${t} from ${id}`;
+}
+```
+
+Run → 3 pass. Commit: `git commit -am "feat: untag command"`
+
+---
+
+## Task 7: `list`
+
+### Test — `test/list.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { list } from '../src/commands/list.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('list shows all notes one per line', () => {
+  const path = tmp();
+  add({ positionals: ['a'], flags: {} }, { path });
+  add({ positionals: ['b'], flags: {} }, { path });
+  assert.equal(list({ positionals: [], flags: {} }, { path }).split('\n').length, 2);
+});
+
+test('list --tag filters', () => {
+  const path = tmp();
+  add({ positionals: ['a'], flags: { tag: 'x' } }, { path });
+  add({ positionals: ['b'], flags: {} }, { path });
+  const out = list({ positionals: [], flags: { tag: 'x' } }, { path });
+  assert.match(out, /a/);
+  assert.doesNotMatch(out, /^.*\bb\b/m);
+});
+
+test('list with no notes returns empty string', () => {
+  assert.equal(list({ positionals: [], flags: {} }, { path: tmp() }), '');
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/list.js`
+```js
+import { loadNotes } from '../storage.js';
+import { filterByTag, formatLine } from '../helpers.js';
+
+export function list({ flags }, { path }) {
+  return filterByTag(loadNotes(path), flags.tag).map(formatLine).join('\n');
+}
+```
+
+Run → 3 pass. Commit: `git commit -am "feat: list command"`
+
+---
+
+## Task 8: `search`
+
+### Test — `test/search.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { search } from '../src/commands/search.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('search matches substring in text', () => {
+  const path = tmp();
+  add({ positionals: ['buy milk'], flags: {} }, { path });
+  add({ positionals: ['call bob'], flags: {} }, { path });
+  const out = search({ positionals: ['milk'], flags: {} }, { path });
+  assert.match(out, /buy milk/);
+  assert.doesNotMatch(out, /call bob/);
+});
+
+test('search with no matches returns empty string', () => {
+  const path = tmp();
+  add({ positionals: ['hi'], flags: {} }, { path });
+  assert.equal(search({ positionals: ['zzz'], flags: {} }, { path }), '');
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/search.js`
+```js
+import { loadNotes } from '../storage.js';
+import { formatLine } from '../helpers.js';
+
+export function search({ positionals }, { path }) {
+  const term = positionals[0] ?? '';
+  return loadNotes(path)
+    .filter((n) => n.text.includes(term))
+    .map(formatLine)
+    .join('\n');
+}
+```
+
+Run → 2 pass. Commit: `git commit -am "feat: search command"`
+
+---
+
+## Task 9: `count`
+
+### Test — `test/count.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { count } from '../src/commands/count.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('count returns total', () => {
+  const path = tmp();
+  add({ positionals: ['a'], flags: {} }, { path });
+  add({ positionals: ['b'], flags: {} }, { path });
+  assert.equal(count({ positionals: [], flags: {} }, { path }), '2');
+});
+
+test('count --tag filters', () => {
+  const path = tmp();
+  add({ positionals: ['a'], flags: { tag: 'x' } }, { path });
+  add({ positionals: ['b'], flags: {} }, { path });
+  assert.equal(count({ positionals: [], flags: { tag: 'x' } }, { path }), '1');
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/count.js`
+```js
+import { loadNotes } from '../storage.js';
+import { filterByTag } from '../helpers.js';
+
+export function count({ flags }, { path }) {
+  return String(filterByTag(loadNotes(path), flags.tag).length);
+}
+```
+
+Run → 2 pass. Commit: `git commit -am "feat: count command"`
+
+---
+
+## Task 10: `export` + CLI wiring
+
+### Test — `test/export.test.js`
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands/add.js';
+import { exportCmd } from '../src/commands/export.js';
+
+const tmp = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('export prints filtered notes as JSON array', () => {
+  const path = tmp();
+  add({ positionals: ['a'], flags: { tag: 'x' } }, { path });
+  add({ positionals: ['b'], flags: {} }, { path });
+  const parsed = JSON.parse(exportCmd({ positionals: [], flags: { tag: 'x' } }, { path }));
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].text, 'a');
+});
+```
+
+Run → fails.
+
+### Implement — `src/commands/export.js`
+```js
+import { loadNotes } from '../storage.js';
+import { filterByTag } from '../helpers.js';
+
+export function exportCmd({ flags }, { path }) {
+  return JSON.stringify(filterByTag(loadNotes(path), flags.tag), null, 2);
+}
+```
+
+Run → 1 pass.
+
+### Wire the CLI — `bin/note.js`
+```js
+#!/usr/bin/env node
+import { parseArgs } from '../src/parseArgs.js';
+import { DEFAULT_PATH } from '../src/storage.js';
+import { add } from '../src/commands/add.js';
+import { show } from '../src/commands/show.js';
+import { rm } from '../src/commands/rm.js';
+import { tag } from '../src/commands/tag.js';
+import { untag } from '../src/commands/untag.js';
+import { list } from '../src/commands/list.js';
+import { search } from '../src/commands/search.js';
+import { count } from '

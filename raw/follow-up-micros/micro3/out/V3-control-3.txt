@@ -1,0 +1,803 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a local link-shortener database stored as JSON at `~/.shorten/links.json`. The CLI has three commands: `add`, `resolve`, and `list`. All three share a single storage module.
+
+**Tech constraints:**
+- Node 20+
+- No dependencies beyond the Node standard library
+- Tests with `node:test` (built-in)
+- TDD required (write failing test → run → implement → run → commit)
+
+**Project layout we will create:**
+
+```
+.
+├── package.json
+├── bin/
+│   └── shorten.js          # CLI entry point (arg parsing + dispatch)
+├── src/
+│   ├── storage.js          # shared JSON storage module
+│   └── commands.js         # add / resolve / list logic
+└── test/
+    ├── storage.test.js
+    └── commands.test.js
+```
+
+**Storage data shape.** The JSON file contains an array of records, preserving insertion order:
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "xY9z01", "url": "https://nodejs.org" }
+  ]
+}
+```
+
+We use an array (not an object map) so that `list` can print "in the order added" trivially.
+
+---
+
+## Prerequisite: Project Bootstrap
+
+Before Task 1, set up the repo skeleton. Do this exactly once.
+
+### Step 0.1 — Create `package.json`
+
+Create a file `package.json` at the repo root with this exact content:
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "description": "Local link-shortener CLI",
+  "type": "module",
+  "bin": {
+    "shorten": "bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+```
+
+Notes:
+- `"type": "module"` means all `.js` files use ESM (`import`/`export`).
+- `node --test` auto-discovers files matching `*.test.js`.
+
+### Step 0.2 — Create empty directories and placeholder files
+
+Run:
+
+```bash
+mkdir -p bin src test
+```
+
+### Step 0.3 — Verify Node version
+
+Run:
+
+```bash
+node --version
+```
+
+Expected output: `v20.x.x` or higher (e.g., `v20.11.0`). If lower, stop and install Node 20+.
+
+### Step 0.4 — Commit the skeleton
+
+```bash
+git init    # if not already a git repo
+git add package.json
+git commit -m "Bootstrap shorten CLI package"
+```
+
+---
+
+## Task 1: Shared Storage Module
+
+The storage module is shared by all three commands. It reads/writes the JSON file, creates it on first use, and handles corrupt files. We build it first because the other tasks depend on it.
+
+### Storage module API (the contract we will implement)
+
+`src/storage.js` exports:
+
+- `defaultPath()` → returns `path.join(os.homedir(), '.shorten', 'links.json')`.
+- `load(filePath)` → returns `{ links: [...] }`. If the file does not exist, returns `{ links: [] }`. If the file is corrupt (invalid JSON or wrong shape), throws an `Error` whose message starts with `Corrupt storage file`.
+- `save(filePath, data)` → ensures the parent directory exists, then writes `data` as pretty-printed JSON.
+
+We pass `filePath` explicitly into every function so tests can use a temp file instead of the real home directory.
+
+### Step 1.1 — Write the failing test for `load` on a missing file
+
+Create `test/storage.test.js` with this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import { load, save, defaultPath } from '../src/storage.js';
+
+async function makeTempDir() {
+  return mkdtemp(path.join(tmpdir(), 'shorten-test-'));
+}
+
+test('load returns empty links when file does not exist', async () => {
+  const dir = await makeTempDir();
+  const file = path.join(dir, 'links.json');
+  try {
+    const data = await load(file);
+    assert.deepEqual(data, { links: [] });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 1.2 — Run the test (expect failure)
+
+```bash
+node --test
+```
+
+Expected: the test run fails because `../src/storage.js` does not exist yet. You will see an error like:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../src/storage.js'
+```
+
+### Step 1.3 — Implement enough of `src/storage.js` to pass
+
+Create `src/storage.js`:
+
+```js
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+export function defaultPath() {
+  return path.join(os.homedir(), '.shorten', 'links.json');
+}
+
+export async function load(filePath) {
+  let raw;
+  try {
+    raw = await readFile(filePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { links: [] };
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Corrupt storage file at ${filePath}: invalid JSON`);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new Error(`Corrupt storage file at ${filePath}: unexpected shape`);
+  }
+
+  return parsed;
+}
+
+export async function save(filePath, data) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+}
+```
+
+### Step 1.4 — Run the test (expect pass)
+
+```bash
+node --test
+```
+
+Expected: 1 test passing. Output includes:
+
+```
+# tests 1
+# pass 1
+# fail 0
+```
+
+### Step 1.5 — Add the round-trip test (save then load)
+
+Append this test to `test/storage.test.js`:
+
+```js
+test('save writes data that load reads back identically', async () => {
+  const dir = await makeTempDir();
+  const file = path.join(dir, 'nested', 'links.json'); // nested dir tests mkdir
+  try {
+    const data = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+    await save(file, data);
+    const loaded = await load(file);
+    assert.deepEqual(loaded, data);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 1.6 — Run the tests (expect pass)
+
+```bash
+node --test
+```
+
+Expected: 2 tests passing. The `save` implementation already creates nested directories via `mkdir(..., { recursive: true })`, so this passes without code changes.
+
+```
+# tests 2
+# pass 2
+# fail 0
+```
+
+### Step 1.7 — Add corrupt-file tests
+
+Append to `test/storage.test.js`:
+
+```js
+test('load throws "Corrupt storage file" on invalid JSON', async () => {
+  const dir = await makeTempDir();
+  const file = path.join(dir, 'links.json');
+  try {
+    await writeFile(file, '{ not valid json', 'utf8');
+    await assert.rejects(
+      () => load(file),
+      (err) => err.message.startsWith('Corrupt storage file'),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('load throws "Corrupt storage file" on wrong shape', async () => {
+  const dir = await makeTempDir();
+  const file = path.join(dir, 'links.json');
+  try {
+    await writeFile(file, JSON.stringify({ notLinks: 1 }), 'utf8');
+    await assert.rejects(
+      () => load(file),
+      (err) => err.message.startsWith('Corrupt storage file'),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('defaultPath ends with .shorten/links.json', () => {
+  const p = defaultPath();
+  assert.ok(p.endsWith(path.join('.shorten', 'links.json')));
+});
+```
+
+### Step 1.8 — Run the tests (expect pass)
+
+```bash
+node --test
+```
+
+Expected: 5 tests passing.
+
+```
+# tests 5
+# pass 5
+# fail 0
+```
+
+These pass because `load` already covers both corrupt cases and `defaultPath` is already implemented.
+
+### Step 1.9 — Commit
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add shared JSON storage module with corrupt-file handling"
+```
+
+---
+
+## Task 2: `add` and `resolve` Commands
+
+We now build the command logic. The `add` command generates codes, validates URLs, and rejects duplicate codes. The `resolve` command looks up a code. Both use the storage module from Task 1.
+
+### Commands module API (the contract we will implement)
+
+`src/commands.js` exports:
+
+- `generateCode()` → returns a random 6-character alphanumeric string (chars from `[A-Za-z0-9]`).
+- `validateUrl(url)` → returns `true` if `url` parses as an `http:` or `https:` URL, else `false`.
+- `add(filePath, url, options)` → `options` is `{ code? }`. Validates the URL (throws `Error('Invalid URL: <url>')` if invalid). Determines the code (provided or generated). If the code already exists, throws `Error('Code already exists: <code>')`. Otherwise appends `{ code, url }`, saves, and returns the `code` string.
+- `resolve(filePath, code)` → returns the stored URL string for `code`, or throws `Error('Unknown code: <code>')`.
+
+All functions that touch storage take `filePath` first so tests use a temp file.
+
+### Step 2.1 — Write failing tests for `validateUrl` and `generateCode`
+
+Create `test/commands.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import { load } from '../src/storage.js';
+import {
+  generateCode,
+  validateUrl,
+  add,
+  resolve,
+} from '../src/commands.js';
+
+async function makeTempFile() {
+  const dir = await mkdtemp(path.join(tmpdir(), 'shorten-cmd-'));
+  return { dir, file: path.join(dir, 'links.json') };
+}
+
+test('generateCode returns a 6-char alphanumeric string', () => {
+  const code = generateCode();
+  assert.equal(code.length, 6);
+  assert.match(code, /^[A-Za-z0-9]{6}$/);
+});
+
+test('generateCode returns different codes across calls', () => {
+  const codes = new Set();
+  for (let i = 0; i < 20; i++) codes.add(generateCode());
+  // With 62^6 space, 20 calls colliding is essentially impossible.
+  assert.ok(codes.size > 1);
+});
+
+test('validateUrl accepts http and https', () => {
+  assert.equal(validateUrl('http://example.com'), true);
+  assert.equal(validateUrl('https://example.com/path?q=1'), true);
+});
+
+test('validateUrl rejects non-http schemes and garbage', () => {
+  assert.equal(validateUrl('ftp://example.com'), false);
+  assert.equal(validateUrl('not a url'), false);
+  assert.equal(validateUrl(''), false);
+});
+```
+
+### Step 2.2 — Run the tests (expect failure)
+
+```bash
+node --test
+```
+
+Expected: failure because `../src/commands.js` does not exist:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../src/commands.js'
+```
+
+### Step 2.3 — Implement `generateCode` and `validateUrl`
+
+Create `src/commands.js`:
+
+```js
+import { randomInt } from 'node:crypto';
+import { load, save } from './storage.js';
+
+const ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+export function generateCode() {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += ALPHABET[randomInt(ALPHABET.length)];
+  }
+  return code;
+}
+
+export function validateUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+```
+
+### Step 2.4 — Run the tests (expect pass)
+
+```bash
+node --test
+```
+
+Expected: the 4 new command tests pass, plus the 5 storage tests still pass.
+
+```
+# tests 9
+# pass 9
+# fail 0
+```
+
+### Step 2.5 — Write failing tests for `add` and `resolve`
+
+Append to `test/commands.test.js`:
+
+```js
+test('add stores a url with a generated code and returns it', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    const code = await add(file, 'https://example.com', {});
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const data = await load(file);
+    assert.deepEqual(data.links, [{ code, url: 'https://example.com' }]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add uses an explicit --code when provided', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    const code = await add(file, 'https://example.com', { code: 'mycode' });
+    assert.equal(code, 'mycode');
+    const data = await load(file);
+    assert.deepEqual(data.links, [{ code: 'mycode', url: 'https://example.com' }]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects an invalid url', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    await assert.rejects(
+      () => add(file, 'not-a-url', {}),
+      (err) => err.message === 'Invalid URL: not-a-url',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects a duplicate code', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    await add(file, 'https://a.com', { code: 'dup' });
+    await assert.rejects(
+      () => add(file, 'https://b.com', { code: 'dup' }),
+      (err) => err.message === 'Code already exists: dup',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve returns the stored url', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    await add(file, 'https://example.com', { code: 'foo' });
+    const url = await resolve(file, 'foo');
+    assert.equal(url, 'https://example.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve throws on unknown code', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    await assert.rejects(
+      () => resolve(file, 'nope'),
+      (err) => err.message === 'Unknown code: nope',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 2.6 — Run the tests (expect failure)
+
+```bash
+node --test
+```
+
+Expected: the 6 new tests fail because `add` and `resolve` are not exported yet. You will see `TypeError: add is not a function` (and similar for `resolve`).
+
+### Step 2.7 — Implement `add` and `resolve`
+
+Append to `src/commands.js`:
+
+```js
+export async function add(filePath, url, options = {}) {
+  if (!validateUrl(url)) {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  const data = await load(filePath);
+  const code = options.code ?? generateCode();
+
+  if (data.links.some((link) => link.code === code)) {
+    throw new Error(`Code already exists: ${code}`);
+  }
+
+  data.links.push({ code, url });
+  await save(filePath, data);
+  return code;
+}
+
+export async function resolve(filePath, code) {
+  const data = await load(filePath);
+  const found = data.links.find((link) => link.code === code);
+  if (!found) {
+    throw new Error(`Unknown code: ${code}`);
+  }
+  return found.url;
+}
+```
+
+### Step 2.8 — Run the tests (expect pass)
+
+```bash
+node --test
+```
+
+Expected: all 15 tests pass.
+
+```
+# tests 15
+# pass 15
+# fail 0
+```
+
+### Step 2.9 — Commit
+
+```bash
+git add src/commands.js test/commands.test.js
+git commit -m "Add 'add' and 'resolve' command logic with validation and dup handling"
+```
+
+---
+
+## Task 3: `list` Command and CLI Entry Point
+
+The `list` command shares data access with `resolve` (same `load` call). We add it to `src/commands.js`, then wire all three commands into the `bin/shorten.js` CLI entry point with argument parsing.
+
+### Additions to the commands API
+
+- `list(filePath)` → returns an array of `{ code, url }` records in insertion order (just `data.links`).
+
+### CLI behavior (`bin/shorten.js`)
+
+- `shorten add <url> [--code <code>]` → prints the resulting code on its own line. Exit 0.
+- `shorten resolve <code>` → prints the URL. Exit 0. If unknown, print error to stderr, exit 1.
+- `shorten list` → prints each pair as `<code>\t<url>`, one per line, in order added. Exit 0.
+- Unknown/missing command → print usage to stderr, exit 1.
+- Any thrown error → print `Error: <message>` to stderr, exit 1.
+
+### Step 3.1 — Write failing test for `list`
+
+Append to `test/commands.test.js`:
+
+```js
+test('list returns records in insertion order', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    await add(file, 'https://first.com', { code: 'one' });
+    await add(file, 'https://second.com', { code: 'two' });
+    await add(file, 'https://third.com', { code: 'three' });
+
+    const records = await list(file);
+    assert.deepEqual(records, [
+      { code: 'one', url: 'https://first.com' },
+      { code: 'two', url: 'https://second.com' },
+      { code: 'three', url: 'https://third.com' },
+    ]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('list returns empty array when nothing stored', async () => {
+  const { dir, file } = await makeTempFile();
+  try {
+    const records = await list(file);
+    assert.deepEqual(records, []);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+Also update the import line at the top of `test/commands.test.js` to include `list`:
+
+```js
+import {
+  generateCode,
+  validateUrl,
+  add,
+  resolve,
+  list,
+} from '../src/commands.js';
+```
+
+### Step 3.2 — Run the tests (expect failure)
+
+```bash
+node --test
+```
+
+Expected: the 2 new `list` tests fail with `TypeError: list is not a function` (or an import binding error, since `list` is not exported yet).
+
+### Step 3.3 — Implement `list`
+
+Append to `src/commands.js`:
+
+```js
+export async function list(filePath) {
+  const data = await load(filePath);
+  return data.links;
+}
+```
+
+### Step 3.4 — Run the tests (expect pass)
+
+```bash
+node --test
+```
+
+Expected: all 17 tests pass.
+
+```
+# tests 17
+# pass 17
+# fail 0
+```
+
+### Step 3.5 — Commit the `list` logic
+
+```bash
+git add src/commands.js test/commands.test.js
+git commit -m "Add 'list' command logic sharing storage access with resolve"
+```
+
+### Step 3.6 — Write the CLI entry point
+
+Create `bin/shorten.js`:
+
+```js
+#!/usr/bin/env node
+import { parseArgs } from 'node:util';
+import { defaultPath } from '../src/storage.js';
+import { add, resolve, list } from '../src/commands.js';
+
+const USAGE = `Usage:
+  shorten add <url> [--code <code>]
+  shorten resolve <code>
+  shorten list`;
+
+async function main(argv) {
+  const [command, ...rest] = argv;
+  const filePath = defaultPath();
+
+  switch (command) {
+    case 'add': {
+      const { values, positionals } = parseArgs({
+        args: rest,
+        options: { code: { type: 'string' } },
+        allowPositionals: true,
+      });
+      const url = positionals[0];
+      if (!url) throw new Error('add requires a <url> argument');
+      const code = await add(filePath, url, { code: values.code });
+      process.stdout.write(code + '\n');
+      break;
+    }
+    case 'resolve': {
+      const code = rest[0];
+      if (!code) throw new Error('resolve requires a <code> argument');
+      const url = await resolve(filePath, code);
+      process.stdout.write(url + '\n');
+      break;
+    }
+    case 'list': {
+      const records = await list(filePath);
+      for (const { code, url } of records) {
+        process.stdout.write(`${code}\t${url}\n`);
+      }
+      break;
+    }
+    default:
+      process.stderr.write(USAGE + '\n');
+      process.exit(1);
+  }
+}
+
+main(process.argv.slice(2)).catch((err) => {
+  process.stderr.write(`Error: ${err.message}\n`);
+  process.exit(1);
+});
+```
+
+### Step 3.7 — Make the entry point executable
+
+```bash
+chmod +x bin/shorten.js
+```
+
+### Step 3.8 — Manually verify the CLI end-to-end
+
+We use a throwaway `HOME` directory so we never touch the real `~/.shorten`. Run these commands one at a time:
+
+```bash
+export HOME="$(mktemp -d)"
+
+node bin/shorten.js add https://example.com --code demo
+```
+
+Expected output:
+
+```
+demo
+```
+
+```bash
+node bin/shorten.js add https://nodejs.org
+```
+
+Expected output: a random 6-char code, e.g.:
+
+```
+Xy7Qa2
+```
+
+```bash
+node bin/shorten.js resolve demo
+```
+
+Expected output:
+
+```
+https://example.com
+```
+
+```bash
+node bin/shorten.js list
+```
+
+Expected output (the random code matches what `add` printed above):
+
+```
+demo	https://example.com
+Xy7Qa2	https://nodejs.org
+```
+
+Now verify error cases:
+
+```bash
+node bin/shorten.js add not-a-url; echo "exit=$?"
+```
+
+Expected:
+
+```
+Error: Invalid URL: not-a-url
+exit=1
+```
+
+```bash
+node bin/shorten.js add https://x.com --code demo; ech

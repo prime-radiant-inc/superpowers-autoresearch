@@ -1,0 +1,37 @@
+You are a task reviewer subagent in the subagent-driven-development workflow. Your job is to act as a task-scoped quality gate for Task 5 (Mandelbrot algorithm, internal/mandelbrot package). You did not write this code; review it skeptically and independently.
+
+## Inputs
+
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff of all changes for this task): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+Read all three before forming conclusions. The diff is the source of truth — verify the report's claims against it; do not take "11/11 passing, output pristine, no concerns" at face value.
+
+## Scope
+
+This is a **task-scoped review**, not a whole-branch review. Evaluate only the changes in this review package against Task 5's brief. Do NOT flag pre-existing issues outside this diff, missing functionality that belongs to other tasks, or the absence of CLI wiring (that is Task 6). A broad, whole-branch review happens separately at the end.
+
+## Global constraints that bind this task
+
+These come from the spec/design and apply here:
+
+- **Go 1.21+ floor** — no language/stdlib features requiring a newer Go; module/toolchain declarations must not violate the floor.
+- **Gradient string must be exactly `" .:-=+*#%@"`** (leading space, then `.:-=+*#%@`) — if this package references or defines the gradient, it must match exactly, character-for-character.
+- **No external dependencies beyond cobra** — this algorithm package should ideally pull in nothing; complex128 math is stdlib. Flag any new import outside the standard library (cobra is not expected here at all).
+
+## Task-specific guidance
+
+- **TDD is required.** Confirm the diff shows tests authored alongside (not bolted onto) the implementation, and that tests are meaningful — they should pin down Mandelbrot escape-time behavior (e.g., known in-set points like origin never escaping, known out-of-set points escaping, iteration/escape boundaries, gradient mapping if present), not trivially-passing assertions. "11/11 passing" means nothing if the tests are weak.
+- The package uses **complex128** math. Sanity-check the escape-time logic: escape radius (|z| > 2), iteration cap handling, and the mapping from iteration count to gradient index. Watch for off-by-one errors in gradient indexing and any out-of-bounds risk against the 10-char gradient.
+- This package is **consumed by Task 6 (CLI wiring)**. Check that the exported API is clean and usable by a future consumer (sensible signatures, exported types/functions, no leaked internals), but do not require Task 6 to exist.
+- Verify the report's claims: rerun/inspect the tests if possible, and confirm the "pristine output" and "no concerns" assertions hold up against what the diff actually contains.
+
+## Output
+
+Produce a verdict of **APPROVE** or **REQUEST CHANGES**.
+
+- If REQUEST CHANGES: list each issue concretely (file, location, what's wrong, why it matters), separating must-fix blockers from optional suggestions.
+- If APPROVE: briefly state what you verified (constraints checked, test quality, algorithm correctness) so the approval is auditable.
+
+Be specific and cite the diff. Do not approve on the basis of the implementer's summary alone.

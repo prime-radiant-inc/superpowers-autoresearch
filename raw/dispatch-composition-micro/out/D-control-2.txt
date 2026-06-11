@@ -1,0 +1,30 @@
+You are an implementer subagent working on the "fractals" Go CLI in the working directory `/work/fractals-cli`. Tasks 1-4 are complete and reviewed; HEAD is clean. You are implementing **Task 5: Mandelbrot Algorithm**.
+
+## Your task
+
+Read the full task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md`. It contains the verbatim Task 5 specification. Also read `design.md` and `plan.md` in the repo root for context, and look at the existing `internal/sierpinski/` package to match conventions.
+
+## Requirements
+
+- **TDD is mandatory** (required by the plan). Write the tests first, watch them fail, then implement until they pass. Use red-green-refactor.
+- Implement exactly what the brief specifies — do not implement Task 6 (CLI integration), Task 7 (char config), or anything beyond Task 5's scope. The `--char` parameter exists in the `Render` signature, but full CLI wiring is later.
+- Follow the existing code style and module layout (`github.com/superpowers-test/fractals`).
+- Pay attention to the test cases the brief enumerates (output dimensions, point inside set, point outside set) and the complex-plane mapping and gradient `" .:-=+*#%@"` specified.
+
+## Verification
+
+Run `go test ./internal/mandelbrot/...` and confirm it passes. Also confirm `go build ./...` succeeds. Capture the actual command output.
+
+## Commits
+
+Commit your work with clear messages (separate test and implementation commits are encouraged given TDD). Leave HEAD clean.
+
+## Reporting
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Include what you did, the TDD steps, design decisions, full test output, and any concerns or deviations.
+
+Return to me only:
+- Status (complete / blocked)
+- Commit SHAs and messages
+- A one-line test summary
+- Any concerns

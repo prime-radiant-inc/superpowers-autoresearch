@@ -1,0 +1,783 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a local link-shortener database stored as JSON at `~/.shorten/links.json`. There are three commands: `add`, `resolve`, and `list`, all sharing a common storage module.
+
+**Tech constraints:**
+- Node 20+ (we rely on `node:test`, `node:fs`, `node:crypto`, `node:os`, `node:path`).
+- No third-party dependencies.
+- TDD: every code change is preceded by a failing test.
+
+**Project layout** (all paths relative to the repository root):
+
+```
+package.json
+bin/shorten.js          # CLI entry point (arg parsing + dispatch)
+src/storage.js          # shared JSON storage (load/save/add/get/list)
+src/commands.js         # command logic that uses storage
+test/storage.test.js
+test/commands.test.js
+```
+
+**Data model.** The JSON file holds a single object:
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" }
+  ]
+}
+```
+
+`links` is an array (not a map) so that insertion order is preserved for `list`.
+
+### Project setup (do this first, before Task 1)
+
+Run these commands from the repository root:
+
+```bash
+mkdir -p bin src test
+```
+
+Create `package.json` with exactly this content:
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+Verify the test runner works (it should report 0 tests, exit 0):
+
+```bash
+npm test
+```
+
+Expected output includes:
+
+```
+# tests 0
+# pass 0
+# fail 0
+```
+
+Commit:
+
+```bash
+git add package.json
+git commit -m "Project scaffolding for shorten CLI"
+```
+
+---
+
+## Task 1: Shared storage module
+
+This task builds `src/storage.js`, which every command depends on. It is responsible for locating the data file, loading it (handling missing and corrupt files), saving it, and providing add/get/list operations.
+
+### Storage module API
+
+`src/storage.js` will export these functions:
+
+- `getDataPath()` → returns the absolute path to `links.json` (`~/.shorten/links.json`), honoring the `SHORTEN_HOME` environment variable for testability.
+- `load(path)` → returns `{ links: [...] }`. If the file does not exist, returns `{ links: [] }`. If the file is corrupt (invalid JSON or wrong shape), throws an `Error` whose message contains `corrupt`.
+- `save(path, data)` → writes `data` as pretty-printed JSON, creating the parent directory if needed.
+- `addLink(data, code, url)` → mutates `data.links` by appending `{ code, url }`. Throws an `Error` whose message contains `already exists` if the code is already present. Returns `data`.
+- `getLink(data, code)` → returns the URL string for `code`, or `undefined` if absent.
+- `listLinks(data)` → returns the `data.links` array.
+
+We use `SHORTEN_HOME` to override the home directory so tests write to a temp dir instead of the real `~/.shorten`.
+
+### Step 1.1: Write failing tests for `getDataPath`
+
+Create `test/storage.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+
+import {
+  getDataPath,
+  load,
+  save,
+  addLink,
+  getLink,
+  listLinks,
+} from '../src/storage.js';
+
+test('getDataPath uses ~/.shorten/links.json by default', () => {
+  const prev = process.env.SHORTEN_HOME;
+  delete process.env.SHORTEN_HOME;
+  try {
+    const expected = path.join(os.homedir(), '.shorten', 'links.json');
+    assert.equal(getDataPath(), expected);
+  } finally {
+    if (prev !== undefined) process.env.SHORTEN_HOME = prev;
+  }
+});
+
+test('getDataPath honors SHORTEN_HOME', () => {
+  const prev = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = '/tmp/fake-home';
+  try {
+    assert.equal(getDataPath(), '/tmp/fake-home/links.json');
+  } finally {
+    if (prev !== undefined) process.env.SHORTEN_HOME = prev;
+    else delete process.env.SHORTEN_HOME;
+  }
+});
+```
+
+Run it (it must fail because `src/storage.js` does not exist yet):
+
+```bash
+npm test
+```
+
+Expected: failure with a module-not-found error mentioning `../src/storage.js`.
+
+### Step 1.2: Create `src/storage.js` with `getDataPath`
+
+Create `src/storage.js`:
+
+```js
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+
+function homeDir() {
+  return process.env.SHORTEN_HOME ?? path.join(os.homedir(), '.shorten');
+}
+
+export function getDataPath() {
+  return path.join(homeDir(), 'links.json');
+}
+```
+
+Run the tests:
+
+```bash
+npm test
+```
+
+Expected: the two `getDataPath` tests pass. (`load`/`save`/etc. are still undefined, so other tests in the file will fail at import — that's fine for now since we add their tests next. If the import itself fails because of the named imports for functions not yet defined, that is expected; proceed to add those functions before running again.)
+
+To avoid an import-time failure, add stub exports temporarily is NOT needed: ES module named imports of missing bindings throw at link time. So before running again, complete Steps 1.3–1.5 which add the remaining functions and their tests, then run once at the end.
+
+### Step 1.3: Add tests for `load` / `save`
+
+Append to `test/storage.test.js`:
+
+```js
+function tempHome() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'shorten-test-'));
+}
+
+test('load returns empty links when file is missing', () => {
+  const dir = tempHome();
+  const p = path.join(dir, 'links.json');
+  assert.deepEqual(load(p), { links: [] });
+});
+
+test('save then load round-trips data', () => {
+  const dir = tempHome();
+  const p = path.join(dir, 'nested', 'links.json');
+  const data = { links: [{ code: 'abc', url: 'https://x.com' }] };
+  save(p, data);
+  assert.ok(fs.existsSync(p), 'file should exist after save');
+  assert.deepEqual(load(p), data);
+});
+
+test('load throws on corrupt JSON', () => {
+  const dir = tempHome();
+  const p = path.join(dir, 'links.json');
+  fs.writeFileSync(p, '{ not valid json');
+  assert.throws(() => load(p), /corrupt/i);
+});
+
+test('load throws on wrong shape', () => {
+  const dir = tempHome();
+  const p = path.join(dir, 'links.json');
+  fs.writeFileSync(p, JSON.stringify({ links: 'nope' }));
+  assert.throws(() => load(p), /corrupt/i);
+});
+```
+
+### Step 1.4: Add tests for `addLink` / `getLink` / `listLinks`
+
+Append to `test/storage.test.js`:
+
+```js
+test('addLink appends a link and returns data', () => {
+  const data = { links: [] };
+  const result = addLink(data, 'abc', 'https://x.com');
+  assert.deepEqual(result.links, [{ code: 'abc', url: 'https://x.com' }]);
+});
+
+test('addLink preserves insertion order', () => {
+  const data = { links: [] };
+  addLink(data, 'one', 'https://1.com');
+  addLink(data, 'two', 'https://2.com');
+  assert.deepEqual(
+    data.links.map((l) => l.code),
+    ['one', 'two'],
+  );
+});
+
+test('addLink throws when code already exists', () => {
+  const data = { links: [{ code: 'dup', url: 'https://x.com' }] };
+  assert.throws(() => addLink(data, 'dup', 'https://y.com'), /already exists/i);
+});
+
+test('getLink returns url for known code', () => {
+  const data = { links: [{ code: 'abc', url: 'https://x.com' }] };
+  assert.equal(getLink(data, 'abc'), 'https://x.com');
+});
+
+test('getLink returns undefined for unknown code', () => {
+  const data = { links: [] };
+  assert.equal(getLink(data, 'nope'), undefined);
+});
+
+test('listLinks returns the links array', () => {
+  const links = [{ code: 'abc', url: 'https://x.com' }];
+  assert.deepEqual(listLinks({ links }), links);
+});
+```
+
+### Step 1.5: Implement the remaining storage functions
+
+Append to `src/storage.js`:
+
+```js
+export function load(filePath) {
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return { links: [] };
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Data file is corrupt (invalid JSON): ${filePath}`);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new Error(`Data file is corrupt (unexpected shape): ${filePath}`);
+  }
+
+  return parsed;
+}
+
+export function save(filePath, data) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+}
+
+export function addLink(data, code, url) {
+  if (data.links.some((l) => l.code === code)) {
+    throw new Error(`Code already exists: ${code}`);
+  }
+  data.links.push({ code, url });
+  return data;
+}
+
+export function getLink(data, code) {
+  const found = data.links.find((l) => l.code === code);
+  return found ? found.url : undefined;
+}
+
+export function listLinks(data) {
+  return data.links;
+}
+```
+
+Run the full test file:
+
+```bash
+npm test
+```
+
+Expected: all storage tests pass. Output includes:
+
+```
+# pass 13
+# fail 0
+```
+
+### Step 1.6: Commit
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add shared storage module"
+```
+
+---
+
+## Task 2: `add` command and CLI entry point
+
+This task builds the command layer (`src/commands.js`) and the CLI entry (`bin/shorten.js`), implementing `add` end to end. `resolve` and `list` are added in Task 3 but the dispatcher is built here.
+
+### Command layer API
+
+`src/commands.js` exports functions that take a `print` callback (so tests can capture output) plus arguments. Each returns nothing and throws on error. They use `getDataPath`, `load`, `save`, and the storage helpers from Task 1.
+
+- `cmdAdd({ url, code, print })` — validates `url`, generates a code if none given, adds and saves, then `print(code)`.
+- `generateCode()` — returns a random 6-char `[a-z0-9]` string (exported for testing).
+- `isValidUrl(url)` — returns boolean; true only for `http:`/`https:` URLs.
+
+### Step 2.1: Write failing tests for `generateCode` and `isValidUrl`
+
+Create `test/commands.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+
+import {
+  generateCode,
+  isValidUrl,
+  cmdAdd,
+} from '../src/commands.js';
+import { load, getDataPath } from '../src/storage.js';
+
+function withTempHome(fn) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorten-cmd-'));
+  const prev = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    return fn(dir);
+  } finally {
+    if (prev !== undefined) process.env.SHORTEN_HOME = prev;
+    else delete process.env.SHORTEN_HOME;
+  }
+}
+
+function capture() {
+  const lines = [];
+  return { print: (s) => lines.push(s), lines };
+}
+
+test('generateCode returns 6 alphanumeric lowercase chars', () => {
+  const code = generateCode();
+  assert.match(code, /^[a-z0-9]{6}$/);
+});
+
+test('generateCode produces varying codes', () => {
+  const a = generateCode();
+  const b = generateCode();
+  // Not a strict guarantee, but collision is astronomically unlikely.
+  assert.notEqual(a, b);
+});
+
+test('isValidUrl accepts http and https', () => {
+  assert.equal(isValidUrl('http://example.com'), true);
+  assert.equal(isValidUrl('https://example.com/path?q=1'), true);
+});
+
+test('isValidUrl rejects junk and non-http schemes', () => {
+  assert.equal(isValidUrl('not a url'), false);
+  assert.equal(isValidUrl('ftp://example.com'), false);
+  assert.equal(isValidUrl(''), false);
+});
+```
+
+Run it (fails: `src/commands.js` does not exist):
+
+```bash
+npm test
+```
+
+Expected: failure referencing `../src/commands.js`.
+
+### Step 2.2: Write failing tests for `cmdAdd`
+
+Append to `test/commands.test.js`:
+
+```js
+test('cmdAdd with explicit code stores and prints the code', () => {
+  withTempHome(() => {
+    const { print, lines } = capture();
+    cmdAdd({ url: 'https://example.com', code: 'mycode', print });
+    assert.deepEqual(lines, ['mycode']);
+    const data = load(getDataPath());
+    assert.deepEqual(data.links, [
+      { code: 'mycode', url: 'https://example.com' },
+    ]);
+  });
+});
+
+test('cmdAdd without code generates a 6-char code and prints it', () => {
+  withTempHome(() => {
+    const { print, lines } = capture();
+    cmdAdd({ url: 'https://example.com', print });
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /^[a-z0-9]{6}$/);
+    const data = load(getDataPath());
+    assert.equal(data.links[0].url, 'https://example.com');
+    assert.equal(data.links[0].code, lines[0]);
+  });
+});
+
+test('cmdAdd rejects invalid URLs', () => {
+  withTempHome(() => {
+    const { print } = capture();
+    assert.throws(
+      () => cmdAdd({ url: 'not a url', code: 'x', print }),
+      /invalid url/i,
+    );
+  });
+});
+
+test('cmdAdd rejects duplicate code', () => {
+  withTempHome(() => {
+    const { print } = capture();
+    cmdAdd({ url: 'https://a.com', code: 'dup', print });
+    assert.throws(
+      () => cmdAdd({ url: 'https://b.com', code: 'dup', print }),
+      /already exists/i,
+    );
+  });
+});
+```
+
+### Step 2.3: Implement `src/commands.js`
+
+Create `src/commands.js`:
+
+```js
+import crypto from 'node:crypto';
+import { getDataPath, load, save, addLink } from './storage.js';
+
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+export function generateCode() {
+  const bytes = crypto.randomBytes(6);
+  let out = '';
+  for (let i = 0; i < 6; i++) {
+    out += ALPHABET[bytes[i] % ALPHABET.length];
+  }
+  return out;
+}
+
+export function isValidUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+export function cmdAdd({ url, code, print }) {
+  if (!isValidUrl(url)) {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  const path = getDataPath();
+  const data = load(path);
+  const finalCode = code ?? generateCode();
+
+  addLink(data, finalCode, url); // throws on duplicate
+  save(path, data);
+  print(finalCode);
+}
+```
+
+Run the tests:
+
+```bash
+npm test
+```
+
+Expected: all command tests in this task pass, plus all storage tests from Task 1.
+
+### Step 2.4: Build the CLI entry point `bin/shorten.js`
+
+Create `bin/shorten.js`:
+
+```js
+#!/usr/bin/env node
+import { cmdAdd } from '../src/commands.js';
+
+function parseArgs(argv) {
+  // argv: process.argv.slice(2)
+  const command = argv[0];
+  const positionals = [];
+  const flags = {};
+  for (let i = 1; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--code') {
+      flags.code = argv[i + 1];
+      i++;
+    } else {
+      positionals.push(arg);
+    }
+  }
+  return { command, positionals, flags };
+}
+
+function main() {
+  const { command, positionals, flags } = parseArgs(process.argv.slice(2));
+  const print = (s) => process.stdout.write(s + '\n');
+
+  try {
+    switch (command) {
+      case 'add': {
+        const url = positionals[0];
+        if (!url) throw new Error('usage: shorten add <url> [--code <code>]');
+        cmdAdd({ url, code: flags.code, print });
+        break;
+      }
+      default:
+        throw new Error(`Unknown command: ${command ?? '(none)'}`);
+    }
+  } catch (err) {
+    process.stderr.write(`error: ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+main();
+```
+
+Make it executable:
+
+```bash
+chmod +x bin/shorten.js
+```
+
+### Step 2.5: Manually verify the CLI
+
+Run against a throwaway home dir so the real `~/.shorten` is untouched:
+
+```bash
+SHORTEN_HOME=/tmp/shorten-manual node bin/shorten.js add https://example.com --code demo
+```
+
+Expected output:
+
+```
+demo
+```
+
+Verify the file:
+
+```bash
+cat /tmp/shorten-manual/links.json
+```
+
+Expected:
+
+```json
+{
+  "links": [
+    {
+      "code": "demo",
+      "url": "https://example.com"
+    }
+  ]
+}
+```
+
+Verify error handling for a duplicate:
+
+```bash
+SHORTEN_HOME=/tmp/shorten-manual node bin/shorten.js add https://other.com --code demo; echo "exit=$?"
+```
+
+Expected:
+
+```
+error: Code already exists: demo
+exit=1
+```
+
+Clean up:
+
+```bash
+rm -rf /tmp/shorten-manual
+```
+
+### Step 2.6: Commit
+
+```bash
+git add src/commands.js bin/shorten.js test/commands.test.js
+git commit -m "Add 'add' command and CLI entry point"
+```
+
+---
+
+## Task 3: `resolve` and `list` commands
+
+This task adds `cmdResolve` and `cmdList` to `src/commands.js` (both reuse `load`/`getLink`/`listLinks` from Task 1) and wires them into `bin/shorten.js`.
+
+### New command API
+
+- `cmdResolve({ code, print })` — loads data, prints the URL for `code`; throws an `Error` whose message contains `unknown code` if absent.
+- `cmdList({ print })` — loads data and prints one line per link in insertion order, formatted as `code -> url`. Prints nothing when empty.
+
+### Step 3.1: Write failing tests for `cmdResolve` and `cmdList`
+
+Append to `test/commands.test.js`. First add the new imports — change the existing import line:
+
+```js
+import {
+  generateCode,
+  isValidUrl,
+  cmdAdd,
+} from '../src/commands.js';
+```
+
+to:
+
+```js
+import {
+  generateCode,
+  isValidUrl,
+  cmdAdd,
+  cmdResolve,
+  cmdList,
+} from '../src/commands.js';
+```
+
+Then append these tests at the end of the file:
+
+```js
+test('cmdResolve prints url for known code', () => {
+  withTempHome(() => {
+    const add = capture();
+    cmdAdd({ url: 'https://example.com', code: 'known', print: add.print });
+
+    const { print, lines } = capture();
+    cmdResolve({ code: 'known', print });
+    assert.deepEqual(lines, ['https://example.com']);
+  });
+});
+
+test('cmdResolve throws on unknown code', () => {
+  withTempHome(() => {
+    const { print } = capture();
+    assert.throws(
+      () => cmdResolve({ code: 'missing', print }),
+      /unknown code/i,
+    );
+  });
+});
+
+test('cmdList prints all pairs in insertion order', () => {
+  withTempHome(() => {
+    const add = capture();
+    cmdAdd({ url: 'https://1.com', code: 'one', print: add.print });
+    cmdAdd({ url: 'https://2.com', code: 'two', print: add.print });
+
+    const { print, lines } = capture();
+    cmdList({ print });
+    assert.deepEqual(lines, [
+      'one -> https://1.com',
+      'two -> https://2.com',
+    ]);
+  });
+});
+
+test('cmdList prints nothing when empty', () => {
+  withTempHome(() => {
+    const { print, lines } = capture();
+    cmdList({ print });
+    assert.deepEqual(lines, []);
+  });
+});
+```
+
+Run it (fails: `cmdResolve`/`cmdList` not exported yet):
+
+```bash
+npm test
+```
+
+Expected: import/link failure for the new named exports, or test failures referencing `cmdResolve is not a function`.
+
+### Step 3.2: Implement `cmdResolve` and `cmdList`
+
+Append to `src/commands.js`. First update the import at the top of the file — change:
+
+```js
+import { getDataPath, load, save, addLink } from './storage.js';
+```
+
+to:
+
+```js
+import {
+  getDataPath,
+  load,
+  save,
+  addLink,
+  getLink,
+  listLinks,
+} from './storage.js';
+```
+
+Then append these functions at the end of the file:
+
+```js
+export function cmdResolve({ code, print }) {
+  const data = load(getDataPath());
+  const url = getLink(data, code);
+  if (url === undefined) {
+    throw new Error(`Unknown code: ${code}`);
+  }
+  print(url);
+}
+
+export function cmdList({ print }) {
+  const data = load(getDataPath());
+  for (const link of listLinks(data)) {
+    print(`${link.code} -> ${link.url}`);
+  }
+}
+```
+
+Run the tests:
+
+```bash
+npm test
+```
+
+Expected: all tests pass.
+
+### Step 3.3: Wire `resolve` and `list` into the CLI
+
+Edit `bin/shorten.js`. Change the import line:
+
+```js
+import { cmdAdd } from '../src/commands.js';
+```
+
+to:
+
+```js
+import { cmdAdd

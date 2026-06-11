@@ -1,0 +1,616 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`. TDD throughout.
+
+## Project layout
+
+```
+notes-cli/
+  package.json
+  bin/note.js          # CLI entry, arg dispatch
+  src/storage.js       # load/save notes
+  src/commands.js      # one function per command
+  test/*.test.js
+```
+
+## Conventions
+
+A **note** is `{ id: string, text: string, tags: string[], created: string }`.
+- `id`: time-based, monotonic. Use `Date.now().toString(36) + counter`. Simpler: an incrementing integer stored alongside notes. We use a `nextId` counter in the storage file.
+- Storage file shape: `{ nextId: number, notes: Note[] }`.
+- `created`: `new Date().toISOString()`.
+
+Each command function takes `(args, deps)` where `deps = { load, save, now, out, err }` so tests inject fakes. `out`/`err` are functions taking a string; default to `console.log`/`console.error`. Functions **return an exit code** (0 success, 1 failure). This keeps everything pure-ish and testable.
+
+List-format line: `<id>  <text>  [tag1, tag2]` — tags omitted (no brackets) when empty:
+`<id>  <text>`.
+
+Run tests with `node --test`. Each task: write failing test → run (see it fail) → implement → run (see it pass) → commit.
+
+---
+
+## Task 0 — Project setup
+
+**Files:** `package.json`
+
+```json
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Create dirs: `mkdir -p bin src test`.
+
+**Verify:** `node --test` prints `tests 0` (no tests yet). Commit: `chore: project setup`.
+
+---
+
+## Task 1 — Storage (`load`/`save`)
+
+**Files:** `src/storage.js`, `test/storage.test.js`
+
+Requirements: load returns `{ nextId, notes }`; missing file returns a fresh empty store `{ nextId: 1, notes: [] }`; corrupt JSON returns the same empty store (do not crash); save writes pretty JSON and creates the dir.
+
+**Test** (`test/storage.test.js`):
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { load, save } from '../src/storage.js';
+
+function tmpFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return join(dir, 'sub', 'notes.json');
+}
+
+test('load missing file returns empty store', () => {
+  assert.deepEqual(load(tmpFile()), { nextId: 1, notes: [] });
+});
+
+test('load corrupt file returns empty store', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  const f = join(dir, 'notes.json');
+  writeFileSync(f, 'not json{');
+  assert.deepEqual(load(f), { nextId: 1, notes: [] });
+});
+
+test('save then load round-trips', () => {
+  const f = tmpFile();
+  const store = { nextId: 5, notes: [{ id: '4', text: 'hi', tags: ['a'], created: '2020-01-01T00:00:00.000Z' }] };
+  save(f, store);
+  assert.deepEqual(load(f), store);
+});
+```
+
+Run: `node --test` → fails (`Cannot find module`).
+
+**Implement** (`src/storage.js`):
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+export const DEFAULT_PATH = join(homedir(), '.notes', 'notes.json');
+const EMPTY = () => ({ nextId: 1, notes: [] });
+
+export function load(path = DEFAULT_PATH) {
+  let raw;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch {
+    return EMPTY();
+  }
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object' || !Array.isArray(data.notes)) return EMPTY();
+    return { nextId: data.nextId ?? 1, notes: data.notes };
+  } catch {
+    return EMPTY();
+  }
+}
+
+export function save(path = DEFAULT_PATH, store) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(store, null, 2));
+}
+```
+
+Run: `node --test` → all pass. Commit: `feat: storage load/save with corrupt-file handling`.
+
+---
+
+## Shared helpers (added incrementally, defined now for reference)
+
+In `src/commands.js` we will build these helpers as commands need them:
+
+```js
+// id lookup: returns index or -1
+function findIndex(notes, id) {
+  return notes.findIndex(n => n.id === id);
+}
+
+// filtering used by list/search/count/export
+function filterByTag(notes, tag) {
+  return tag ? notes.filter(n => n.tags.includes(tag)) : notes;
+}
+
+function formatLine(n) {
+  return n.tags.length ? `${n.id}  ${n.text}  [${n.tags.join(', ')}]` : `${n.id}  ${n.text}`;
+}
+```
+
+Each command receives `deps`. A shared test helper builds deps over an in-memory store:
+
+```js
+// test/helpers.js
+export function makeDeps(initial = { nextId: 1, notes: [] }) {
+  let store = JSON.parse(JSON.stringify(initial));
+  const outLines = [], errLines = [];
+  return {
+    deps: {
+      load: () => store,
+      save: (s) => { store = s; },
+      now: () => '2020-01-01T00:00:00.000Z',
+      out: (s) => outLines.push(s),
+      err: (s) => errLines.push(s),
+    },
+    outLines, errLines,
+    getStore: () => store,
+  };
+}
+```
+Create `test/helpers.js` with the above now. Commit with Task 2.
+
+`bin/note.js` dispatches; built in Task 9. Until then commands are tested directly.
+
+---
+
+## Task 2 — `add`
+
+**Files:** `src/commands.js`, `test/add.test.js`, `test/helpers.js`
+
+`add(args, deps)`: `args` is the array after the command word, e.g. `['hello', '--tag', 'work']`. Parse optional `--tag`. If text empty/whitespace → `err('text required')`, return 1. Else create note with `id = String(store.nextId)`, increment nextId, push, save, `out(id)`, return 0.
+
+**Test** (`test/add.test.js`):
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { add } from '../src/commands.js';
+
+test('add creates note and prints id', () => {
+  const h = makeDeps();
+  const code = add(['hello'], h.deps);
+  assert.equal(code, 0);
+  assert.deepEqual(h.outLines, ['1']);
+  assert.deepEqual(h.getStore().notes[0], {
+    id: '1', text: 'hello', tags: [], created: '2020-01-01T00:00:00.000Z',
+  });
+  assert.equal(h.getStore().nextId, 2);
+});
+
+test('add with tag', () => {
+  const h = makeDeps();
+  add(['hello', '--tag', 'work'], h.deps);
+  assert.deepEqual(h.getStore().notes[0].tags, ['work']);
+});
+
+test('add empty text fails', () => {
+  const h = makeDeps();
+  const code = add(['  '], h.deps);
+  assert.equal(code, 1);
+  assert.deepEqual(h.errLines, ['text required']);
+  assert.equal(h.getStore().notes.length, 0);
+});
+```
+
+Run → fails. **Implement** (`src/commands.js`):
+```js
+function parseTag(args) {
+  const i = args.indexOf('--tag');
+  if (i === -1) return { rest: args, tag: undefined };
+  const tag = args[i + 1];
+  const rest = args.slice(0, i).concat(args.slice(i + 2));
+  return { rest, tag };
+}
+
+export function add(args, deps) {
+  const { rest, tag } = parseTag(args);
+  const text = rest.join(' ').trim();
+  if (!text) { deps.err('text required'); return 1; }
+  const store = deps.load();
+  const id = String(store.nextId);
+  store.nextId += 1;
+  store.notes.push({ id, text, tags: tag ? [tag] : [], created: deps.now() });
+  deps.save(store);
+  deps.out(id);
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: add command`.
+
+---
+
+## Task 3 — `show`
+
+**Files:** `src/commands.js`, `test/show.test.js`
+
+`show(args, deps)`: `args[0]` is id. If not found → `err('note <id> not found')`, return 1. Else print three lines: text, `tags: a, b` (or `tags: (none)`), `created: <iso>`.
+
+**Test:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { show } from '../src/commands.js';
+
+const store = { nextId: 2, notes: [{ id: '1', text: 'hi', tags: ['a'], created: '2020-01-01T00:00:00.000Z' }] };
+
+test('show prints note', () => {
+  const h = makeDeps(store);
+  const code = show(['1'], h.deps);
+  assert.equal(code, 0);
+  assert.deepEqual(h.outLines, ['hi', 'tags: a', 'created: 2020-01-01T00:00:00.000Z']);
+});
+
+test('show missing fails', () => {
+  const h = makeDeps(store);
+  assert.equal(show(['9'], h.deps), 1);
+  assert.deepEqual(h.errLines, ['note 9 not found']);
+});
+```
+
+Run → fails. **Implement** — add the shared `findIndex` helper plus:
+```js
+function findIndex(notes, id) { return notes.findIndex(n => n.id === id); }
+
+export function show(args, deps) {
+  const id = args[0];
+  const store = deps.load();
+  const i = findIndex(store.notes, id);
+  if (i === -1) { deps.err(`note ${id} not found`); return 1; }
+  const n = store.notes[i];
+  deps.out(n.text);
+  deps.out(`tags: ${n.tags.length ? n.tags.join(', ') : '(none)'}`);
+  deps.out(`created: ${n.created}`);
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: show command`.
+
+---
+
+## Task 4 — `rm`
+
+**Files:** `src/commands.js`, `test/rm.test.js`
+
+`rm(args, deps)`: same id handling (use `findIndex`). On success remove note, save, `out('deleted <id>')`, return 0. Missing → same error as show, return 1.
+
+**Test:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { rm } from '../src/commands.js';
+
+const store = { nextId: 3, notes: [
+  { id: '1', text: 'a', tags: [], created: 'x' },
+  { id: '2', text: 'b', tags: [], created: 'x' },
+] };
+
+test('rm deletes', () => {
+  const h = makeDeps(store);
+  assert.equal(rm(['1'], h.deps), 0);
+  assert.deepEqual(h.outLines, ['deleted 1']);
+  assert.deepEqual(h.getStore().notes.map(n => n.id), ['2']);
+});
+
+test('rm missing fails', () => {
+  const h = makeDeps(store);
+  assert.equal(rm(['9'], h.deps), 1);
+  assert.deepEqual(h.errLines, ['note 9 not found']);
+});
+```
+
+Run → fails. **Implement:**
+```js
+export function rm(args, deps) {
+  const id = args[0];
+  const store = deps.load();
+  const i = findIndex(store.notes, id);
+  if (i === -1) { deps.err(`note ${id} not found`); return 1; }
+  store.notes.splice(i, 1);
+  deps.save(store);
+  deps.out(`deleted ${id}`);
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: rm command`.
+
+---
+
+## Task 5 — `tag`
+
+**Files:** `src/commands.js`, `test/tag.test.js`
+
+`tag(args, deps)`: `args[0]`=id, `args[1]`=tag. Missing note → standard error, return 1. Add tag if not already present (no duplicates), save, `out('tagged <id> <tag>')`, return 0.
+
+**Test:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { tag } from '../src/commands.js';
+
+const store = { nextId: 2, notes: [{ id: '1', text: 'a', tags: ['x'], created: 'x' }] };
+
+test('tag adds', () => {
+  const h = makeDeps(store);
+  assert.equal(tag(['1', 'y'], h.deps), 0);
+  assert.deepEqual(h.getStore().notes[0].tags, ['x', 'y']);
+  assert.deepEqual(h.outLines, ['tagged 1 y']);
+});
+
+test('tag duplicate is no-op on array', () => {
+  const h = makeDeps(store);
+  tag(['1', 'x'], h.deps);
+  assert.deepEqual(h.getStore().notes[0].tags, ['x']);
+});
+
+test('tag missing note fails', () => {
+  const h = makeDeps(store);
+  assert.equal(tag(['9', 'y'], h.deps), 1);
+});
+```
+
+Run → fails. **Implement:**
+```js
+export function tag(args, deps) {
+  const [id, t] = args;
+  const store = deps.load();
+  const i = findIndex(store.notes, id);
+  if (i === -1) { deps.err(`note ${id} not found`); return 1; }
+  if (!store.notes[i].tags.includes(t)) store.notes[i].tags.push(t);
+  deps.save(store);
+  deps.out(`tagged ${id} ${t}`);
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: tag command`.
+
+---
+
+## Task 6 — `untag`
+
+**Files:** `src/commands.js`, `test/untag.test.js`
+
+`untag(args, deps)`: missing note → standard error, return 1. If tag present, remove and `out('untagged <id> <tag>')`. If tag absent, `err('tag <tag> not present on <id>')`, return 1.
+
+**Test:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { untag } from '../src/commands.js';
+
+const store = { nextId: 2, notes: [{ id: '1', text: 'a', tags: ['x', 'y'], created: 'x' }] };
+
+test('untag removes', () => {
+  const h = makeDeps(store);
+  assert.equal(untag(['1', 'x'], h.deps), 0);
+  assert.deepEqual(h.getStore().notes[0].tags, ['y']);
+  assert.deepEqual(h.outLines, ['untagged 1 x']);
+});
+
+test('untag absent tag fails', () => {
+  const h = makeDeps(store);
+  assert.equal(untag(['1', 'z'], h.deps), 1);
+  assert.deepEqual(h.errLines, ['tag z not present on 1']);
+});
+
+test('untag missing note fails', () => {
+  const h = makeDeps(store);
+  assert.equal(untag(['9', 'x'], h.deps), 1);
+});
+```
+
+Run → fails. **Implement:**
+```js
+export function untag(args, deps) {
+  const [id, t] = args;
+  const store = deps.load();
+  const i = findIndex(store.notes, id);
+  if (i === -1) { deps.err(`note ${id} not found`); return 1; }
+  const tags = store.notes[i].tags;
+  const ti = tags.indexOf(t);
+  if (ti === -1) { deps.err(`tag ${t} not present on ${id}`); return 1; }
+  tags.splice(ti, 1);
+  deps.save(store);
+  deps.out(`untagged ${id} ${t}`);
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: untag command`.
+
+---
+
+## Task 7 — `list` (introduces `filterByTag` + `formatLine`)
+
+**Files:** `src/commands.js`, `test/list.test.js`
+
+`list(args, deps)`: parse `--tag` via `parseTag`. Print one `formatLine` per note. Return 0. Empty list prints nothing.
+
+**Test:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { list } from '../src/commands.js';
+
+const store = { nextId: 3, notes: [
+  { id: '1', text: 'a', tags: ['work'], created: 'x' },
+  { id: '2', text: 'b', tags: [], created: 'x' },
+] };
+
+test('list all', () => {
+  const h = makeDeps(store);
+  assert.equal(list([], h.deps), 0);
+  assert.deepEqual(h.outLines, ['1  a  [work]', '2  b']);
+});
+
+test('list filtered by tag', () => {
+  const h = makeDeps(store);
+  list(['--tag', 'work'], h.deps);
+  assert.deepEqual(h.outLines, ['1  a  [work]']);
+});
+```
+
+Run → fails. **Implement** (add shared helpers + list):
+```js
+function filterByTag(notes, tag) {
+  return tag ? notes.filter(n => n.tags.includes(tag)) : notes;
+}
+function formatLine(n) {
+  return n.tags.length ? `${n.id}  ${n.text}  [${n.tags.join(', ')}]` : `${n.id}  ${n.text}`;
+}
+
+export function list(args, deps) {
+  const { tag } = parseTag(args);
+  const store = deps.load();
+  for (const n of filterByTag(store.notes, tag)) deps.out(formatLine(n));
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: list command with tag filter`.
+
+---
+
+## Task 8 — `search`, `count`, `export`
+
+These reuse Task 7 helpers. Implement all three (still one TDD cycle each; grouped to save words).
+
+**Files:** `src/commands.js`, `test/search.test.js`, `test/count.test.js`, `test/export.test.js`
+
+`search(args, deps)`: `args[0]`=term. Print `formatLine` for notes whose `text` includes term (case-sensitive substring). Return 0.
+
+`count(args, deps)`: parse `--tag`, print the filtered count as a string. Return 0.
+
+`export(args, deps)`: parse `--tag`, print `JSON.stringify(filtered, null, 2)`. Return 0.
+
+**test/search.test.js:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { search } from '../src/commands.js';
+
+const store = { nextId: 3, notes: [
+  { id: '1', text: 'buy milk', tags: [], created: 'x' },
+  { id: '2', text: 'call bob', tags: [], created: 'x' },
+] };
+
+test('search matches text', () => {
+  const h = makeDeps(store);
+  assert.equal(search(['milk'], h.deps), 0);
+  assert.deepEqual(h.outLines, ['1  buy milk']);
+});
+```
+
+**test/count.test.js:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { count } from '../src/commands.js';
+
+const store = { nextId: 3, notes: [
+  { id: '1', text: 'a', tags: ['w'], created: 'x' },
+  { id: '2', text: 'b', tags: [], created: 'x' },
+] };
+
+test('count all', () => {
+  const h = makeDeps(store);
+  count([], h.deps);
+  assert.deepEqual(h.outLines, ['2']);
+});
+test('count filtered', () => {
+  const h = makeDeps(store);
+  count(['--tag', 'w'], h.deps);
+  assert.deepEqual(h.outLines, ['1']);
+});
+```
+
+**test/export.test.js:**
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeps } from './helpers.js';
+import { export_ } from '../src/commands.js';
+
+const store = { nextId: 2, notes: [{ id: '1', text: 'a', tags: ['w'], created: 'x' }] };
+
+test('export prints json array', () => {
+  const h = makeDeps(store);
+  export_([], h.deps);
+  assert.deepEqual(JSON.parse(h.outLines[0]), store.notes);
+});
+```
+
+Run → fails. **Implement** (note `export` is a reserved word; export the function as `export_` and map the CLI name `export` to it in Task 9):
+```js
+export function search(args, deps) {
+  const term = args[0] ?? '';
+  const store = deps.load();
+  for (const n of store.notes) if (n.text.includes(term)) deps.out(formatLine(n));
+  return 0;
+}
+
+export function count(args, deps) {
+  const { tag } = parseTag(args);
+  const store = deps.load();
+  deps.out(String(filterByTag(store.notes, tag).length));
+  return 0;
+}
+
+export function export_(args, deps) {
+  const { tag } = parseTag(args);
+  const store = deps.load();
+  deps.out(JSON.stringify(filterByTag(store.notes, tag), null, 2));
+  return 0;
+}
+```
+
+Run → pass. Commit: `feat: search, count, export commands`.
+
+---
+
+## Task 9 — CLI entry & dispatch
+
+**Files:** `bin/note.js`, `test/cli.test.js`
+
+`bin/note.js` builds real `deps` (using `storage.load`/`save` bound to `DEFAULT_PATH`, `now = () => new Date().toISOString()`, `out`/`err` to console), dispatches on `argv[2]`, exits with the returned code. Unknown command → `err('unknown command: <x>')`, exit 1. No command → print usage, exit 1.
+
+**Test** (end-to-end via subprocess with a temp HOME so the real file is used):
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+function run(args, home) {
+  return execFileSync

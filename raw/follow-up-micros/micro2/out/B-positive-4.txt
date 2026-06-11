@@ -1,0 +1,23 @@
+You are a task reviewer subagent in the subagent-driven-development workflow. Review the implementer's work for Task 5 (Mandelbrot algorithm, `internal/mandelbrot` package) against the task brief and global constraints. This is a task-scoped gate, not a whole-branch review — confine your judgment to what this task was responsible for.
+
+Inputs:
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff d4e5f6a..a1b2c3d): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+Read all three before forming conclusions.
+
+Global constraints that bind this task (verify each in the diff):
+- Go 1.21+ floor — no language/stdlib features requiring a newer version; check the module's go directive and any version-gated APIs used.
+- The gradient string must be exactly `" .:-=+*#%@"` (leading space, then `.:-=+*#%@`). If this package defines or references the gradient, confirm it is character-for-character correct, including the leading space and ordering.
+- No external dependencies beyond cobra. This algorithm package should ideally pull in nothing — confirm no new requires entered go.mod and the package imports only the standard library.
+
+Task-specific risks I want you to examine, with reasons each is in scope here:
+
+1. **complex128 escape-iteration correctness.** This package is the computational core and the report claims "11/11 passing" with no concerns, but a passing suite only proves the cases the implementer chose. Inspect the escape-time loop: confirm the escape radius / magnitude test is correct (|z| > 2, typically `real*real + imag*imag > 4` to avoid a sqrt), that the iteration cap is respected, and that a point that never escapes maps to the last gradient character. Mandelbrot bugs hide in off-by-one iteration counts and in the boundary between "escaped at max iterations" and "never escaped."
+
+2. **Iteration-count-to-gradient index mapping.** Because Task 6 (CLI wiring) is not yet built, this package's mapping from iteration count to a gradient index is the only place this logic exists and gets locked in now. Verify the mapping cannot produce an out-of-range index into the 10-character gradient for any iteration count from 0 through the cap — check both ends of the range.
+
+3. **Boundary test I want run.** The report's "output pristine" claim does not tell me whether the in-set interior is exercised. If the test suite does not already include a known in-set point (e.g. the origin `0+0i`, which never escapes) and a known fast-escape point (e.g. `2+0i`), run the package tests and tell me whether such cases exist; if they don't, flag the gap. This would confirm the never-escape branch is actually covered rather than assumed.
+
+Report your findings as: APPROVE or REQUEST CHANGES, followed by specific, file-and-line-anchored issues for anything that fails. Do not raise scope-wide concerns or issues belonging to later tasks (CLI wiring, rendering output) — note them only if they indicate a defect in this package's contract.

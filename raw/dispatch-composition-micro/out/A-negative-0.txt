@@ -1,0 +1,28 @@
+You are implementing one task in the "fractals" Go CLI project (subagent-driven-development workflow). TDD is required: write failing tests first, then implement.
+
+Read your task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full text of your task. Follow it precisely.
+
+## Context
+
+- Working dir: `/work/fractals-cli`. Go 1.21, cobra. Tasks 1-4 are complete (project setup, cobra CLI framework, sierpinski algorithm + CLI subcommand). HEAD is clean.
+- Module path: `github.com/superpowers-test/fractals`. Your package goes in `internal/mandelbrot/`.
+- See `design.md` in the repo root for the full specification before implementing — defer to it for any rendering details.
+- This task is the **algorithm package only**. Do NOT add a CLI subcommand or touch `internal/cli/` — that is Task 6. Produce only `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`.
+- The exact signature to implement is `Render(width, height, maxIter int, char string) []string`. Task 6 will call this, so keep the signature exactly as specified.
+- For the `char` parameter: the brief specifies an empty/unset `char` uses the gradient `" .:-=+*#%@"`, and a provided `char` uses that single character for filled points. Implement this now since the tests depend on it; the CLI wiring comes in Task 6.
+- For reference on the existing package's conventions (test style, file layout), look at the completed `internal/sierpinski/` package.
+- Validation/error handling is explicitly Task 8 — do not add input validation here.
+
+## Verification
+
+Run `go test ./internal/mandelbrot/...` and ensure it passes. Confirm the three test cases from the brief are covered (output dimensions, point inside set at (0,0) → max-iteration char, point outside set at (2,0) → low-iteration char).
+
+## Reporting
+
+Write your full implementation report to `/work/fractals-cli/.git/sdd/task-5-report.md`. In your reply to me, return only:
+- status (complete / blocked)
+- commit hash(es)
+- a one-line test summary
+- any concerns or deviations
+
+Commit your work when tests pass (do not commit failing/partial work).

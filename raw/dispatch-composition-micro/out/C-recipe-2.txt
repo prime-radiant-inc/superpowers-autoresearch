@@ -1,0 +1,22 @@
+You are implementing Task 5 of the "fractals" Go CLI project — an ASCII fractal renderer. This task adds the Mandelbrot set rendering algorithm as a pure package in `internal/mandelbrot/`, mirroring the structure of the already-complete `internal/sierpinski/` package. There is no CLI wiring in this task; that comes in Task 6.
+
+Read this first — it is your requirements, with the exact values to use verbatim:
+`/work/fractals-cli/.git/sdd/task-5-brief.md`
+
+It contains the function signature, the complex-plane region bounds, the character gradient string, and the three required test cases. Use those exact values; do not paraphrase or substitute them.
+
+Context from earlier completed tasks the brief cannot know:
+- The module is `github.com/superpowers-test/fractals`, Go 1.21.
+- The sibling package `internal/sierpinski/` is already complete and reviewed; follow its conventions for file layout, package naming, and test style so the two packages stay consistent. Read it before you start.
+- This is a pure algorithm package — no cobra, no stdout printing, no flags here. Return `[]string` of rendered lines.
+
+TDD is required by the plan: write the tests in `internal/mandelbrot/mandelbrot_test.go` first and watch them fail before implementing `Render` in `internal/mandelbrot/mandelbrot.go`.
+
+Ambiguity resolutions:
+- The brief's gradient `" .:-=+*#%@"` runs from few-iterations (escapes immediately, i.e. outside the set) to max-iterations (never escapes, inside the set). Map low iteration counts to the leading space/`.` end and points reaching `maxIter` to the trailing `@`. The "inside set (0,0) maps to max-iteration character" test means (0,0) should produce `@`; "outside set (2,0) maps to low-iteration character" should produce a character at the leading end of the gradient.
+- The `char string` parameter: when non-empty, use that single string for every "filled"/in-set point instead of the gradient. In this task just ensure the signature accepts it and the gradient path works; the `--char` single-character behavior is fully exercised in Task 7, so implement the obvious interpretation but keep the gradient as the default when `char` is empty (`""`).
+- Validation of inputs is explicitly Task 8 — do not add input validation or error returns here.
+
+Verification before reporting: `go test ./internal/mandelbrot/...` must pass, and `go build ./...` must succeed.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return to me only: status, the commit hash(es), a one-line test summary, and any concerns. The report file should contain the full details (files changed, design decisions, test cases, anything the next task's implementer needs to know about the `Render` signature and behavior).

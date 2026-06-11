@@ -1,0 +1,26 @@
+You are implementing one task in the "fractals" Go CLI project. TDD is required by the plan.
+
+Read your task brief first: `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full task text. Do not expect the task description to be repeated here.
+
+## Context
+
+- Working dir: `/work/fractals-cli`. Go 1.21, cobra. HEAD is clean; Tasks 1-4 are complete (project setup, cobra CLI framework, sierpinski algorithm + CLI subcommand).
+- Module path: `github.com/superpowers-test/fractals`.
+- This task is **algorithm only** — create `internal/mandelbrot/mandelbrot.go` and its test. Do NOT wire any CLI subcommand; that is Task 6.
+- Follow the signature from the brief exactly: `Render(width, height, maxIter int, char string) []string`. Task 6 and Task 7 will call this signature, so keep it stable.
+- Character handling per the brief: map iteration count to the gradient `" .:-=+*#%@"` when `char` is empty; when a non-empty `char` is provided, use that single character for filled (in-set / high-iteration) points. (Task 7 will exercise the custom-char path, so implement it now even though CLI wiring comes later.)
+- Complex-plane region per the brief: real -2.5 to 1.0, imaginary -1.0 to 1.0, mapped onto the requested width/height.
+- Look at `internal/sierpinski/sierpinski.go` and its test for the established package layout, naming, and testing style; match those conventions.
+- Input validation and CLI integration are explicitly out of scope here (Tasks 6 and 8). Implement only what Task 5 specifies.
+
+## Workflow
+
+- Write tests first, watch them fail, then implement (TDD). Cover the three test cases named in the brief: output dimensions match requested width/height; point (0,0) maps to the max-iteration character; point (2,0) maps to a low-iteration character.
+- Verify with `go test ./internal/mandelbrot/...` and confirm the whole repo still builds (`go build ./...`).
+- Commit your work with a clear message.
+
+## Report
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`.
+
+Return only: status, commit hashes, a one-line test summary, and any concerns.

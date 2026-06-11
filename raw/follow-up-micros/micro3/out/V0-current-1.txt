@@ -1,0 +1,692 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We're building a Node.js CLI named `shorten` that manages a local JSON database of shortened links. The database lives at `~/.shorten/links.json`. There are three commands: `add`, `resolve`, and `list`. All three share a single storage module.
+
+**Tech constraints:**
+- Node 20+ (we rely on built-in `node:test`, `node:fs`, `node:os`, `node:path`, `node:crypto`).
+- No third-party dependencies.
+- TDD: each task writes a failing test first, runs it, implements, runs it again, then commits.
+
+**Project layout when complete:**
+```
+shorten/
+├── package.json
+├── bin/
+│   └── shorten.js          # CLI entry point (arg parsing + dispatch)
+├── src/
+│   ├── storage.js          # shared JSON read/write + data operations
+│   ├── add.js              # add command logic
+│   ├── resolve.js          # resolve command logic
+│   └── list.js             # list command logic
+└── test/
+    ├── storage.test.js
+    ├── add.test.js
+    ├── resolve.test.js
+    └── list.test.js
+```
+
+**Data model.** The JSON file is a single object whose shape is:
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "xyz789", "url": "https://other.com" }
+  ]
+}
+```
+We use an **array** (not a map) so that insertion order is preserved for `list`. Lookups by code are linear scans — fine for a local CLI.
+
+---
+
+## Project Setup
+
+Before Task 1, create the project skeleton.
+
+### Step 0.1 — Create directories and package.json
+
+Run:
+```bash
+mkdir -p shorten/bin shorten/src shorten/test
+cd shorten
+```
+
+Create `package.json` with exactly this content:
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+We use `"type": "module"` so all files use ES module `import`/`export` syntax.
+
+### Step 0.2 — Verify Node version
+
+Run:
+```bash
+node --version
+```
+Expected output: `v20.x.x` or higher (e.g. `v20.11.0`). If lower, stop and install Node 20+.
+
+### Step 0.3 — Verify the test runner works
+
+Run:
+```bash
+node --test
+```
+Expected output (no tests exist yet):
+```
+ℹ tests 0
+ℹ pass 0
+ℹ fail 0
+...
+```
+Exit code 0. This confirms `node --test` discovers `test/*.test.js` files.
+
+### Step 0.4 — Commit the skeleton
+
+```bash
+git init
+git add package.json
+git commit -m "Set up project skeleton"
+```
+
+---
+
+## Task 1: Shared Storage Module
+
+The storage module is the foundation. It handles:
+- Resolving the database file path (`~/.shorten/links.json`), overridable via an environment variable so tests don't touch the real home directory.
+- Reading the database, creating it on first use, and recovering from corrupt files.
+- Writing the database.
+- Adding a link (with duplicate-code detection).
+- Looking up a link by code.
+- Listing all links in insertion order.
+- Generating a random 6-character alphanumeric code.
+
+We expose these as named functions. Tests drive a temporary directory via the `SHORTEN_HOME` environment variable.
+
+### Design decisions
+
+- **Path override:** The function `dbPath()` returns `process.env.SHORTEN_HOME ? join(SHORTEN_HOME, 'links.json') : join(os.homedir(), '.shorten', 'links.json')`. This lets tests point at a temp dir.
+- **Corrupt file handling:** If the file exists but is not valid JSON, or its parsed value doesn't have an array `links` property, we treat it as empty (`{ links: [] }`) rather than crashing. This is the "reasonable" behavior the spec asks for: a corrupt DB shouldn't make the tool unusable.
+- **Code generation:** 6 characters from the alphabet `[a-z0-9]` (lowercase letters + digits, 36 chars), drawn using `crypto.randomInt` for uniform distribution.
+
+### Step 1.1 — Write the failing test
+
+Create `test/storage.test.js` with exactly this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import {
+  dbPath,
+  readDb,
+  writeDb,
+  addLink,
+  findLink,
+  listLinks,
+  generateCode,
+} from '../src/storage.js';
+
+// Create a fresh temp home for each test and point SHORTEN_HOME at it.
+async function withTempHome(run) {
+  const dir = await mkdtemp(join(tmpdir(), 'shorten-test-'));
+  const previous = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    await run(dir);
+  } finally {
+    if (previous === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = previous;
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+test('dbPath uses SHORTEN_HOME when set', async () => {
+  await withTempHome(async (dir) => {
+    assert.equal(dbPath(), join(dir, 'links.json'));
+  });
+});
+
+test('readDb returns empty links when file does not exist', async () => {
+  await withTempHome(async () => {
+    const db = await readDb();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('readDb recovers from corrupt JSON by returning empty links', async () => {
+  await withTempHome(async (dir) => {
+    await writeFile(join(dir, 'links.json'), 'this is not json{{{');
+    const db = await readDb();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('readDb recovers when JSON lacks a links array', async () => {
+  await withTempHome(async (dir) => {
+    await writeFile(join(dir, 'links.json'), JSON.stringify({ foo: 1 }));
+    const db = await readDb();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('writeDb creates the directory and file', async () => {
+  await withTempHome(async (dir) => {
+    await writeDb({ links: [{ code: 'abc123', url: 'https://x.com' }] });
+    assert.ok(existsSync(join(dir, 'links.json')));
+    const raw = await readFile(join(dir, 'links.json'), 'utf8');
+    assert.deepEqual(JSON.parse(raw), {
+      links: [{ code: 'abc123', url: 'https://x.com' }],
+    });
+  });
+});
+
+test('writeDb then readDb round-trips', async () => {
+  await withTempHome(async () => {
+    const db = { links: [{ code: 'zzz999', url: 'https://y.com' }] };
+    await writeDb(db);
+    assert.deepEqual(await readDb(), db);
+  });
+});
+
+test('addLink stores a link and persists it', async () => {
+  await withTempHome(async () => {
+    await addLink('code01', 'https://a.com');
+    assert.deepEqual(await readDb(), {
+      links: [{ code: 'code01', url: 'https://a.com' }],
+    });
+  });
+});
+
+test('addLink throws when code already exists', async () => {
+  await withTempHome(async () => {
+    await addLink('dup001', 'https://a.com');
+    await assert.rejects(
+      () => addLink('dup001', 'https://b.com'),
+      /code "dup001" already exists/,
+    );
+  });
+});
+
+test('findLink returns the url for a known code', async () => {
+  await withTempHome(async () => {
+    await addLink('find01', 'https://found.com');
+    assert.equal(await findLink('find01'), 'https://found.com');
+  });
+});
+
+test('findLink returns undefined for an unknown code', async () => {
+  await withTempHome(async () => {
+    assert.equal(await findLink('nope00'), undefined);
+  });
+});
+
+test('listLinks returns all links in insertion order', async () => {
+  await withTempHome(async () => {
+    await addLink('aaa111', 'https://1.com');
+    await addLink('bbb222', 'https://2.com');
+    await addLink('ccc333', 'https://3.com');
+    assert.deepEqual(await listLinks(), [
+      { code: 'aaa111', url: 'https://1.com' },
+      { code: 'bbb222', url: 'https://2.com' },
+      { code: 'ccc333', url: 'https://3.com' },
+    ]);
+  });
+});
+
+test('generateCode returns 6 alphanumeric lowercase chars', () => {
+  const code = generateCode();
+  assert.match(code, /^[a-z0-9]{6}$/);
+});
+
+test('generateCode is not constant across calls', () => {
+  const codes = new Set();
+  for (let i = 0; i < 50; i++) codes.add(generateCode());
+  // With 36^6 possibilities, 50 draws colliding into 1 value is effectively impossible.
+  assert.ok(codes.size > 1);
+});
+```
+
+### Step 1.2 — Run the test (expect failure)
+
+```bash
+node --test test/storage.test.js
+```
+Expected: failure because `../src/storage.js` does not exist. You'll see an error like:
+```
+Error: Cannot find module '.../src/storage.js'
+```
+
+### Step 1.3 — Implement the storage module
+
+Create `src/storage.js` with exactly this content:
+
+```js
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { randomInt } from 'node:crypto';
+
+const CODE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+// Resolve the database file path. SHORTEN_HOME lets tests redirect storage.
+export function dbPath() {
+  if (process.env.SHORTEN_HOME) {
+    return join(process.env.SHORTEN_HOME, 'links.json');
+  }
+  return join(homedir(), '.shorten', 'links.json');
+}
+
+// Read the database. Missing file => empty. Corrupt file => empty (recovered).
+export async function readDb() {
+  let raw;
+  try {
+    raw = await readFile(dbPath(), 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return { links: [] };
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { links: [] };
+  }
+
+  if (!parsed || !Array.isArray(parsed.links)) {
+    return { links: [] };
+  }
+  return { links: parsed.links };
+}
+
+// Write the database, creating the parent directory if needed.
+export async function writeDb(db) {
+  const path = dbPath();
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(db, null, 2) + '\n', 'utf8');
+}
+
+// Add a link. Throws if the code already exists.
+export async function addLink(code, url) {
+  const db = await readDb();
+  if (db.links.some((link) => link.code === code)) {
+    throw new Error(`code "${code}" already exists`);
+  }
+  db.links.push({ code, url });
+  await writeDb(db);
+}
+
+// Find the URL for a code, or undefined if not present.
+export async function findLink(code) {
+  const db = await readDb();
+  const match = db.links.find((link) => link.code === code);
+  return match ? match.url : undefined;
+}
+
+// Return all links in insertion order.
+export async function listLinks() {
+  const db = await readDb();
+  return db.links;
+}
+
+// Generate a random 6-character lowercase alphanumeric code.
+export function generateCode() {
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
+  }
+  return code;
+}
+```
+
+### Step 1.4 — Run the test (expect pass)
+
+```bash
+node --test test/storage.test.js
+```
+Expected: all storage tests pass. Output ends with something like:
+```
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+```
+Exit code 0.
+
+### Step 1.5 — Commit
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add shared storage module"
+```
+
+---
+
+## Task 2: `add` Command
+
+`shorten add <url> [--code <code>]` adds a URL.
+- Validates the URL (must parse as an absolute `http:`/`https:` URL).
+- If `--code` is omitted, generate a random code via `generateCode()`.
+- If a generated code happens to collide with an existing one, retry (up to a small bound) before failing.
+- If a user-supplied `--code` already exists, fail with a clear message.
+- On success, print the code.
+
+We implement the command as a function `runAdd(args)` in `src/add.js` that takes an array of CLI arguments (everything after `add`), does the work, and returns the code string. CLI wiring comes in the bin file (built in this task too, but tested via the command function for the core logic).
+
+### Design decisions
+
+- **URL validation:** Use the WHATWG `URL` constructor. A string is valid if `new URL(str)` succeeds **and** the resulting `protocol` is `http:` or `https:`. This rejects nonsense like `not a url` and also non-web schemes like `file:` or `javascript:`.
+- **Arg parsing:** Minimal hand-rolled parsing — we only need to find `<url>` (first non-flag positional) and an optional `--code <value>`. No external arg library (dependency-free requirement).
+- **Collision retry:** When generating a code, try up to 10 times to find an unused one. With 36^6 ≈ 2 billion combinations this is effectively never needed, but it makes generation robust.
+- **Errors:** `runAdd` throws `Error` on bad input; the bin layer catches and prints to stderr with exit code 1.
+
+### Step 2.1 — Write the failing test
+
+Create `test/add.test.js` with exactly this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { runAdd } from '../src/add.js';
+import { readDb, findLink } from '../src/storage.js';
+
+async function withTempHome(run) {
+  const dir = await mkdtemp(join(tmpdir(), 'shorten-test-'));
+  const previous = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    await run(dir);
+  } finally {
+    if (previous === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = previous;
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+test('runAdd with explicit --code stores and returns that code', async () => {
+  await withTempHome(async () => {
+    const code = await runAdd(['https://example.com', '--code', 'mycode']);
+    assert.equal(code, 'mycode');
+    assert.equal(await findLink('mycode'), 'https://example.com');
+  });
+});
+
+test('runAdd without --code generates a 6-char code', async () => {
+  await withTempHome(async () => {
+    const code = await runAdd(['https://example.com']);
+    assert.match(code, /^[a-z0-9]{6}$/);
+    assert.equal(await findLink(code), 'https://example.com');
+  });
+});
+
+test('runAdd accepts http and https urls', async () => {
+  await withTempHome(async () => {
+    await runAdd(['http://plain.com', '--code', 'httpc1']);
+    await runAdd(['https://secure.com', '--code', 'httpsc']);
+    assert.equal(await findLink('httpc1'), 'http://plain.com');
+    assert.equal(await findLink('httpsc'), 'https://secure.com');
+  });
+});
+
+test('runAdd rejects a non-url string', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => runAdd(['not a url']),
+      /invalid url/i,
+    );
+  });
+});
+
+test('runAdd rejects non-http(s) schemes', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => runAdd(['file:///etc/passwd']),
+      /invalid url/i,
+    );
+  });
+});
+
+test('runAdd requires a url argument', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => runAdd([]),
+      /url is required/i,
+    );
+  });
+});
+
+test('runAdd fails when explicit code already exists', async () => {
+  await withTempHome(async () => {
+    await runAdd(['https://a.com', '--code', 'dupcod']);
+    await assert.rejects(
+      () => runAdd(['https://b.com', '--code', 'dupcod']),
+      /already exists/,
+    );
+  });
+});
+
+test('runAdd errors when --code flag has no value', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => runAdd(['https://a.com', '--code']),
+      /--code requires a value/i,
+    );
+  });
+});
+
+test('runAdd does not write anything when url is invalid', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(() => runAdd(['garbage']));
+    // DB should still be empty (no partial write).
+    assert.deepEqual(await readDb(), { links: [] });
+  });
+});
+```
+
+### Step 2.2 — Run the test (expect failure)
+
+```bash
+node --test test/add.test.js
+```
+Expected: failure because `../src/add.js` does not exist:
+```
+Error: Cannot find module '.../src/add.js'
+```
+
+### Step 2.3 — Implement the add command
+
+Create `src/add.js` with exactly this content:
+
+```js
+import { readDb, addLink, generateCode } from './storage.js';
+
+const MAX_CODE_ATTEMPTS = 10;
+
+// Validate that a string is an absolute http(s) URL.
+function isValidUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+// Parse args after "add": first non-flag positional is the url; --code <value> optional.
+function parseAddArgs(args) {
+  let url;
+  let code;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--code') {
+      const value = args[i + 1];
+      if (value === undefined) {
+        throw new Error('--code requires a value');
+      }
+      code = value;
+      i++; // skip the consumed value
+    } else if (url === undefined) {
+      url = arg;
+    }
+  }
+  return { url, code };
+}
+
+// Pick an unused random code, retrying on the unlikely event of a collision.
+async function generateUnusedCode() {
+  const db = await readDb();
+  const existing = new Set(db.links.map((link) => link.code));
+  for (let i = 0; i < MAX_CODE_ATTEMPTS; i++) {
+    const candidate = generateCode();
+    if (!existing.has(candidate)) return candidate;
+  }
+  throw new Error('failed to generate a unique code');
+}
+
+// Run the add command. Returns the code used.
+export async function runAdd(args) {
+  const { url, code } = parseAddArgs(args);
+
+  if (url === undefined) {
+    throw new Error('url is required');
+  }
+  if (!isValidUrl(url)) {
+    throw new Error(`invalid url: ${url}`);
+  }
+
+  const finalCode = code !== undefined ? code : await generateUnusedCode();
+  await addLink(finalCode, url); // throws if finalCode already exists
+  return finalCode;
+}
+```
+
+### Step 2.4 — Run the test (expect pass)
+
+```bash
+node --test test/add.test.js
+```
+Expected: all add tests pass:
+```
+ℹ tests 9
+ℹ pass 9
+ℹ fail 0
+```
+
+### Step 2.5 — Create the CLI entry point
+
+Create `bin/shorten.js` with exactly this content. It dispatches subcommands. `resolve` and `list` handlers are imported from modules we build in Task 3 — but since this is ESM with top-level imports, **we must create those module files now (as minimal stubs) or the bin file will fail to import.** To keep tasks independent we define the bin file to import all three command modules; create placeholder modules for `resolve` and `list` here so the bin file loads, then flesh them out in Task 3.
+
+First, create the placeholder modules so imports resolve.
+
+Create `src/resolve.js` with this content (final version comes in Task 3, but this stub is importable and harmless):
+
+```js
+import { findLink } from './storage.js';
+
+export async function runResolve(args) {
+  const code = args[0];
+  if (code === undefined) {
+    throw new Error('code is required');
+  }
+  const url = await findLink(code);
+  if (url === undefined) {
+    throw new Error(`unknown code: ${code}`);
+  }
+  return url;
+}
+```
+
+Create `src/list.js` with this content (final version comes in Task 3):
+
+```js
+import { listLinks } from './storage.js';
+
+export async function runList() {
+  const links = await listLinks();
+  return links.map((link) => `${link.code}\t${link.url}`).join('\n');
+}
+```
+
+Now create `bin/shorten.js` with exactly this content:
+
+```js
+#!/usr/bin/env node
+import { runAdd } from '../src/add.js';
+import { runResolve } from '../src/resolve.js';
+import { runList } from '../src/list.js';
+
+function usage() {
+  return [
+    'Usage:',
+    '  shorten add <url> [--code <code>]',
+    '  shorten resolve <code>',
+    '  shorten list',
+  ].join('\n');
+}
+
+async function main() {
+  const [command, ...rest] = process.argv.slice(2);
+
+  switch (command) {
+    case 'add': {
+      const code = await runAdd(rest);
+      console.log(code);
+      break;
+    }
+    case 'resolve': {
+      const url = await runResolve(rest);
+      console.log(url);
+      break;
+    }
+    case 'list': {
+      const output = await runList();
+      if (output) console.log(output);
+      break;
+    }
+    case undefined:
+    case '--help':
+    case '-h':
+      console.log(usage());
+      break;
+    default:
+      console.error(`unknown command: ${command}`);
+      console.error(usage());
+      process.exitCode = 1;
+  }
+}
+
+main().catch((err) => {
+  console.error(`error: ${err.message}`);
+  process.exitCode = 1;
+});
+```
+
+### Step 2.6 — Manually verify the CLI end-to-end
+
+Point storage at a temp dir so we don't touch your real home:
+
+```bash
+export SHORTEN_HOME=$(mktemp -d)
+node

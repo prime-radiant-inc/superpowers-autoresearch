@@ -1,0 +1,642 @@
+# Notes CLI — Implementation Plan
+
+A `note` CLI managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, TDD.
+
+## Project Setup
+
+```
+notes-cli/
+  bin/note.js          # entry point / arg dispatch
+  src/storage.js       # load/save notes
+  src/commands.js      # command implementations
+  test/*.test.js
+  package.json
+```
+
+`package.json`:
+```json
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Run `npm install` (no deps). All commands return a string (the CLI prints it) or throw an `Error` whose message the CLI prints to stderr with exit code 1.
+
+---
+
+## Task 1 — Storage layer
+
+**Files:** `src/storage.js`, `test/storage.test.js`
+
+We store notes as a JSON array. Each note: `{ id, text, tags: [], created }` where `created` is an ISO string. `id` is a short random hex string.
+
+**Write failing test** `test/storage.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { loadNotes, saveNotes, newId } from '../src/storage.js';
+
+function tmpFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return join(dir, 'notes.json');
+}
+
+test('load returns [] when file missing', () => {
+  assert.deepStrictEqual(loadNotes(tmpFile()), []);
+});
+
+test('save then load round-trips', () => {
+  const f = tmpFile();
+  const notes = [{ id: 'a', text: 'hi', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+  saveNotes(f, notes);
+  assert.deepStrictEqual(loadNotes(f), notes);
+});
+
+test('corrupt file throws clear error', () => {
+  const f = tmpFile();
+  writeFileSync(f, '{not json');
+  assert.throws(() => loadNotes(f), /corrupt/i);
+});
+
+test('newId returns unique hex strings', () => {
+  assert.notStrictEqual(newId(), newId());
+  assert.match(newId(), /^[0-9a-f]+$/);
+});
+```
+
+Run `node --test test/storage.test.js` — fails (module missing).
+
+**Implement** `src/storage.js`:
+```js
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+
+export const DEFAULT_PATH = join(homedir(), '.notes', 'notes.json');
+
+export function loadNotes(path = DEFAULT_PATH) {
+  if (!existsSync(path)) return [];
+  let raw;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch (e) {
+    throw new Error(`Cannot read notes file: ${e.message}`);
+  }
+  if (raw.trim() === '') return [];
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`Notes file is corrupt: ${path}`);
+  }
+  if (!Array.isArray(data)) throw new Error(`Notes file is corrupt: ${path}`);
+  return data;
+}
+
+export function saveNotes(notes, path = DEFAULT_PATH) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(notes, null, 2));
+}
+
+export function newId() {
+  return randomBytes(4).toString('hex');
+}
+```
+
+Note: tests call `saveNotes(f, notes)` and `loadNotes(f)` — but the signature above is `saveNotes(notes, path)`. **Fix the test calls** to match: `saveNotes(notes, f)` and `loadNotes(f)`. Update the round-trip test accordingly:
+```js
+  saveNotes(notes, f);
+  assert.deepStrictEqual(loadNotes(f), notes);
+```
+
+Run `node --test test/storage.test.js` — passes. Commit: `feat: storage layer`.
+
+---
+
+## Shared helpers (added in command tasks)
+
+Two helpers live in `src/commands.js`. Define them in Task 2 (lookup) and Task 7 (filter/format); later tasks reuse them.
+
+`findNote(notes, id)`:
+```js
+function findNote(notes, id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) throw new Error(`No note with id: ${id}`);
+  return note;
+}
+```
+
+`filterNotes(notes, tag)` and `formatLine(note)`:
+```js
+function filterNotes(notes, tag) {
+  return tag ? notes.filter(n => n.tags.includes(tag)) : notes;
+}
+function formatLine(note) {
+  const tags = note.tags.length ? ` [${note.tags.join(', ')}]` : '';
+  return `${note.id}  ${note.text}${tags}`;
+}
+```
+
+All commands take `(args, { path })` where `args` is the parsed object and `path` is the notes file (defaults handled in Task 10). Each command loads, mutates, saves as needed, and returns a string.
+
+---
+
+## Task 2 — `add`
+
+**Files:** `src/commands.js`, `test/add.test.js`
+
+**Write failing test** `test/add.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add } from '../src/commands.js';
+import { loadNotes } from '../src/storage.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('add stores note and returns id', () => {
+  const p = path();
+  const out = add({ text: 'hello', tag: undefined }, { path: p });
+  const notes = loadNotes(p);
+  assert.strictEqual(notes.length, 1);
+  assert.strictEqual(notes[0].text, 'hello');
+  assert.strictEqual(out, notes[0].id);
+});
+
+test('add with tag', () => {
+  const p = path();
+  add({ text: 'hi', tag: 'work' }, { path: p });
+  assert.deepStrictEqual(loadNotes(p)[0].tags, ['work']);
+});
+
+test('add rejects empty text', () => {
+  assert.throws(() => add({ text: '   ' }, { path: path() }), /empty/i);
+});
+```
+
+Run — fails.
+
+**Implement** in `src/commands.js` (include the shared `findNote` helper now so later tasks have it):
+```js
+import { loadNotes, saveNotes, newId } from './storage.js';
+
+function findNote(notes, id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) throw new Error(`No note with id: ${id}`);
+  return note;
+}
+
+export function add({ text, tag }, { path }) {
+  if (!text || text.trim() === '') throw new Error('Note text cannot be empty');
+  const notes = loadNotes(path);
+  const note = { id: newId(), text, tags: tag ? [tag] : [], created: new Date().toISOString() };
+  notes.push(note);
+  saveNotes(notes, path);
+  return note.id;
+}
+```
+
+Run `node --test test/add.test.js` — passes. Commit: `feat: add command`.
+
+---
+
+## Task 3 — `show`
+
+**Files:** `src/commands.js`, `test/show.test.js`
+
+**Write failing test** `test/show.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, show } from '../src/commands.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('show prints text, tags, created', () => {
+  const p = path();
+  const id = add({ text: 'hi', tag: 'x' }, { path: p });
+  const out = show({ id }, { path: p });
+  assert.match(out, /hi/);
+  assert.match(out, /x/);
+  assert.match(out, /\d{4}-\d{2}-\d{2}/);
+});
+
+test('show unknown id throws', () => {
+  assert.throws(() => show({ id: 'nope' }, { path: path() }), /No note with id/);
+});
+```
+
+Run — fails.
+
+**Implement** (append to `src/commands.js`):
+```js
+export function show({ id }, { path }) {
+  const note = findNote(loadNotes(path), id);
+  const tags = note.tags.length ? note.tags.join(', ') : '(none)';
+  return `${note.text}\nTags: ${tags}\nCreated: ${note.created}`;
+}
+```
+
+Run `node --test test/show.test.js` — passes. Commit: `feat: show command`.
+
+---
+
+## Task 4 — `rm`
+
+**Files:** `src/commands.js`, `test/rm.test.js`
+
+**Write failing test** `test/rm.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, rm } from '../src/commands.js';
+import { loadNotes } from '../src/storage.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('rm deletes note', () => {
+  const p = path();
+  const id = add({ text: 'bye' }, { path: p });
+  const out = rm({ id }, { path: p });
+  assert.strictEqual(loadNotes(p).length, 0);
+  assert.match(out, /deleted/i);
+});
+
+test('rm unknown id throws', () => {
+  assert.throws(() => rm({ id: 'nope' }, { path: path() }), /No note with id/);
+});
+```
+
+Run — fails.
+
+**Implement** (append):
+```js
+export function rm({ id }, { path }) {
+  const notes = loadNotes(path);
+  findNote(notes, id); // throws if missing
+  saveNotes(notes.filter(n => n.id !== id), path);
+  return `Deleted ${id}`;
+}
+```
+
+Run `node --test test/rm.test.js` — passes. Commit: `feat: rm command`.
+
+---
+
+## Task 5 — `tag`
+
+**Files:** `src/commands.js`, `test/tag.test.js`
+
+**Write failing test** `test/tag.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, tag } from '../src/commands.js';
+import { loadNotes } from '../src/storage.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('tag adds a tag', () => {
+  const p = path();
+  const id = add({ text: 'hi' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  assert.deepStrictEqual(loadNotes(p)[0].tags, ['work']);
+});
+
+test('tag is idempotent (no duplicates)', () => {
+  const p = path();
+  const id = add({ text: 'hi' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  assert.deepStrictEqual(loadNotes(p)[0].tags, ['work']);
+});
+
+test('tag unknown id throws', () => {
+  assert.throws(() => tag({ id: 'nope', tag: 'x' }, { path: path() }), /No note with id/);
+});
+```
+
+Run — fails.
+
+**Implement** (append):
+```js
+export function tag({ id, tag }, { path }) {
+  const notes = loadNotes(path);
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  saveNotes(notes, path);
+  return `Tagged ${id} with ${tag}`;
+}
+```
+
+Run `node --test test/tag.test.js` — passes. Commit: `feat: tag command`.
+
+---
+
+## Task 6 — `untag`
+
+**Files:** `src/commands.js`, `test/untag.test.js`
+
+**Write failing test** `test/untag.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, tag, untag } from '../src/commands.js';
+import { loadNotes } from '../src/storage.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('untag removes a tag', () => {
+  const p = path();
+  const id = add({ text: 'hi' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  untag({ id, tag: 'work' }, { path: p });
+  assert.deepStrictEqual(loadNotes(p)[0].tags, []);
+});
+
+test('untag missing tag is a no-op success', () => {
+  const p = path();
+  const id = add({ text: 'hi' }, { path: p });
+  const out = untag({ id, tag: 'ghost' }, { path: p });
+  assert.match(out, /removed|not/i);
+});
+
+test('untag unknown id throws', () => {
+  assert.throws(() => untag({ id: 'nope', tag: 'x' }, { path: path() }), /No note with id/);
+});
+```
+
+Run — fails.
+
+**Implement** (append):
+```js
+export function untag({ id, tag }, { path }) {
+  const notes = loadNotes(path);
+  const note = findNote(notes, id);
+  const had = note.tags.includes(tag);
+  note.tags = note.tags.filter(t => t !== tag);
+  saveNotes(notes, path);
+  return had ? `Removed ${tag} from ${id}` : `Tag ${tag} not present on ${id}`;
+}
+```
+
+Run `node --test test/untag.test.js` — passes. Commit: `feat: untag command`.
+
+---
+
+## Task 7 — `list`
+
+**Files:** `src/commands.js`, `test/list.test.js`
+
+Introduces shared `filterNotes` and `formatLine` helpers.
+
+**Write failing test** `test/list.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, tag, list } from '../src/commands.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('list shows all notes one per line', () => {
+  const p = path();
+  add({ text: 'one' }, { path: p });
+  add({ text: 'two' }, { path: p });
+  const out = list({ tag: undefined }, { path: p });
+  assert.strictEqual(out.split('\n').length, 2);
+  assert.match(out, /one/);
+  assert.match(out, /two/);
+});
+
+test('list filters by tag', () => {
+  const p = path();
+  const id = add({ text: 'one' }, { path: p });
+  add({ text: 'two' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  const out = list({ tag: 'work' }, { path: p });
+  assert.match(out, /one/);
+  assert.doesNotMatch(out, /two/);
+});
+
+test('list empty returns message', () => {
+  assert.match(list({}, { path: path() }), /no notes/i);
+});
+```
+
+Run — fails.
+
+**Implement** (append the helpers, then `list`):
+```js
+function filterNotes(notes, tag) {
+  return tag ? notes.filter(n => n.tags.includes(tag)) : notes;
+}
+function formatLine(note) {
+  const tags = note.tags.length ? ` [${note.tags.join(', ')}]` : '';
+  return `${note.id}  ${note.text}${tags}`;
+}
+
+export function list({ tag }, { path }) {
+  const notes = filterNotes(loadNotes(path), tag);
+  if (notes.length === 0) return 'No notes found';
+  return notes.map(formatLine).join('\n');
+}
+```
+
+Run `node --test test/list.test.js` — passes. Commit: `feat: list command`.
+
+---
+
+## Task 8 — `search`
+
+**Files:** `src/commands.js`, `test/search.test.js`
+
+**Write failing test** `test/search.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, search } from '../src/commands.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('search matches substring', () => {
+  const p = path();
+  add({ text: 'buy milk' }, { path: p });
+  add({ text: 'call mom' }, { path: p });
+  const out = search({ term: 'milk' }, { path: p });
+  assert.match(out, /milk/);
+  assert.doesNotMatch(out, /mom/);
+});
+
+test('search is case-insensitive', () => {
+  const p = path();
+  add({ text: 'Hello World' }, { path: p });
+  assert.match(search({ term: 'world' }, { path: p }), /Hello/);
+});
+
+test('search no match returns message', () => {
+  const p = path();
+  add({ text: 'abc' }, { path: p });
+  assert.match(search({ term: 'zzz' }, { path: p }), /no notes/i);
+});
+```
+
+Run — fails.
+
+**Implement** (append; reuses `formatLine`):
+```js
+export function search({ term }, { path }) {
+  const t = (term || '').toLowerCase();
+  const notes = loadNotes(path).filter(n => n.text.toLowerCase().includes(t));
+  if (notes.length === 0) return 'No notes found';
+  return notes.map(formatLine).join('\n');
+}
+```
+
+Run `node --test test/search.test.js` — passes. Commit: `feat: search command`.
+
+---
+
+## Task 9 — `count` and `export`
+
+**Files:** `src/commands.js`, `test/count.test.js`, `test/export.test.js`
+
+**Write failing test** `test/count.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, tag, count } from '../src/commands.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('count returns total', () => {
+  const p = path();
+  add({ text: 'a' }, { path: p });
+  add({ text: 'b' }, { path: p });
+  assert.strictEqual(count({}, { path: p }), '2');
+});
+
+test('count filters by tag', () => {
+  const p = path();
+  const id = add({ text: 'a' }, { path: p });
+  add({ text: 'b' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  assert.strictEqual(count({ tag: 'work' }, { path: p }), '1');
+});
+```
+
+**Write failing test** `test/export.test.js`:
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { add, tag, exportNotes } from '../src/commands.js';
+
+const path = () => join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+
+test('export returns JSON array', () => {
+  const p = path();
+  add({ text: 'a' }, { path: p });
+  const parsed = JSON.parse(exportNotes({}, { path: p }));
+  assert.strictEqual(parsed.length, 1);
+  assert.strictEqual(parsed[0].text, 'a');
+});
+
+test('export filters by tag', () => {
+  const p = path();
+  const id = add({ text: 'a' }, { path: p });
+  add({ text: 'b' }, { path: p });
+  tag({ id, tag: 'work' }, { path: p });
+  const parsed = JSON.parse(exportNotes({ tag: 'work' }, { path: p }));
+  assert.strictEqual(parsed.length, 1);
+});
+```
+
+Run both — fail.
+
+**Implement** (append; both reuse `filterNotes`):
+```js
+export function count({ tag }, { path }) {
+  return String(filterNotes(loadNotes(path), tag).length);
+}
+
+export function exportNotes({ tag }, { path }) {
+  return JSON.stringify(filterNotes(loadNotes(path), tag), null, 2);
+}
+```
+
+Run `node --test test/count.test.js test/export.test.js` — pass. Commit: `feat: count and export commands`.
+
+---
+
+## Task 10 — CLI entry point & dispatch
+
+**Files:** `bin/note.js`, `test/cli.test.js`
+
+Parses `process.argv`, routes to a command, prints the returned string, and on thrown error prints to stderr and exits 1. A `--tag <value>` flag is parsed out of args; positionals are what remain.
+
+**Write failing test** `test/cli.test.js` (invokes the CLI as a subprocess):
+```js
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+function run(args, p) {
+  return execFileSync('node', ['bin/note.js', ...args], {
+    env: { ...process.env, NOTES_PATH: p }, encoding: 'utf8'
+  }).trim();
+}
+
+test('cli add then list', () => {
+  const p = join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+  const id = run(['add', 'hello'], p);
+  assert.match(id, /^[0-9a-f]+$/);
+  assert.match(run(['list'], p), /hello/);
+});
+
+test('cli add with --tag and filter', () => {
+  const p = join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json');
+  run(['add', 'work item', '--tag', 'work'], p);
+  run(['add', 'other'], p);
+  assert.match(run(['list', '--tag', 'work'], p), /work item/);
+});
+
+test('cli unknown id exits non-zero', () => {
+  const p = join(mkdtempSync(join(tmpdir(),

@@ -1,0 +1,39 @@
+You are an implementer subagent in a subagent-driven-development workflow. Implement exactly one task following strict TDD. Do not work ahead or touch anything outside this task's scope.
+
+## Context
+
+- Project: a Go CLI ("fractals") rendering ASCII fractals. Working dir: `/work/fractals-cli`.
+- Go 1.21, using cobra. See `design.md` and `plan.md` in the repo root for full specification.
+- Tasks 1-4 are complete and reviewed (project setup; cobra CLI framework; sierpinski algorithm in `internal/sierpinski`; sierpinski CLI subcommand). HEAD is clean.
+- This is **Task 5: Mandelbrot Algorithm** — algorithm package only, no CLI wiring (that's Task 6).
+
+## Your task
+
+Read your task brief here: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+
+It contains the verbatim plan text for Task 5. Follow the **Do** and **Verify** sections exactly.
+
+## Requirements
+
+- **TDD is required.** Write `internal/mandelbrot/mandelbrot_test.go` tests first (red), then implement `internal/mandelbrot/mandelbrot.go` to make them pass (green), then refactor if needed. Make small commits along the way.
+- Implement `Render(width, height, maxIter int, char string) []string` per the brief:
+  - Map complex plane region (-2.5 to 1.0 real, -1.0 to 1.0 imaginary) to output dimensions.
+  - Map iteration count to character gradient `" .:-=+*#%@"`, or use the single provided char if `char` is non-empty.
+- Cover the three required test cases: output dimensions match requested width/height; point inside set (0,0) maps to the max-iteration character; point outside set (2,0) maps to a low-iteration character.
+- Do **not** create or modify CLI files (`internal/cli/`, `cmd/fractals/`) — that is Task 6.
+- Match the style and conventions of the existing `internal/sierpinski` package.
+
+## Verify
+
+- `go test ./internal/mandelbrot/...` passes.
+- `go build ./...` succeeds.
+
+## Reporting
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Include what you did, the TDD red/green steps, files changed, test output, and any decisions or concerns.
+
+Then return to me ONLY:
+- Status (complete / blocked)
+- List of commit SHAs + subjects
+- A one-line test summary
+- Any concerns

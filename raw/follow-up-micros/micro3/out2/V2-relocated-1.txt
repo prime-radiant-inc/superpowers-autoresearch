@@ -1,0 +1,649 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, TDD.
+
+## Project Setup
+
+```bash
+mkdir -p notes-cli/src notes-cli/test
+cd notes-cli
+npm init -y
+npm pkg set type=module
+npm pkg set bin.note=./bin/note.js
+```
+
+File layout:
+- `src/storage.js` — load/save notes
+- `src/commands.js` — one function per command
+- `src/cli.js` — argument parsing + dispatch
+- `bin/note.js` — entry point
+- `test/*.test.js` — tests
+
+Notes are objects: `{ id: string, text: string, tags: string[], created: string (ISO) }`.
+Storage file shape: `{ "notes": [ ...note ] }`.
+
+Run all tests with: `node --test`
+
+---
+
+## Task 1: Storage layer
+
+Create `test/storage.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { load, save } from '../src/storage.js';
+
+function tmpFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return { file: join(dir, 'notes.json'), dir };
+}
+
+test('load returns empty array when file missing', () => {
+  const { file, dir } = tmpFile();
+  assert.deepEqual(load(file), []);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('save then load round-trips', () => {
+  const { file, dir } = tmpFile();
+  const notes = [{ id: 'a', text: 'hi', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+  save(file, notes);
+  assert.deepEqual(load(file), notes);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('load throws on corrupt file', () => {
+  const { file, dir } = tmpFile();
+  writeFileSync(file, '{ not json');
+  assert.throws(() => load(file), /corrupt/i);
+  rmSync(dir, { recursive: true, force: true });
+});
+```
+
+Run: `node --test test/storage.test.js` → fails (no module).
+
+Create `src/storage.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
+
+export const DEFAULT_FILE = join(homedir(), '.notes', 'notes.json');
+
+export function load(file = DEFAULT_FILE) {
+  let raw;
+  try {
+    raw = readFileSync(file, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`Storage file is corrupt: ${file}`);
+  }
+  if (!data || !Array.isArray(data.notes)) {
+    throw new Error(`Storage file is corrupt: ${file}`);
+  }
+  return data.notes;
+}
+
+export function save(notes, file = DEFAULT_FILE) {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify({ notes }, null, 2));
+}
+```
+
+Note: `save` takes `(notes, file)`. Update the test's `save(file, notes)` calls to `save(notes, file)`.
+
+Run: `node --test test/storage.test.js` → passes.
+
+```bash
+git add -A && git commit -m "Add storage layer"
+```
+
+---
+
+## Shared command conventions
+
+All command functions live in `src/commands.js`, take `(args, ctx)` where
+`ctx = { file }`, and return a string to print or throw `CliError`.
+
+Add this shared helper file now. Create `src/errors.js`:
+
+```js
+export class CliError extends Error {}
+```
+
+Shared helpers in `src/commands.js` (add at top as each task needs them; full final file accumulates). Start the file:
+
+```js
+import { randomUUID } from 'node:crypto';
+import { load, save } from './storage.js';
+import { CliError } from './errors.js';
+
+function findNote(notes, id) {
+  const note = notes.find((n) => n.id === id);
+  if (!note) throw new CliError(`No note with id ${id}`);
+  return note;
+}
+
+function filterByTag(notes, tag) {
+  return tag ? notes.filter((n) => n.tags.includes(tag)) : notes;
+}
+
+function formatLine(n) {
+  const tags = n.tags.length ? ` [${n.tags.join(', ')}]` : '';
+  return `${n.id} ${n.text}${tags}`;
+}
+```
+
+```bash
+git add -A && git commit -m "Add command helpers and errors"
+```
+
+---
+
+## Task 2: `add`
+
+Append to `test/commands.test.js` (create it):
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import * as cmd from '../src/commands.js';
+import { load } from '../src/storage.js';
+
+function ctx() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return { file: join(dir, 'notes.json'), dir };
+}
+
+test('add stores note and returns id', () => {
+  const c = ctx();
+  const out = cmd.add({ text: 'hello', tag: undefined }, c);
+  const notes = load(c.file);
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].text, 'hello');
+  assert.equal(out, notes[0].id);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('add with tag', () => {
+  const c = ctx();
+  cmd.add({ text: 'x', tag: 'work' }, c);
+  assert.deepEqual(load(c.file)[0].tags, ['work']);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('add rejects empty text', () => {
+  const c = ctx();
+  assert.throws(() => cmd.add({ text: '  ', tag: undefined }, c), /empty/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run: `node --test test/commands.test.js` → fails.
+
+Add to `src/commands.js`:
+
+```js
+export function add({ text, tag }, { file }) {
+  if (!text || !text.trim()) throw new CliError('Note text cannot be empty');
+  const notes = load(file);
+  const note = {
+    id: randomUUID().slice(0, 8),
+    text: text.trim(),
+    tags: tag ? [tag] : [],
+    created: new Date().toISOString(),
+  };
+  notes.push(note);
+  save(notes, file);
+  return note.id;
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'add' command"`
+
+---
+
+## Task 3: `show`
+
+Add to `test/commands.test.js`:
+
+```js
+test('show prints note details', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'hi', tag: 'a' }, c);
+  const out = cmd.show({ id }, c);
+  assert.match(out, /hi/);
+  assert.match(out, /a/);
+  assert.match(out, /Created:/);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('show fails on unknown id', () => {
+  const c = ctx();
+  assert.throws(() => cmd.show({ id: 'nope' }, c), /no note/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function show({ id }, { file }) {
+  const note = findNote(load(file), id);
+  const tags = note.tags.length ? note.tags.join(', ') : '(none)';
+  return [
+    `Id: ${note.id}`,
+    `Text: ${note.text}`,
+    `Tags: ${tags}`,
+    `Created: ${note.created}`,
+  ].join('\n');
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'show' command"`
+
+---
+
+## Task 4: `rm`
+
+Add to `test/commands.test.js`:
+
+```js
+test('rm deletes note', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'gone', tag: undefined }, c);
+  cmd.rm({ id }, c);
+  assert.equal(load(c.file).length, 0);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('rm fails on unknown id', () => {
+  const c = ctx();
+  assert.throws(() => cmd.rm({ id: 'nope' }, c), /no note/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function rm({ id }, { file }) {
+  const notes = load(file);
+  findNote(notes, id); // throws if missing
+  const remaining = notes.filter((n) => n.id !== id);
+  save(remaining, file);
+  return `Removed ${id}`;
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'rm' command"`
+
+---
+
+## Task 5: `tag`
+
+Add to `test/commands.test.js`:
+
+```js
+test('tag adds a tag', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'x', tag: undefined }, c);
+  cmd.tag({ id, tag: 'work' }, c);
+  assert.deepEqual(load(c.file)[0].tags, ['work']);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('tag is idempotent', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'x', tag: 'work' }, c);
+  cmd.tag({ id, tag: 'work' }, c);
+  assert.deepEqual(load(c.file)[0].tags, ['work']);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('tag fails on unknown id', () => {
+  const c = ctx();
+  assert.throws(() => cmd.tag({ id: 'nope', tag: 't' }, c), /no note/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function tag({ id, tag }, { file }) {
+  const notes = load(file);
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  save(notes, file);
+  return `Tagged ${id} with ${tag}`;
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'tag' command"`
+
+---
+
+## Task 6: `untag`
+
+Add to `test/commands.test.js`:
+
+```js
+test('untag removes a tag', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'x', tag: 'work' }, c);
+  cmd.untag({ id, tag: 'work' }, c);
+  assert.deepEqual(load(c.file)[0].tags, []);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('untag missing tag is a no-op', () => {
+  const c = ctx();
+  const id = cmd.add({ text: 'x', tag: undefined }, c);
+  const out = cmd.untag({ id, tag: 'nope' }, c);
+  assert.match(out, /not tagged/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('untag fails on unknown id', () => {
+  const c = ctx();
+  assert.throws(() => cmd.untag({ id: 'nope', tag: 't' }, c), /no note/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function untag({ id, tag }, { file }) {
+  const notes = load(file);
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) return `Note ${id} not tagged with ${tag}`;
+  note.tags = note.tags.filter((t) => t !== tag);
+  save(notes, file);
+  return `Untagged ${id} from ${tag}`;
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'untag' command"`
+
+---
+
+## Task 7: `list`
+
+Add to `test/commands.test.js`:
+
+```js
+test('list shows all notes one per line', () => {
+  const c = ctx();
+  cmd.add({ text: 'one', tag: undefined }, c);
+  cmd.add({ text: 'two', tag: 'b' }, c);
+  const out = cmd.list({ tag: undefined }, c);
+  assert.equal(out.split('\n').length, 2);
+  assert.match(out, /one/);
+  assert.match(out, /two \[b\]/);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('list filters by tag', () => {
+  const c = ctx();
+  cmd.add({ text: 'one', tag: undefined }, c);
+  cmd.add({ text: 'two', tag: 'b' }, c);
+  const out = cmd.list({ tag: 'b' }, c);
+  assert.equal(out, cmd.list({ tag: 'b' }, c));
+  assert.match(out, /two/);
+  assert.doesNotMatch(out, /one/);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('list empty returns message', () => {
+  const c = ctx();
+  assert.equal(cmd.list({ tag: undefined }, c), '(no notes)');
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function list({ tag }, { file }) {
+  const notes = filterByTag(load(file), tag);
+  if (notes.length === 0) return '(no notes)';
+  return notes.map(formatLine).join('\n');
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'list' command"`
+
+---
+
+## Task 8: `search`
+
+Add to `test/commands.test.js`:
+
+```js
+test('search matches text substring', () => {
+  const c = ctx();
+  cmd.add({ text: 'buy milk', tag: undefined }, c);
+  cmd.add({ text: 'call bob', tag: undefined }, c);
+  const out = cmd.search({ term: 'milk' }, c);
+  assert.match(out, /buy milk/);
+  assert.doesNotMatch(out, /call bob/);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('search empty result message', () => {
+  const c = ctx();
+  cmd.add({ text: 'x', tag: undefined }, c);
+  assert.equal(cmd.search({ term: 'zzz' }, c), '(no notes)');
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function search({ term }, { file }) {
+  const t = (term || '').toLowerCase();
+  const notes = load(file).filter((n) => n.text.toLowerCase().includes(t));
+  if (notes.length === 0) return '(no notes)';
+  return notes.map(formatLine).join('\n');
+}
+```
+
+Run → passes. Commit: `git commit -am "Add 'search' command"`
+
+---
+
+## Task 9: `count` and `export`
+
+Add to `test/commands.test.js`:
+
+```js
+test('count returns number', () => {
+  const c = ctx();
+  cmd.add({ text: 'a', tag: 't' }, c);
+  cmd.add({ text: 'b', tag: undefined }, c);
+  assert.equal(cmd.count({ tag: undefined }, c), '2');
+  assert.equal(cmd.count({ tag: 't' }, c), '1');
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('export returns JSON array filtered', () => {
+  const c = ctx();
+  cmd.add({ text: 'a', tag: 't' }, c);
+  cmd.add({ text: 'b', tag: undefined }, c);
+  const out = cmd.export_({ tag: 't' }, c);
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].text, 'a');
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Add to `src/commands.js`:
+
+```js
+export function count({ tag }, { file }) {
+  return String(filterByTag(load(file), tag).length);
+}
+
+export function export_({ tag }, { file }) {
+  return JSON.stringify(filterByTag(load(file), tag), null, 2);
+}
+```
+
+(`export_` has a trailing underscore because `export` is reserved.)
+
+Run → passes. Commit: `git commit -am "Add 'count' and 'export' commands"`
+
+---
+
+## Task 10: CLI parsing and entry point
+
+Add `test/cli.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { run } from '../src/cli.js';
+
+function ctx() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return { file: join(dir, 'notes.json'), dir };
+}
+
+test('run add then list', () => {
+  const c = ctx();
+  const id = run(['add', 'hello', '--tag', 'x'], c);
+  const out = run(['list'], c);
+  assert.match(out, new RegExp(id));
+  assert.match(out, /hello \[x\]/);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('run unknown command throws', () => {
+  const c = ctx();
+  assert.throws(() => run(['bogus'], c), /unknown command/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+
+test('run unknown id throws CliError', () => {
+  const c = ctx();
+  assert.throws(() => run(['show', 'nope'], c), /no note/i);
+  rmSync(c.dir, { recursive: true, force: true });
+});
+```
+
+Run → fails. Create `src/cli.js`:
+
+```js
+import * as cmd from './commands.js';
+import { CliError } from './errors.js';
+import { DEFAULT_FILE } from './storage.js';
+
+// Splits positional args from `--tag <value>`.
+function parse(rest) {
+  const positional = [];
+  let tag;
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--tag') {
+      tag = rest[++i];
+      if (tag === undefined) throw new CliError('--tag requires a value');
+    } else {
+      positional.push(rest[i]);
+    }
+  }
+  return { positional, tag };
+}
+
+export function run(argv, ctx = { file: DEFAULT_FILE }) {
+  const [command, ...rest] = argv;
+  const { positional, tag } = parse(rest);
+  switch (command) {
+    case 'add':
+      return cmd.add({ text: positional.join(' '), tag }, ctx);
+    case 'show':
+      return cmd.show({ id: positional[0] }, ctx);
+    case 'rm':
+      return cmd.rm({ id: positional[0] }, ctx);
+    case 'tag':
+      return cmd.tag({ id: positional[0], tag: positional[1] }, ctx);
+    case 'untag':
+      return cmd.untag({ id: positional[0], tag: positional[1] }, ctx);
+    case 'list':
+      return cmd.list({ tag }, ctx);
+    case 'search':
+      return cmd.search({ term: positional[0] }, ctx);
+    case 'count':
+      return cmd.count({ tag }, ctx);
+    case 'export':
+      return cmd.export_({ tag }, ctx);
+    default:
+      throw new CliError(`Unknown command: ${command}`);
+  }
+}
+```
+
+Note: `tag`/`untag` take their tag as a positional arg (`note tag <id> <tag>`), so they read `positional[1]`, not `--tag`.
+
+Run: `node --test test/cli.test.js` → passes.
+
+Create `bin/note.js`:
+
+```js
+#!/usr/bin/env node
+import { run } from '../src/cli.js';
+
+try {
+  const out = run(process.argv.slice(2));
+  if (out) console.log(out);
+} catch (err) {
+  console.error(`Error: ${err.message}`);
+  process.exit(1);
+}
+```
+
+Make executable and verify end-to-end:
+
+```bash
+chmod +x bin/note.js
+node bin/note.js add "first note" --tag demo   # prints an 8-char id
+node bin/note.js list                          # prints: <id> first note [demo]
+node bin/note.js count                         # prints: 1
+node bin/note.js export                        # prints JSON array
+```
+
+Run full suite: `node --test` → all pass.
+
+Commit: `git commit -am "Add CLI parsing and entry point"`
+
+---
+
+## Self-Review
+
+- **Spec coverage:** add (T2), show (T3), rm (T4), tag (T5), untag (T6), list (T7), search (T8), count + export (T9), storage (T1), CLI dispatch (T10). All 9 commands plus storage covered.
+- **Shared id-lookup:** `findNote` used by show/rm/tag/untag (throws `CliError`).
+- **Shared filtering/format:** `filterByTag` + `formatLine` used by list/search/count/export.
+- **Corrupt files:** `load` throws a clear error caught by `bin/note.js`.
+- **Empty text validation:** `add` rejects blank text.
+- **Names consistent:** `export_`, `ctx`, `CliError`, `DEFAULT_FILE` used consistently across tasks.
+- No placeholders; every step has literal code, a runnable command, and expected output.

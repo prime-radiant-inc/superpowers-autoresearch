@@ -1,0 +1,27 @@
+You are implementing Task 5 of the fractals CLI project: the Mandelbrot set ASCII rendering algorithm. This is the pure algorithm package in `internal/mandelbrot/`; a later task wires it to a CLI subcommand. Tasks 1-4 (project setup, cobra CLI, and the parallel sierpinski algorithm + CLI) are complete.
+
+Read this first — it is your requirements, with the exact values to use verbatim:
+/work/fractals-cli/.git/sdd/task-5-brief.md
+
+TDD is required by the plan: write the tests first, watch them fail, then implement until they pass.
+
+Context from earlier tasks the brief cannot know:
+- Module path is `github.com/superpowers-test/fractals`, Go 1.21.
+- The parallel sierpinski package established the house style for these algorithm packages: a single exported generator function returning `[]string` (one entry per output row, no trailing newlines), with a table-driven `_test.go` alongside it. Follow that same shape for `mandelbrot`. Look at `internal/sierpinski/sierpinski.go` and its test before writing yours.
+
+Resolving ambiguity I noticed in the brief:
+- The signature in your brief is `Render(width, height, maxIter int, char string) []string` — note `char` is a `string`, not a `rune` like sierpinski used. Honor the brief: when `char` is non-empty use it for all in-set points (and presumably the empty/space rendering for escaped points — use the same `" "` you'd get from the gradient's first slot); when `char` is empty (`""`), use the gradient.
+- The gradient in your brief is the 10-character string `" .:-=+*#%@"` — the first character is a space and the last is `@`. Map low iteration counts (fast escape, outside the set) toward the space end and high/max iteration counts (in the set) toward the `@` end, so that the in-set point test below lands on `@`.
+- Your brief's two boundary tests pin this mapping down: point (0,0) is inside the set and must map to the max-iteration character (`@` with the gradient); point (2,0) is outside and must map to a low-iteration character. Make sure your iteration-to-character index math actually produces `@` at max iterations and a near-space character at fast escape — don't let an off-by-one push the in-set point off `@`.
+- The complex-plane region in your brief (`-2.5` to `1.0` real, `-1.0` to `1.0` imaginary) maps onto the requested width/height. Column 0 / row 0 is the top-left corner of that region.
+
+When done, write your full report to:
+/work/fractals-cli/.git/sdd/task-5-report.md
+
+Report contract — the report file contains the complete writeup; in your reply to me return only:
+- status (complete / blocked)
+- commits made (hashes + one-line messages)
+- a one-line test summary (e.g. `go test ./internal/mandelbrot/...` result)
+- any concerns or surprises for the controller
+
+Do not implement anything outside this task's scope (no CLI subcommand — that is Task 6).

@@ -1,0 +1,766 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a JSON database of shortened links stored at `~/.shorten/links.json`. The CLI has three commands: `add`, `resolve`, and `list`. All three share a single storage module.
+
+**Tech constraints:**
+- Node 20+ (uses built-in `node:test`, `node:assert`, `node:fs`, `node:crypto`, `node:path`, `node:os`).
+- No external dependencies.
+- TDD: write a failing test, run it, implement, run it green, commit.
+
+### Project layout (final state)
+
+```
+shorten/
+├── package.json
+├── bin/
+│   └── shorten.js          # CLI entry point (arg parsing + dispatch)
+├── src/
+│   ├── storage.js          # shared JSON load/save + data operations
+│   ├── add.js              # add command logic
+│   ├── resolve.js          # resolve command logic
+│   └── list.js             # list command logic
+└── test/
+    ├── storage.test.js
+    ├── add.test.js
+    ├── resolve.test.js
+    └── list.test.js
+```
+
+### Storage file format
+
+`~/.shorten/links.json` holds a JSON object with a `links` array. We use an **array of `{ code, url }` objects** (not a plain map) so insertion order is preserved deterministically for `list`.
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "xyz789", "url": "https://nodejs.org" }
+  ]
+}
+```
+
+### Shared data model and function signatures (defined here, used by all tasks)
+
+These are implemented in `src/storage.js` in Task 1 and consumed by Tasks 2 and 3.
+
+```js
+// A link record:
+//   { code: string, url: string }
+
+// loadDb(filePath) -> { links: Array<{code, url}> }
+//   - Returns { links: [] } if the file does not exist.
+//   - Throws Error("Corrupt database at <path>") if the file exists but is
+//     not valid JSON or does not match the expected shape.
+
+// saveDb(filePath, db) -> void
+//   - Creates the parent directory if needed, writes pretty JSON.
+
+// defaultDbPath() -> string
+//   - Returns path.join(os.homedir(), ".shorten", "links.json")
+
+// findByCode(db, code) -> {code, url} | undefined
+
+// addLink(db, code, url) -> void   (mutates db.links; assumes validation done by caller)
+```
+
+---
+
+## Task 0: Project scaffolding
+
+This sets up the package so tests can run. No production logic yet.
+
+### Step 0.1: Create `package.json`
+
+Create the file `package.json` with this exact content:
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "description": "Local link-shortener CLI",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+> Note: `"type": "module"` means all `.js` files use ESM `import`/`export`.
+
+### Step 0.2: Verify the test runner works
+
+Create a temporary file `test/smoke.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+test('smoke', () => {
+  assert.equal(1 + 1, 2);
+});
+```
+
+Run:
+
+```bash
+node --test
+```
+
+Expected output (approximately):
+
+```
+✔ smoke (Xms)
+...
+# pass 1
+# fail 0
+```
+
+### Step 0.3: Remove the smoke test and commit
+
+```bash
+rm test/smoke.test.js
+git init
+git add -A
+git commit -m "Scaffold shorten CLI project"
+```
+
+---
+
+## Task 1: Shared storage module
+
+This is the shared foundation for all three commands. We build and fully test `src/storage.js` first.
+
+Because tests must not touch the real `~/.shorten/links.json`, every test creates a temp directory and passes an explicit file path. Only `bin/shorten.js` (Task 2/3) uses `defaultDbPath()`.
+
+### Step 1.1: Write failing tests for `loadDb` / `saveDb`
+
+Create `test/storage.test.js`:
+
+```js
+import { test, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import {
+  loadDb,
+  saveDb,
+  defaultDbPath,
+  findByCode,
+  addLink,
+} from '../src/storage.js';
+
+let dir;
+let dbPath;
+
+beforeEach(() => {
+  dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  dbPath = join(dir, 'nested', 'links.json');
+});
+
+afterEach(() => {
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('loadDb returns empty links when file missing', () => {
+  const db = loadDb(dbPath);
+  assert.deepEqual(db, { links: [] });
+});
+
+test('saveDb creates parent dir and writes readable JSON', () => {
+  const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+  saveDb(dbPath, db);
+  assert.ok(existsSync(dbPath));
+  const parsed = JSON.parse(readFileSync(dbPath, 'utf8'));
+  assert.deepEqual(parsed, db);
+});
+
+test('save then load round-trips', () => {
+  const db = { links: [{ code: 'xyz789', url: 'https://nodejs.org' }] };
+  saveDb(dbPath, db);
+  assert.deepEqual(loadDb(dbPath), db);
+});
+
+test('loadDb throws on invalid JSON', () => {
+  writeFileSync(dbPath.replace('/nested/links.json', '/corrupt.json'), '{ not json');
+  const corruptPath = join(dir, 'corrupt.json');
+  assert.throws(
+    () => loadDb(corruptPath),
+    /Corrupt database/
+  );
+});
+
+test('loadDb throws when JSON is valid but wrong shape', () => {
+  const badPath = join(dir, 'bad.json');
+  writeFileSync(badPath, JSON.stringify({ links: 'not-an-array' }));
+  assert.throws(
+    () => loadDb(badPath),
+    /Corrupt database/
+  );
+});
+
+test('defaultDbPath ends with .shorten/links.json', () => {
+  const p = defaultDbPath();
+  assert.ok(p.endsWith(join('.shorten', 'links.json')));
+});
+```
+
+Run:
+
+```bash
+node --test test/storage.test.js
+```
+
+Expected: failure because `src/storage.js` does not exist yet:
+
+```
+Error: Cannot find module '.../src/storage.js'
+...
+# fail (nonzero exit)
+```
+
+### Step 1.2: Write failing tests for `findByCode` / `addLink`
+
+Append to `test/storage.test.js`:
+
+```js
+test('findByCode returns matching record', () => {
+  const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+  assert.deepEqual(findByCode(db, 'abc123'), {
+    code: 'abc123',
+    url: 'https://example.com',
+  });
+});
+
+test('findByCode returns undefined when not found', () => {
+  const db = { links: [] };
+  assert.equal(findByCode(db, 'nope'), undefined);
+});
+
+test('addLink appends in order', () => {
+  const db = { links: [] };
+  addLink(db, 'one', 'https://1.example');
+  addLink(db, 'two', 'https://2.example');
+  assert.deepEqual(db.links, [
+    { code: 'one', url: 'https://1.example' },
+    { code: 'two', url: 'https://2.example' },
+  ]);
+});
+```
+
+Run:
+
+```bash
+node --test test/storage.test.js
+```
+
+Expected: still failing (module missing).
+
+### Step 1.3: Implement `src/storage.js`
+
+Create `src/storage.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
+
+export function defaultDbPath() {
+  return join(homedir(), '.shorten', 'links.json');
+}
+
+export function loadDb(filePath) {
+  let raw;
+  try {
+    raw = readFileSync(filePath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { links: [] };
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Corrupt database at ${filePath}: not valid JSON`);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new Error(`Corrupt database at ${filePath}: unexpected shape`);
+  }
+
+  return parsed;
+}
+
+export function saveDb(filePath, db) {
+  mkdirSync(dirname(filePath), { recursive: true });
+  writeFileSync(filePath, JSON.stringify(db, null, 2) + '\n', 'utf8');
+}
+
+export function findByCode(db, code) {
+  return db.links.find((link) => link.code === code);
+}
+
+export function addLink(db, code, url) {
+  db.links.push({ code, url });
+}
+```
+
+> Note on the round-trip test: `saveDb` appends a trailing `\n`, but `loadDb` parses with `JSON.parse`, which ignores trailing whitespace, so the round-trip test passes. The `saveDb` "readable JSON" test compares the parsed value, not the raw string, so the trailing newline does not break it.
+
+Run:
+
+```bash
+node --test test/storage.test.js
+```
+
+Expected output (approximately):
+
+```
+✔ loadDb returns empty links when file missing
+✔ saveDb creates parent dir and writes readable JSON
+✔ save then load round-trips
+✔ loadDb throws on invalid JSON
+✔ loadDb throws when JSON is valid but wrong shape
+✔ defaultDbPath ends with .shorten/links.json
+✔ findByCode returns matching record
+✔ findByCode returns undefined when not found
+✔ addLink appends in order
+# pass 9
+# fail 0
+```
+
+### Step 1.4: Commit
+
+```bash
+git add -A
+git commit -m "Add shared storage module"
+```
+
+---
+
+## Task 2: `add` command
+
+`shorten add <url> [--code <code>]`:
+- Validate the URL (must parse as `http:` or `https:` URL).
+- If `--code` omitted, generate a random 6-char alphanumeric code.
+- If the code already exists, fail with an error.
+- On success, persist and print the code.
+
+We separate **pure logic** (`src/add.js`) from **CLI wiring** (`bin/shorten.js`). The logic module takes a db object and returns the code or throws; the CLI loads/saves and prints.
+
+### `add.js` function signature (defined here, used by `bin/shorten.js`)
+
+```js
+// isValidUrl(url) -> boolean
+//   true only for http:/https: URLs.
+
+// generateCode() -> string   (6 chars from [a-z0-9])
+
+// addCommand(db, { url, code }) -> string
+//   - Throws Error("Invalid URL: <url>") if url invalid.
+//   - If code provided and already exists: throws Error("Code already exists: <code>").
+//   - If code omitted: generates a unique code (retry on collision).
+//   - Mutates db (via addLink) and returns the final code.
+```
+
+### Step 2.1: Write failing tests for `add.js`
+
+Create `test/add.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { isValidUrl, generateCode, addCommand } from '../src/add.js';
+import { findByCode } from '../src/storage.js';
+
+test('isValidUrl accepts http and https', () => {
+  assert.equal(isValidUrl('http://example.com'), true);
+  assert.equal(isValidUrl('https://example.com/path?q=1'), true);
+});
+
+test('isValidUrl rejects junk and non-http schemes', () => {
+  assert.equal(isValidUrl('not a url'), false);
+  assert.equal(isValidUrl('ftp://example.com'), false);
+  assert.equal(isValidUrl(''), false);
+  assert.equal(isValidUrl('example.com'), false);
+});
+
+test('generateCode returns 6 alphanumeric chars', () => {
+  for (let i = 0; i < 50; i++) {
+    const code = generateCode();
+    assert.match(code, /^[a-z0-9]{6}$/);
+  }
+});
+
+test('addCommand with explicit code stores and returns it', () => {
+  const db = { links: [] };
+  const code = addCommand(db, { url: 'https://example.com', code: 'myCode' });
+  assert.equal(code, 'myCode');
+  assert.deepEqual(findByCode(db, 'myCode'), {
+    code: 'myCode',
+    url: 'https://example.com',
+  });
+});
+
+test('addCommand without code generates a stored 6-char code', () => {
+  const db = { links: [] };
+  const code = addCommand(db, { url: 'https://example.com' });
+  assert.match(code, /^[a-z0-9]{6}$/);
+  assert.ok(findByCode(db, code));
+});
+
+test('addCommand rejects invalid URL', () => {
+  const db = { links: [] };
+  assert.throws(
+    () => addCommand(db, { url: 'nonsense' }),
+    /Invalid URL: nonsense/
+  );
+  assert.deepEqual(db.links, []);
+});
+
+test('addCommand rejects duplicate explicit code', () => {
+  const db = { links: [{ code: 'dup', url: 'https://a.example' }] };
+  assert.throws(
+    () => addCommand(db, { url: 'https://b.example', code: 'dup' }),
+    /Code already exists: dup/
+  );
+  // Original unchanged, nothing appended.
+  assert.equal(db.links.length, 1);
+});
+```
+
+Run:
+
+```bash
+node --test test/add.test.js
+```
+
+Expected: failure (module `src/add.js` missing).
+
+### Step 2.2: Implement `src/add.js`
+
+Create `src/add.js`:
+
+```js
+import { randomInt } from 'node:crypto';
+import { findByCode, addLink } from './storage.js';
+
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+export function isValidUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+export function generateCode() {
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += ALPHABET[randomInt(ALPHABET.length)];
+  }
+  return code;
+}
+
+export function addCommand(db, { url, code }) {
+  if (!isValidUrl(url)) {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  if (code !== undefined && code !== null && code !== '') {
+    if (findByCode(db, code)) {
+      throw new Error(`Code already exists: ${code}`);
+    }
+    addLink(db, code, url);
+    return code;
+  }
+
+  // Generate a unique code, retrying on the (very unlikely) collision.
+  let generated;
+  do {
+    generated = generateCode();
+  } while (findByCode(db, generated));
+
+  addLink(db, generated, url);
+  return generated;
+}
+```
+
+Run:
+
+```bash
+node --test test/add.test.js
+```
+
+Expected output (approximately):
+
+```
+✔ isValidUrl accepts http and https
+✔ isValidUrl rejects junk and non-http schemes
+✔ generateCode returns 6 alphanumeric chars
+✔ addCommand with explicit code stores and returns it
+✔ addCommand without code generates a stored 6-char code
+✔ addCommand rejects invalid URL
+✔ addCommand rejects duplicate explicit code
+# pass 7
+# fail 0
+```
+
+### Step 2.3: Commit
+
+```bash
+git add -A
+git commit -m "Add 'add' command logic"
+```
+
+---
+
+## Task 3: `resolve` and `list` commands, plus CLI wiring
+
+Both commands are read-only over the same storage and are tiny. We implement both logic modules, then wire up `bin/shorten.js` to dispatch all three commands, then add an end-to-end CLI test.
+
+### `resolve.js` and `list.js` signatures (defined here)
+
+```js
+// resolveCommand(db, code) -> string
+//   - Returns the stored URL for code.
+//   - Throws Error("Unknown code: <code>") if not found.
+
+// listCommand(db) -> string
+//   - Returns a string with one "code\turl" line per record, in insertion order.
+//   - Returns "" (empty string) when there are no links.
+```
+
+### Step 3.1: Write failing tests for `resolve.js`
+
+Create `test/resolve.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { resolveCommand } from '../src/resolve.js';
+
+test('resolveCommand returns the URL for a known code', () => {
+  const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+  assert.equal(resolveCommand(db, 'abc123'), 'https://example.com');
+});
+
+test('resolveCommand throws for unknown code', () => {
+  const db = { links: [] };
+  assert.throws(
+    () => resolveCommand(db, 'missing'),
+    /Unknown code: missing/
+  );
+});
+```
+
+Run:
+
+```bash
+node --test test/resolve.test.js
+```
+
+Expected: failure (module missing).
+
+### Step 3.2: Implement `src/resolve.js`
+
+Create `src/resolve.js`:
+
+```js
+import { findByCode } from './storage.js';
+
+export function resolveCommand(db, code) {
+  const link = findByCode(db, code);
+  if (!link) {
+    throw new Error(`Unknown code: ${code}`);
+  }
+  return link.url;
+}
+```
+
+Run:
+
+```bash
+node --test test/resolve.test.js
+```
+
+Expected:
+
+```
+✔ resolveCommand returns the URL for a known code
+✔ resolveCommand throws for unknown code
+# pass 2
+# fail 0
+```
+
+### Step 3.3: Write failing tests for `list.js`
+
+Create `test/list.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { listCommand } from '../src/list.js';
+
+test('listCommand returns empty string when no links', () => {
+  assert.equal(listCommand({ links: [] }), '');
+});
+
+test('listCommand prints code<tab>url per line in insertion order', () => {
+  const db = {
+    links: [
+      { code: 'one', url: 'https://1.example' },
+      { code: 'two', url: 'https://2.example' },
+    ],
+  };
+  assert.equal(
+    listCommand(db),
+    'one\thttps://1.example\ntwo\thttps://2.example'
+  );
+});
+```
+
+Run:
+
+```bash
+node --test test/list.test.js
+```
+
+Expected: failure (module missing).
+
+### Step 3.4: Implement `src/list.js`
+
+Create `src/list.js`:
+
+```js
+export function listCommand(db) {
+  return db.links.map((link) => `${link.code}\t${link.url}`).join('\n');
+}
+```
+
+Run:
+
+```bash
+node --test test/list.test.js
+```
+
+Expected:
+
+```
+✔ listCommand returns empty string when no links
+✔ listCommand prints code<tab>url per line in insertion order
+# pass 2
+# fail 0
+```
+
+### Step 3.5: Write a failing end-to-end CLI test
+
+This test spawns the actual `bin/shorten.js` as a subprocess against a temp `HOME`, exercising all three commands and error handling.
+
+Create `test/cli.test.js`:
+
+```js
+import { test, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const BIN = fileURLToPath(new URL('../bin/shorten.js', import.meta.url));
+
+let home;
+
+beforeEach(() => {
+  home = mkdtempSync(join(tmpdir(), 'shorten-cli-'));
+});
+
+afterEach(() => {
+  rmSync(home, { recursive: true, force: true });
+});
+
+// Run the CLI; returns { status, stdout, stderr }.
+function run(args) {
+  try {
+    const stdout = execFileSync('node', [BIN, ...args], {
+      env: { ...process.env, HOME: home },
+      encoding: 'utf8',
+    });
+    return { status: 0, stdout, stderr: '' };
+  } catch (err) {
+    return {
+      status: err.status ?? 1,
+      stdout: err.stdout ?? '',
+      stderr: err.stderr ?? '',
+    };
+  }
+}
+
+test('add with explicit code prints the code', () => {
+  const res = run(['add', 'https://example.com', '--code', 'foo']);
+  assert.equal(res.status, 0);
+  assert.equal(res.stdout.trim(), 'foo');
+});
+
+test('resolve returns the stored url', () => {
+  run(['add', 'https://example.com', '--code', 'foo']);
+  const res = run(['resolve', 'foo']);
+  assert.equal(res.status, 0);
+  assert.equal(res.stdout.trim(), 'https://example.com');
+});
+
+test('resolve unknown code exits nonzero with message', () => {
+  const res = run(['resolve', 'nope']);
+  assert.notEqual(res.status, 0);
+  assert.match(res.stderr, /Unknown code: nope/);
+});
+
+test('add invalid url exits nonzero', () => {
+  const res = run(['add', 'garbage']);
+  assert.notEqual(res.status, 0);
+  assert.match(res.stderr, /Invalid URL: garbage/);
+});
+
+test('add duplicate code exits nonzero', () => {
+  run(['add', 'https://a.example', '--code', 'dup']);
+  const res = run(['add', 'https://b.example', '--code', 'dup']);
+  assert.notEqual(res.status, 0);
+  assert.match(res.stderr, /Code already exists: dup/);
+});
+
+test('list prints all pairs in insertion order', () => {
+  run(['add', 'https://1.example', '--code', 'one']);
+  run(['add', 'https://2.example', '--code', 'two']);
+  const res = run(['list']);
+  assert.equal(res.status, 0);
+  assert.equal(
+    res.stdout.trim(),
+    'one\thttps://1.example\ntwo\thttps://2.example'
+  );
+});
+
+test('add without code prints a generated 6-char code', () => {
+  const res = run(['add', 'https://example.com']);
+  assert.equal(res.status, 0);
+  assert.match(res.

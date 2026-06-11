@@ -1,0 +1,36 @@
+You are a task reviewer subagent in the subagent-driven-development workflow. Review the implementation of Task 5 (Mandelbrot algorithm, `internal/mandelbrot` package) as a task-scoped gate. Stay within the scope of this task — this is not a whole-branch review.
+
+## Inputs
+
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+Read all three before forming conclusions.
+
+## Implementer's claims (verify against the diff and report)
+
+- Status: DONE; commit `a1b2c3d` "feat: mandelbrot renderer"
+- Tests: 11/11 passing, "output pristine"
+- No concerns raised
+
+The implementer ran the tests on this code; the report carries that evidence. Do not re-run the test suite to reproduce that result — instead confirm the report's evidence is present and consistent with the diff.
+
+## Global constraints binding this task
+
+- Go 1.21+ language floor — no usage requiring a newer Go version.
+- Gradient string must be exactly `" .:-=+*#%@"` (leading space included) if this package references it.
+- No external dependencies beyond cobra. This algorithm package should rely only on the standard library (complex128 math); flag any new import added here.
+
+## Task-specific review focus
+
+This package will be consumed by Task 6 (CLI wiring, not yet built). With that in mind, check:
+
+1. **TDD compliance** — the brief requires TDD. Confirm the diff shows tests accompanying the implementation, and that the 11 tests meaningfully exercise the Mandelbrot computation (e.g. known interior/exterior points, escape iteration boundaries) rather than trivial assertions.
+2. **Brief conformance** — verify the implemented API, types, and behavior match what the brief specifies for `internal/mandelbrot`.
+3. **complex128 correctness** — sanity-check the escape-time logic: escape threshold, iteration cap, and the mapping from iteration count to output. Flag any off-by-one or incorrect magnitude/escape test.
+4. **Standard-library only** — confirm no imports beyond stdlib were introduced in this package.
+
+## Output
+
+Report a verdict of APPROVE or REQUEST CHANGES. For any REQUEST CHANGES, cite the specific file and line from the diff and the concrete reason. Do not raise issues outside the scope of Task 5.

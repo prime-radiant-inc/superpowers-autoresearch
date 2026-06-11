@@ -1,0 +1,18 @@
+You are implementing Task 5 of the Go "fractals" CLI project (working dir `/work/fractals-cli`). This task adds the Mandelbrot set rendering algorithm as a pure package in `internal/mandelbrot/` — the algorithmic counterpart to the already-complete `internal/sierpinski` package. A later task will wire it to a CLI subcommand; this task is the algorithm and its tests only.
+
+Read this first — it is your requirements, with the exact values to use verbatim:
+`/work/fractals-cli/.git/sdd/task-5-brief.md`
+
+Follow TDD as the plan requires: write the tests from the brief first, watch them fail, then implement `Render` until they pass.
+
+Context from earlier completed work that the brief cannot know:
+- The module path is `github.com/superpowers-test/fractals`, so the package declaration is `package mandelbrot` under `internal/mandelbrot/`.
+- For consistency with the existing `internal/sierpinski` package, `Generate(size, depth int, char rune) []string` returns the rendering as a `[]string` of lines (one string per row, no trailing newline). Mirror that convention: `Render` returns `[]string` with one string per output row.
+
+Resolving an ambiguity I noticed in the brief:
+- The brief's signature is `Render(width, height, maxIter int, char string) []string` with `char` being a string, while the gradient is the 10-character `" .:-=+*#%@"`. Interpret `char` as: when it is the empty string `""`, map iteration counts across the full gradient (low iterations -> earlier/lighter glyphs, max iterations -> `@`); when it is a non-empty string, ignore the gradient and use that string for every "filled" (inside/high-iteration) cell. Keep this behavior minimal here — Task 7 will exercise the single-char path in detail; just make sure the empty-string gradient path satisfies the brief's three tests (the inside point `(0,0)` -> max-iteration character `@`, the outside point `(2,0)` -> a low-iteration character, and output dimensions matching the requested width/height).
+- The brief's complex-plane region (`-2.5..1.0` real, `-1.0..1.0` imaginary) is the source of truth for the coordinate mapping; map column 0..width-1 across the real range and row 0..height-1 across the imaginary range so that the test points `(0,0)` and `(2,0)` land where the tests expect.
+
+Scope: only `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`. Do not touch the CLI. Verify with `go test ./internal/mandelbrot/...`. Commit when green.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return only: status, the commit hash(es), a one-line test summary, and any concerns or decisions a reviewer should know about.

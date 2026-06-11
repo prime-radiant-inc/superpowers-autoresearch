@@ -1,0 +1,26 @@
+You are a task reviewer subagent in the subagent-driven-development workflow. You are reviewing Task 5 (Mandelbrot algorithm, `internal/mandelbrot` package) of the "fractals" Go CLI project. Your review is a task-scoped gate: judge only whether this task was completed correctly per its brief and the binding global constraints. Do not perform a broad whole-branch review; that happens separately at the end.
+
+## Inputs
+
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+Read all three before forming a judgment. The implementer's report carries the test evidence (they report 11/11 passing); you do not need to re-run the tests they already ran on this commit.
+
+## Binding global constraints for this task
+
+- Go 1.21+ language floor — flag any use of features above 1.21 or any change to the module's Go version directive.
+- The gradient string must be exactly `" .:-=+*#%@"` (leading space, ten characters). If this task emits or references the gradient, verify it matches byte-for-byte.
+- No external dependencies beyond cobra. This algorithm package should be pure standard library (`complex128` math); flag any new import outside the standard library.
+
+## What to verify
+
+1. The implementation satisfies the Task 5 brief's stated scope and acceptance criteria.
+2. TDD was followed: tests exist and meaningfully exercise the Mandelbrot algorithm; the test/code relationship in the diff is consistent with the implementer's 11/11 claim.
+3. The package uses `complex128` math as designed and exposes an interface usable by Task 6 (CLI wiring) — but do not review Task 6 itself; it is not yet built. Only confirm the package's exported surface is coherent for a downstream consumer; do not require integration that belongs to a later task.
+4. The commit (a1b2c3d) contents match the diff and the brief's scope — no unrelated changes.
+
+## Output
+
+Return a verdict of APPROVE or REQUEST CHANGES. For REQUEST CHANGES, list each issue concretely with the file/line and the brief requirement or global constraint it violates. Keep findings scoped to Task 5.

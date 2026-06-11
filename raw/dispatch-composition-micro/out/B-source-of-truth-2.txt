@@ -1,0 +1,21 @@
+You are implementing Task 5 of the Go fractals CLI project (working dir `/work/fractals-cli`). Tasks 1–4 are complete: the project is set up with cobra, and `internal/sierpinski` plus its CLI subcommand exist. HEAD is clean.
+
+**Your brief is at `/work/fractals-cli/.git/sdd/task-5-brief.md`** — read it first. It is the single source of truth for your requirements and their exact values (the complex-plane region bounds, the character gradient string, the function signature, and the three required test cases). Use those values verbatim; do not invent or adjust them.
+
+**Scope:** This task is the Mandelbrot *algorithm* only — `internal/mandelbrot/mandelbrot.go` and its test file. Do NOT touch the CLI; the `mandelbrot` subcommand is Task 6.
+
+**TDD is required by the plan.** Write each test first, watch it fail, then implement. The brief lists three test cases — implement all three.
+
+Context and guidance only I can give you:
+
+- **Signature:** `Render(width, height, maxIter int, char string) []string`. The `char string` parameter: when non-empty it should be used as the fill for in-set points instead of the gradient; when empty, use the gradient `" .:-=+*#%@"`. For *this* task you only need the gradient path working and tested — the brief's tests use the default behavior — but implement the `char` parameter handling now so Task 6 and Task 7 can rely on it. Don't over-think it: empty `char` → gradient, non-empty → that string for filled points.
+
+- **Mapping interpretation:** Map the real axis (-2.5 to 1.0) across `width` columns and the imaginary axis (-1.0 to 1.0) across `height` rows. For the "dimensions match" test, the returned slice should have `height` lines, each `width` characters wide.
+
+- **Gradient mapping:** Map iteration count to the gradient such that points that reach `maxIter` (i.e., in the set, like (0,0)) get the *last* gradient character `@`, and points that escape immediately (like (2,0)) get the first character (space). Pick a sensible monotonic mapping; the brief's two point-tests just require (0,0) → max-iteration char and (2,0) → a low-iteration char, so make sure your indexing satisfies both.
+
+**Verify:** `go test ./internal/mandelbrot/...` passes.
+
+Follow the project's existing Go style and conventions (match how `internal/sierpinski` is written). Commit when done with a clear message.
+
+Write your full implementation report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return to me only: status, commit hash(es), a one-line test summary, and any concerns or ambiguities you hit.

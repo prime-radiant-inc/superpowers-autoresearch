@@ -1,0 +1,22 @@
+You are implementing Task 5 of the "fractals" Go CLI — a tool that renders ASCII fractals. This task adds the Mandelbrot set rendering algorithm as a pure package in `internal/mandelbrot`, mirroring the structure of the already-complete `internal/sierpinski` package. No CLI wiring happens in this task (that is Task 6).
+
+Read this first — it is your requirements, with the exact values to use verbatim:
+/work/fractals-cli/.git/sdd/task-5-brief.md
+
+This is your single source of truth for the signature, the complex-plane region bounds, the character gradient, and the three required test cases. Use the values there exactly; do not paraphrase or substitute them.
+
+Context from earlier completed tasks the brief cannot know:
+- Module name is `github.com/superpowers-test/fractals`. Import accordingly if needed.
+- The directory `internal/mandelbrot/` already exists (created in Task 1) but is empty.
+- For reference on house style, the existing `internal/sierpinski/sierpinski.go` exposes `Generate(size, depth int, char rune) []string` and has a matching `_test.go`. Match that style: a pure function returning `[]string` (one string per row, no trailing newline), table-driven or clearly-structured tests, TDD (write tests first, watch them fail, then implement).
+
+Resolution of an ambiguity I noticed in the brief:
+- The signature is `Render(width, height, maxIter int, char string) []string` and `char` is a `string` (unlike Sierpinski's `rune`). The brief says map iteration count to the gradient `" .:-=+*#%@"` "or single char if provided." Interpret this as: if `char` is the empty string `""`, use the 10-character gradient mapping iteration count to a character; if `char` is non-empty, use that single character for every point that reaches `maxIter` (in-set points) and a space `" "` for out-of-set points. The brief's gradient-vs-single-char `--char` behavior is finalized in Task 7 — for this task, just make the function honor both modes so the three required tests pass; keep the empty-string-means-gradient default.
+- The gradient string is exactly 10 characters: index points so that index 0 (`" "`) corresponds to escaping immediately and the last index (`"@"`) corresponds to reaching `maxIter`. The in-set point (0,0) must map to the max-iteration character `"@"`; an escaping point like (2,0) must map to a low/early character. Verify your index math against the two known-point tests in the brief.
+
+When done, write your full report to:
+/work/fractals-cli/.git/sdd/task-5-report.md
+
+The report must cover: what you implemented, the final `Render` signature and gradient/char-mode behavior, your iteration-to-character index mapping (so the next task and reviewer understand it), the test cases and their results, and any concerns or deviations.
+
+Return to me only: status (done/blocked), the commit hash(es), a one-line test summary, and any concerns. Commit your work with a clear message; do not push.

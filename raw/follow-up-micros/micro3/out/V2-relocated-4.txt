@@ -1,0 +1,740 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a local JSON database of shortened links at `~/.shorten/links.json`. The CLI has three commands: `add`, `resolve`, and `list`. All three share a storage module.
+
+**Tech constraints:**
+- Node 20+ (we rely on `node:test`, `node:assert`, built-in `fetch`-free code, and standard `fs`/`path`/`os` modules).
+- No third-party dependencies.
+- Tests written with `node:test`.
+- TDD: every feature starts with a failing test.
+
+**Project layout we will create:**
+
+```
+shorten/
+  package.json
+  bin/
+    shorten.js          # CLI entry point (arg parsing + dispatch)
+  src/
+    storage.js          # shared storage module
+    commands.js         # add / resolve / list logic
+  test/
+    storage.test.js
+    commands.test.js
+```
+
+**Data model.** The JSON file holds an object with one key `links`, whose value is an array of records in insertion order. Each record is `{ code: string, url: string }`. Using an array (not a map) guarantees we preserve "order added" for `list`.
+
+Example file contents:
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "ZZ9000", "url": "https://nodejs.org" }
+  ]
+}
+```
+
+**Shared design decisions (apply to every task):**
+- The storage path is configurable via an environment variable `SHORTEN_HOME` (defaults to `~/.shorten`). This lets tests use a temp directory instead of the real home directory. The DB file is always `<home>/links.json`.
+- URL validation: a URL is valid if `new URL(url)` does not throw **and** its protocol is `http:` or `https:`. Anything else is rejected.
+- Corrupt file handling: if the file exists but does not parse as JSON, or parses but is not the expected shape, we throw a clear error rather than silently overwriting.
+- Errors thrown by command functions carry a `.exitCode` property; the CLI entry point prints the message to stderr and exits with that code. This keeps command logic testable without spawning processes.
+
+---
+
+## Task 1 — Shared storage module
+
+This task builds `src/storage.js`, which every command depends on. It handles locating the DB file, reading it (creating an empty DB on first use), validating its shape, and writing it back.
+
+### 1.1 Create the project skeleton
+
+Create the directory and `package.json`.
+
+**File: `shorten/package.json`** (create with exactly this content):
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+```
+
+Create the empty directories:
+
+```bash
+mkdir -p shorten/bin shorten/src shorten/test
+```
+
+Run the test command to confirm the harness works (it will report no tests):
+
+```bash
+cd shorten && node --test
+```
+
+Expected output (something like):
+
+```
+ℹ tests 0
+ℹ pass 0
+ℹ fail 0
+```
+
+Commit:
+
+```bash
+git add -A && git commit -m "Scaffold shorten project skeleton"
+```
+
+### 1.2 Write the failing storage tests
+
+We will define and test the following storage API:
+
+- `dbPath()` → returns the absolute path to `links.json` based on `SHORTEN_HOME` or `~/.shorten`.
+- `readDb()` → returns `{ links: [...] }`. If the file does not exist, returns `{ links: [] }` (does **not** create the file). If the file is corrupt, throws an `Error` whose message starts with `Corrupt database`.
+- `writeDb(db)` → creates the home directory if needed and writes the DB to disk (pretty-printed JSON).
+
+**File: `shorten/test/storage.test.js`** (create with exactly this content):
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { dbPath, readDb, writeDb } from '../src/storage.js';
+
+// Helper: run a function with SHORTEN_HOME pointed at a fresh temp dir.
+async function withTempHome(fn) {
+  const home = await mkdtemp(join(tmpdir(), 'shorten-test-'));
+  const previous = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = home;
+  try {
+    return await fn(home);
+  } finally {
+    if (previous === undefined) {
+      delete process.env.SHORTEN_HOME;
+    } else {
+      process.env.SHORTEN_HOME = previous;
+    }
+    await rm(home, { recursive: true, force: true });
+  }
+}
+
+test('dbPath points at links.json inside SHORTEN_HOME', async () => {
+  await withTempHome((home) => {
+    assert.equal(dbPath(), join(home, 'links.json'));
+  });
+});
+
+test('readDb returns empty db when file does not exist', async () => {
+  await withTempHome(async () => {
+    const db = await readDb();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('readDb does not create the file', async () => {
+  await withTempHome(async (home) => {
+    await readDb();
+    await assert.rejects(readFile(join(home, 'links.json')));
+  });
+});
+
+test('writeDb then readDb round-trips data', async () => {
+  await withTempHome(async () => {
+    const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+    await writeDb(db);
+    const loaded = await readDb();
+    assert.deepEqual(loaded, db);
+  });
+});
+
+test('writeDb creates the home directory if missing', async () => {
+  await withTempHome(async (home) => {
+    // point SHORTEN_HOME at a not-yet-existing nested dir
+    const nested = join(home, 'deeper');
+    process.env.SHORTEN_HOME = nested;
+    await writeDb({ links: [] });
+    const contents = await readFile(join(nested, 'links.json'), 'utf8');
+    assert.deepEqual(JSON.parse(contents), { links: [] });
+  });
+});
+
+test('writeDb writes pretty-printed JSON ending in a newline', async () => {
+  await withTempHome(async (home) => {
+    await writeDb({ links: [{ code: 'x', url: 'https://x.test' }] });
+    const contents = await readFile(join(home, 'links.json'), 'utf8');
+    assert.ok(contents.includes('\n  '), 'expected indentation');
+    assert.ok(contents.endsWith('\n'), 'expected trailing newline');
+  });
+});
+
+test('readDb throws Corrupt database on invalid JSON', async () => {
+  await withTempHome(async (home) => {
+    await mkdir(home, { recursive: true });
+    await writeFile(join(home, 'links.json'), 'this is not json', 'utf8');
+    await assert.rejects(readDb(), /^Error: Corrupt database/);
+  });
+});
+
+test('readDb throws Corrupt database when shape is wrong', async () => {
+  await withTempHome(async (home) => {
+    await mkdir(home, { recursive: true });
+    await writeFile(join(home, 'links.json'), '{"links": "nope"}', 'utf8');
+    await assert.rejects(readDb(), /^Error: Corrupt database/);
+  });
+});
+```
+
+Run the tests; they must fail because `src/storage.js` does not exist yet:
+
+```bash
+cd shorten && node --test
+```
+
+Expected output includes a failure resolving the import, e.g.:
+
+```
+Cannot find module '.../shorten/src/storage.js'
+ℹ fail 8   (or the run aborts on the import error)
+```
+
+(The exact count may differ; the key point is the run is **not** all-passing.)
+
+### 1.3 Implement the storage module
+
+**File: `shorten/src/storage.js`** (create with exactly this content):
+
+```js
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+// Returns the directory that holds the database file.
+function homeDir() {
+  return process.env.SHORTEN_HOME ?? join(homedir(), '.shorten');
+}
+
+// Returns the absolute path to the database file.
+export function dbPath() {
+  return join(homeDir(), 'links.json');
+}
+
+// Reads the database. Returns { links: [] } if the file does not exist.
+// Throws an Error starting with "Corrupt database" if the file is unreadable
+// as the expected shape.
+export async function readDb() {
+  let raw;
+  try {
+    raw = await readFile(dbPath(), 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { links: [] };
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Corrupt database at ${dbPath()}: not valid JSON`);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new Error(
+      `Corrupt database at ${dbPath()}: expected { links: [...] }`,
+    );
+  }
+
+  return parsed;
+}
+
+// Writes the database, creating the home directory if needed.
+export async function writeDb(db) {
+  await mkdir(homeDir(), { recursive: true });
+  const json = JSON.stringify(db, null, 2) + '\n';
+  await writeFile(dbPath(), json, 'utf8');
+}
+```
+
+Run the tests; they must all pass:
+
+```bash
+cd shorten && node --test
+```
+
+Expected output (counts):
+
+```
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+```
+
+Commit:
+
+```bash
+git add -A && git commit -m "Add shared storage module"
+```
+
+---
+
+## Task 2 — `add` and `resolve` commands
+
+This task builds `src/commands.js` with two exported functions, `add` and `resolve`, plus a code generator. Both functions use the storage module from Task 1. We also wire up the CLI entry point so the commands are usable from the terminal.
+
+Function contracts:
+
+- `generateCode()` → returns a random 6-character string drawn from `[A-Za-z0-9]`.
+- `add(url, { code })` → validates the URL, picks a code (given or generated), rejects duplicates, persists, and returns the code string. Throws an `Error` with `.exitCode = 1` on bad input.
+- `resolve(code)` → returns the stored URL string, or throws an `Error` with `.exitCode = 1` if the code is unknown.
+
+### 2.1 Write the failing tests for `add` and `resolve`
+
+**File: `shorten/test/commands.test.js`** (create with exactly this content):
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { add, resolve, generateCode } from '../src/commands.js';
+import { readDb } from '../src/storage.js';
+
+async function withTempHome(fn) {
+  const home = await mkdtemp(join(tmpdir(), 'shorten-cmd-'));
+  const previous = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = home;
+  try {
+    return await fn(home);
+  } finally {
+    if (previous === undefined) {
+      delete process.env.SHORTEN_HOME;
+    } else {
+      process.env.SHORTEN_HOME = previous;
+    }
+    await rm(home, { recursive: true, force: true });
+  }
+}
+
+test('generateCode returns 6 alphanumeric characters', () => {
+  for (let i = 0; i < 50; i++) {
+    const code = generateCode();
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+  }
+});
+
+test('add with explicit code stores the url and returns the code', async () => {
+  await withTempHome(async () => {
+    const code = await add('https://example.com', { code: 'mycode' });
+    assert.equal(code, 'mycode');
+    const db = await readDb();
+    assert.deepEqual(db.links, [
+      { code: 'mycode', url: 'https://example.com' },
+    ]);
+  });
+});
+
+test('add without code generates a 6-char code', async () => {
+  await withTempHome(async () => {
+    const code = await add('https://example.com', {});
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const db = await readDb();
+    assert.equal(db.links.length, 1);
+    assert.equal(db.links[0].code, code);
+  });
+});
+
+test('add preserves insertion order across calls', async () => {
+  await withTempHome(async () => {
+    await add('https://a.test', { code: 'aaa' });
+    await add('https://b.test', { code: 'bbb' });
+    const db = await readDb();
+    assert.deepEqual(
+      db.links.map((l) => l.code),
+      ['aaa', 'bbb'],
+    );
+  });
+});
+
+test('add rejects a non-http(s) url', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => add('ftp://example.com', {}),
+      (err) => {
+        assert.match(err.message, /Invalid URL/);
+        assert.equal(err.exitCode, 1);
+        return true;
+      },
+    );
+  });
+});
+
+test('add rejects a totally malformed url', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => add('not a url', {}),
+      (err) => {
+        assert.match(err.message, /Invalid URL/);
+        assert.equal(err.exitCode, 1);
+        return true;
+      },
+    );
+  });
+});
+
+test('add rejects a duplicate code', async () => {
+  await withTempHome(async () => {
+    await add('https://a.test', { code: 'dup' });
+    await assert.rejects(
+      () => add('https://b.test', { code: 'dup' }),
+      (err) => {
+        assert.match(err.message, /already exists/);
+        assert.equal(err.exitCode, 1);
+        return true;
+      },
+    );
+    const db = await readDb();
+    assert.equal(db.links.length, 1);
+  });
+});
+
+test('resolve returns the stored url', async () => {
+  await withTempHome(async () => {
+    await add('https://example.com', { code: 'find' });
+    const url = await resolve('find');
+    assert.equal(url, 'https://example.com');
+  });
+});
+
+test('resolve throws for an unknown code', async () => {
+  await withTempHome(async () => {
+    await assert.rejects(
+      () => resolve('nope'),
+      (err) => {
+        assert.match(err.message, /Unknown code/);
+        assert.equal(err.exitCode, 1);
+        return true;
+      },
+    );
+  });
+});
+```
+
+Run the tests; they must fail because `src/commands.js` does not exist:
+
+```bash
+cd shorten && node --test
+```
+
+Expected: the storage tests still pass, and the import of `../src/commands.js` fails (run is not all-passing).
+
+### 2.2 Implement `generateCode`, `add`, and `resolve`
+
+**File: `shorten/src/commands.js`** (create with exactly this content):
+
+```js
+import { randomInt } from 'node:crypto';
+import { readDb, writeDb } from './storage.js';
+
+const ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+// Build an Error that carries an exit code for the CLI.
+function userError(message) {
+  const err = new Error(message);
+  err.exitCode = 1;
+  return err;
+}
+
+// Returns a random 6-character alphanumeric code.
+export function generateCode() {
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += ALPHABET[randomInt(ALPHABET.length)];
+  }
+  return code;
+}
+
+// Returns true if the string is a valid http(s) URL.
+function isValidUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+// Generates a code that is not already present in the db.
+function freshCode(db) {
+  let code = generateCode();
+  while (db.links.some((l) => l.code === code)) {
+    code = generateCode();
+  }
+  return code;
+}
+
+// Adds a url. Returns the code used. Throws userError on invalid input.
+export async function add(url, { code } = {}) {
+  if (!isValidUrl(url)) {
+    throw userError(`Invalid URL: ${url}`);
+  }
+
+  const db = await readDb();
+
+  let finalCode;
+  if (code !== undefined) {
+    if (db.links.some((l) => l.code === code)) {
+      throw userError(`Code already exists: ${code}`);
+    }
+    finalCode = code;
+  } else {
+    finalCode = freshCode(db);
+  }
+
+  db.links.push({ code: finalCode, url });
+  await writeDb(db);
+  return finalCode;
+}
+
+// Returns the url stored for a code. Throws userError if not found.
+export async function resolve(code) {
+  const db = await readDb();
+  const found = db.links.find((l) => l.code === code);
+  if (!found) {
+    throw userError(`Unknown code: ${code}`);
+  }
+  return found.url;
+}
+```
+
+Run the tests; all should pass:
+
+```bash
+cd shorten && node --test
+```
+
+Expected output (counts; 8 storage + 9 commands = 17):
+
+```
+ℹ tests 17
+ℹ pass 17
+ℹ fail 0
+```
+
+### 2.3 Wire up the CLI entry point
+
+Create the executable that parses arguments and dispatches to the commands. We support `add <url> [--code <code>]` and `resolve <code>` now; `list` is added in Task 3 but we include its dispatch stub-free by handling it in this same file structure (we add the `list` branch in Task 3).
+
+**File: `shorten/bin/shorten.js`** (create with exactly this content):
+
+```js
+#!/usr/bin/env node
+import { add, resolve } from '../src/commands.js';
+
+// Parse argv into a command, positional args, and flags.
+// Supports a single recognised flag: --code <value>.
+function parseArgs(argv) {
+  const [command, ...rest] = argv;
+  const positionals = [];
+  const flags = {};
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    if (arg === '--code') {
+      flags.code = rest[i + 1];
+      i++;
+    } else {
+      positionals.push(arg);
+    }
+  }
+  return { command, positionals, flags };
+}
+
+function fail(message, exitCode = 1) {
+  process.stderr.write(message + '\n');
+  process.exit(exitCode);
+}
+
+async function main() {
+  const { command, positionals, flags } = parseArgs(process.argv.slice(2));
+
+  switch (command) {
+    case 'add': {
+      const url = positionals[0];
+      if (!url) fail('Usage: shorten add <url> [--code <code>]');
+      if (flags.code !== undefined && flags.code === undefined) {
+        fail('Usage: shorten add <url> [--code <code>]');
+      }
+      const code = await add(url, { code: flags.code });
+      process.stdout.write(code + '\n');
+      break;
+    }
+    case 'resolve': {
+      const code = positionals[0];
+      if (!code) fail('Usage: shorten resolve <code>');
+      const url = await resolve(code);
+      process.stdout.write(url + '\n');
+      break;
+    }
+    default:
+      fail(`Unknown command: ${command ?? '(none)'}`);
+  }
+}
+
+main().catch((err) => {
+  fail(err.message, err.exitCode ?? 1);
+});
+```
+
+Make it executable:
+
+```bash
+chmod +x shorten/bin/shorten.js
+```
+
+Manually verify the end-to-end flow using a temp home so we don't touch the real `~/.shorten`:
+
+```bash
+cd shorten
+export SHORTEN_HOME="$(mktemp -d)"
+node bin/shorten.js add https://example.com --code demo
+```
+
+Expected output:
+
+```
+demo
+```
+
+```bash
+node bin/shorten.js resolve demo
+```
+
+Expected output:
+
+```
+https://example.com
+```
+
+Verify error behavior and exit code:
+
+```bash
+node bin/shorten.js resolve missing; echo "exit=$?"
+```
+
+Expected output:
+
+```
+Unknown code: missing
+exit=1
+```
+
+```bash
+node bin/shorten.js add "not a url"; echo "exit=$?"
+```
+
+Expected output:
+
+```
+Invalid URL: not a url
+exit=1
+```
+
+Clean up the temp home and unset the variable:
+
+```bash
+rm -rf "$SHORTEN_HOME"; unset SHORTEN_HOME
+```
+
+Commit:
+
+```bash
+git add -A && git commit -m "Add add/resolve commands and CLI entry point"
+```
+
+---
+
+## Task 3 — `list` command
+
+This task adds a `list` function to `src/commands.js` and a `list` branch to the CLI. `list` shares the exact same data-access path as `resolve` (both call `readDb` from storage). The output format is one line per link: `<code>\t<url>`, in insertion order. With no links, it prints nothing (exit code 0).
+
+Function contract:
+
+- `list()` → returns an array of `{ code, url }` records in insertion order (the raw `db.links` array). The CLI is responsible for formatting.
+
+### 3.1 Write the failing test for `list`
+
+Append the following tests to **`shorten/test/commands.test.js`** (add at the end of the existing file, after the last test). First add the import update at the top of the file — change the existing import line:
+
+```js
+import { add, resolve, generateCode } from '../src/commands.js';
+```
+
+to:
+
+```js
+import { add, resolve, generateCode, list } from '../src/commands.js';
+```
+
+Then append these tests to the end of the file:
+
+```js
+test('list returns an empty array when there are no links', async () => {
+  await withTempHome(async () => {
+    const result = await list();
+    assert.deepEqual(result, []);
+  });
+});
+
+test('list returns all links in insertion order', async () => {
+  await withTempHome(async () => {
+    await add('https://a.test', { code: 'aaa' });
+    await add('https://b.test', { code: 'bbb' });
+    await add('https://c.test', { code: 'ccc' });
+    const result = await list();
+    assert.deepEqual(result, [
+      { code: 'aaa', url: 'https://a.test' },
+      { code: 'bbb', url: 'https://b.test' },
+      { code: 'ccc', url: 'https://c.test' },
+    ]);
+  });
+});
+```
+
+Run the tests; the two new ones must fail because `list` is not exported yet:
+
+```bash
+cd shorten && node --test
+```
+
+Expected: the import of `list` fails or the new tests error (run is not all-passing).
+
+### 3.2 Implement `list`
+
+Append the following function to the end of **`shorten/src/commands.js`** (after the `resolve` function):
+
+```js
+// Returns all stored links in insertion order.
+export async function

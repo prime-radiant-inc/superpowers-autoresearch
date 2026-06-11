@@ -1,0 +1,25 @@
+You are implementing a task in the "fractals" Go CLI project. Follow TDD strictly — write failing tests first, then implement.
+
+Read your task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full text of your task. Also read `design.md` and `plan.md` in the repo root for full context.
+
+Working directory: `/work/fractals-cli` (Go 1.21, cobra). HEAD is clean; Tasks 1–4 (project setup, cobra CLI framework, sierpinski algorithm, sierpinski CLI subcommand) are already complete.
+
+## Context
+
+- This task is algorithm-only (`internal/mandelbrot/`). Do NOT add a CLI subcommand — that is Task 6.
+- Module path is `github.com/superpowers-test/fractals`.
+- Signature is fixed by the plan: `Render(width, height, maxIter int, char string) []string`. Task 6's CLI will call this, and Task 7 will rely on the `char` parameter behavior, so honor it precisely:
+  - When `char` is empty (`""`), map iteration count to the gradient `" .:-=+*#%@"`.
+  - When `char` is non-empty, use that single character for filled (in-set / high-iteration) points.
+  - Decide and document (in code comments) exactly how iteration count maps to gradient index, and how the non-empty `char` case decides filled vs. blank — Task 7 will test custom-character output against this behavior.
+- Complex plane region per the plan: real `-2.5` to `1.0`, imaginary `-1.0` to `1.0`, mapped onto the requested `width`×`height`.
+- For look ahead: input validation (size/width/height/iterations bounds) is Task 8 — do NOT add validation logic here. Assume valid positive inputs for this task.
+- Follow the patterns established in `internal/sierpinski/sierpinski.go` and its test file for code style and test structure.
+
+Write tests covering at least: output dimensions match requested width/height; point inside the set (0,0) maps to the max-iteration character; point outside the set (2,0) maps to a low-iteration character. Run `go test ./internal/mandelbrot/...` to verify.
+
+## Report
+
+Write your full implementation report to `/work/fractals-cli/.git/sdd/task-5-report.md` (decisions made, the gradient-mapping scheme you chose, anything Task 6/7 implementers must know, test coverage notes).
+
+Return to me only: status, the commit hash(es), a one-line test summary, and any concerns.

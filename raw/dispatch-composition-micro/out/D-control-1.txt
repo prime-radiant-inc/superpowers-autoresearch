@@ -1,0 +1,36 @@
+You are implementing one task in the "fractals" Go CLI project (working dir: `/work/fractals-cli`). Tasks 1-4 are complete; HEAD is clean.
+
+## Your task
+
+Read your task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full text of Task 5 (Mandelbrot Algorithm) verbatim. Implement exactly that task, nothing more.
+
+For full context, also read `design.md` and `plan.md` in the repo root before starting.
+
+## Requirements
+
+- **TDD is required by the plan.** Write the tests first, watch them fail, then implement until they pass. The brief specifies the three required test cases:
+  - Output dimensions match requested width/height
+  - Known point inside set (0,0) maps to max-iteration character
+  - Known point outside set (2,0) maps to low-iteration character
+- Create `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`.
+- Implement `Render(width, height, maxIter int, char string) []string` per the brief: map the complex plane region (-2.5 to 1.0 real, -1.0 to 1.0 imaginary) to output dimensions, and map iteration count to the gradient `" .:-=+*#%@"` (or the single provided char if `char` is non-empty).
+- This is the algorithm package only — do NOT touch the CLI (`internal/cli/`) or `main.go`. CLI integration is Task 6.
+
+## Verification
+
+- `go test ./internal/mandelbrot/...` must pass.
+- `go build ./...` must succeed.
+
+## Commit
+
+Commit your work with a clear message when the task is complete and verification passes. Follow the existing commit style in the repo (`git log` to check).
+
+## Reporting
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. It should cover what you did, the TDD cycle (tests written, failure observed, implementation, pass), design decisions, and verification output.
+
+Return to me only:
+- Status (complete / blocked)
+- Commit SHA(s)
+- A one-line test summary
+- Any concerns or surprises

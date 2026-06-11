@@ -1,0 +1,738 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We're building a Node.js CLI named `shorten` that manages a JSON database of short-code → URL mappings stored at `~/.shorten/links.json`. The CLI has three commands: `add`, `resolve`, and `list`. All three share a storage module.
+
+**Tech constraints:**
+- Node 20+ (we rely on `node:test`, `node:assert`, built-in `crypto`, `fs`, `path`, `os`).
+- No third-party dependencies.
+- TDD: write a failing test, run it, implement, run again, commit.
+
+**Architecture:**
+- `src/storage.js` — load/save the JSON database. Pure-ish functions that take a file path so tests can use temp files.
+- `src/commands.js` — `add`, `resolve`, `list` command logic. Each takes a storage file path and returns a string (or throws). This makes them testable without spawning processes.
+- `bin/shorten.js` — thin CLI entry point that parses `process.argv`, resolves the real home-directory path, calls a command, prints the result, and sets exit codes.
+
+**Why this split:** The command functions return strings and throw typed errors instead of calling `console.log`/`process.exit` directly. That makes them unit-testable. The `bin` file is the only place that touches `process` and the real filesystem location.
+
+**Data model.** The JSON file contains an object with a `links` array preserving insertion order:
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "ZZ9000", "url": "https://nodejs.org" }
+  ]
+}
+```
+
+We use an array (not a plain object map) so that `list` can print in insertion order trivially and deterministically.
+
+---
+
+## Project Setup (do this first)
+
+Run these commands from an empty directory where you want the project:
+
+```bash
+mkdir -p shorten-cli && cd shorten-cli
+mkdir -p src bin test
+npm init -y
+```
+
+Edit `package.json` so it has the following content exactly (replace the generated file):
+
+```json
+{
+  "name": "shorten-cli",
+  "version": "1.0.0",
+  "description": "Local link-shortener CLI",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+```
+
+Key points:
+- `"type": "module"` — we use ES modules (`import`/`export`) throughout.
+- `npm test` runs `node --test`, which discovers files matching `test/*.test.js`.
+
+Verify your Node version:
+
+```bash
+node --version
+```
+
+Expected output: `v20.x.x` or higher (e.g. `v20.11.0`, `v22.3.0`). If it prints `v18.x` or lower, stop and install Node 20+.
+
+Initialize git so you can commit per step:
+
+```bash
+git init
+printf "node_modules/\n" > .gitignore
+git add -A && git commit -m "chore: project scaffold"
+```
+
+Expected: a commit is created. Confirm with `git log --oneline` showing one commit.
+
+---
+
+## Task 1: Storage module (shared)
+
+This is the shared dependency for all three commands, so we build it first. It handles: creating the directory/file on first use, loading, saving, and dealing with a corrupt file.
+
+### 1.1 Write the failing test
+
+Create `test/storage.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { loadDb, saveDb } from '../src/storage.js';
+
+function tempFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  return { path: join(dir, 'links.json'), dir };
+}
+
+test('loadDb returns empty db when file does not exist', () => {
+  const { path, dir } = tempFile();
+  try {
+    const db = loadDb(path);
+    assert.deepEqual(db, { links: [] });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('saveDb then loadDb round-trips data and creates the file', () => {
+  const { path, dir } = tempFile();
+  try {
+    const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+    saveDb(path, db);
+    assert.ok(existsSync(path), 'file should exist after saveDb');
+    const loaded = loadDb(path);
+    assert.deepEqual(loaded, db);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('saveDb creates parent directory if missing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  const nestedPath = join(dir, 'deep', 'nested', 'links.json');
+  try {
+    saveDb(nestedPath, { links: [] });
+    assert.ok(existsSync(nestedPath), 'nested file should be created');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadDb throws a CorruptDbError on invalid JSON', () => {
+  const { path, dir } = tempFile();
+  try {
+    writeFileSync(path, 'this is not json {{{');
+    assert.throws(
+      () => loadDb(path),
+      (err) => {
+        assert.equal(err.name, 'CorruptDbError');
+        assert.match(err.message, /corrupt/i);
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadDb throws CorruptDbError when JSON is valid but wrong shape', () => {
+  const { path, dir } = tempFile();
+  try {
+    writeFileSync(path, JSON.stringify({ notLinks: 1 }));
+    assert.throws(
+      () => loadDb(path),
+      (err) => {
+        assert.equal(err.name, 'CorruptDbError');
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### 1.2 Run the test (expect failure)
+
+```bash
+npm test
+```
+
+Expected: failure because `../src/storage.js` does not exist. You'll see an error like:
+
+```
+Error: Cannot find module '.../src/storage.js'
+```
+
+and the test summary will show failing tests (`# fail` greater than 0). This confirms the test is wired up.
+
+### 1.3 Implement the storage module
+
+Create `src/storage.js` with this exact content:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
+export class CorruptDbError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'CorruptDbError';
+  }
+}
+
+const EMPTY_DB = { links: [] };
+
+function isValidDb(value) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    Array.isArray(value.links)
+  );
+}
+
+/**
+ * Load the database from `path`.
+ * Returns { links: [] } if the file does not exist.
+ * Throws CorruptDbError if the file exists but is not valid JSON
+ * or does not match the expected shape.
+ */
+export function loadDb(path) {
+  let raw;
+  try {
+    raw = readFileSync(path, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { links: [] };
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new CorruptDbError(
+      `Database at ${path} is corrupt (invalid JSON). ` +
+        `Fix or delete the file and try again.`
+    );
+  }
+
+  if (!isValidDb(parsed)) {
+    throw new CorruptDbError(
+      `Database at ${path} is corrupt (unexpected structure). ` +
+        `Fix or delete the file and try again.`
+    );
+  }
+
+  return parsed;
+}
+
+/**
+ * Save the database to `path`, creating parent directories as needed.
+ */
+export function saveDb(path, db) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(db, null, 2) + '\n', 'utf8');
+}
+
+export { EMPTY_DB };
+```
+
+### 1.4 Run the test (expect pass)
+
+```bash
+npm test
+```
+
+Expected: all storage tests pass. The summary shows `# pass 5` (the five storage tests) and `# fail 0`.
+
+### 1.5 Commit
+
+```bash
+git add -A && git commit -m "feat: shared storage module with corrupt-file handling"
+```
+
+Expected: commit created.
+
+---
+
+## Task 2: `add` command
+
+`add` validates a URL, optionally takes a `--code`, generates a random 6-char alphanumeric code if none given, rejects duplicate codes, persists, and returns the code.
+
+### 2.1 Write the failing test
+
+Create `test/add.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { addCommand } from '../src/commands.js';
+import { loadDb } from '../src/storage.js';
+
+function tempFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  return { path: join(dir, 'links.json'), dir };
+}
+
+test('addCommand with explicit code stores and returns that code', () => {
+  const { path, dir } = tempFile();
+  try {
+    const code = addCommand(path, 'https://example.com', { code: 'myCode1' });
+    assert.equal(code, 'myCode1');
+    const db = loadDb(path);
+    assert.deepEqual(db.links, [
+      { code: 'myCode1', url: 'https://example.com' },
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('addCommand without code generates a 6-char alphanumeric code', () => {
+  const { path, dir } = tempFile();
+  try {
+    const code = addCommand(path, 'https://nodejs.org', {});
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const db = loadDb(path);
+    assert.equal(db.links.length, 1);
+    assert.equal(db.links[0].code, code);
+    assert.equal(db.links[0].url, 'https://nodejs.org');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('addCommand rejects an invalid URL', () => {
+  const { path, dir } = tempFile();
+  try {
+    assert.throws(
+      () => addCommand(path, 'not a url', {}),
+      (err) => {
+        assert.equal(err.name, 'UserError');
+        assert.match(err.message, /invalid url/i);
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('addCommand rejects a non-http(s) URL', () => {
+  const { path, dir } = tempFile();
+  try {
+    assert.throws(
+      () => addCommand(path, 'ftp://example.com', {}),
+      (err) => {
+        assert.equal(err.name, 'UserError');
+        assert.match(err.message, /http/i);
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('addCommand rejects a duplicate code', () => {
+  const { path, dir } = tempFile();
+  try {
+    addCommand(path, 'https://example.com', { code: 'dup123' });
+    assert.throws(
+      () => addCommand(path, 'https://other.com', { code: 'dup123' }),
+      (err) => {
+        assert.equal(err.name, 'UserError');
+        assert.match(err.message, /already exists/i);
+        return true;
+      }
+    );
+    // First entry must be unchanged.
+    const db = loadDb(path);
+    assert.deepEqual(db.links, [
+      { code: 'dup123', url: 'https://example.com' },
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('addCommand appends in insertion order', () => {
+  const { path, dir } = tempFile();
+  try {
+    addCommand(path, 'https://a.com', { code: 'aaa111' });
+    addCommand(path, 'https://b.com', { code: 'bbb222' });
+    const db = loadDb(path);
+    assert.deepEqual(db.links, [
+      { code: 'aaa111', url: 'https://a.com' },
+      { code: 'bbb222', url: 'https://b.com' },
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### 2.2 Run the test (expect failure)
+
+```bash
+npm test
+```
+
+Expected: failure because `../src/commands.js` does not exist (`Cannot find module '.../src/commands.js'`). The storage tests from Task 1 still pass.
+
+### 2.3 Implement the commands module (with `add` only for now)
+
+Create `src/commands.js` with this exact content. Note we define a shared `UserError` class here that all commands use to signal user-facing failures (bad input, unknown code, etc.), distinct from `CorruptDbError`.
+
+```js
+import { randomBytes } from 'node:crypto';
+
+import { loadDb, saveDb } from './storage.js';
+
+/**
+ * Error type for expected, user-facing failures (bad input, unknown code).
+ * The CLI turns these into a clean message + exit code 1, no stack trace.
+ */
+export class UserError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'UserError';
+  }
+}
+
+const CODE_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+function generateCode() {
+  const bytes = randomBytes(CODE_LENGTH);
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  }
+  return code;
+}
+
+function validateUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new UserError(`Invalid URL: ${url}`);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new UserError(
+      `Invalid URL: ${url} (only http and https are supported)`
+    );
+  }
+}
+
+/**
+ * Add a URL. Returns the code that was stored.
+ * @param {string} path - storage file path
+ * @param {string} url - the URL to shorten
+ * @param {{ code?: string }} options
+ */
+export function addCommand(path, url, options = {}) {
+  validateUrl(url);
+
+  const db = loadDb(path);
+
+  let code = options.code;
+  if (code) {
+    if (db.links.some((link) => link.code === code)) {
+      throw new UserError(`Code already exists: ${code}`);
+    }
+  } else {
+    do {
+      code = generateCode();
+    } while (db.links.some((link) => link.code === code));
+  }
+
+  db.links.push({ code, url });
+  saveDb(path, db);
+  return code;
+}
+```
+
+### 2.4 Run the test (expect pass)
+
+```bash
+npm test
+```
+
+Expected: all `add` tests pass plus the storage tests. Summary shows `# pass 11` (5 storage + 6 add) and `# fail 0`.
+
+### 2.5 Commit
+
+```bash
+git add -A && git commit -m "feat: add command with URL validation and code generation"
+```
+
+---
+
+## Task 3: `resolve` and `list` commands + CLI entry point
+
+`resolve` looks up a code. `list` prints all pairs in insertion order. They share data access with storage. We add both functions to `commands.js`, then build the `bin/shorten.js` CLI that wires everything to `process.argv` and the real home directory.
+
+### 3.1 Write the failing tests for resolve and list
+
+Create `test/resolve-list.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { addCommand, resolveCommand, listCommand } from '../src/commands.js';
+
+function tempFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  return { path: join(dir, 'links.json'), dir };
+}
+
+test('resolveCommand returns the stored URL for a known code', () => {
+  const { path, dir } = tempFile();
+  try {
+    addCommand(path, 'https://example.com', { code: 'known1' });
+    assert.equal(resolveCommand(path, 'known1'), 'https://example.com');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolveCommand throws UserError for an unknown code', () => {
+  const { path, dir } = tempFile();
+  try {
+    assert.throws(
+      () => resolveCommand(path, 'nope99'),
+      (err) => {
+        assert.equal(err.name, 'UserError');
+        assert.match(err.message, /unknown code/i);
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolveCommand throws UserError on empty db', () => {
+  const { path, dir } = tempFile();
+  try {
+    assert.throws(
+      () => resolveCommand(path, 'anything'),
+      (err) => {
+        assert.equal(err.name, 'UserError');
+        return true;
+      }
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('listCommand returns code\\turl lines in insertion order', () => {
+  const { path, dir } = tempFile();
+  try {
+    addCommand(path, 'https://a.com', { code: 'aaa111' });
+    addCommand(path, 'https://b.com', { code: 'bbb222' });
+    const out = listCommand(path);
+    assert.equal(
+      out,
+      'aaa111\thttps://a.com\nbbb222\thttps://b.com'
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('listCommand returns empty string when db is empty', () => {
+  const { path, dir } = tempFile();
+  try {
+    assert.equal(listCommand(path), '');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### 3.2 Run the test (expect failure)
+
+```bash
+npm test
+```
+
+Expected: failure because `commands.js` does not export `resolveCommand` or `listCommand`. You'll see errors like `resolveCommand is not a function` / `The requested module ... does not provide an export named 'resolveCommand'`. Existing storage and add tests still pass.
+
+### 3.3 Implement `resolveCommand` and `listCommand`
+
+Append these two functions to the end of `src/commands.js` (after `addCommand`):
+
+```js
+/**
+ * Resolve a code to its URL. Returns the URL string.
+ * Throws UserError if the code is unknown.
+ */
+export function resolveCommand(path, code) {
+  const db = loadDb(path);
+  const found = db.links.find((link) => link.code === code);
+  if (!found) {
+    throw new UserError(`Unknown code: ${code}`);
+  }
+  return found.url;
+}
+
+/**
+ * List all code -> url pairs in insertion order.
+ * Returns a string of "code\turl" lines joined by newlines.
+ * Returns an empty string when there are no links.
+ */
+export function listCommand(path) {
+  const db = loadDb(path);
+  return db.links.map((link) => `${link.code}\t${link.url}`).join('\n');
+}
+```
+
+### 3.4 Run the test (expect pass)
+
+```bash
+npm test
+```
+
+Expected: all tests pass. Summary shows `# pass 16` (5 storage + 6 add + 5 resolve/list) and `# fail 0`.
+
+### 3.5 Commit
+
+```bash
+git add -A && git commit -m "feat: resolve and list commands"
+```
+
+### 3.6 Write a test for the argument parser
+
+The CLI entry point needs argument parsing. We isolate the parsing logic into a pure function `parseArgs` in `bin/shorten.js` and export it so it's testable without spawning a process.
+
+Create `test/cli.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { parseArgs } from '../bin/shorten.js';
+
+test('parseArgs parses add with url and no code', () => {
+  assert.deepEqual(parseArgs(['add', 'https://x.com']), {
+    command: 'add',
+    url: 'https://x.com',
+    code: undefined,
+  });
+});
+
+test('parseArgs parses add with --code', () => {
+  assert.deepEqual(parseArgs(['add', 'https://x.com', '--code', 'abc123']), {
+    command: 'add',
+    url: 'https://x.com',
+    code: 'abc123',
+  });
+});
+
+test('parseArgs parses resolve', () => {
+  assert.deepEqual(parseArgs(['resolve', 'abc123']), {
+    command: 'resolve',
+    code: 'abc123',
+  });
+});
+
+test('parseArgs parses list', () => {
+  assert.deepEqual(parseArgs(['list']), { command: 'list' });
+});
+
+test('parseArgs throws UserError on unknown command', () => {
+  assert.throws(
+    () => parseArgs(['frobnicate']),
+    (err) => {
+      assert.equal(err.name, 'UserError');
+      return true;
+    }
+  );
+});
+
+test('parseArgs throws UserError when add is missing url', () => {
+  assert.throws(
+    () => parseArgs(['add']),
+    (err) => {
+      assert.equal(err.name, 'UserError');
+      return true;
+    }
+  );
+});
+
+test('parseArgs throws UserError when --code has no value', () => {
+  assert.throws(
+    () => parseArgs(['add', 'https://x.com', '--code']),
+    (err) => {
+      assert.equal(err.name, 'UserError');
+      return true;
+    }
+  );
+});
+
+test('parseArgs throws UserError when resolve is missing code', () => {
+  assert.throws(
+    () => parseArgs(['resolve']),
+    (err) => {
+      assert.equal(err.name, 'UserError');
+      return true;
+    }
+  );
+});
+
+test('parseArgs throws UserError when no command is given', () => {
+  assert.throws(
+    () => parseArgs([]),
+    (err) => {
+      assert.equal(err.name, 'UserError');
+      return true;
+    }
+  );
+});
+```
+
+### 3.7 Run the test (expect failure)
+
+```bash
+npm test
+```
+
+Expected

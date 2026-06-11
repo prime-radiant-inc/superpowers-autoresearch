@@ -1,0 +1,35 @@
+You are an implementer subagent in a subagent-driven-development workflow. Implement exactly one task and report back. Do not work ahead on other tasks.
+
+## Context
+
+- Project: a Go CLI ("fractals") rendering ASCII fractals. Working dir: `/work/fractals-cli`.
+- Go 1.21, using cobra. Tasks 1-4 are complete and reviewed; HEAD is clean.
+- Authoritative specs are `design.md` and `plan.md` in the repo root — consult `design.md` for any details about the Mandelbrot rendering region, character gradient, and output format.
+
+## Your task
+
+Read your task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full text of Task 5 (Mandelbrot Algorithm) verbatim. Implement exactly what it specifies.
+
+Summary of what the brief requires:
+- Create `internal/mandelbrot/mandelbrot.go` with `Render(width, height, maxIter int, char string) []string`.
+- Map the complex plane region (-2.5 to 1.0 real, -1.0 to 1.0 imaginary) to output dimensions.
+- Map iteration count to the character gradient `" .:-=+*#%@"` (or use the single provided char if non-empty).
+- Create `internal/mandelbrot/mandelbrot_test.go` with the three tests listed in the brief.
+
+## Requirements
+
+- **TDD is required by the plan.** Write failing tests first, then implement to make them pass. Your commit history should reflect this (e.g., a test commit and an implementation commit, or interleaved red/green commits).
+- This task is algorithm-only — do NOT wire up any CLI subcommand (that is Task 6). Keep changes confined to `internal/mandelbrot/`.
+- Follow the existing code conventions established in the prior tasks (look at `internal/sierpinski/` for style).
+- Match the brief's verification exactly: `go test ./internal/mandelbrot/...` must pass.
+- Commit your work with clear messages. Leave HEAD clean (no uncommitted changes).
+
+## Reporting
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`, including what you did, design decisions, how you verified, and any concerns.
+
+Then return ONLY the following to me:
+- Status (complete / blocked)
+- Commit SHAs you created
+- A one-line test summary
+- Any concerns or surprises

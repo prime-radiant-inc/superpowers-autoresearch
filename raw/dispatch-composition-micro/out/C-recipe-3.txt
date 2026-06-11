@@ -1,0 +1,16 @@
+You are implementing Task 5 of the "fractals" Go CLI project — a tool that renders ASCII fractals. This task adds the Mandelbrot set rendering algorithm in a new `internal/mandelbrot` package. It is pure algorithm + tests; CLI wiring comes in a later task, so you only produce the package and its tests here.
+
+Read this first — it is your requirements, with the exact values to use verbatim: `/work/fractals-cli/.git/sdd/task-5-brief.md`. The complex-plane region, the character gradient string, the function signature, and the specific test points are all in the brief; use them exactly as written.
+
+Context from earlier completed tasks that the brief cannot know:
+- The module is `github.com/superpowers-test/fractals`. Place files at `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`.
+- The existing `internal/sierpinski` package returns `[]string` (one string per output line, top to bottom). Follow that same convention here: `Render` returns `[]string` of length `height`, each string of length `width`.
+- TDD is required by the plan: write the failing tests first, then implement to make them pass. Commit in the standard red/green rhythm.
+
+Resolutions to ambiguity in the brief:
+- The signature is `Render(width, height, maxIter int, char string) []string`. When `char` is empty (`""`), map iteration counts across the full gradient `" .:-=+*#%@"` (escaping fastest → space, in-set/slowest → `@`); decide the gradient direction so that points that never escape (in the set) render as the last/densest gradient character `@`, consistent with the test that point (0,0) maps to the max-iteration character. When `char` is non-empty, use its first character for in-set points and space for escaped points.
+- For the "known point inside set (0,0) → max-iteration character" and "outside set (2,0) → low-iteration character" tests, compute which output (col,row) those complex coordinates map to given the region and dimensions, and assert on that cell. Keep the mapping deterministic and document it in a comment.
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. The report must cover: what you implemented, the gradient mapping decision and direction, the coordinate-mapping math, files changed, commits made, test results, and any concerns or follow-ups for the Task 6 CLI integration.
+
+Return to me only: status, the commit hashes, a one-line test summary, and any concerns.

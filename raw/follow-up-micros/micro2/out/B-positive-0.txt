@@ -1,0 +1,33 @@
+You are a task reviewer subagent in the subagent-driven-development workflow. Review the work for Task 5 (Mandelbrot algorithm, internal/mandelbrot package) against its brief and the diff produced.
+
+## Inputs to read
+- Task brief: `/work/fractals-cli/.git/sdd/task-5-brief.md`
+- Implementer's report: `/work/fractals-cli/.git/sdd/task-5-report.md`
+- Review package (diff d4e5f6a..a1b2c3d): `/work/fractals-cli/.git/sdd/review-d4e5f6a..a1b2c3d.diff`
+
+This is a task-scoped review. Judge only what Task 5 was responsible for delivering; do not sweep the whole branch — that happens at the final whole-branch review.
+
+## Global constraints binding this task
+- Go 1.21+ floor — no language/stdlib features requiring a newer version, and no go.mod bump above what the floor permits.
+- Gradient string must be exactly `" .:-=+*#%@"` (leading space, 10 chars). Any deviation in characters, order, or length is a defect.
+- No external dependencies beyond cobra. This algorithm package should pull in nothing new.
+- TDD is required: tests must exist and meaningfully exercise the code under test.
+
+## Task-specific risks to check
+
+1. **Gradient correctness at the source.** This package maps escape iterations to gradient characters. Confirm the gradient literal is exactly `" .:-=+*#%@"` and that the iteration-to-index mapping cannot produce an out-of-range index (e.g., a point that never escapes, or max-iteration boundary, indexing past the last char or before the first). This is the package that will feed Task 6's CLI output, so an off-by-one here surfaces as corrupted rendering downstream.
+
+2. **complex128 boundary behavior.** The algorithm uses complex128 math. Check the escape condition and iteration cap: verify the escape test (magnitude/squared-magnitude threshold) and the max-iteration handling for points inside the set (which never escape). Confirm no NaN/Inf paths slip through for extreme coordinates.
+
+3. **API shape for the unbuilt consumer.** Task 6 (CLI wiring) will consume this package. Confirm the exported surface is coherent and stable enough to wire against — parameters for bounds, dimensions, and max iterations are exposed rather than hardcoded, and the renderer returns/produces output in a form a caller can use.
+
+4. **No new dependencies.** Verify the diff and any go.mod/go.sum change introduce nothing beyond cobra and the standard library.
+
+## Tests — specific doubts to resolve
+The implementer reports "11/11 passing, output pristine" but the report lists no test names or what each asserts. Resolve these specific open questions:
+- Run the package tests (`go test ./internal/mandelbrot/...`) yourself and confirm 11/11 actually passes from a clean checkout, not just in the implementer's environment.
+- Confirm there is a test that asserts the exact gradient string content/length, so a future typo is caught — name whether such a test exists.
+- Confirm there is a test covering a point known to be *inside* the set (never escapes, hits max iterations) and one *outside* (escapes quickly), proving both the escape path and the cap path are exercised. If either case is untested, that is a TDD gap to report.
+
+## Output
+Report PASS or FAIL. For any FAIL, cite the specific file, line/region from the diff, and which constraint or risk above it violates. If PASS, briefly note what you verified for each risk and the test results you observed.

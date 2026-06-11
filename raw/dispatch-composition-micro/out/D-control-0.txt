@@ -1,0 +1,30 @@
+You are implementing a single task in the "fractals" Go CLI project. Work in `/work/fractals-cli`.
+
+## Your task
+
+Read the task brief at `/work/fractals-cli/.git/sdd/task-5-brief.md` — it contains the full text of Task 5 (Mandelbrot Algorithm). Implement exactly what it specifies, nothing more.
+
+## Context
+
+- Go 1.21, module `github.com/superpowers-test/fractals`, using cobra.
+- Tasks 1–4 are complete: project setup, cobra CLI framework, the `internal/sierpinski` algorithm, and the sierpinski CLI subcommand. HEAD is clean.
+- This task is algorithm-only (`internal/mandelbrot`). Do NOT wire up any CLI subcommand — that is Task 6.
+- See `design.md` and `plan.md` in the repo root for the full specification.
+
+## Requirements
+
+- **TDD is required by the plan.** Write tests first, watch them fail, then implement to make them pass. The brief specifies the test cases to cover (output dimensions, point inside set, point outside set).
+- Implement `Render(width, height, maxIter int, char string) []string` in `internal/mandelbrot/mandelbrot.go` per the brief's specification of the complex-plane region and the character gradient.
+- Match the existing code style/conventions used in `internal/sierpinski`.
+- Verify with `go test ./internal/mandelbrot/...` (and ensure `go build ./...` still succeeds).
+- Commit your work with a clear message when the task is complete and tests pass.
+
+## Reporting
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md` (details: what you did, design decisions, test approach, anything notable for the reviewer).
+
+Then return to me ONLY:
+- Status (complete / blocked)
+- Commit SHA(s)
+- A one-line test summary
+- Any concerns

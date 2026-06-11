@@ -1,0 +1,30 @@
+You are implementing one task in the "fractals" Go CLI project, following TDD as required by the plan.
+
+Read your task brief first: `/work/fractals-cli/.git/sdd/task-5-brief.md`. It contains the full text of Task 5 (the Mandelbrot algorithm). Follow it exactly.
+
+## Context
+
+- Working dir: `/work/fractals-cli`. Go 1.21, cobra. HEAD is clean.
+- Tasks 1–4 are complete: project setup, cobra CLI framework, sierpinski algorithm (`internal/sierpinski/`), and the sierpinski CLI subcommand.
+- This task is the **algorithm only** — create `internal/mandelbrot/` with `Render` and its tests. Do **not** wire up any CLI subcommand; that is Task 6.
+- Module path is `github.com/superpowers-test/fractals` — use it for any internal imports if needed.
+- Follow the established package conventions from `internal/sierpinski/` (look at that package for the project's house style: function signature shape, test structure, error/return idioms) so this package is consistent.
+- Signature is fixed by the brief: `Render(width, height, maxIter int, char string) []string`. Note `char` is a `string` here (sierpinski used a `rune` — do not "fix" this to match; the CLI task depends on the string signature).
+- The `char` parameter semantics: empty string ("") means use the gradient `" .:-=+*#%@"`; a non-empty string means use that single character for filled points. The brief's tests assume the default gradient behavior, so test the empty-string/gradient path here. Custom single-char behavior gets fuller treatment in Task 7 — implement the empty-vs-nonempty branch now but keep it minimal.
+- This task does no input validation — that is Task 8. Assume valid positive dimensions.
+
+## Constraints
+
+- TDD: write the tests described in the brief first, watch them fail, then implement to green.
+- Each output line must be exactly `width` characters; there must be exactly `height` lines.
+- Map the complex region (-2.5 to 1.0 real, -1.0 to 1.0 imaginary) across the output dimensions per the brief.
+- Commit when the task is complete and tests pass.
+
+## Verification
+
+- `go test ./internal/mandelbrot/...` passes.
+- `go build ./...` still succeeds.
+
+## Report
+
+Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. In your reply to me, return only: status, commit hash(es), a one-line test summary, and any concerns or decisions that affect later tasks (especially anything Task 6/Task 7 implementers need to know about the `Render` signature or `char` handling).

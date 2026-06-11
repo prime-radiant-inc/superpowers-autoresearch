@@ -1,0 +1,696 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI tool called `shorten` that manages a local link-shortener database stored as a JSON file at `~/.shorten/links.json`. The CLI has three commands: `add`, `resolve`, and `list`. All three share a storage module.
+
+**Tech constraints:**
+- Node 20+ (we rely on built-in `node:test`, `node:crypto`, `node:fs`, `node:path`, `node:os`).
+- No third-party dependencies.
+- TDD: every task writes a failing test first, runs it to confirm failure, implements, runs to confirm pass, commits.
+
+**Project layout we will create:**
+
+```
+link-shortener/
+├── package.json
+├── bin/
+│   └── shorten.js          # CLI entry point (arg parsing + dispatch)
+├── src/
+│   ├── storage.js          # shared JSON load/save + record operations
+│   ├── add.js              # add command logic
+│   ├── resolve.js          # resolve command logic
+│   └── list.js             # list command logic
+└── test/
+    ├── storage.test.js
+    ├── add.test.js
+    ├── resolve.test.js
+    └── list.test.js
+```
+
+**Data shape.** The JSON file is a single object with this structure:
+
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" },
+    { "code": "xy7q9z", "url": "https://nodejs.org" }
+  ]
+}
+```
+
+We use an **array** (not a map) so that insertion order is preserved deterministically for `list`. Lookups iterate the array; this is fine for a small local file.
+
+---
+
+## Prerequisites: Project Bootstrap
+
+Before Task 1, create the project skeleton. Run these commands from wherever you keep projects:
+
+```bash
+mkdir -p link-shortener/bin link-shortener/src link-shortener/test
+cd link-shortener
+```
+
+Create `package.json` with exactly this content:
+
+```json
+{
+  "name": "link-shortener",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+```
+
+Verify Node version:
+
+```bash
+node --version
+```
+
+Expected: `v20.x.x` or higher. If lower, install Node 20+ before continuing.
+
+Initialize git:
+
+```bash
+git init
+printf "node_modules\n" > .gitignore
+git add package.json .gitignore
+git commit -m "Bootstrap link-shortener project"
+```
+
+Expected output: a commit is created (e.g. `2 files changed`).
+
+**A note on test isolation.** All tests set the `SHORTEN_HOME` environment variable to a temporary directory so they never touch the real `~/.shorten`. The storage module reads this env var (falling back to the real home dir). This is built in Task 1.
+
+---
+
+## Task 1: Shared Storage Module
+
+The storage module is the foundation. It handles: resolving the data directory, loading the JSON file (creating an empty structure if missing, recovering gracefully from corrupt files), saving, and the low-level record operations (`findByCode`, `addLink`, `allLinks`).
+
+### Step 1.1 — Write the failing test
+
+Create `test/storage.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import {
+  load,
+  save,
+  findByCode,
+  addLink,
+  allLinks,
+  dataFilePath,
+} from '../src/storage.js';
+
+// Helper: make a fresh temp home and point SHORTEN_HOME at it.
+function withTempHome(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  const prev = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    return fn(dir);
+  } finally {
+    if (prev === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = prev;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('dataFilePath is under SHORTEN_HOME/.shorten/links.json', () => {
+  withTempHome((dir) => {
+    assert.equal(dataFilePath(), join(dir, '.shorten', 'links.json'));
+  });
+});
+
+test('load returns empty links array when file does not exist', () => {
+  withTempHome(() => {
+    const db = load();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('save then load round-trips data', () => {
+  withTempHome(() => {
+    const db = { links: [{ code: 'abc123', url: 'https://example.com' }] };
+    save(db);
+    const loaded = load();
+    assert.deepEqual(loaded, db);
+  });
+});
+
+test('save creates the .shorten directory and file', () => {
+  withTempHome((dir) => {
+    save({ links: [] });
+    assert.ok(existsSync(join(dir, '.shorten', 'links.json')));
+  });
+});
+
+test('load recovers from a corrupt (non-JSON) file by returning empty links', () => {
+  withTempHome((dir) => {
+    const file = dataFilePath();
+    // Manually create the directory and write garbage.
+    save({ links: [] });
+    writeFileSync(file, 'this is not json {{{');
+    const db = load();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('load recovers when JSON is valid but missing the links array', () => {
+  withTempHome(() => {
+    const file = dataFilePath();
+    save({ links: [] });
+    writeFileSync(file, JSON.stringify({ something: 'else' }));
+    const db = load();
+    assert.deepEqual(db, { links: [] });
+  });
+});
+
+test('findByCode returns the matching link or undefined', () => {
+  const db = {
+    links: [
+      { code: 'aaa111', url: 'https://a.com' },
+      { code: 'bbb222', url: 'https://b.com' },
+    ],
+  };
+  assert.deepEqual(findByCode(db, 'bbb222'), { code: 'bbb222', url: 'https://b.com' });
+  assert.equal(findByCode(db, 'zzz999'), undefined);
+});
+
+test('addLink appends a new link and returns updated db', () => {
+  const db = { links: [{ code: 'aaa111', url: 'https://a.com' }] };
+  const updated = addLink(db, 'bbb222', 'https://b.com');
+  assert.deepEqual(updated.links, [
+    { code: 'aaa111', url: 'https://a.com' },
+    { code: 'bbb222', url: 'https://b.com' },
+  ]);
+});
+
+test('allLinks returns links in insertion order', () => {
+  const db = {
+    links: [
+      { code: 'first0', url: 'https://1.com' },
+      { code: 'secnd0', url: 'https://2.com' },
+    ],
+  };
+  assert.deepEqual(allLinks(db), db.links);
+});
+
+test('saved file is pretty-printed JSON', () => {
+  withTempHome(() => {
+    save({ links: [{ code: 'abc123', url: 'https://example.com' }] });
+    const raw = readFileSync(dataFilePath(), 'utf8');
+    // Pretty-printed JSON contains newlines and indentation.
+    assert.ok(raw.includes('\n'));
+    assert.ok(raw.includes('  '));
+  });
+});
+```
+
+### Step 1.2 — Run the test, confirm it fails
+
+```bash
+node --test test/storage.test.js
+```
+
+Expected: failure because `src/storage.js` does not exist yet. You will see an error like:
+
+```
+Error: Cannot find module '.../src/storage.js'
+```
+
+and the test run reports `# fail` with a non-zero exit code.
+
+### Step 1.3 — Implement the storage module
+
+Create `src/storage.js` with this exact content:
+
+```js
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+} from 'node:fs';
+
+// Resolve the base home directory. Tests override via SHORTEN_HOME so they
+// never touch the real ~/.shorten.
+function baseHome() {
+  return process.env.SHORTEN_HOME || homedir();
+}
+
+// Directory holding the data file.
+export function dataDir() {
+  return join(baseHome(), '.shorten');
+}
+
+// Full path to the JSON data file.
+export function dataFilePath() {
+  return join(dataDir(), 'links.json');
+}
+
+// The empty/default database shape.
+function emptyDb() {
+  return { links: [] };
+}
+
+// Load the database. Returns { links: [...] }.
+// - Missing file -> empty db.
+// - Corrupt JSON -> empty db (recover reasonably).
+// - Valid JSON but wrong shape -> empty db.
+export function load() {
+  const file = dataFilePath();
+  if (!existsSync(file)) {
+    return emptyDb();
+  }
+  let raw;
+  try {
+    raw = readFileSync(file, 'utf8');
+  } catch {
+    return emptyDb();
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return emptyDb();
+  }
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    return emptyDb();
+  }
+  return parsed;
+}
+
+// Persist the database. Creates the directory if needed. Pretty-printed.
+export function save(db) {
+  mkdirSync(dataDir(), { recursive: true });
+  writeFileSync(dataFilePath(), JSON.stringify(db, null, 2) + '\n', 'utf8');
+}
+
+// Find a link record by its code. Returns the record or undefined.
+export function findByCode(db, code) {
+  return db.links.find((link) => link.code === code);
+}
+
+// Return a new db with the link appended. Does not mutate the input.
+export function addLink(db, code, url) {
+  return { links: [...db.links, { code, url }] };
+}
+
+// Return all links in insertion order.
+export function allLinks(db) {
+  return db.links;
+}
+```
+
+### Step 1.4 — Run the test, confirm it passes
+
+```bash
+node --test test/storage.test.js
+```
+
+Expected: all tests pass, output ends with something like `# pass 10` and `# fail 0`, exit code 0.
+
+### Step 1.5 — Commit
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Add shared storage module with corrupt-file recovery"
+```
+
+Expected: a commit is created (`2 files changed`).
+
+---
+
+## Task 2: Add Command
+
+The `add` command validates a URL, generates a 6-character alphanumeric code (unless `--code` is supplied), guards against duplicate codes, persists, and returns the code. We implement the command logic in `src/add.js` as a pure-ish function that takes the storage module functions implicitly (it imports them) and returns/throws. Then we wire the CLI entry point in `bin/shorten.js`.
+
+We split this into the command function (Step 2.1–2.5) and the CLI wiring (Step 2.6–2.10).
+
+### Step 2.1 — Write the failing test for the add command
+
+Create `test/add.test.js` with this exact content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { runAdd } from '../src/add.js';
+import { load, findByCode } from '../src/storage.js';
+
+function withTempHome(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-test-'));
+  const prev = process.env.SHORTEN_HOME;
+  process.env.SHORTEN_HOME = dir;
+  try {
+    return fn(dir);
+  } finally {
+    if (prev === undefined) delete process.env.SHORTEN_HOME;
+    else process.env.SHORTEN_HOME = prev;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('runAdd with explicit code stores the link and returns the code', () => {
+  withTempHome(() => {
+    const code = runAdd({ url: 'https://example.com', code: 'mycode' });
+    assert.equal(code, 'mycode');
+    const db = load();
+    assert.deepEqual(findByCode(db, 'mycode'), {
+      code: 'mycode',
+      url: 'https://example.com',
+    });
+  });
+});
+
+test('runAdd without code generates a 6-char alphanumeric code', () => {
+  withTempHome(() => {
+    const code = runAdd({ url: 'https://example.com' });
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const db = load();
+    assert.ok(findByCode(db, code));
+  });
+});
+
+test('runAdd generates distinct codes across calls', () => {
+  withTempHome(() => {
+    const a = runAdd({ url: 'https://a.com' });
+    const b = runAdd({ url: 'https://b.com' });
+    assert.notEqual(a, b);
+  });
+});
+
+test('runAdd rejects an invalid URL', () => {
+  withTempHome(() => {
+    assert.throws(
+      () => runAdd({ url: 'not a url' }),
+      /invalid url/i,
+    );
+  });
+});
+
+test('runAdd rejects a non-http(s) URL', () => {
+  withTempHome(() => {
+    assert.throws(
+      () => runAdd({ url: 'ftp://example.com' }),
+      /invalid url/i,
+    );
+  });
+});
+
+test('runAdd rejects a duplicate explicit code', () => {
+  withTempHome(() => {
+    runAdd({ url: 'https://example.com', code: 'dup' });
+    assert.throws(
+      () => runAdd({ url: 'https://other.com', code: 'dup' }),
+      /already exists/i,
+    );
+  });
+});
+
+test('runAdd retries generation if a generated code collides', () => {
+  withTempHome(() => {
+    // Two sequential generated codes must both succeed and differ.
+    const first = runAdd({ url: 'https://1.com' });
+    const second = runAdd({ url: 'https://2.com' });
+    assert.notEqual(first, second);
+    const db = load();
+    assert.equal(db.links.length, 2);
+  });
+});
+```
+
+### Step 2.2 — Run the test, confirm it fails
+
+```bash
+node --test test/add.test.js
+```
+
+Expected: failure — `Cannot find module '.../src/add.js'`. Exit code non-zero.
+
+### Step 2.3 — Implement the add command
+
+Create `src/add.js` with this exact content:
+
+```js
+import { randomBytes } from 'node:crypto';
+import { load, save, findByCode, addLink } from './storage.js';
+
+const CODE_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+// Generate one random 6-character alphanumeric code.
+function generateCode() {
+  const bytes = randomBytes(CODE_LENGTH);
+  let out = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  }
+  return out;
+}
+
+// Validate that a URL is a well-formed http(s) URL.
+function isValidUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+}
+
+// Add a link. Options: { url: string, code?: string }.
+// Returns the code on success. Throws Error on invalid URL or duplicate code.
+export function runAdd({ url, code }) {
+  if (!isValidUrl(url)) {
+    throw new Error(`invalid url: ${url}`);
+  }
+
+  let db = load();
+
+  let finalCode = code;
+  if (finalCode === undefined || finalCode === null || finalCode === '') {
+    // Generate, retrying on the (rare) chance of collision.
+    do {
+      finalCode = generateCode();
+    } while (findByCode(db, finalCode));
+  } else if (findByCode(db, finalCode)) {
+    throw new Error(`code already exists: ${finalCode}`);
+  }
+
+  db = addLink(db, finalCode, url);
+  save(db);
+  return finalCode;
+}
+```
+
+### Step 2.4 — Run the test, confirm it passes
+
+```bash
+node --test test/add.test.js
+```
+
+Expected: all 7 tests pass. `# pass 7`, `# fail 0`, exit code 0.
+
+### Step 2.5 — Commit the add command logic
+
+```bash
+git add src/add.js test/add.test.js
+git commit -m "Add 'add' command logic with URL validation and code generation"
+```
+
+Expected: a commit is created (`2 files changed`).
+
+### Step 2.6 — Write the failing CLI integration test for `add`
+
+Now wire up the CLI entry point. The entry point parses `process.argv`, dispatches to the right command, prints results to stdout, and prints errors to stderr with a non-zero exit code. We test it by spawning the actual binary as a subprocess.
+
+Create `test/cli.test.js` with this exact content. (This file grows in Tasks 3; for now it covers `add`.)
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const BIN = join(__dirname, '..', 'bin', 'shorten.js');
+
+// Run the CLI in a fresh temp home. Returns { status, stdout, stderr }.
+function runCli(args, home) {
+  const result = spawnSync('node', [BIN, ...args], {
+    env: { ...process.env, SHORTEN_HOME: home },
+    encoding: 'utf8',
+  });
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
+function withTempHome(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'shorten-cli-'));
+  try {
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('cli add with --code prints the code and exits 0', () => {
+  withTempHome((home) => {
+    const r = runCli(['add', 'https://example.com', '--code', 'hello1'], home);
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout.trim(), 'hello1');
+  });
+});
+
+test('cli add without --code prints a generated 6-char code', () => {
+  withTempHome((home) => {
+    const r = runCli(['add', 'https://example.com'], home);
+    assert.equal(r.status, 0);
+    assert.match(r.stdout.trim(), /^[A-Za-z0-9]{6}$/);
+  });
+});
+
+test('cli add with invalid url exits non-zero with stderr message', () => {
+  withTempHome((home) => {
+    const r = runCli(['add', 'not-a-url'], home);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /invalid url/i);
+  });
+});
+
+test('cli add with duplicate code exits non-zero with stderr message', () => {
+  withTempHome((home) => {
+    runCli(['add', 'https://a.com', '--code', 'dup'], home);
+    const r = runCli(['add', 'https://b.com', '--code', 'dup'], home);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /already exists/i);
+  });
+});
+
+test('cli with no command exits non-zero with usage on stderr', () => {
+  withTempHome((home) => {
+    const r = runCli([], home);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /usage/i);
+  });
+});
+
+test('cli with unknown command exits non-zero', () => {
+  withTempHome((home) => {
+    const r = runCli(['frobnicate'], home);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /unknown command/i);
+  });
+});
+
+test('cli add missing url argument exits non-zero', () => {
+  withTempHome((home) => {
+    const r = runCli(['add'], home);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /url/i);
+  });
+});
+```
+
+### Step 2.7 — Run the CLI test, confirm it fails
+
+```bash
+node --test test/cli.test.js
+```
+
+Expected: failures because `bin/shorten.js` does not exist or is empty. `spawnSync` returns a non-zero status with a module-not-found message; the assertions that expect `status === 0` fail. Exit code non-zero.
+
+### Step 2.8 — Implement the CLI entry point
+
+Create `bin/shorten.js` with this exact content. Note the shebang on the first line and that it imports the command functions (`runResolve` and `runList` are implemented in Task 3 — we import them now and the corresponding commands will start working then; the `add` path works immediately).
+
+```js
+#!/usr/bin/env node
+import { runAdd } from '../src/add.js';
+import { runResolve } from '../src/resolve.js';
+import { runList } from '../src/list.js';
+
+const USAGE = `Usage:
+  shorten add <url> [--code <code>]
+  shorten resolve <code>
+  shorten list`;
+
+// Parse the argv tail (everything after the command word) for the add command.
+// Returns { url, code }. Throws on missing url.
+function parseAddArgs(rest) {
+  let url;
+  let code;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    if (arg === '--code') {
+      code = rest[i + 1];
+      i++; // consume the value
+    } else if (url === undefined) {
+      url = arg;
+    }
+  }
+  if (url === undefined) {
+    throw new Error('missing required argument: url');
+  }
+  return { url, code };
+}
+
+function main() {
+  const [, , command, ...rest] = process.argv;
+
+  if (command === undefined) {
+    process.stderr.write(USAGE + '\n');
+    process.exit(1);
+  }
+
+  try {
+    switch (command) {
+      case 'add': {
+        const { url, code } = parseAddArgs(rest);
+        const result = runAdd({ url, code });
+        process.stdout.write(result + '\n');
+        break;
+      }
+      case 'resolve': {
+        const code = rest[0];
+        if (code === undefined) {
+          throw new Error('missing required argument: code');
+        }
+        const url = runResolve(code);
+        process.stdout.write(url + '\n');
+        break

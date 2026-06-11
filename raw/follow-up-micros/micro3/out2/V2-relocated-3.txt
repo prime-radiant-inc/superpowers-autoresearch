@@ -1,0 +1,640 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI (`note`) managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, TDD throughout.
+
+## Conventions
+
+- **Project root:** create all files relative to repo root.
+- **Note shape:** `{ id: string, text: string, tags: string[], created: string }` where `id` is an 8-char hex string and `created` is an ISO timestamp.
+- **Exit codes:** `0` success, `1` user error (bad input, unknown id). Errors print to `stderr`.
+- **TDD loop:** for each task — write failing test, run it (see it fail), implement, run (see it pass), commit.
+
+## Task 0: Project setup
+
+Create `package.json`:
+
+```json
+{
+  "name": "notes-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "./bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Create directory `lib/` and `test/`. Create empty `bin/note.js` for now:
+
+```js
+#!/usr/bin/env node
+```
+
+Run `npm test` — expect `tests 0` (no tests yet). Commit: `chore: project scaffold`.
+
+---
+
+## Task 1: Storage layer
+
+File: `lib/storage.js`. Handles reading/writing the JSON file and creating notes.
+
+### 1a. Write failing test
+
+File: `test/storage.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createStore } from '../lib/storage.js';
+
+function tmpFile() {
+  const dir = mkdtempSync(join(tmpdir(), 'notes-'));
+  return join(dir, 'notes.json');
+}
+
+test('load returns empty array when file missing', () => {
+  const store = createStore(tmpFile());
+  assert.deepEqual(store.load(), []);
+});
+
+test('save then load round-trips', () => {
+  const store = createStore(tmpFile());
+  store.save([{ id: 'a', text: 'hi', tags: [], created: 'x' }]);
+  assert.deepEqual(store.load(), [{ id: 'a', text: 'hi', tags: [], created: 'x' }]);
+});
+
+test('corrupt file throws a clear error', () => {
+  const f = tmpFile();
+  writeFileSync(f, '{not json');
+  const store = createStore(f);
+  assert.throws(() => store.load(), /corrupt/i);
+});
+
+test('makeNote builds a valid note', () => {
+  const store = createStore(tmpFile());
+  const n = store.makeNote('hello', ['work']);
+  assert.equal(n.text, 'hello');
+  assert.deepEqual(n.tags, ['work']);
+  assert.match(n.id, /^[0-9a-f]{8}$/);
+  assert.ok(!Number.isNaN(Date.parse(n.created)));
+});
+```
+
+Run `node --test test/storage.test.js` — expect failure (module not found).
+
+### 1b. Implement
+
+File: `lib/storage.js`:
+
+```js
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { randomBytes } from 'node:crypto';
+
+export function createStore(filePath) {
+  return {
+    load() {
+      let raw;
+      try {
+        raw = readFileSync(filePath, 'utf8');
+      } catch (err) {
+        if (err.code === 'ENOENT') return [];
+        throw err;
+      }
+      try {
+        const data = JSON.parse(raw);
+        if (!Array.isArray(data)) throw new Error('not an array');
+        return data;
+      } catch {
+        throw new Error(`Storage file is corrupt: ${filePath}`);
+      }
+    },
+    save(notes) {
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, JSON.stringify(notes, null, 2));
+    },
+    makeNote(text, tags = []) {
+      return {
+        id: randomBytes(4).toString('hex'),
+        text,
+        tags,
+        created: new Date().toISOString(),
+      };
+    },
+  };
+}
+```
+
+Run `node --test test/storage.test.js` — expect all pass. Commit: `feat: storage layer`.
+
+---
+
+## Shared helpers (created in Task 2, reused later)
+
+File: `lib/helpers.js` — created now so later tasks can import it:
+
+```js
+export function findNote(notes, id) {
+  const note = notes.find((n) => n.id === id);
+  if (!note) {
+    const err = new Error(`Unknown note: ${id}`);
+    err.userError = true;
+    throw err;
+  }
+  return note;
+}
+
+export function filterNotes(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter((n) => n.tags.includes(tag));
+}
+
+export function formatLine(note) {
+  const tags = note.tags.length ? ` [${note.tags.join(', ')}]` : '';
+  return `${note.id}  ${note.text}${tags}`;
+}
+```
+
+File: `test/helpers.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { findNote, filterNotes, formatLine } from '../lib/helpers.js';
+
+const notes = [
+  { id: 'a1', text: 'one', tags: ['work'], created: 'x' },
+  { id: 'b2', text: 'two', tags: [], created: 'x' },
+];
+
+test('findNote returns match', () => {
+  assert.equal(findNote(notes, 'a1').text, 'one');
+});
+test('findNote throws userError on miss', () => {
+  assert.throws(() => findNote(notes, 'zz'), (e) => e.userError === true);
+});
+test('filterNotes by tag', () => {
+  assert.deepEqual(filterNotes(notes, 'work').map((n) => n.id), ['a1']);
+});
+test('filterNotes no tag returns all', () => {
+  assert.equal(filterNotes(notes, undefined).length, 2);
+});
+test('formatLine includes tags', () => {
+  assert.equal(formatLine(notes[0]), 'a1  one [work]');
+  assert.equal(formatLine(notes[1]), 'b2  two');
+});
+```
+
+Run test — fail, then implement, then pass. Commit: `feat: shared helpers`.
+
+---
+
+## CLI dispatch infrastructure
+
+Each command is a function in `lib/commands.js` taking `(store, args)` and returning a string to print (or throwing). `bin/note.js` parses argv and dispatches.
+
+We build `commands.js` incrementally. Start with a tiny arg parser at the top of `lib/commands.js`:
+
+```js
+import { findNote, filterNotes, formatLine } from './helpers.js';
+
+// Extracts --tag value; returns { positionals, tag }.
+export function parseArgs(args) {
+  const positionals = [];
+  let tag;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--tag') { tag = args[++i]; }
+    else positionals.push(args[i]);
+  }
+  return { positionals, tag };
+}
+
+export const commands = {};
+```
+
+Add a test stub now (`test/commands.test.js`) with a helper to build an in-memory-ish store backed by a temp file:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createStore } from '../lib/storage.js';
+import { commands, parseArgs } from '../lib/commands.js';
+
+function freshStore() {
+  return createStore(join(mkdtempSync(join(tmpdir(), 'n-')), 'notes.json'));
+}
+
+test('parseArgs splits tag and positionals', () => {
+  assert.deepEqual(parseArgs(['x', '--tag', 'w']), { positionals: ['x'], tag: 'w' });
+});
+```
+
+Run test — pass. Commit: `feat: cli arg parser`.
+
+Each task below adds one command function plus tests in these files.
+
+---
+
+## Task 2: `add`
+
+### Test (append to `test/commands.test.js`)
+
+```js
+test('add stores note and returns id', () => {
+  const store = freshStore();
+  const out = commands.add(store, parseArgs(['hello', '--tag', 'work']));
+  assert.match(out, /^[0-9a-f]{8}$/);
+  const notes = store.load();
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].text, 'hello');
+  assert.deepEqual(notes[0].tags, ['work']);
+});
+
+test('add rejects empty text', () => {
+  const store = freshStore();
+  assert.throws(() => commands.add(store, parseArgs([''])), (e) => e.userError === true);
+});
+```
+
+Run — fail. ### Implement (add to `commands` object in `lib/commands.js`):
+
+```js
+commands.add = (store, { positionals, tag }) => {
+  const text = positionals[0];
+  if (!text || !text.trim()) {
+    const err = new Error('Note text must not be empty');
+    err.userError = true;
+    throw err;
+  }
+  const notes = store.load();
+  const note = store.makeNote(text, tag ? [tag] : []);
+  notes.push(note);
+  store.save(notes);
+  return note.id;
+};
+```
+
+Run — pass. Commit: `feat: add command`.
+
+---
+
+## Task 3: `show`
+
+### Test
+
+```js
+test('show prints note details', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['hi', '--tag', 't']));
+  const out = commands.show(store, parseArgs([id]));
+  assert.match(out, /hi/);
+  assert.match(out, /t/);
+  assert.match(out, /Created:/);
+});
+
+test('show fails on unknown id', () => {
+  const store = freshStore();
+  assert.throws(() => commands.show(store, parseArgs(['zzzz'])), (e) => e.userError);
+});
+```
+
+### Implement
+
+```js
+commands.show = (store, { positionals }) => {
+  const note = findNote(store.load(), positionals[0]);
+  const tags = note.tags.length ? note.tags.join(', ') : '(none)';
+  return `${note.text}\nTags: ${tags}\nCreated: ${note.created}`;
+};
+```
+
+Run fail→pass. Commit: `feat: show command`.
+
+---
+
+## Task 4: `rm`
+
+### Test
+
+```js
+test('rm deletes note', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['bye']));
+  commands.rm(store, parseArgs([id]));
+  assert.equal(store.load().length, 0);
+});
+
+test('rm fails on unknown id', () => {
+  const store = freshStore();
+  assert.throws(() => commands.rm(store, parseArgs(['zzzz'])), (e) => e.userError);
+});
+```
+
+### Implement
+
+```js
+commands.rm = (store, { positionals }) => {
+  const notes = store.load();
+  findNote(notes, positionals[0]); // throws if missing
+  store.save(notes.filter((n) => n.id !== positionals[0]));
+  return `Deleted ${positionals[0]}`;
+};
+```
+
+Run fail→pass. Commit: `feat: rm command`.
+
+---
+
+## Task 5: `tag`
+
+### Test
+
+```js
+test('tag adds a tag', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['x']));
+  commands.tag(store, parseArgs([id, 'work']));
+  assert.deepEqual(store.load()[0].tags, ['work']);
+});
+
+test('tag is idempotent', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['x', '--tag', 'work']));
+  commands.tag(store, parseArgs([id, 'work']));
+  assert.deepEqual(store.load()[0].tags, ['work']);
+});
+
+test('tag fails on unknown id', () => {
+  const store = freshStore();
+  assert.throws(() => commands.tag(store, parseArgs(['zz', 'w'])), (e) => e.userError);
+});
+```
+
+### Implement
+
+```js
+commands.tag = (store, { positionals }) => {
+  const [id, tag] = positionals;
+  const notes = store.load();
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  store.save(notes);
+  return `Tagged ${id} with ${tag}`;
+};
+```
+
+Run fail→pass. Commit: `feat: tag command`.
+
+---
+
+## Task 6: `untag`
+
+### Test
+
+```js
+test('untag removes a tag', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['x', '--tag', 'work']));
+  commands.untag(store, parseArgs([id, 'work']));
+  assert.deepEqual(store.load()[0].tags, []);
+});
+
+test('untag of absent tag is a no-op', () => {
+  const store = freshStore();
+  const id = commands.add(store, parseArgs(['x']));
+  const out = commands.untag(store, parseArgs([id, 'nope']));
+  assert.match(out, /not present|removed/i);
+  assert.deepEqual(store.load()[0].tags, []);
+});
+
+test('untag fails on unknown id', () => {
+  const store = freshStore();
+  assert.throws(() => commands.untag(store, parseArgs(['zz', 'w'])), (e) => e.userError);
+});
+```
+
+### Implement
+
+```js
+commands.untag = (store, { positionals }) => {
+  const [id, tag] = positionals;
+  const notes = store.load();
+  const note = findNote(notes, id);
+  if (!note.tags.includes(tag)) return `Tag ${tag} not present on ${id}`;
+  note.tags = note.tags.filter((t) => t !== tag);
+  store.save(notes);
+  return `Removed ${tag} from ${id}`;
+};
+```
+
+Run fail→pass. Commit: `feat: untag command`.
+
+---
+
+## Task 7: `list`
+
+### Test
+
+```js
+test('list prints one line per note', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a', '--tag', 'w']));
+  commands.add(store, parseArgs(['b']));
+  const out = commands.list(store, parseArgs([]));
+  assert.equal(out.split('\n').length, 2);
+  assert.match(out, /a \[w\]/);
+});
+
+test('list filters by tag', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a', '--tag', 'w']));
+  commands.add(store, parseArgs(['b']));
+  const out = commands.list(store, parseArgs(['--tag', 'w']));
+  assert.equal(out.split('\n').length, 1);
+  assert.match(out, /a/);
+});
+
+test('list empty returns empty string', () => {
+  const store = freshStore();
+  assert.equal(commands.list(store, parseArgs([])), '');
+});
+```
+
+### Implement
+
+```js
+commands.list = (store, { tag }) =>
+  filterNotes(store.load(), tag).map(formatLine).join('\n');
+```
+
+Run fail→pass. Commit: `feat: list command`.
+
+---
+
+## Task 8: `search`
+
+### Test
+
+```js
+test('search matches substring', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['hello world']));
+  commands.add(store, parseArgs(['goodbye']));
+  const out = commands.search(store, parseArgs(['world']));
+  assert.equal(out.split('\n').length, 1);
+  assert.match(out, /hello world/);
+});
+
+test('search no match returns empty', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['hi']));
+  assert.equal(commands.search(store, parseArgs(['xyz'])), '');
+});
+```
+
+### Implement
+
+```js
+commands.search = (store, { positionals }) => {
+  const term = positionals[0] || '';
+  return store.load()
+    .filter((n) => n.text.includes(term))
+    .map(formatLine)
+    .join('\n');
+};
+```
+
+Run fail→pass. Commit: `feat: search command`.
+
+---
+
+## Task 9: `count`
+
+### Test
+
+```js
+test('count returns total', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a']));
+  commands.add(store, parseArgs(['b', '--tag', 'w']));
+  assert.equal(commands.count(store, parseArgs([])), '2');
+});
+
+test('count filters by tag', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a']));
+  commands.add(store, parseArgs(['b', '--tag', 'w']));
+  assert.equal(commands.count(store, parseArgs(['--tag', 'w'])), '1');
+});
+```
+
+### Implement
+
+```js
+commands.count = (store, { tag }) =>
+  String(filterNotes(store.load(), tag).length);
+```
+
+Run fail→pass. Commit: `feat: count command`.
+
+---
+
+## Task 10: `export`
+
+### Test
+
+```js
+test('export emits JSON array', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a', '--tag', 'w']));
+  const out = commands.export(store, parseArgs([]));
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].text, 'a');
+});
+
+test('export filters by tag', () => {
+  const store = freshStore();
+  commands.add(store, parseArgs(['a', '--tag', 'w']));
+  commands.add(store, parseArgs(['b']));
+  const out = commands.export(store, parseArgs(['--tag', 'w']));
+  assert.equal(JSON.parse(out).length, 1);
+});
+```
+
+### Implement
+
+```js
+commands.export = (store, { tag }) =>
+  JSON.stringify(filterNotes(store.load(), tag), null, 2);
+```
+
+Run fail→pass. Commit: `feat: export command`.
+
+---
+
+## Task 11: Wire up `bin/note.js`
+
+### Implement
+
+File: `bin/note.js`:
+
+```js
+#!/usr/bin/env node
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { createStore } from '../lib/storage.js';
+import { commands, parseArgs } from '../lib/commands.js';
+
+const [cmd, ...rest] = process.argv.slice(2);
+const store = createStore(join(homedir(), '.notes', 'notes.json'));
+
+if (!cmd || !commands[cmd]) {
+  console.error(`Usage: note <${Object.keys(commands).join('|')}> ...`);
+  process.exit(1);
+}
+
+try {
+  const out = commands[cmd](store, parseArgs(rest));
+  if (out) console.log(out);
+} catch (err) {
+  console.error(err.message);
+  process.exit(err.userError ? 1 : 1);
+}
+```
+
+### Manual verification
+
+```bash
+chmod +x bin/note.js
+node bin/note.js add "first note" --tag demo   # prints an 8-hex id
+node bin/note.js list                           # prints: <id>  first note [demo]
+node bin/note.js count --tag demo               # prints: 1
+node bin/note.js show <id>                       # text, Tags, Created lines
+node bin/note.js export                          # JSON array
+node bin/note.js show bogus                       # prints "Unknown note: bogus", exit 1
+echo $?                                           # prints 1
+```
+
+Corrupt-file check:
+
+```bash
+echo 'garbage' > ~/.notes/notes.json
+node bin/note.js list    # prints "Storage file is corrupt: ..." exit 1
+rm ~/.notes/notes.json
+```
+
+Run full suite: `npm test` — expect all tests passing. Commit: `feat: cli entrypoint`.
+
+---
+
+## Self-Review
+
+- **Spec coverage:** add (T2), show (T3), rm (T4), tag (T5), untag (T6), list (T7), search (T8), count (T9), export (T10), storage (T1). Shared id-lookup via `findNote`; shared filter/format via `filterNotes`/`formatLine`. Corrupt files handled in `storage.load` and surfaced in `bin/note.js`. ✓
+- **Placeholder scan:** no TBD/TODO; every step has literal code, commands, and expected output. ✓
+- **Type consistency:** note shape (`id/text/tags/created`), `parseArgs` → `{ positionals, tag }`, and command signature `(store, args)` are used identically across all tasks. ✓

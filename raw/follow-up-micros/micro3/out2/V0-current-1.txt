@@ -1,0 +1,671 @@
+# Notes CLI — Implementation Plan
+
+A Node.js CLI (`note`) managing notes in `~/.notes/notes.json`. Node 20+, stdlib only, `node:test`, strict TDD.
+
+## Architecture
+
+- `src/storage.js` — load/save notes, id-lookup helper, filtering helper.
+- `src/commands/*.js` — one module per command, each exporting a function.
+- `bin/note.js` — argument router.
+- `test/*.test.js` — one test file per module.
+
+**Note shape:** `{ id: string, text: string, tags: string[], created: string (ISO) }`. `id` is a zero-padded incrementing counter? No — use `Date.now()` base36 plus a random suffix for uniqueness: `Date.now().toString(36) + Math.random().toString(36).slice(2, 6)`.
+
+**Shared list format (one line):** `<id>  <text> [#tag1 #tag2]` — tags section omitted if empty.
+
+**Storage path:** allow override via `NOTES_FILE` env var (essential for testing). Default `path.join(os.homedir(), '.notes', 'notes.json')`.
+
+Run all tests with `node --test`. Each task: write failing test → run (see it fail) → implement → run (see it pass) → commit.
+
+---
+
+## Task 1: Project setup
+
+**Files:** `package.json`, `.gitignore`
+
+Create `package.json`:
+
+```json
+{
+  "name": "note",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "note": "bin/note.js" },
+  "scripts": { "test": "node --test" }
+}
+```
+
+Create `.gitignore`:
+
+```
+node_modules/
+```
+
+**Verify:** `node --version` prints v20+ or higher. `npm test` runs (exits 0 with "no tests" — fine for now).
+
+**Commit:** `chore: project setup`
+
+---
+
+## Task 2: Storage module
+
+**Files:** `src/storage.js`, `test/storage.test.js`
+
+Storage handles: reading the JSON file (returning `[]` if missing or corrupt), writing it (creating the dir), looking up by id, and filtering by tag.
+
+**Write `test/storage.test.js`:**
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+
+const tmp = () => path.join(os.tmpdir(), `notes-${Math.random().toString(36).slice(2)}.json`);
+
+async function load(file) {
+  process.env.NOTES_FILE = file;
+  const mod = await import('../src/storage.js?' + Math.random());
+  return mod;
+}
+
+test('loadNotes returns [] when file missing', async () => {
+  const { loadNotes } = await load(tmp());
+  assert.deepEqual(loadNotes(), []);
+});
+
+test('loadNotes returns [] when file corrupt', async () => {
+  const f = tmp();
+  fs.writeFileSync(f, 'not json{{');
+  const { loadNotes } = await load(f);
+  assert.deepEqual(loadNotes(), []);
+});
+
+test('saveNotes then loadNotes round-trips', async () => {
+  const f = tmp();
+  const { saveNotes, loadNotes } = await load(f);
+  const notes = [{ id: 'a', text: 'hi', tags: [], created: '2020-01-01T00:00:00.000Z' }];
+  saveNotes(notes);
+  assert.deepEqual(loadNotes(), notes);
+});
+
+test('findNote returns matching note', async () => {
+  const { findNote } = await load(tmp());
+  const notes = [{ id: 'x', text: 't', tags: [], created: 'c' }];
+  assert.equal(findNote(notes, 'x').text, 't');
+});
+
+test('findNote returns undefined for unknown id', async () => {
+  const { findNote } = await load(tmp());
+  assert.equal(findNote([], 'nope'), undefined);
+});
+
+test('filterNotes returns all when no tag', async () => {
+  const { filterNotes } = await load(tmp());
+  const notes = [{ id: '1', tags: ['a'] }, { id: '2', tags: [] }];
+  assert.equal(filterNotes(notes, undefined).length, 2);
+});
+
+test('filterNotes filters by tag', async () => {
+  const { filterNotes } = await load(tmp());
+  const notes = [{ id: '1', tags: ['a'] }, { id: '2', tags: ['b'] }];
+  const r = filterNotes(notes, 'a');
+  assert.equal(r.length, 1);
+  assert.equal(r[0].id, '1');
+});
+```
+
+**Run:** `node --test test/storage.test.js` → fails (module missing).
+
+**Implement `src/storage.js`:**
+
+```js
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+export function notesFile() {
+  return process.env.NOTES_FILE || path.join(os.homedir(), '.notes', 'notes.json');
+}
+
+export function loadNotes() {
+  try {
+    const raw = fs.readFileSync(notesFile(), 'utf8');
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveNotes(notes) {
+  const file = notesFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(notes, null, 2));
+}
+
+export function findNote(notes, id) {
+  return notes.find((n) => n.id === id);
+}
+
+export function filterNotes(notes, tag) {
+  if (!tag) return notes;
+  return notes.filter((n) => n.tags.includes(tag));
+}
+
+export function formatNote(n) {
+  const tags = n.tags.length ? ` [${n.tags.map((t) => '#' + t).join(' ')}]` : '';
+  return `${n.id}  ${n.text}${tags}`;
+}
+```
+
+**Run:** `node --test test/storage.test.js` → 7 pass.
+
+**Commit:** `feat: storage module`
+
+---
+
+## Shared command conventions
+
+Each command module exports `run(args, io)` where `io = { out, err }` (default `console.log`/`console.error`). It returns an exit code (0 success, 1 failure). This makes testing easy. Parse flags with a helper.
+
+**Add to `src/storage.js`** (the flag parser — used by many commands):
+
+```js
+export function parseTag(args) {
+  const i = args.indexOf('--tag');
+  if (i === -1) return { tag: undefined, rest: args };
+  const tag = args[i + 1];
+  const rest = args.slice(0, i).concat(args.slice(i + 2));
+  return { tag, rest };
+}
+```
+
+Add a test for it in `test/storage.test.js`:
+
+```js
+test('parseTag extracts tag and rest', async () => {
+  const { parseTag } = await load(tmp());
+  assert.deepEqual(parseTag(['x', '--tag', 'work']), { tag: 'work', rest: ['x'] });
+  assert.deepEqual(parseTag(['x']), { tag: undefined, rest: ['x'] });
+});
+```
+
+Run `node --test test/storage.test.js` → 8 pass. **Commit:** `feat: parseTag helper`
+
+For tests of commands, set `process.env.NOTES_FILE` to a temp file and collect output into an array.
+
+---
+
+## Task 3: `add` command
+
+**Files:** `src/commands/add.js`, `test/add.test.js`
+
+**Write `test/add.test.js`:**
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+
+function setup() {
+  process.env.NOTES_FILE = path.join(os.tmpdir(), `n-${Math.random().toString(36).slice(2)}.json`);
+  const out = [], err = [];
+  return { io: { out: (s) => out.push(s), err: (s) => err.push(s) }, out, err };
+}
+const imp = (m) => import(`../src/commands/${m}.js?` + Math.random());
+
+test('add stores note and prints id', async () => {
+  const { run } = await imp('add');
+  const { io, out } = setup();
+  const code = await run(['hello'], io);
+  assert.equal(code, 0);
+  assert.match(out[0], /^[a-z0-9]+$/);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  const notes = loadNotes();
+  assert.equal(notes[0].text, 'hello');
+  assert.deepEqual(notes[0].tags, []);
+});
+
+test('add with tag', async () => {
+  const { run } = await imp('add');
+  const { io } = setup();
+  await run(['hi', '--tag', 'work'], io);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  assert.deepEqual(loadNotes()[0].tags, ['work']);
+});
+
+test('add rejects empty text', async () => {
+  const { run } = await imp('add');
+  const { io, err } = setup();
+  const code = await run([], io);
+  assert.equal(code, 1);
+  assert.match(err[0], /text/i);
+});
+```
+
+**Run:** fails. **Implement `src/commands/add.js`:**
+
+```js
+import { loadNotes, saveNotes, parseTag } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const { tag, rest } = parseTag(args);
+  const text = rest.join(' ').trim();
+  if (!text) { io.err('error: note text is required'); return 1; }
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const note = { id, text, tags: tag ? [tag] : [], created: new Date().toISOString() };
+  const notes = loadNotes();
+  notes.push(note);
+  saveNotes(notes);
+  io.out(id);
+  return 0;
+}
+```
+
+**Run:** 3 pass. **Commit:** `feat: add command`
+
+---
+
+## Shared id-lookup helper (for Tasks 4–7)
+
+**Add to `src/storage.js`:**
+
+```js
+export function requireNote(notes, id, io) {
+  const note = findNote(notes, id);
+  if (!note) { io.err(`error: no note with id ${id}`); return undefined; }
+  return note;
+}
+```
+
+No separate test needed (covered through commands). Commit with Task 4.
+
+---
+
+## Task 4: `show` command
+
+**Files:** `src/commands/show.js`, `test/show.test.js`
+
+**Write `test/show.test.js`:** (reuse `setup`/`imp` from Task 3 — copy them in)
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
+
+function setup() {
+  process.env.NOTES_FILE = path.join(os.tmpdir(), `n-${Math.random().toString(36).slice(2)}.json`);
+  const out = [], err = [];
+  return { io: { out: (s) => out.push(s), err: (s) => err.push(s) }, out, err };
+}
+const imp = (m) => import(`../src/commands/${m}.js?` + Math.random());
+
+async function seed(io) {
+  const { run } = await imp('add');
+  await run(['my note', '--tag', 't1'], io);
+}
+
+test('show prints note details', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('show');
+  const code = await run([id], io);
+  assert.equal(code, 0);
+  const joined = out.join('\n');
+  assert.match(joined, /my note/);
+  assert.match(joined, /t1/);
+});
+
+test('show fails on unknown id', async () => {
+  const { io, err } = setup();
+  const { run } = await imp('show');
+  const code = await run(['nope'], io);
+  assert.equal(code, 1);
+  assert.match(err[0], /no note/i);
+});
+```
+
+**Run:** fails. **Implement `src/commands/show.js`:**
+
+```js
+import { loadNotes, requireNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const note = requireNote(loadNotes(), args[0], io);
+  if (!note) return 1;
+  io.out(note.text);
+  io.out(`tags: ${note.tags.join(', ') || '(none)'}`);
+  io.out(`created: ${note.created}`);
+  return 0;
+}
+```
+
+**Run:** 2 pass. **Commit:** `feat: requireNote helper and show command`
+
+---
+
+## Task 5: `rm` command
+
+**Files:** `src/commands/rm.js`, `test/rm.test.js`
+
+**Write `test/rm.test.js`:** (copy `setup`, `imp`, `seed` from Task 4)
+
+```js
+test('rm deletes note', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('rm');
+  const code = await run([id], io);
+  assert.equal(code, 0);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  assert.equal(loadNotes().length, 0);
+});
+
+test('rm fails on unknown id', async () => {
+  const { io, err } = setup();
+  const { run } = await imp('rm');
+  assert.equal(await run(['nope'], io), 1);
+  assert.match(err[0], /no note/i);
+});
+```
+
+**Run:** fails. **Implement `src/commands/rm.js`:**
+
+```js
+import { loadNotes, saveNotes, requireNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const notes = loadNotes();
+  const note = requireNote(notes, args[0], io);
+  if (!note) return 1;
+  saveNotes(notes.filter((n) => n.id !== note.id));
+  io.out(`deleted ${note.id}`);
+  return 0;
+}
+```
+
+**Run:** 2 pass. **Commit:** `feat: rm command`
+
+---
+
+## Task 6: `tag` command
+
+**Files:** `src/commands/tag.js`, `test/tag.test.js`
+
+**Write `test/tag.test.js`:** (copy `setup`, `imp`, `seed`)
+
+```js
+test('tag adds a tag', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('tag');
+  assert.equal(await run([id, 'urgent'], io), 0);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  assert.ok(loadNotes()[0].tags.includes('urgent'));
+});
+
+test('tag is idempotent (no duplicates)', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('tag');
+  await run([id, 't1'], io);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  assert.deepEqual(loadNotes()[0].tags, ['t1']);
+});
+
+test('tag fails on unknown id', async () => {
+  const { io, err } = setup();
+  const { run } = await imp('tag');
+  assert.equal(await run(['nope', 'x'], io), 1);
+});
+```
+
+**Run:** fails. **Implement `src/commands/tag.js`:**
+
+```js
+import { loadNotes, saveNotes, requireNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const [id, tag] = args;
+  const notes = loadNotes();
+  const note = requireNote(notes, id, io);
+  if (!note) return 1;
+  if (!tag) { io.err('error: tag is required'); return 1; }
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  saveNotes(notes);
+  io.out(`tagged ${id} with ${tag}`);
+  return 0;
+}
+```
+
+**Run:** 3 pass. **Commit:** `feat: tag command`
+
+---
+
+## Task 7: `untag` command
+
+**Files:** `src/commands/untag.js`, `test/untag.test.js`
+
+**Write `test/untag.test.js`:** (copy `setup`, `imp`, `seed`)
+
+```js
+test('untag removes a tag', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('untag');
+  assert.equal(await run([id, 't1'], io), 0);
+  const { loadNotes } = await import('../src/storage.js?' + Math.random());
+  assert.deepEqual(loadNotes()[0].tags, []);
+});
+
+test('untag missing tag succeeds with notice', async () => {
+  const { io, out } = setup();
+  await seed(io);
+  const id = out[0];
+  const { run } = await imp('untag');
+  const code = await run([id, 'absent'], io);
+  assert.equal(code, 0);
+  assert.match(out.join('\n'), /not present|absent/i);
+});
+
+test('untag fails on unknown id', async () => {
+  const { io } = setup();
+  const { run } = await imp('untag');
+  assert.equal(await run(['nope', 'x'], io), 1);
+});
+```
+
+**Run:** fails. **Implement `src/commands/untag.js`:**
+
+```js
+import { loadNotes, saveNotes, requireNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const [id, tag] = args;
+  const notes = loadNotes();
+  const note = requireNote(notes, id, io);
+  if (!note) return 1;
+  if (!note.tags.includes(tag)) {
+    io.out(`tag ${tag} not present on ${id}`);
+    return 0;
+  }
+  note.tags = note.tags.filter((t) => t !== tag);
+  saveNotes(notes);
+  io.out(`untagged ${tag} from ${id}`);
+  return 0;
+}
+```
+
+**Run:** 3 pass. **Commit:** `feat: untag command`
+
+---
+
+## Task 8: `list`, `count` commands (shared filtering)
+
+**Files:** `src/commands/list.js`, `src/commands/count.js`, `test/list.test.js`
+
+`list` and `count` both use `parseTag` + `filterNotes`. `list` prints each via `formatNote`; `count` prints the number.
+
+**Write `test/list.test.js`:** (copy `setup`, `imp`)
+
+```js
+async function seedMany(io) {
+  const { run } = await imp('add');
+  await run(['alpha', '--tag', 'a'], io);
+  await run(['beta', '--tag', 'b'], io);
+}
+
+test('list prints all notes', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('list');
+  assert.equal(await run([], io), 0);
+  assert.equal(out.length, 2);
+  assert.match(out.join('\n'), /alpha/);
+  assert.match(out.join('\n'), /#a/);
+});
+
+test('list filters by tag', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('list');
+  await run(['--tag', 'a'], io);
+  assert.equal(out.length, 1);
+  assert.match(out[0], /alpha/);
+});
+
+test('count prints total', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('count');
+  await run([], io);
+  assert.equal(out[0], '2');
+});
+
+test('count filters by tag', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('count');
+  await run(['--tag', 'b'], io);
+  assert.equal(out[0], '1');
+});
+```
+
+**Run:** fails. **Implement `src/commands/list.js`:**
+
+```js
+import { loadNotes, filterNotes, parseTag, formatNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const { tag } = parseTag(args);
+  for (const n of filterNotes(loadNotes(), tag)) io.out(formatNote(n));
+  return 0;
+}
+```
+
+**Implement `src/commands/count.js`:**
+
+```js
+import { loadNotes, filterNotes, parseTag } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const { tag } = parseTag(args);
+  io.out(String(filterNotes(loadNotes(), tag).length));
+  return 0;
+}
+```
+
+**Run:** 4 pass. **Commit:** `feat: list and count commands`
+
+---
+
+## Task 9: `search`, `export` commands
+
+**Files:** `src/commands/search.js`, `src/commands/export.js`, `test/search.test.js`
+
+`search` filters notes whose text contains the term (case-insensitive), printing each via `formatNote`. `export` applies tag filtering and prints a JSON array.
+
+**Write `test/search.test.js`:** (copy `setup`, `imp`, `seedMany` from Task 8)
+
+```js
+async function seedMany(io) {
+  const { run } = await imp('add');
+  await run(['alpha', '--tag', 'a'], io);
+  await run(['beta', '--tag', 'b'], io);
+}
+
+test('search matches text substring', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('search');
+  assert.equal(await run(['alph'], io), 0);
+  assert.equal(out.length, 1);
+  assert.match(out[0], /alpha/);
+});
+
+test('search is case-insensitive', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('search');
+  await run(['BETA'], io);
+  assert.equal(out.length, 1);
+});
+
+test('export prints JSON array', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('export');
+  await run([], io);
+  const parsed = JSON.parse(out.join('\n'));
+  assert.equal(parsed.length, 2);
+});
+
+test('export filters by tag', async () => {
+  const { io, out } = setup();
+  await seedMany(io);
+  out.length = 0;
+  const { run } = await imp('export');
+  await run(['--tag', 'a'], io);
+  const parsed = JSON.parse(out.join('\n'));
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].text, 'alpha');
+});
+```
+
+**Run:** fails. **Implement `src/commands/search.js`:**
+
+```js
+import { loadNotes, formatNote } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const term = (args[0] || '').toLowerCase();
+  for (const n of loadNotes()) {
+    if (n.text.toLowerCase().includes(term)) io.out(formatNote(n));
+  }
+  return 0;
+}
+```
+
+**Implement `src/commands/export.js`:**
+
+```js
+import { loadNotes, filterNotes, parseTag } from '../storage.js';
+
+export async function run(args, io = { out: console.log, err: console.error }) {
+  const

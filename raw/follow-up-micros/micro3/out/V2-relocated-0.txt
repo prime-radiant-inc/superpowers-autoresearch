@@ -1,0 +1,756 @@
+# Link Shortener CLI — Implementation Plan
+
+## Overview
+
+We are building a Node.js CLI named `shorten` that manages a local link-shortener database stored as JSON at `~/.shorten/links.json`. The CLI supports three commands: `add`, `resolve`, and `list`. All three share a single storage module.
+
+**Tech constraints:**
+- Node 20+
+- No dependencies beyond the Node standard library
+- Tests with `node:test` (the built-in test runner)
+- TDD: every piece of behavior gets a failing test first, then implementation
+
+**Architecture:**
+- `src/storage.js` — load/save the JSON DB, with a configurable file path (so tests can use temp files)
+- `src/commands.js` — the three command functions (`add`, `resolve`, `list`), each takes a storage path + args and returns output (so they're testable without spawning processes)
+- `bin/shorten.js` — thin CLI entry point that parses `process.argv` and calls the command functions
+
+**Data model:** The DB is a JSON object:
+```json
+{
+  "links": [
+    { "code": "abc123", "url": "https://example.com" }
+  ]
+}
+```
+We use an array (not a map) so order-added is preserved naturally for `list`.
+
+---
+
+## Project Setup (do this first)
+
+### Step 0.1: Create the directory structure and package.json
+
+Run these commands from the root of your project directory:
+
+```bash
+mkdir -p src bin test
+```
+
+Create `package.json` with exactly this content:
+
+```json
+{
+  "name": "shorten",
+  "version": "1.0.0",
+  "description": "Link shortener CLI",
+  "type": "module",
+  "bin": {
+    "shorten": "./bin/shorten.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+```
+
+Note `"type": "module"` — we use ES modules (`import`/`export`) throughout.
+
+### Step 0.2: Verify Node version and test runner work
+
+Run:
+
+```bash
+node --version
+```
+
+Expected output: `v20.x.x` or higher (e.g. `v20.11.0`). If you see something lower, install Node 20+ before continuing.
+
+Create a throwaway test to confirm the runner works. Create `test/smoke.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+test('smoke', () => {
+  assert.equal(1 + 1, 2);
+});
+```
+
+Run:
+
+```bash
+npm test
+```
+
+Expected output includes:
+
+```
+# tests 1
+# pass 1
+# fail 0
+```
+
+Now delete the smoke test:
+
+```bash
+rm test/smoke.test.js
+```
+
+### Step 0.3: Commit the setup
+
+```bash
+git init
+git add package.json
+git commit -m "Project setup: package.json with node:test"
+```
+
+Expected: a commit is created. (If `git init` was already done, skip it.)
+
+---
+
+## Task 1: Storage module
+
+The storage module is shared by all three commands. It handles:
+- resolving the DB file path (default `~/.shorten/links.json`, overridable for tests)
+- loading the DB (creating an empty one if the file doesn't exist)
+- handling corrupt JSON reasonably (throw a clear error)
+- saving the DB (creating the parent directory if needed)
+
+We'll expose these functions from `src/storage.js`:
+
+```js
+export function defaultDbPath()        // returns the ~/.shorten/links.json path
+export function loadDb(dbPath)         // returns { links: [...] }
+export function saveDb(dbPath, db)     // writes db to dbPath, creating dirs
+```
+
+### Step 1.1: Write failing tests for `loadDb`
+
+Create `test/storage.test.js` with this content:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, writeFile, rm, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { loadDb, saveDb, defaultDbPath } from '../src/storage.js';
+
+// Helper: make a fresh temp directory for each test and return a db path inside it.
+async function makeTempDbPath() {
+  const dir = await mkdtemp(join(tmpdir(), 'shorten-test-'));
+  return { dir, dbPath: join(dir, 'nested', 'links.json') };
+}
+
+test('loadDb returns empty links when file does not exist', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const db = await loadDb(dbPath);
+    assert.deepEqual(db, { links: [] });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadDb reads existing valid file', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    // saveDb is tested separately; here we write the file directly.
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(dir, 'nested'), { recursive: true });
+    await writeFile(
+      dbPath,
+      JSON.stringify({ links: [{ code: 'abc123', url: 'https://example.com' }] }),
+      'utf8'
+    );
+    const db = await loadDb(dbPath);
+    assert.deepEqual(db, {
+      links: [{ code: 'abc123', url: 'https://example.com' }],
+    });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadDb throws a clear error on corrupt JSON', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(dir, 'nested'), { recursive: true });
+    await writeFile(dbPath, '{ this is not json', 'utf8');
+    await assert.rejects(
+      () => loadDb(dbPath),
+      /corrupt/i,
+      'error message should mention corrupt'
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 1.2: Run the tests — confirm they fail
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the tests fail because `src/storage.js` does not exist yet. You'll see an error like:
+
+```
+Cannot find module '.../src/storage.js'
+```
+
+This is the expected failing state.
+
+### Step 1.3: Implement `loadDb`, `defaultDbPath`, and a stub `saveDb`
+
+Create `src/storage.js`:
+
+```js
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
+
+/**
+ * Returns the default database path: ~/.shorten/links.json
+ */
+export function defaultDbPath() {
+  return join(homedir(), '.shorten', 'links.json');
+}
+
+/**
+ * Loads the database from dbPath.
+ * - If the file does not exist, returns { links: [] }.
+ * - If the file exists but is not valid JSON (or not the expected shape),
+ *   throws an Error mentioning "corrupt".
+ */
+export async function loadDb(dbPath) {
+  let raw;
+  try {
+    raw = await readFile(dbPath, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { links: [] };
+    }
+    throw err;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Database file is corrupt (invalid JSON): ${dbPath}`);
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray(parsed.links)
+  ) {
+    throw new Error(`Database file is corrupt (unexpected shape): ${dbPath}`);
+  }
+
+  return parsed;
+}
+
+/**
+ * Saves the database to dbPath, creating the parent directory if needed.
+ */
+export async function saveDb(dbPath, db) {
+  await mkdir(dirname(dbPath), { recursive: true });
+  await writeFile(dbPath, JSON.stringify(db, null, 2) + '\n', 'utf8');
+}
+```
+
+### Step 1.4: Run the tests — confirm `loadDb` tests pass
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the three `loadDb` tests now pass. Output includes:
+
+```
+# pass 3
+# fail 0
+```
+
+(`saveDb` and `defaultDbPath` are implemented but not yet tested — we add those next.)
+
+### Step 1.5: Write failing tests for `saveDb` and `defaultDbPath`
+
+Append these tests to the end of `test/storage.test.js`:
+
+```js
+test('saveDb writes a file that loadDb can read back', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const db = { links: [{ code: 'xyz789', url: 'https://node.org' }] };
+    await saveDb(dbPath, db);
+    const roundTripped = await loadDb(dbPath);
+    assert.deepEqual(roundTripped, db);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('saveDb creates missing parent directories', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    // dbPath includes a "nested" directory that does not exist yet.
+    await saveDb(dbPath, { links: [] });
+    const contents = await readFile(dbPath, 'utf8');
+    assert.equal(JSON.parse(contents).links.length, 0);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('defaultDbPath ends with .shorten/links.json', async () => {
+  const p = defaultDbPath();
+  assert.match(p, /[\\/]\.shorten[\\/]links\.json$/);
+});
+```
+
+### Step 1.6: Run the tests — confirm everything passes
+
+Run:
+
+```bash
+npm test
+```
+
+Since `saveDb` and `defaultDbPath` were already implemented in Step 1.3, these new tests should pass immediately. Expected:
+
+```
+# pass 6
+# fail 0
+```
+
+If `saveDb` had been left as a stub these would fail — confirm you see 6 passing tests.
+
+### Step 1.7: Commit Task 1
+
+```bash
+git add src/storage.js test/storage.test.js
+git commit -m "Task 1: storage module (loadDb/saveDb/defaultDbPath)"
+```
+
+Expected: a commit is created.
+
+---
+
+## Task 2: `add` command (plus `resolve`, since they share storage)
+
+We implement the command functions in `src/commands.js`. Each command function takes the db path explicitly so tests can pass a temp path. Each returns a string (the output) rather than printing directly — printing happens in the CLI layer (Task 3 / wiring).
+
+Functions exposed from `src/commands.js`:
+
+```js
+export function generateCode()                 // random 6-char alphanumeric
+export async function add(dbPath, url, code)   // returns the code string
+export async function resolve(dbPath, code)    // returns the url string
+export async function list(dbPath)             // returns formatted multi-line string
+```
+
+`add` behavior:
+- validate the URL (must parse via `new URL()` and have an `http:` or `https:` protocol)
+- if `code` not provided, generate a random 6-char alphanumeric code
+- if the code already exists, throw an error
+- otherwise append `{ code, url }`, save, return the code
+
+`resolve` behavior:
+- look up the code; if not found, throw an error; else return the URL
+
+We build `add` and `resolve` here because they share storage and `add`'s tests need `resolve` (or direct loadDb) to verify. `list` comes in Task 3.
+
+### Step 2.1: Write failing tests for `generateCode`
+
+Create `test/commands.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { generateCode, add, resolve } from '../src/commands.js';
+import { loadDb } from '../src/storage.js';
+
+async function makeTempDbPath() {
+  const dir = await mkdtemp(join(tmpdir(), 'shorten-cmd-test-'));
+  return { dir, dbPath: join(dir, 'links.json') };
+}
+
+test('generateCode returns a 6-char alphanumeric string', () => {
+  const code = generateCode();
+  assert.equal(typeof code, 'string');
+  assert.equal(code.length, 6);
+  assert.match(code, /^[A-Za-z0-9]{6}$/);
+});
+
+test('generateCode is reasonably random (no immediate dupes)', () => {
+  const a = generateCode();
+  const b = generateCode();
+  // Not a strict guarantee, but with 62^6 space a collision here is vanishingly unlikely.
+  assert.notEqual(a, b);
+});
+```
+
+### Step 2.2: Run the tests — confirm they fail
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: `test/commands.test.js` fails because `src/commands.js` does not exist:
+
+```
+Cannot find module '.../src/commands.js'
+```
+
+(`test/storage.test.js` should still pass — 6 passing, plus the new file erroring.)
+
+### Step 2.3: Implement `generateCode` and stub the others
+
+Create `src/commands.js`:
+
+```js
+import { randomInt } from 'node:crypto';
+import { loadDb, saveDb } from './storage.js';
+
+const ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const CODE_LENGTH = 6;
+
+/**
+ * Generates a random 6-character alphanumeric code using crypto.randomInt.
+ */
+export function generateCode() {
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += ALPHABET[randomInt(ALPHABET.length)];
+  }
+  return code;
+}
+
+/**
+ * Validates that `url` is a well-formed http(s) URL.
+ * Throws an Error with a clear message if not.
+ */
+function validateUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`URL must use http or https: ${url}`);
+  }
+}
+
+/**
+ * Adds a URL to the database.
+ * - Validates the URL.
+ * - If `code` is falsy, generates one.
+ * - Throws if the code already exists.
+ * Returns the code that was stored.
+ */
+export async function add(dbPath, url, code) {
+  validateUrl(url);
+
+  const db = await loadDb(dbPath);
+
+  const finalCode = code || generateCode();
+
+  if (db.links.some((link) => link.code === finalCode)) {
+    throw new Error(`Code already exists: ${finalCode}`);
+  }
+
+  db.links.push({ code: finalCode, url });
+  await saveDb(dbPath, db);
+
+  return finalCode;
+}
+
+/**
+ * Resolves a code to its stored URL.
+ * Throws if the code is unknown.
+ */
+export async function resolve(dbPath, code) {
+  const db = await loadDb(dbPath);
+  const link = db.links.find((l) => l.code === code);
+  if (!link) {
+    throw new Error(`Unknown code: ${code}`);
+  }
+  return link.url;
+}
+```
+
+### Step 2.4: Run the tests — confirm `generateCode` tests pass
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the two `generateCode` tests now pass, plus the 6 storage tests:
+
+```
+# pass 8
+# fail 0
+```
+
+### Step 2.5: Write failing tests for `add` and `resolve`
+
+Append to `test/commands.test.js`:
+
+```js
+test('add with explicit code stores and returns the code', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const code = await add(dbPath, 'https://example.com', 'mycode');
+    assert.equal(code, 'mycode');
+    const db = await loadDb(dbPath);
+    assert.deepEqual(db.links, [{ code: 'mycode', url: 'https://example.com' }]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add without code generates a 6-char code', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const code = await add(dbPath, 'https://example.com');
+    assert.match(code, /^[A-Za-z0-9]{6}$/);
+    const url = await resolve(dbPath, code);
+    assert.equal(url, 'https://example.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects an invalid URL', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await assert.rejects(
+      () => add(dbPath, 'not a url', 'c1'),
+      /invalid url/i
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects a non-http(s) URL', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await assert.rejects(
+      () => add(dbPath, 'ftp://example.com', 'c2'),
+      /http or https/i
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('add rejects a duplicate code', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await add(dbPath, 'https://a.com', 'dup');
+    await assert.rejects(
+      () => add(dbPath, 'https://b.com', 'dup'),
+      /already exists/i
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve returns the stored URL', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await add(dbPath, 'https://example.com', 'r1');
+    const url = await resolve(dbPath, 'r1');
+    assert.equal(url, 'https://example.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('resolve throws on unknown code', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await assert.rejects(
+      () => resolve(dbPath, 'nope'),
+      /unknown code/i
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 2.6: Run the tests — confirm all pass
+
+Run:
+
+```bash
+npm test
+```
+
+Since `add` and `resolve` were fully implemented in Step 2.3, these tests pass. Expected:
+
+```
+# pass 15
+# fail 0
+```
+
+(6 storage + 2 generateCode + 7 add/resolve = 15.)
+
+### Step 2.7: Commit Task 2
+
+```bash
+git add src/commands.js test/commands.test.js
+git commit -m "Task 2: add and resolve commands"
+```
+
+Expected: a commit is created.
+
+---
+
+## Task 3: `list` command and CLI wiring
+
+`list` reads the DB (same data access as `resolve`) and returns all `code → url` pairs, one per line, in insertion order. Then we wire all three commands into a CLI entry point that parses `process.argv`.
+
+Output format for `list`: one line per link, formatted as `code  url` (code, two spaces, url). Empty DB returns an empty string.
+
+### Step 3.1: Write a failing test for `list`
+
+Append to `test/commands.test.js` (and update the import line at the top of the file).
+
+First, change the import line at the top of `test/commands.test.js` from:
+
+```js
+import { generateCode, add, resolve } from '../src/commands.js';
+```
+
+to:
+
+```js
+import { generateCode, add, resolve, list } from '../src/commands.js';
+```
+
+Then append these tests at the end of the file:
+
+```js
+test('list returns empty string for empty db', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    const out = await list(dbPath);
+    assert.equal(out, '');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('list returns pairs in insertion order, one per line', async () => {
+  const { dir, dbPath } = await makeTempDbPath();
+  try {
+    await add(dbPath, 'https://first.com', 'one');
+    await add(dbPath, 'https://second.com', 'two');
+    const out = await list(dbPath);
+    assert.equal(out, 'one  https://first.com\ntwo  https://second.com');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+```
+
+### Step 3.2: Run the tests — confirm the `list` tests fail
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: the two new `list` tests fail because `list` is not exported (it's `undefined`), producing a `TypeError: list is not a function`. The other 15 tests still pass.
+
+### Step 3.3: Implement `list`
+
+Add this function to the end of `src/commands.js`:
+
+```js
+/**
+ * Returns all code→url pairs, one per line, in insertion order.
+ * Each line is formatted as "code  url". Empty db returns "".
+ */
+export async function list(dbPath) {
+  const db = await loadDb(dbPath);
+  return db.links.map((l) => `${l.code}  ${l.url}`).join('\n');
+}
+```
+
+### Step 3.4: Run the tests — confirm all command tests pass
+
+Run:
+
+```bash
+npm test
+```
+
+Expected:
+
+```
+# pass 17
+# fail 0
+```
+
+(15 from before + 2 list tests = 17.)
+
+### Step 3.5: Write a failing test for the CLI entry point
+
+The CLI is a separate executable. We test it by spawning the process and checking stdout/stderr/exit codes. Create `test/cli.test.js`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const BIN = join(__dirname, '..', 'bin', 'shorten.js');
+
+/**
+ * Runs the CLI with the given args, using a HOME override so the DB
+ * lands in our temp directory (~/.shorten/links.json).
+ * Resolves with { code, stdout, stderr }.
+ */
+function runCli(args, home) {
+  return new Promise((resolve) => {
+    const child = spawn('node', [BIN, ...args], {
+      env: { ...process.env, HOME: home, USERPROFILE: home },
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => (stdout += d));
+    child.stderr.on('data', (d

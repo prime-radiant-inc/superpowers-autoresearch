@@ -1,0 +1,19 @@
+You are implementing Task 5 of the fractals CLI project. Working dir: `/work/fractals-cli`. Go 1.21.
+
+**Your task brief is at `/work/fractals-cli/.git/sdd/task-5-brief.md`.** Read it first. It is your single source of truth for requirements and their exact values: the function signature, the complex-plane region bounds, the character gradient string, and the three required test cases. Use those values verbatim — do not paraphrase or substitute them.
+
+**Context — where this fits:**
+- Tasks 1-4 are complete: the Go module (`github.com/superpowers-test/fractals`), cobra CLI framework, and the sierpinski algorithm + CLI subcommand all exist and are reviewed. HEAD is clean.
+- This task is the Mandelbrot *algorithm* only, living in a new package `internal/mandelbrot/`. Do NOT touch the CLI — wiring the subcommand is Task 6. Your only deliverables are `internal/mandelbrot/mandelbrot.go` and `internal/mandelbrot/mandelbrot_test.go`.
+- For consistency, mirror the structure and style of the existing `internal/sierpinski` package (its `Generate` returns `[]string` lines; your `Render` should likewise return `[]string`, one string per output row). Look at it before you start.
+
+**Resolved guidance / clarifications:**
+- The brief specifies `char string` as a parameter. The intended behavior (from the design): when `char` is the empty string `""`, use the full gradient `" .:-=+*#%@"` mapping iteration count to gradient index; when `char` is non-empty, this is the single-char mode for Task 7 — for THIS task, just make the signature accept it and at minimum handle the gradient case correctly. Test the gradient (`char=""`) behavior now; full single-char semantics get hardened in Task 7.
+- "max-iteration character" for a point inside the set means the character representing the most-iterations bucket (the densest gradient char, `@`). "low-iteration character" for a point outside means the sparse end (space or near-space). Assert against the appropriate end of the gradient, not a hardcoded guess — derive it from how your mapping works.
+- The gradient has 10 characters; map iteration counts in `[0, maxIter]` across those 10 buckets. Decide the exact bucketing and make your tests consistent with it.
+
+**Process:**
+- TDD is required. Write the tests from the brief's three cases first, watch them fail, then implement. Run `go test ./internal/mandelbrot/...` to verify.
+- Commit when green.
+
+**Reporting:** Write your full report to `/work/fractals-cli/.git/sdd/task-5-report.md`. Return to me only: status, commit hash(es), a one-line test summary, and any concerns.
