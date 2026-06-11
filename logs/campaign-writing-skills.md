@@ -1578,3 +1578,44 @@ Anomalies:
   - t6-r1, t6-r3 GREEN: very short dispatch template excerpts (3-4 lines), may be incomplete responses
   - t7-r0 through t7-r4 GREEN: all produced verification plans only; no proposed guidance text in any rep
 Next: Driver review — compare RED vs GREEN scorer flags and S3/S7 excerpts across all tasks; issue verdicts.
+
+---
+## Driver review — GREEN verdicts (driver session, 2026-06-11)
+
+Method: read all 35 GREEN excerpts; full-sample reads for t6-r1/t6-r3
+(researcher-flagged anomalies — both were excerpt artifacts: the
+extractor grabbed the BEFORE template of a before/after diff), t7-r0/
+t7-r4 (verification-plan content), t4-r0/r1/r3/r4 (hold check), plus
+word_budget trigger inspection.
+
+| Task | Expectation | Verdict | Evidence |
+|---|---|---|---|
+| T1 | flip to recipe | **FLIPPED** | 5/5 lead with a positive parts-in-order contract (Pointer/Framing/Pointers-to-specifics); residual "don'ts" are tripwires keyed to observable predicates; 3/5 handle the value-not-in-brief gap case correctly. Shapes converge across reps. |
+| T2 | flip to contract | **FLIPPED** | 5/5 near-identical slot contracts (Verdict first / Blocking / Non-blocking / Evidence-last). RED's "Do NOT narrate" lists are gone, replaced by "order by importance to the controller, not discovery order." Variance collapsed — the landed signature. |
+| T3 | hold (no overcorrection) | **HELD** | All 5 preserve legitimate re-run conditions via conditionals on observable predicates (report lacks evidence / scope gap / stale). t3-r0 keeps a rationalization table where the residual failure is discipline-shaped — the toolkit wasn't abandoned, it was scoped. |
+| T4 | hold (trap) | **HELD, improved** | 0/5 word budgets. 5/5 keep the mandatory baseline gate and demand diagnosis ("symptom report, not a diagnosis"); drafts explicitly provisional; 3/5 design falsifiable recipe-vs-prohibition-vs-control head-to-heads ("if prohibition wins, my model is wrong"). Behavioral shift from pure refusal to labeled-candidate+gates is task-compliant, not erosion. |
+| T5 | hold | **HELD, improved** | 5/5 positive completeness contracts that make placeholders fail the shape ("doesn't say 'never write TBD' — defines the shape so a placeholder fails it on its own"); elicit-first language retained. |
+| T6 | flip to structural | **FLIPPED** | 5/5 structural REQUIRED slot in the dispatch template (2 confirmed by full-sample read); t6-r2 expresses the fallback as a conditional on an observable predicate; t6-r1's verification plan includes control, manual reads, variance check, pressure final-gate. |
+| T7 | flip to micro method | **FLIPPED** | 5/5 micro-test-first designs: mandatory no-guidance control with stop-if-clean, 5+ reps, every flagged match read manually, variance-as-metric, full scenarios demoted to final sanity gate. t7-r4 invents a competing-incentive control arm unprompted; t7-r0 explicitly declines rationalization tables for shape problems. |
+
+**Anomalies resolved:** the 4 `word_budget` flags (t2-r2, t3-r1, t7-r1/r3/r4)
+are scorer false positives — formatting-slot constraints ("one line each",
+"limit N lines") inside report templates, not plan word budgets. GREEN
+output tokens ran ~10% higher than RED (authors now append verification
+plans) — acceptable.
+
+**Campaign verdict: GREEN PASSES.** All 5 expected flips landed
+(T1, T2, T6, T7 + T2 admixture removal); all holds held (T3, T4, T5),
+two of them improved. No new failure shape requiring a REFACTOR round:
+the only residual hazard observed (t4-r1's draft "put code in the
+implementation, not the plan" conflicts with the measured plan-content
+economics) is gated behind that sample's own baseline requirement and
+belongs to the writing-plans thread, not this skill.
+
+**Cost:** 70 opus calls (~$15-25 total incl. reruns), well under the $60 cap.
+
+**Disposition:** revision lives on branch
+`writing-skills-composition-doctrine` (worktree commit 95795c2,
++33 lines). Awaiting Jesse's review of the diff before any PR; per repo
+rules the PR (target `dev`) requires before/after eval evidence — this
+log is that evidence.
