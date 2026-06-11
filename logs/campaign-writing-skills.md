@@ -1853,3 +1853,47 @@ Pre-registered success criteria:
 4. No regression: no plan/word budgets, no rationalization-table-for-
    shaping misfire.
 Failure on 2 or 3 = F4 fails and the revision goes back to REFACTOR.
+
+---
+## F4 real-session test — result (2026-06-11): PASS on all four pre-registered criteria
+
+Worker f4-author (real Claude Code session, opus, Jesse's full global
+config + superpowers plugin present), session ff82877f. Evidence:
+raw/f4-session/ (full transcript, shipped edit patch, skill-as-loaded).
+
+1. **Project skill engaged — uncontaminated.** Skill tool invoked bare
+   `writing-skills` (the project copy, not superpowers:writing-skills);
+   "Match the Form to the Failure" appears in the transcript; the
+   session paraphrased the revised doctrine in its report.
+2. **Recipe/contract-led — PASS.** Shipped section: ordered phases, a
+   per-step contract (imperative action → exact command → expected
+   result → branch), skippable Background block, one-line acceptance
+   test, before/after example. Explicitly declined to write "don't
+   weave commentary", citing the backfire result.
+3. **Iron Law + control — PASS, unprompted.** BEFORE editing: 5 control
+   subagent reps (current skill) vs 5 treatment reps (with draft), all
+   read manually — control 5/5 reproduced the failure, treatment 5/5
+   converged; cited low-variance-as-binding. Used the single-shot-
+   subagent micro-test variant (the no-API-access path added in
+   remediation 391c33e). Branched before editing; committed; asked
+   before opening a PR.
+4. **No regressions — PASS.** No plan word budgets (it applied the
+   existing <500-word token-efficiency target to the skill file itself,
+   which is the pre-existing guidance working as intended); no
+   rationalization-table misfire; and when its own micro-test surfaced
+   a residual issue (4/5 treatment reps invented plausible commands for
+   steps whose source facts had none), it explicitly DECLINED to patch
+   with a nuance clause — citing the dilution warning — and escalated
+   the judgment call to the human. Doctrine composing with judgment
+   escalation, unprompted.
+
+Caveats, recorded: n=1 session; README pointed at the methodology
+(mirrors superpowers CLAUDE.md, which does the same); driver-graded
+against pre-registered criteria with full artifacts preserved.
+
+**CAMPAIGN CLOSED.** All adversarial findings closed or disclosed; F4
+was the final gate. Revision (4 commits on
+writing-skills-composition-doctrine, 9887c17 tip) is PR-ready pending
+Jesse's review. Total spend ≈ $30-40 of the $60 cap (RED 35 + GREEN 35
++ held-out 15 opus calls, two adversarial agents, blinded grader, one
+real session).

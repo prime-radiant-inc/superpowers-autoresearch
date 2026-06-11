@@ -1,0 +1,71 @@
+commit fec1bac3271e4052490b1965d30a9cb0416d8d3e
+Author: Jesse Vincent <jesse@fsck.com>
+Date:   Thu Jun 11 11:50:35 2026 -0700
+
+    writing-runbooks: add executable-checklist structure for runbook bodies
+    
+    On-call engineers couldn't execute runbooks mid-incident because diagnosis
+    commentary was woven together with the commands to run. Add a recipe for
+    the runbook body: a per-step contract (imperative action -> command ->
+    expected result -> branch) and a Background block that holds the why/story
+    so the steps stay scannable and executable under pressure.
+
+diff --git a/skills/writing-runbooks/SKILL.md b/skills/writing-runbooks/SKILL.md
+index d26b2d6..06a561a 100644
+--- a/skills/writing-runbooks/SKILL.md
++++ b/skills/writing-runbooks/SKILL.md
+@@ -17,6 +17,54 @@ fresh.
+ - When the same alert has fired three or more times
+ - When tribal knowledge about a subsystem lives in one person's head
+ 
++## Make It Executable
++
++A runbook is an **executable checklist**, not a narrative. The reader is
++mid-incident at 3am, scanning for the next command — not reading for
++understanding. Structure the body as ordered phases, each a numbered list of
++steps: **Diagnose → Mitigate → Verify → Escalate.**
++
++Each step is, in this order:
++
++1. **An imperative action** as the lead — the one thing to do ("Check the
++   Redis connection count").
++2. **The exact command** in its own code block, runnable as-is. If the step is
++   a manual check with no command, say so and name exactly what to open and
++   look at.
++3. **The expected result**, stated for comparison at a glance
++   (`connected_clients` at or near the 1000 max = pool exhausted).
++4. When the result changes what you do next, **the branch**, keyed to that
++   result ("If exhausted → Mitigate; if not, this runbook doesn't apply —
++   re-triage the alert").
++
++The "why" — reasoning, architecture, the story of the incident you wrote this
++from — goes in a short **Background** block at the top that a responder can
++skip. The steps themselves are generic instructions for the responder's
++current incident, not a retelling of the original.
++
++A finished runbook passes one test: a responder can read just the bolded
++actions and command blocks, top to bottom, and execute — without reading a
++paragraph.
++
++### Before / after
++
++Woven into prose:
++
++> We saw the 503 rate climbing on the Checkout Overview dashboard, which told
++> us the alert was real. In INC-4821 the promo-code validator was holding
++> hundreds of idle connections, so we checked Redis with `redis-cli -h
++> checkout-redis info clients` and found connected_clients pinned at 1000.
++
++As an executable step:
++
++> **3. Check the Redis connection count.**
++> ```
++> redis-cli -h checkout-redis info clients
++> ```
++> Expected: `connected_clients` at or near the 1000 max = pool exhausted.
++> → If exhausted, go to **Mitigate**. If not, this runbook doesn't apply —
++> re-triage the alert.
++
+ ## Content Guidelines
+ 
+ - Ground every runbook in a real incident; link the incident review.
