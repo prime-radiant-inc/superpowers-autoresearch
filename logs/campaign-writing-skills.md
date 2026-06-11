@@ -1731,3 +1731,46 @@ billing):**
 - **New minor note:** t2 GREEN provisional labeling dropped 5/5 → 2/5 —
   GREEN authors label report-format contracts as deployable more often.
   Watch in any future round.
+
+---
+## Held-out battery (F2/F6 remediation, 2026-06-11)
+
+15 opus samples (t8/t9/t10 × 5 reps) against the REMEDIATED skill
+(worktree 391c33e), out/writing-skills-green-heldout. Tasks deliberately
+avoid the form table's example vocabulary; t10 is a genuine discipline
+failure wearing shape-flavored words ("the diff looks clean") — the
+scope-note-leak test, where the CORRECT answer is the prohibition
+toolkit the new section warns about.
+
+Scorer output recorded above driver reads; driver read all 15 (t8 and
+t9 via form-indicator sweeps of every rep + full-text spot checks, t10
+all five sweeps). Verdicts:
+
+- **t8 (staged migration scripts — novel wrong-shape): 5/5 recipe-led.**
+  Every rep classifies as shaping, names the competing incentive ("one
+  efficient pass"), states why prohibition would backfire, and produces
+  a stages-in-order contract. t8-r3 self-flags its own riskiest
+  near-prohibition line ("logging never happens inline") as the highest-
+  priority wording to micro-test — unprompted exemption-trap awareness.
+- **t9 (review reports missing commit range — novel omission): 5/5
+  structural REQUIRED slot**, explicitly rejecting both prohibition and
+  prose reminders. (t9-r4 momentarily mislabels the failure "wrong
+  shape" but lands on the correct structural row regardless.)
+- **t10 (skipping integration suite — discipline, leak test): 5/5
+  correctly choose prohibition + rationalization table + red flags.**
+  No rep avoided the Bulletproofing toolkit; 2/5 additionally note the
+  user-supplied rationalizations are secondhand and must be confirmed
+  against real baseline output before the table is locked. Scope note
+  did NOT leak. **F6's leak hypothesis refuted at n=5.**
+- Baseline gates and provisional labels present throughout (scorer:
+  baseline_first 15/15, control 12/15).
+
+**F2 disposition:** on tasks not vocabulary-matched in the table,
+authors discriminated all three failure types correctly 15/15 —
+including choosing AGAINST the new section's headline lesson where
+discipline demanded it. Citing the section by name on held-out tasks is
+application, not echo. Echo-compliance explanation for GREEN rejected.
+
+**Open item after all remediations:** F4 — no real-session/harness test
+yet (one Claude Code session authoring guidance for a fresh composition
+problem with the revised skill loaded). Proposed as the pre-PR gate.
