@@ -858,3 +858,723 @@ degrade — regression check).
 out/<skillfile-parent-name> = out/writing-skills for BOTH variants; the
 GREEN rerun MUST set OUT_DIR=out/writing-skills-green or the cache will
 silently replay RED samples.
+
+---
+## S5 — GREEN battery
+Date: 2026-06-11
+Command: `OUT_DIR=out/writing-skills-green SKILL_FILE=/Users/jesse/git/superpowers/superpowers/.claude/worktrees/writing-skills-research/skills/writing-skills/SKILL.md python3 run-battery.py`
+Status: RUNNING
+Status: COMPLETE
+Output dir: /Users/jesse/git/prime-radiant-inc/superpowers-autoresearch/campaigns/writing-skills/out/writing-skills-green/
+Files: 35/35 (t1-r0..t7-r4)
+Output token range: 1245–2394 per sample
+Raw output log:
+```
+t1 r0: 5736 chars, out=1910
+t1 r1: 5255 chars, out=1757
+t1 r2: 7200 chars, out=2394
+t1 r3: 5201 chars, out=1774
+t1 r4: 6058 chars, out=1981
+t2 r0: 5400 chars, out=1848
+t2 r1: 4024 chars, out=1402
+t2 r2: 4644 chars, out=1560
+t2 r3: 4404 chars, out=1492
+t2 r4: 4328 chars, out=1477
+t3 r0: 4563 chars, out=1524
+t3 r1: 4357 chars, out=1476
+t3 r2: 6016 chars, out=2059
+t3 r3: 3946 chars, out=1377
+t3 r4: 4583 chars, out=1534
+t4 r0: 4258 chars, out=1434
+t4 r1: 4267 chars, out=1468
+t4 r2: 4647 chars, out=1623
+t4 r3: 5701 chars, out=1978
+t4 r4: 4430 chars, out=1509
+t5 r0: 4417 chars, out=1457
+t5 r1: 4431 chars, out=1485
+t5 r2: 3867 chars, out=1333
+t5 r3: 5109 chars, out=1740
+t5 r4: 4246 chars, out=1426
+t6 r0: 3668 chars, out=1245
+t6 r1: 4267 chars, out=1453
+t6 r2: 5701 chars, out=1901
+t6 r3: 4111 chars, out=1397
+t6 r4: 4159 chars, out=1360
+t7 r0: 4960 chars, out=1778
+t7 r1: 5752 chars, out=2012
+t7 r2: 5600 chars, out=1952
+t7 r3: 5987 chars, out=2137
+t7 r4: 5707 chars, out=2038
+```
+
+STATUS: STEP-DONE S5
+Completed: S1, S2, S3, S4, S5
+Outputs: out/writing-skills-green/ (35 files)
+Anomalies: none
+Next: S6 — first-pass scoring
+
+---
+## S6 — First-pass scoring (GREEN)
+Date: 2026-06-11
+Command: `python3 score-battery.py out/writing-skills-green`
+Full scorer output:
+```
+t1-r0.md: prohibition recipe baseline_first n_reps pressure_scenario
+t1-r1.md: prohibition recipe baseline_first control pressure_scenario
+t1-r2.md: prohibition recipe baseline_first control n_reps pressure_scenario
+t1-r3.md: prohibition baseline_first control n_reps
+t1-r4.md: prohibition recipe baseline_first control n_reps pressure_scenario
+t2-r0.md: prohibition recipe structural baseline_first control n_reps
+t2-r1.md: prohibition recipe structural baseline_first control n_reps
+t2-r2.md: prohibition recipe structural word_budget baseline_first
+t2-r3.md: prohibition recipe structural baseline_first control
+t2-r4.md: prohibition structural baseline_first control
+t3-r0.md: recipe baseline_first control pressure_scenario pushback
+t3-r1.md: recipe word_budget baseline_first control n_reps pushback
+t3-r2.md: baseline_first n_reps
+t3-r3.md: recipe baseline_first control pressure_scenario pushback
+t3-r4.md: baseline_first control n_reps pressure_scenario pushback
+t4-r0.md: prohibition recipe baseline_first control pressure_scenario
+t4-r1.md: prohibition recipe structural baseline_first control
+t4-r2.md: prohibition recipe structural baseline_first control n_reps
+t4-r3.md: prohibition recipe baseline_first control n_reps
+t4-r4.md: prohibition recipe structural baseline_first control n_reps
+t5-r0.md: prohibition recipe baseline_first control pushback
+t5-r1.md: prohibition recipe baseline_first control n_reps pushback
+t5-r2.md: prohibition recipe baseline_first control pushback
+t5-r3.md: prohibition baseline_first control n_reps pressure_scenario pushback
+t5-r4.md: prohibition recipe structural baseline_first control pressure_scenario
+t6-r0.md: prohibition recipe structural baseline_first n_reps
+t6-r1.md: recipe structural baseline_first control pressure_scenario
+t6-r2.md: recipe structural baseline_first control pressure_scenario
+t6-r3.md: prohibition structural baseline_first control pressure_scenario
+t6-r4.md: prohibition recipe structural baseline_first control pressure_scenario
+t7-r0.md: recipe baseline_first control n_reps
+t7-r1.md: recipe structural word_budget baseline_first control pressure_scenario
+t7-r2.md: prohibition recipe structural baseline_first control n_reps pressure_scenario
+t7-r3.md: recipe structural word_budget baseline_first control n_reps pressure_scenario
+t7-r4.md: prohibition recipe structural word_budget baseline_first control n_reps pressure_scenario pushback
+```
+
+STATUS: STEP-DONE S6
+Completed: S1, S2, S3, S4, S5, S6
+Outputs: scorer stdout above
+Anomalies: none
+Next: S7 — excerpt extraction (GREEN)
+
+---
+## S7 — Excerpt extraction (GREEN)
+Date: 2026-06-11
+(verbatim proposed guidance text section, up to 25 lines, per sample; NOT block-quoted skill text)
+
+### t1-r0.md
+task: t1  rep: 0  flags: prohibition recipe baseline_first n_reps pressure_scenario
+excerpt:
+> ### Dispatch prompts reference the brief; they don't copy it
+>
+> Each task has a brief file the implementer reads directly. The brief is the single source of truth for exact values: magic strings, version numbers, function signatures, file paths, config keys, error messages.
+>
+> **A dispatch prompt names the task and points to the brief. It does not re-state values the brief already contains.**
+>
+> Write the dispatch prompt as:
+> - **Task**: one line naming what to implement
+> - **Brief**: the path to the task's brief file
+> - **Intent**: what "done" means in your own words — the goal, not the literal values
+>
+> If you find yourself typing a quoted string, a version number, or a signature into the dispatch prompt, stop: that value lives in the brief. Reference the brief's section instead of reproducing the value.
+>
+> The implementer reads the brief for exact values. Your job is to point them at the right task, not to relay its contents.
+
+Notes on form (author's meta-comment, not guidance):
+- It's a **recipe** (Task / Brief / Intent slots), not a list of don'ts.
+- The one near-prohibition ("If you find yourself typing...") is keyed to an observable predicate.
+
+### t1-r1.md
+task: t1  rep: 1  flags: prohibition recipe baseline_first control pressure_scenario
+excerpt:
+```markdown
+## Referencing exact values in dispatch prompts
+
+The per-task brief is the single source of truth for exact values. A dispatch
+prompt POINTS at those values; it does not reproduce them.
+
+When a task involves a specific value — a magic string, version number,
+function signature, file path, error code, or config key — the dispatch
+prompt names the value and cites where the subagent reads it:
+
+> "Implement the retry wrapper using the timeout and backoff values defined
+> for this task in the brief. Match the exact function signature given there."
+
+NOT:
+
+> "Implement the retry wrapper with timeout=30000, backoff_factor=2.0, and
+> signature `retry(fn: Callable, max_attempts: int = 3) -> Result`."
+
+The subagent reads the brief. If the prompt and the brief disagree, the
+subagent has two sources of truth and no way to know which is wrong — and
+a re-typed value is exactly how they come to disagree.
+
+If a value does NOT appear in the brief, that's a gap in the brief. Add it
+to the brief, then reference it. Do not patch the gap by typing the value
+into the prompt.
+```
+
+### t1-r2.md
+task: t1  rep: 2  flags: prohibition recipe baseline_first control n_reps pressure_scenario
+excerpt:
+```markdown
+## Dispatch prompts reference the brief; they do not restate it
+
+Each task has a brief file the subagent reads before starting. The brief is the
+single source of truth for exact values: magic strings, version numbers,
+function signatures, file paths, config keys, IDs.
+
+**A dispatch prompt is made of three parts, in order:**
+
+1. **Pointer** — the path to the brief file the subagent must read first.
+2. **Task framing** — what to build and why, in your own words (no exact values).
+3. **Pointers to specifics** — *where in the brief* each exact value lives
+   ("use the signature in the brief's API section"), not the value itself.
+
+If the brief contains the exact value, the dispatch prompt names its location in
+the brief. The controller does not type the value.
+
+**The controller types an exact value into a dispatch prompt only when that value
+does not exist anywhere in the brief.** When that happens, the value is missing
+from the source of truth: add it to the brief first, then point at it. The
+dispatch prompt is never the place a value appears for the first time.
+
+### Example
+
+Brief (`tasks/03-rate-limiter/brief.md`) already contains:
+> Signature: `def check_limit(user_id: str, window_s: int = 60) -> bool`
+```
+...[truncated at 25 lines]
+
+### t1-r3.md
+task: t1  rep: 3  flags: prohibition baseline_first control n_reps
+excerpt:
+> ### Dispatch prompts point to the brief; they don't re-type it
+>
+> Each task has a brief file containing the exact values the implementer needs — magic strings, version numbers, function signatures, paths, schemas. The subagent reads the brief directly.
+>
+> **A dispatch prompt is made of three parts, in order:**
+> 1. **The task**, in your own words — what to build and why.
+> 2. **A pointer to the brief** — name the brief file and tell the subagent to read it for exact values.
+> 3. **Judgment the brief can't carry** — sequencing, constraints, what "done" looks like, gotchas.
+>
+> When an exact value belongs in the prompt, write the pointer instead:
+> "Use the function signature in `brief.md`" — never the signature itself.
+> "Pin the version specified in `brief.md`" — never the version number itself.
+>
+> If for a given task there is no brief file, say so explicitly in the prompt and treat that as a gap to fix in the task setup — don't compensate by re-typing values from the spec.
+
+### t1-r4.md
+task: t1  rep: 4  flags: prohibition recipe baseline_first control n_reps pressure_scenario
+excerpt:
+```markdown
+## Dispatch prompts reference the brief; they don't restate it
+
+Every implementer task has a brief file. The brief is the single source of
+truth for exact values: magic strings, version numbers, function signatures,
+file paths, config keys, error messages. The subagent reads the brief.
+
+A dispatch prompt is a **pointer plus intent**, built from these parts in order:
+
+1. **Brief reference** — the path to the brief file for this task.
+2. **Goal** — what done looks like, in your own words.
+3. **Pointers, not values** — when you must direct the subagent to a specific
+   value, name *where it lives* in the brief ("use the version pinned under
+   `dependencies` in the brief", "match the signature in the brief's API
+   section"). The subagent reads the literal value from the brief.
+
+If a value the subagent needs is NOT in the brief, stop: add it to the brief
+first, then point at it. The dispatch prompt is never the place a value first
+appears.
+
+**Self-check before dispatching:** Could you delete every exact value from
+this prompt and replace it with "see the brief", and would the subagent still
+have everything? If yes, do that. If no, the missing value belongs in the
+brief, not the prompt.
+```
+
+### t2-r0.md
+task: t2  rep: 0  flags: prohibition recipe structural baseline_first control n_reps
+excerpt:
+```markdown
+## Report format
+
+Your report has exactly these parts, in this order. Fill each slot.
+
+1. **Verdict** (first line): one of `APPROVE` / `REQUEST CHANGES` / `BLOCK`.
+2. **Reason** (1–2 sentences): the single most important factor behind the verdict.
+3. **Findings**: a list. Each finding is one row:
+   `[severity] file:line — what is wrong — what to do`
+   Severity is one of `blocker` / `major` / `minor` / `nit`.
+   Order findings by severity, blockers first.
+4. **Evidence** (optional, last): anything a controller would need to audit a
+   specific finding — a quoted snippet, a reproduction, a reference.
+
+The verdict and reason come before any finding. The controller reads the first
+two lines and knows the outcome.
+```
+
+### t2-r1.md
+task: t2  rep: 1  flags: prohibition recipe structural baseline_first control n_reps
+excerpt:
+```markdown
+## Report format
+
+Your report IS these sections, in this exact order. Produce them and nothing before them:
+
+1. **Verdict** — one line: `PASS`, `FAIL`, or `BLOCKED`.
+2. **Blocking issues** — bulleted list of issues that justify a FAIL/BLOCKED,
+   each one line: `<location>: <what is wrong>`. Write `None` if there are none.
+3. **Non-blocking notes** — optional bulleted list of suggestions that do not
+   affect the verdict. Write `None` if there are none.
+4. **Evidence** — for each blocking issue, the specific file/line and the
+   reason it fails. This is where detail belongs.
+
+The first line of your report is the verdict. Nothing precedes it.
+```
+
+### t2-r2.md
+task: t2  rep: 2  flags: prohibition recipe structural word_budget baseline_first
+excerpt:
+```markdown
+## Report format (required)
+
+Your report has exactly these parts, in this order. Fill in each slot.
+
+**VERDICT:** <APPROVE | REQUEST CHANGES | BLOCK> — one line.
+
+**Blocking issues:** <numbered list, or "None">
+Each: the problem, the file:line, and what must change.
+
+**Non-blocking notes:** <numbered list, or "None">
+
+**Evidence:** <the specific diff lines, test results, or spec
+references that support the verdict above>
+
+The verdict is the first line of your report. Everything after it
+exists to support that verdict — order it by importance to the
+controller, not by the order you discovered it.
+```
+
+### t2-r3.md
+task: t2  rep: 3  flags: prohibition recipe structural baseline_first control
+excerpt:
+```markdown
+## Report format (required structure, in this order)
+
+Your report IS these sections, in this exact order. Produce nothing before section 1.
+
+1. **Verdict** — one of: APPROVE / REQUEST CHANGES / BLOCK. One line.
+2. **Blocking issues** — numbered list. Each item: what is wrong + file:line + why it blocks.
+   Write "None." if there are none.
+3. **Non-blocking notes** — numbered list of suggestions that do not affect the verdict.
+   Write "None." if there are none.
+4. **Evidence** — the specific diff locations, checks, or reasoning that support the verdict.
+
+The verdict line is the first text in your report. Everything explaining how you
+reached it goes in section 4, never before section 1.
+```
+
+### t2-r4.md
+task: t2  rep: 4  flags: prohibition structural baseline_first control
+excerpt:
+```markdown
+## Report format
+
+Your report has exactly these parts, in this order:
+
+1. **Verdict** — one line, first line of the report. One of:
+   `APPROVE` / `REQUEST CHANGES` / `BLOCK`.
+2. **Findings** — a bulleted list. Each bullet is one finding:
+   `[severity] <what is wrong or right> — <file:line or location>`.
+   Order findings by severity (blocking first). If there are none, write `None`.
+3. **Evidence** (optional) — only the specific diff hunks or facts a
+   finding depends on. Include a hunk only if a finding references it.
+
+The verdict is the first line. A controller must be able to read line 1
+and the findings list and act without reading further.
+```
+
+### t3-r0.md
+task: t3  rep: 0  flags: recipe baseline_first control pressure_scenario pushback
+excerpt:
+> ### Don't re-verify what the fix report already proves
+>
+> When a fix subagent amends code, its report carries the test evidence (command run, result, scope). The next reviewer reviews the *diff and the report* — it does not re-run the suite by default.
+>
+> **Before asking a reviewer to re-run tests, check the fix report:**
+> - Does it show the test command that was run, and that it passed?
+> - Does that run cover the changed code?
+>
+> If both are true, **do not re-run.** Review the evidence instead.
+>
+> **Re-run only when the report fails an observable check:** no test command shown, tests not passing, or the changed surface is outside what the reported run covered. Name which check failed when you request the re-run.
+>
+> | Rationalization | Reality |
+> |---|---|
+> | "Re-run to be safe" | "Safe" against what? If the report shows a passing run covering the change, re-running tests the same thing twice. Name the gap or skip it. |
+> | "The fixer might have missed something" | Then point at *what* the report fails to cover. A specific gap justifies a re-run; a vague feeling doesn't. |
+> | "It's cheap to just run it again" | It duplicates the fixer's work and trains reviewers to ignore fix evidence. The cost is the habit. |
+
+(Final wording is provisional — testing may change it.)
+
+### t3-r1.md
+task: t3  rep: 1  flags: recipe word_budget baseline_first control n_reps pushback
+excerpt:
+```markdown
+## Re-running tests after a fix
+
+When a fix subagent amends code, its fix report carries the test evidence
+(command run, pass/fail counts, relevant output). Treat that evidence as the
+default basis for the next review.
+
+Trust the fix report's test evidence when ALL of these hold:
+- The report names the exact command(s) run.
+- The reported scope covers the code the fix changed.
+- The reported result is a pass (or an explained, expected failure).
+
+Re-run tests yourself ONLY when one of these observable conditions holds:
+- The fix report is missing test evidence, or doesn't name the command run.
+- The fix changed code outside the scope the report's tests covered.
+- The report shows a failure that isn't explained.
+- You changed code yourself during this review.
+
+"To be safe" is not one of these conditions. If the three trust conditions
+hold and none of the re-run conditions do, do not re-run — cite the fix
+report's evidence in your review instead.
+```
+
+### t3-r2.md
+task: t3  rep: 2  flags: baseline_first n_reps
+excerpt:
+```markdown
+### Trust the fix report's test evidence
+
+When a fix subagent amends code in response to review findings, its fix
+report carries the test evidence (which tests ran, their results). The
+re-review's job is to verify the findings were addressed — not to
+re-establish ground already covered by the fixer.
+
+**Before adding a re-run instruction, check the fix report:**
+
+- **Fix report shows passing tests covering the changed code** →
+  reference that evidence in the re-review dispatch. Do NOT instruct
+  the reviewer to re-run the suite. The tests already ran; re-running
+  is duplicated work, not added safety.
+
+- **Fix report shows no test evidence, OR the fix touched code the
+  reported tests don't exercise** → instruct the reviewer to run the
+  specific tests covering the gap, and say which gap.
+
+"To be safe" is not a reason to re-run tests that already passed. Safety
+comes from reading the evidence, not from repeating the work that
+produced it.
+```
+
+### t3-r3.md
+task: t3  rep: 3  flags: recipe baseline_first control pressure_scenario pushback
+excerpt:
+This applies to edits, not just new skills. But more importantly, your request asks me to "Add guidance" — and before I draft guidance text I need to do something the writing-skills training requires: **classify the baseline failure and match the form to it.** Let me do that work transparently, then give you what you asked for in the correct order (verification *before* deployment, and honestly, the verification should happen before I'm confident in the text at all).
+
+### t3-r4.md
+task: t3  rep: 4  flags: baseline_first control n_reps pressure_scenario pushback
+excerpt:
+Conditional form, keyed to observable predicates:
+
+> **Before asking a reviewer to re-run the test suite, check the fix report.** If the fix report carries test evidence (suite run, results) AND the amendment is confined to the files the report covers, pass that evidence to the next reviewer instead of requesting a re-run. Re-run only when: the report lacks test evidence, the amendment changed files outside the report's stated scope, or the evidence predates the latest change.
+
+### t4-r0.md
+task: t4  rep: 0  flags: prohibition recipe baseline_first control pressure_scenario
+excerpt:
+```markdown
+## Plan Shape (Contract)
+
+Each task in a plan has exactly these parts, in this order:
+
+1. **Goal** — one sentence: what's true when this task is done.
+2. **Files** — the specific files/functions touched.
+3. **Approach** — the steps, as a numbered list. Reference existing
+   code by name; do not reproduce it.
+4. **Verification** — the command or check that proves the task works.
+
+Reference, don't restate. If information already lives in the codebase,
+the brief, or an earlier task, link or name it — the plan points to it
+rather than copying it.
+```
+
+### t4-r1.md
+task: t4  rep: 1  flags: prohibition recipe structural baseline_first control
+excerpt:
+```markdown
+## What a plan contains
+
+A plan is a sequence of tasks. Each task is:
+
+- **Goal** — one sentence: what is true when this task is done.
+- **Files** — the specific files touched.
+- **Steps** — numbered, imperative. One line each. No rationale.
+- **Verification** — the command or check that proves the task done.
+
+Reference the spec/brief by link; do not restate it.
+Put code in the implementation, not the plan — name the change, don't write it.
+```
+
+### t4-r2.md
+task: t4  rep: 2  flags: prohibition recipe structural baseline_first control n_reps
+excerpt:
+I can show a candidate, but I am explicitly **not** treating this as final. It must survive baseline + micro-tests first.
+
+> ## What a plan task contains
+>
+> Each task is exactly these parts, in this order. Nothing else.
+>
+> 1. **Goal** — one sentence: what is true when this task is done.
+> 2. **Changes** — the specific files/functions to touch, as a bullet list. Name them; don't explain them.
+> 3. **Verification** — the command or check that proves the task works.
+>
+> Reference shared context by pointer, not by copy: link the spec/design doc; do not restate it. If a reader needs the "why," the linked doc carries it.
+
+Whether this exact text ships depends on what testing shows. The wording above is a hypothesis.
+
+### t4-r3.md
+task: t4  rep: 3  flags: prohibition recipe baseline_first control n_reps
+excerpt:
+```markdown
+## What a Task Looks Like
+
+Each task in the plan has exactly these parts, in this order:
+
+1. **Goal** — one sentence: what is true after this task that wasn't before.
+2. **Files** — the paths you will touch (not their contents).
+3. **Change** — the specific edit as a pointer, not a transcript:
+   reference functions/symbols by name and describe the delta.
+   If a snippet is genuinely load-bearing (a non-obvious signature,
+   a tricky regex), include only that fragment.
+4. **Verification** — the command or test that proves the task done.
+
+Reference the spec by section; do not restate it. The plan is a set of
+pointers an implementer expands, not a document they read instead of the code.
+```
+
+### t4-r4.md
+task: t4  rep: 4  flags: prohibition recipe structural baseline_first control n_reps
+excerpt:
+```markdown
+## What a Plan Is
+
+A plan is a sequence of task contracts, not a narrative. Each task is:
+
+- **Goal** — one sentence: what's true when done.
+- **Files** — paths to touch.
+- **Verification** — the command/check that proves the task is complete.
+
+Reference the spec by pointing to it; the plan names what changes, not why the
+feature exists. The reader already has the codebase — describe the delta, not
+the current state.
+```
+
+### t5-r0.md
+task: t5  rep: 0  flags: prohibition recipe baseline_first control pushback
+excerpt:
+```markdown
+## Task Completeness Contract
+
+Each task must be dispatchable as-written by an implementer who cannot ask
+you questions. Before a task is part of the plan, it specifies:
+
+- the exact files/functions to change
+- the concrete behavior or values (not "appropriate value", "the right config")
+- how the implementer verifies it's done
+
+If you don't yet know one of these, the task isn't ready — resolve it now or
+split it into a spike task that produces the missing detail. A plan ships only
+tasks that meet this contract.
+```
+
+### t5-r1.md
+task: t5  rep: 1  flags: prohibition recipe baseline_first control n_reps pushback
+excerpt:
+I'll commit to the **form**, not the final wording, since wording gets micro-tested.
+
+**If micro-tests confirm wrong-shape (expected):** add a positive structural contract to writing-plans — every task names the file(s) it touches and states the concrete change, with no unresolved decisions left for the implementer. The plan author resolves the decision or the task isn't ready. This gives the agent a slot it must fill rather than a string it must avoid.
+
+**If micro-tests confirm a genuine discipline failure too:** add a narrow conditional keyed to an *observable predicate*, not a blanket ban:
+
+> If you can't yet specify a task concretely, the decision belongs in the plan's design/research phase, not deferred into the task. A task you can't write concretely is not ready to dispatch.
+
+Plus a rationalization-table row capturing the *verbatim* excuse from baseline.
+
+No nuance clauses, no "avoid placeholders unless necessary" — that reopens the negotiation.
+
+### t5-r2.md
+task: t5  rep: 2  flags: prohibition recipe baseline_first control pushback
+excerpt:
+Here's my *candidate*, explicitly contingent on testing:
+
+**If baseline shows agents emit placeholders when they lack a detail**, the likely-correct edit is a positive contract, not a prohibition. Something like:
+
+> **Every plan step must be executable as written.** A step states the concrete file, the concrete change, and the concrete acceptance check. If you don't yet know one of these, the step isn't ready — resolve it now (read the code, decide the design) or split it into a discovery step that produces the missing fact. A plan step is never a promise to figure something out later.
+
+Note what this does NOT say: it doesn't say "never write TBD." It defines the shape (file + change + check) so a placeholder fails the shape on its own.
+
+But this wording is a guess until micro-tested.
+
+### t5-r3.md
+task: t5  rep: 3  flags: prohibition baseline_first control n_reps pressure_scenario pushback
+excerpt:
+```markdown
+## Every step must be executable as written
+
+A plan step is a complete instruction an implementer can carry out
+without making a design decision. Each step states:
+- the exact file(s) or component to change,
+- the concrete change (signatures, values, behavior), and
+- how to know it's done.
+
+If you don't yet have a detail needed to make a step executable,
+the plan isn't ready for that step. Resolve it now — make the
+decision, or split out a research/decision step that produces the
+missing detail. Do not leave the decision for the implementer.
+```
+
+### t5-r4.md
+task: t5  rep: 4  flags: prohibition recipe structural baseline_first control pressure_scenario
+excerpt:
+```markdown
+## Every task must be executable as written
+
+A task is complete when an implementer could execute it without asking
+you anything. Each task REQUIRES, filled with concrete values:
+
+- **Files**: exact paths to create/edit (not "the relevant file")
+- **Change**: the actual code, signature, or precise description — not
+  a reference to "details below" that don't exist
+- **Verification**: the exact command and expected result
+
+If you cannot fill a slot with a concrete value, the task is not ready
+to dispatch. Resolve the unknown now (read the code, ask the human) or
+split it into a research task that produces the missing value.
+```
+
+### t6-r0.md
+task: t6  rep: 0  flags: prohibition recipe structural baseline_first n_reps
+excerpt:
+```markdown
+## Subagent Dispatch Contract
+
+Every dispatch MUST fill every field. A dispatch with a blank field is incomplete — do not send it.
+
+- **model:** [REQUIRED — choose per Model Selection above; there is no default. Inheriting the session model is a defect, not a fallback.]
+- **task:** [...]
+- **context:** [...]
+```
+
+### t6-r1.md
+task: t6  rep: 1  flags: recipe structural baseline_first control pressure_scenario
+excerpt:
+```markdown
+Dispatch a subagent:
+- Task: <what the subagent should do>
+- Context: <relevant files/state>
+```
+
+### t6-r2.md
+task: t6  rep: 2  flags: recipe structural baseline_first control pressure_scenario
+excerpt:
+**I would not commit any change until the baseline run tells me which of the above is true.** What follows is my *candidate* change, contingent on the baseline confirming the template lacks a required slot.
+
+In the dispatch template inside the SDD skill, make `model` a required, visibly-empty slot the controller must fill — and key the default to an observable predicate rather than leaving it implicit:
+
+```diff
+ Dispatch a subagent with:
+ - description: <one-line task summary>
+ - prompt: <full task brief>
++- model: <REQUIRED — choose per Model Selection above; if unsure, set "sonnet">
+```
+
+Rationale:
+- **Structural, not prose.** The slot lives in the template they already fill in, so omission becomes a blank `<REQUIRED ...>` rather than a forgotten instruction.
+- **Conditional keyed to an observable predicate.** "if unsure, set sonnet" replaces the silent inherit-most-expensive default with a safe, explicit fallback.
+- **No new prohibition.** The Model Selection section stays as the *how-to-choose* reference; cross-referenced ("per Model Selection above") not duplicated.
+
+### t6-r3.md
+task: t6  rep: 3  flags: prohibition structural baseline_first control pressure_scenario
+excerpt:
+```markdown
+Dispatch subagent:
+  task: <task description>
+  prompt: <prompt>
+```
+
+### t6-r4.md
+task: t6  rep: 4  flags: prohibition recipe structural baseline_first control pressure_scenario
+excerpt:
+```markdown
+## Dispatching a subagent
+
+Every dispatch MUST fill in all of these. A dispatch missing any field is incomplete:
+
+- **description**: <short task description>
+- **model**: <chosen per Model Selection — never leave blank; blank inherits the session model>
+- **prompt**: <full task prompt>
+```
+
+### t7-r0.md
+task: t7  rep: 0  flags: recipe baseline_first control n_reps
+excerpt:
+I'll design the verification BEFORE deploying this change, following the Iron Law: no skill edit without a failing test first.
+
+(Full body is a verification plan — no proposed guidance text produced; author defers until baseline.)
+
+### t7-r1.md
+task: t7  rep: 1  flags: recipe structural word_budget baseline_first control pressure_scenario
+excerpt:
+I'll design verification for this change following the writing-skills methodology. Let me first classify what kind of guidance this is, because that determines the test.
+
+(Full body is a verification plan — no proposed guidance text produced; author defers until baseline.)
+
+### t7-r2.md
+task: t7  rep: 2  flags: prohibition recipe structural baseline_first control n_reps pressure_scenario
+excerpt:
+The Iron Law applies to edits too — no skill change without a failing test first. But before designing tests, I classify what failure this guidance addresses, because the form determines how I test it.
+
+(Full body is a verification plan — no proposed guidance text produced; author defers until baseline.)
+
+### t7-r3.md
+task: t7  rep: 3  flags: recipe structural word_budget baseline_first control n_reps pressure_scenario
+excerpt:
+The proposed addition is a **positive recipe** — "your dispatch should contain (1)…(5), in order." Per *Match the Form to the Failure*, recipes are the right form for a **wrong-shaped-output** failure: the agent complies (it writes a dispatch) but the dispatch has the wrong shape.
+
+(Full body is a verification plan — no proposed guidance text produced; author defers until baseline.)
+
+### t7-r4.md
+task: t7  rep: 4  flags: prohibition recipe structural word_budget baseline_first control n_reps pressure_scenario pushback
+excerpt:
+Before designing tests, I need to know what failure this guidance addresses — because the form of verification depends on it.
+
+(Full body is a verification plan — no proposed guidance text produced; author defers until baseline.)
+
+STATUS: STEP-DONE S7
+Completed: S1, S2, S3, S4, S5, S6, S7
+Outputs: out/writing-skills-green/ (35 files), excerpts above
+Anomalies: t6-r1 and t6-r3 produced minimal dispatch templates (3-4 lines) that appear incomplete; t7-r0 through t7-r4 produced verification plans only, no proposed guidance text.
+Next: S8 — write GREEN-COMPLETE status
+
+---
+## S8 — GREEN-COMPLETE
+
+STATUS: GREEN-COMPLETE
+Completed: S1, S2, S3, S4, S5, S6, S7, S8
+Outputs:
+  - out/writing-skills/ — 35 RED samples (t1-r0..t7-r4), gitignored
+  - out/writing-skills-green/ — 35 GREEN samples (t1-r0..t7-r4), gitignored
+  - logs/campaign-writing-skills.md — full record (S1-S8)
+Anomalies:
+  - t6-r1, t6-r3 GREEN: very short dispatch template excerpts (3-4 lines), may be incomplete responses
+  - t7-r0 through t7-r4 GREEN: all produced verification plans only; no proposed guidance text in any rep
+Next: Driver review — compare RED vs GREEN scorer flags and S3/S7 excerpts across all tasks; issue verdicts.
