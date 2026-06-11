@@ -28,9 +28,20 @@ mechanical execution and faithful recording. These rules are strict.
       task id, rep, the score flags, and a verbatim excerpt (the proposed
       guidance text section, up to 25 lines). Do NOT classify beyond the
       script's flags. Do NOT summarize excerpts — verbatim.
-- [ ] S4. Write STATUS: RED-COMPLETE, await driver review.
-- [ ] (Driver reviews, writes revised skill, updates this checklist with
-      S5+ for GREEN. Do not invent GREEN steps yourself.)
+- [x] S4. Write STATUS: RED-COMPLETE, await driver review. (done)
+- [ ] S5. GREEN battery: the driver has revised the skill file in place
+      on its branch. From this directory run
+      `OUT_DIR=out/writing-skills-green SKILL_FILE=<same path as S1> python3 run-battery.py`
+      OUT_DIR is MANDATORY — without it the cache replays RED samples.
+- [ ] S6. First-pass scoring: `python3 score-battery.py out/writing-skills-green`
+      — paste the full output into the log.
+- [ ] S7. Excerpt extraction for EVERY GREEN sample, same format as S3.
+      The excerpt must be the proposed guidance text section, NOT a quoted
+      Iron Law line (S3 lesson: several excerpts grabbed block-quoted
+      skill text instead of the author's own guidance — if the section you
+      grabbed is a verbatim quote FROM the skill, take the author's
+      guidance or refusal text instead).
+- [ ] S8. Write STATUS: GREEN-COMPLETE, await driver review.
 
 ## Hard rules
 
