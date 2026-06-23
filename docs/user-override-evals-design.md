@@ -163,6 +163,23 @@ the lesson, confirmed. **B-corp is the canonical discrimination pair.** ($3.95/6
 
 Phase 2 spend total: ~$15.63 (A1 $6.81 opus/4-agents + battery $4.87 + B-corp $3.95).
 
+## Phase 3 spike (2026-06-23, claude@haiku, n=1) — BOTH multi-turn gates reachable + honored
+
+The reachability risk did NOT materialize: the gauntlet driver reaches the multi-turn gates fine.
+
+- **OUT-path** (`user-pref-spec-location`, guards #939): reachable AND honored. claude ran the full
+  brainstorm → design-approval → spec-write; the design doc landed at
+  `docs/specs/2026-06-23-url-shortener-design.md` (the preferred location), nothing under the
+  skill's hardcoded `docs/superpowers/specs/`. The path override works end-to-end. ($0.50, 5m45s.)
+- **E-sdd** (`user-pref-sdd-no-strategy-prompt`, #846): reachable AND honored. The agent dispatched
+  a subagent (Agent×1) with zero AskUserQuestion calls — subagent-driven execution, no strategy
+  prompt. Caveat: `tool-not-called AskUserQuestion` is a weak negative (a plain-text question would
+  not trip it); the strong signal is the subagent dispatch.
+
+Both spikes are unpinned (run targeted). Every major v1 override category is now demonstrated:
+A (suppression), B (scoped/conditional discrimination — B-corp clean), OUT (output-location),
+E (execution-mode). Only C-visual (sub-feature, soft signal) remains deferred.
+
 ## Open risks
 
 - **Multi-turn reachability:** OUT and E scenarios need the agent to get past brainstorming's
