@@ -90,4 +90,38 @@ fact.
 
 ## Findings
 
-(none yet — this log is created before any battery has run)
+### 2026-07-28 — Parser validated against the audit corpus (Task 4, MINE)
+
+`campaigns/codex-efficiency/validate_corpus.py` ran `extract_spawns`/
+`parse_session` against the full audit corpus's known ground truth
+(`session-manifest.json`, `spawns-window.json`, `metrics-all.jsonl`, 2,240
+sessions / 1,098 spawn records). Full report:
+`campaigns/codex-efficiency/out/corpus-validation.md`.
+
+- **Phase A (spawn parity):** 161/161 sessions exact match, 0 mismatches;
+  `fork_turns`/`model` aggregate distributions identical to the audit's
+  (574 `all` / 359 `none` / 18 `(omitted)` / partials; 925/1098 omitted
+  models). Exact parity, unconditionally trusted.
+- **Phase B (per-session metrics, 49-session stratified sample):**
+  93.9–98.0% per-field exact match. All mismatches trace to 3 sessions whose
+  rollout activity extends outside the audit's
+  `[2026-07-14T07:00:00.000Z, 2026-07-28T16:50:29.164Z)` window (created
+  before window start, or still live/growing past window end) — confirmed
+  by direct rollout inspection. The audit scanner discards out-of-window
+  lines from every counter; `parse_session()` has no such filter (out of
+  scope for Tasks 2–3). Restricted to sessions fully inside the window:
+  100% (46/46) on all 8 fields.
+- **Phase C (manual inspection):** sampled skill-read and test-command
+  matches eyeballed by hand — all genuine, no false positives observed in
+  the sample (the known `apply_patch`-mentions-`SKILL.md` false-positive
+  path from Task 3 wasn't hit here since the sample drew from real
+  exec-shaped reads).
+
+**Restriction for downstream scorers:** do not treat `parse_session()`'s
+absolute counts as corpus-comparable for a session whose activity spans
+outside the audit window; the parser is a strict superset in that case, not
+wrong. See task-4-report.md for the full adjudication and a suggested (not
+implemented) future parser enhancement.
+
+**Verdict: parser trusted for corpus-relative scoring, subject to the
+window-boundary restriction above.**
