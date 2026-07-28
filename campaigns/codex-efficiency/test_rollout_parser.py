@@ -51,6 +51,10 @@ WAIT_CALL = L("2026-07-28T17:01:30.000Z", "response_item", {
     "type": "function_call", "id": "fc_13", "name": "wait_agent",
     "arguments": "{}", "call_id": "call_wait_1"})
 PATCH_END = L("2026-07-28T17:01:35.000Z", "event_msg", {"type": "patch_apply_end"})
+CUSTOM_EXEC_SPAWN_MENTION = L("2026-07-28T17:01:40.000Z", "response_item", {
+    "type": "custom_tool_call", "id": "fc_14", "name": "exec",
+    "input": "echo 'calling spawn_agent(task_name=\"x\") from a shell script'",
+    "call_id": "call_exec_3"})
 
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
@@ -97,6 +101,19 @@ class TestSessionMetrics(unittest.TestCase):
         cmds = rp.exec_commands(p)
         self.assertEqual([c.encoding for c in cmds], ["exec_command", "custom_exec"])
         self.assertIn("pytest", cmds[0].cmd)
+
+    def test_spawn_calls_matches_broad_audit_classifier(self):
+        # A custom_tool_call exec whose input merely *mentions* spawn_agent(
+        # (not a real function_call named spawn_agent) must still count in
+        # the parse_session spawn_calls counter, mirroring the audit's
+        # isSpawn classifier (name === "spawn_agent" || /\bspawn_agent\(/),
+        # while extract_spawns' structured-tuple extraction — which only
+        # recognizes function_call records named spawn_agent — must NOT
+        # produce a Spawn tuple for it.
+        p = write_fixture([CUSTOM_EXEC_SPAWN_MENTION])
+        m = rp.parse_session(p)
+        self.assertEqual(m.spawn_calls, 1)
+        self.assertEqual(rp.extract_spawns(p), [])
 
 if __name__ == "__main__":
     unittest.main()

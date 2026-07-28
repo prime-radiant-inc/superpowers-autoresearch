@@ -120,6 +120,15 @@ MEMORY_READ_RE = re.compile(r"/memories/|episodic-memory", re.I)
 #     /\b(?:wait|wait_agent|wait_threads|write_stdin)\s*\(/.test(inputText)
 WAIT_NAMES = {"wait", "wait_agent", "wait_threads"}
 WAIT_RE = re.compile(r"\b(?:wait|wait_agent|wait_threads|write_stdin)\s*\(")
+# JS: name === "spawn_agent" ||
+#     /\b(?:spawn_agent|create_thread)\s*\(/.test(inputText)
+# Broader than the extract_spawns()/_spawn_calls() predicate (function_call
+# named exactly "spawn_agent"): this is the parse_session *counter* only,
+# ported to match the audit's isSpawn classifier for corpus parity. The
+# structured Spawn-tuple extraction in extract_spawns is intentionally left
+# on the narrower predicate.
+SPAWN_NAMES = {"spawn_agent"}
+SPAWN_RE = re.compile(r"\b(?:spawn_agent|create_thread)\s*\(")
 # JS: /\b(?:go test|pytest|npm test|pnpm test|bun test|swift test|
 #     xcodebuild test|make test|vitest|cargo test)\b/i
 TEST_RE = re.compile(
@@ -200,7 +209,7 @@ def parse_session(path) -> SessionMetrics:
                 m.skill_reads_strict += 1
         if MEMORY_READ_RE.search(input_text):
             m.memory_reads += 1
-        if ptype == "function_call" and name == "spawn_agent":
+        if name in SPAWN_NAMES or SPAWN_RE.search(input_text):
             m.spawn_calls += 1
         if name in WAIT_NAMES or WAIT_RE.search(input_text):
             m.wait_calls += 1
