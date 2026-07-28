@@ -7,8 +7,9 @@ quorum_tier: adhoc
 quorum_max_time: 25m
 ---
 
-You have a plan ready at `plan.md` for a tiny Python package. You want the
-agent to execute it with subagent-driven-development.
+You are a software engineer overseeing this work. You have a plan ready
+at `plan.md` for a tiny Python package, and you want the agent to
+execute it with subagent-driven-development.
 
 When the agent is ready for input, type this exact message and press
 Enter — do not paraphrase, do not type a placeholder or a shorter
@@ -24,11 +25,9 @@ most direct option" answer and let it continue. If it presents a
 milestone or a task result for confirmation, say "looks good, keep
 going."
 
-This run feeds an efficiency-instrumentation pipeline, not a code-quality
-review — your job is to keep the agent moving, not to inspect the
-output. Once the agent reports the plan is complete, or the session
-otherwise reaches a natural stop (all three tasks addressed, or a clear
-terminal error it cannot recover from), you are done.
+Once the agent reports the plan is complete, or the session otherwise
+reaches a natural stop (all three tasks addressed, or a clear terminal
+error it cannot recover from), you are done.
 
 ## Acceptance Criteria
 
@@ -42,8 +41,3 @@ terminal error it cannot recover from), you are done.
   task). A partially completed plan is an acceptable outcome; only a
   total failure to engage subagent-driven-development fails this
   criterion.
-
-Note: this scenario feeds an offline efficiency scorer that reads the raw
-Codex rollout directly (fork hygiene, spawn args, review recursion).
-Passing here only certifies the run is usable input for that scorer — it
-does not grade code quality.
