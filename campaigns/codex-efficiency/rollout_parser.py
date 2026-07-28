@@ -1,6 +1,6 @@
 """Parse Codex rollout JSONL (three-key lines: timestamp/type/payload).
 Shapes verified against the 2026-07-28 audit corpus recon."""
-import json, dataclasses, pathlib
+import json, dataclasses
 from typing import Iterator
 
 MAX_LINE_BYTES = 8 * 1024 * 1024  # match audit scanner
@@ -52,5 +52,7 @@ def child_links(path) -> dict[str, str]:
     for ts, typ, p in iter_records(path):
         if typ == "event_msg" and p.get("type") == "sub_agent_activity" \
            and p.get("kind") == "started":
-            links[p["event_id"]] = p.get("agent_thread_id", "")
+            event_id = p.get("event_id")
+            if event_id is not None:
+                links[event_id] = p.get("agent_thread_id", "")
     return links
