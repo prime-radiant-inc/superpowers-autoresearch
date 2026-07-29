@@ -1170,3 +1170,137 @@ flat at 8.0% across the entire battery (no measurable movement — the
 battery's real cost was too small to register against the primary
 window). Codex CLI `0.146.0` confirmed on all 20 samples. No ledger row
 added (not a $-costed battery).
+
+### 2026-07-29 — E2-FULL PRE-REGISTRATION: branch-review baseline (Task 8)
+
+Registered before any `cx-branch-review` battery run, per the campaign's
+pre-registration discipline. This is the FULL-tier baseline the E2-MICRO
+entry above (Task 7, inconclusive-by-zero) explicitly deferred: "the FULL
+scenario ... still carries the real baseline question."
+
+**Rig, built this task (all under
+`campaigns/codex-efficiency/`):**
+
+- **Scenario:** `scenarios/cx-branch-review/` (`story.md`/`setup.sh`
+  executable/`checks.sh` non-executable, `# coding-agents: codex` first
+  line) — a quorum scenario, interactive (`quorum run ... --coding-agent
+  codex`, NOT `codex exec`), `quorum_max_time: 20m`. The Gauntlet brief is
+  a neutral engineer-oversight persona with no efficiency/measurement
+  vocabulary anywhere in the body (Task 5's Gauntlet-blinding fix
+  precedent, re-applied from the start here rather than fixed after the
+  fact): "You are a software engineer who has been working on a small
+  Python library ... on the `feature` branch. Implementation is done and
+  you want a review before merging to `main`." The fixed typed message:
+  "Please do a final review of the feature branch using your superpowers
+  review skills before we merge." `bun run quorum check
+  scenarios/cx-branch-review` passes (`ok cx-branch-review` / `ok
+  credentials`).
+- **Fixture:** `fixtures/branch-review/build.sh` (hand-authored git
+  history — the review's INPUT, not skill output, per the task brief's
+  explicit allowance) — a `main` baseline (2 files) plus a `feature`
+  branch (checked out at the end) carrying 4 commits across 4 concerns:
+  core logic (`taskqueue/queue.py`, `taskqueue/validators.py`), CLI
+  (`taskqueue/cli.py`, `taskqueue/__main__.py`), tests
+  (`tests/test_queue.py`, `tests/test_validators.py`,
+  `tests/test_cli.py`), docs (`docs/USAGE.md`, `docs/DESIGN.md`,
+  `README.md`). 10 files touched, **453 changed lines**
+  (`git diff --stat main..feature`), 5 commits total (1 baseline + 4
+  feature) — well past the "8-12 files / 300+ lines / several commits /
+  3+ concerns" bar this task was scoped to, specifically so a reviewer
+  has genuine surface area to consider splitting the review up (Task 7's
+  lesson: a single-turn, single-diff review never delegates because
+  there's no natural sub-task to delegate to).
+  **Verified by hand before committing:** `python3 -m pytest tests/` on
+  the built `feature` branch — 22/22 pass.
+- **Two seeded issues, both confirmed live (not just asserted) and both
+  invisible to the passing test suite:**
+  1. **Missing edge-case test** — `taskqueue/queue.py:46-58`
+     (`dequeue_batch(n)`) is correctly implemented for `n` greater than
+     the queue's length or an empty queue (it returns whatever remains
+     instead of raising, per its own docstring — confirmed by hand:
+     `dequeue_batch(5)` on a 1-item queue returns the 1 item,
+     `dequeue_batch(3)` on an empty queue returns `[]`, no exception
+     either way), but `tests/test_queue.py` (lines 39-51) never exercises
+     either path — only `n <= len(queue)`.
+  2. **Docstring/behavior mismatch** — `taskqueue/queue.py:60-65`
+     (`peek()`)'s docstring says "Returns None if the queue is empty";
+     the implementation (`return self._heap[0][2]`) has no empty check
+     and raises `IndexError` instead — confirmed by hand
+     (`PriorityQueue().peek()` on a fresh queue raises
+     `IndexError: list index out of range`). `docs/DESIGN.md` repeats the
+     same (wrong, relative to the code) contract, so a reviewer who reads
+     only the docs would be misled the same way; only reading `peek()`'s
+     own body against its docstring catches it.
+     `tests/test_queue.py` never calls `peek()` on an empty queue, so the
+     suite stays green either way.
+- **Scorer:** `score_e2.py` (TDD, 9 new tests in `test_score_e2.py`, all
+  passing; existing suites unaffected — `test_rollout_parser.py` 10/10,
+  `test_score_e1.py` 6/6, `test_score_e9.py` 7/7). Walks every rollout in
+  a run's `home/.codex/sessions/**` TRANSITIVELY via `child_links()` (not
+  just the root's own spawns, like `score_e1.py` — a reviewer that itself
+  spawns further reviewers is exactly what this measures), starting from
+  the chronologically-earliest rollout as root. Census per run:
+  `total_sessions` (tree size, root included), `max_depth` (root = 0),
+  `spawns_by_nonroot` (spawn_agent calls issued by anyone OTHER than
+  root — the recursion signal, since the root dispatching one reviewer is
+  the expected/intended single delegation), `missing_task_complete`
+  (rollouts in the tree with zero `task_complete` events), `total_wait_calls`
+  / `root_wait_calls`, and `orphan_rollouts` (rollout files present but
+  unlinked from the tree). `score_run()` asserts root identity (the
+  chronologically-earliest rollout's first `event_msg/user_message`
+  contains the review-request marker) and raises `SystemExit` if that
+  assertion fails, rather than silently scoring the wrong session as
+  root — this is our own fixed Gauntlet prompt, not corpus content, so
+  checking it for a known substring (never printing the raw text) is
+  safe per this campaign's established precedent for Gauntlet-prompt
+  text. `FORCE=1`/collision-refusal convention matches
+  `score_e1.py`/`score_e8.py`/`score_e9.py`.
+
+**Prediction (unchanged from the original E2 baseline entry above,
+registered 2026-07-28):** a dispatched branch reviewer produces ≥1
+descendant in ≥half of reps (i.e. **≥2 of 4 dev-arm reps show
+`spawns_by_nonroot > 0`**, equivalently `max_depth >= 2` — a session
+below the root itself spawning something further, NOT counting the
+root's own single expected reviewer dispatch, which is the intended
+baseline shape and does not by itself indicate the pathology).
+
+**Alternative outcome, registered explicitly as a live possibility before
+this battery runs (per Task 7's own instruction and the E1/E7
+fresh-session lessons):** E1's baseline (Task 6) found 34/34 SDD spawns
+isolated (`fork_turns:"none"`) on a fresh, short-lived `dev`-arm session
+— axis B (fork-isolation) landed as **inconclusive-by-zero** and was
+re-scoped into E6 (long-history/compaction elicitation), on the
+hypothesis that the audit's own Finding 1/Finding 2 recursive-forking
+narratives describe *long-running, heavily-loaded* controller sessions,
+not short fresh dispatches. E2-MICRO (Task 7) independently found the
+same shape at single-turn scale (0/20 spawns of any kind). **If this
+FULL battery shows 0 reviewer descendants across all 4 dev reps
+(`spawns_by_nonroot == 0` in every rep, i.e. review recursion never
+occurs even once), that is recorded as inconclusive-by-zero for E2 on
+fresh sessions, the same terminal state as E1's axis B** — the baseline
+question (does review recursion happen at all, absent any intervention)
+gets folded into E6's scope (long-history/compaction elicitation) rather
+than re-attempted with more reps at this scenario shape, per the
+discrimination rule (inconclusive-by-zero is a stop, not grounds to keep
+spending on more reps chasing the same shape). This is registered now,
+before the battery runs, exactly like E1 axis B and E2-MICRO's own
+inconclusive-by-zero caveat — not a reframe invented after seeing a
+disappointing result.
+
+**Battery plan:** 4 reps, `dev` arm only (no treatment arm exists yet for
+E2 — DESIGN.md's E2 tiers are MINE → MICRO → FULL baseline, no treatment
+tier registered), sequential, via `run-quorum.sh dev cx-branch-review 4`.
+Per the task instruction: if the discrimination gate reads 0 descendants
+everywhere, do not run more reps chasing the pathology — record
+inconclusive-by-zero and stop.
+
+**Seeded-issue recall (secondary readout, not gating the discrimination
+verdict):** per rep, whether both seeded issues (dequeue_batch edge-case
+gap, peek() docstring mismatch) are named in the root session's final
+`task_complete.last_agent_message` and/or any report-shaped file left in
+the workdir. This checks findings quality, not delegation — registered
+here so it's clear this is a secondary readout, not something the
+discrimination gate depends on.
+
+**No run yet — this is the pre-registration.** Battery, census, and
+verdict follow in a separate log entry once `out/e2-report.md` exists.
