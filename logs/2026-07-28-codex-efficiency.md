@@ -751,3 +751,144 @@ scope restriction in `out/e8-report.md`, not fixed in this task (the
 
 **No budget spent** (MINE tier, existing corpora only, no quorum/Codex
 runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
+
+### 2026-07-29 — E9 PRE-REGISTRATION: workspace-leak census (Amendment 1, Tasks E7-E9)
+
+Registered before `score_e9.py` exists, per the campaign's build-order rule.
+E9 differs from E7/E8: it scores **git repos** (run workdirs), not rollout
+JSONL, so there is no `rollout_parser.py` change to make first — the
+"ground-check before scorer" discipline here means running plain read-only
+`git log`/`git ls-tree` by hand, once, before writing any scoring code.
+
+**Drew's fractals set — the task brief's "3 of 4 runs" claim does NOT match
+either the raw git history or Drew's own analysis; traced to source and
+corrected here, not carried forward uncritically.**
+
+- **Task brief's claim, as given:** "3 of 4 runs shipped `.superpowers/sdd/`
+  workspace files into git history."
+- **Ground check just now** (`git log --all --diff-filter=A --name-only
+  --pretty='@@COMMIT@@%H%x09%s' -- '.superpowers'`, run by hand against all
+  four `awesome-fractals-fcu-*` repos under
+  `/Users/jesse/git/superpowers/_tmp/drew-sdd-head-to-head-2026-07-27/sdd-testing-fresh/`):
+  **2 of 4, not 3 of 4.**
+  - `awesome-fractals-fcu-codex-5_5`: 4 paths added across 4 commits
+    (`2f72702` Task 3, `07d34e2` Task 4, `8842b73` Task 6, `f4fed14` Task 7).
+  - `awesome-fractals-fcu-sol-5_6`: 1 path added (`d5e66d0`, Task 4).
+  - `awesome-fractals-fcu-opus-4_8`: 0 (confirmed with an unrestricted
+    `git log --all -p | grep -c '\.superpowers'` too — zero mentions of
+    `.superpowers` anywhere in this repo's history, not just zero Added
+    paths).
+  - `awesome-fractals-fcu-opus-5`: 0 (same unrestricted check, zero
+    mentions).
+  - **None of the four have any `.superpowers` path in the current HEAD
+    tree** (`git ls-tree -r --name-only HEAD -- '.superpowers'` empty for
+    all four) — both leaking repos self-cured via a later removal commit on
+    the same branch (`8d97818`/`c5abb3a` for codex-5_5, `fa2bb75` for
+    sol-5_6), so by a HEAD-presence definition all four repos currently
+    "ship clean"; only by an ever-added-to-history definition do 2 of 4
+    count as leaks.
+- **Where "3" likely comes from — traced, not guessed.** Drew's own
+  `analysis/report.md` (line 94) says: "5 force-adds of `.superpowers/sdd/`
+  reports across both Codex runs; **3 reached the branch unflagged in
+  codex-5_5**." That is a within-codex-5_5 count (3 of its leaks rode in
+  silently inside planned feat commits, vs. the 4th being a deliberate,
+  self-flagged `docs:` commit) — a different denominator (3 of one run's
+  leaks) than "3 of 4 runs." Drew's own `analysis/narratives/scope-audit.md`
+  (the actual per-run leak narrative, §"SDD workspace leakage into git")
+  states the runs-level count explicitly and it agrees with our ground
+  check exactly: "Both Claude runs honored that perfectly — no
+  `.superpowers` path ever appears in opus-4_8 or opus-5 history. Both
+  Codex runs leaked" — i.e. 2 of 4, with the same commit SHAs we found
+  independently (`d5e66d0`/`fa2bb75` for sol-5_6; `2f72702`/`07d34e2`/
+  `8842b73`/`f4fed14`/`8d97818`/`c5abb3a` for codex-5_5). **Registering the
+  corrected figure (2 of 4) as what `score_e9.py` must reproduce**, not the
+  task brief's "3 of 4" — flagging the brief's figure as traced to a
+  misapplied denominator from Drew's own materials, not a data
+  disagreement with Drew.
+
+**Our own battery workdirs — predict some nonzero leak rate on both arms;
+ground-checked now, before the scorer exists.**
+
+- Prediction (registered per the task brief): some nonzero leak rate on
+  both `dev` and `spinout` arms, on the theory that the `cx-sdd-small`
+  fixture drives the same SDD workflow (task-N-report.md etc. written to
+  `.superpowers/sdd/`) that produced Drew's Codex-side leaks.
+- **Ground check just now**, all 14 real `coding-agent-workdir` git repos
+  under `evals/results/cx-eff-cx-sdd-small-{dev,spinout}-rep*/*/` (dev
+  rep1-6, spinout rep1-8; see "data-quality note" below for a 15th
+  candidate directory excluded from this count): **0 of 14 have any
+  `.superpowers` path ever added** (`added=0`) **and 0 of 14 have any in
+  HEAD** (`in_head=0`) — flatly contradicting the nonzero prediction.
+  Registering the miss now, before the scorer exists, rather than
+  reframing after.
+- **Mechanism spot-checked (not exhaustively investigated — flagged as an
+  open question, matching Drew's own unresolved one below).** Two guards
+  are visibly present: (1) every repo has a workspace-internal
+  `.superpowers/sdd/.gitignore` containing `*` (git status shows it `!!`
+  ignored in every repo checked) — this matches Drew's own domain-review
+  note that all four of *his* fractals repos also end up with this same
+  nested self-ignore file; (2) in 10 of the 14 battery repos, the agent
+  itself additionally committed a repo-root `.gitignore` containing
+  `.superpowers/` as an early, own-initiative hygiene commit — confirmed
+  NOT scripted by `setup-helpers` (grepped `evals/src/setup-helpers/*.ts`:
+  neither `init_repo_from_fixtures` nor `symlink_superpowers` touches
+  `.gitignore` or makes a second commit; `initRepoFromFixtures` makes
+  exactly one commit, "seed scenario fixtures"), and the commit message
+  itself varies across reps ("chore: ignore development workspaces",
+  "chore: ignore local worktrees", "chore: ignore development artifacts",
+  "chore: ignore local workspaces", "chore: ignore local worktree
+  artifacts") — i.e. genuinely agent-authored wording, not a fixed
+  template string. The other 4 reps (dev-rep3, spinout-rep1/2/3) have no
+  such root `.gitignore` commit at all yet still show zero leaks, so guard
+  (1) alone appears sufficient on its own. Why guard (1) held reliably
+  here but did not prevent Drew's Codex-side leaks is Drew's own flagged
+  "open mechanism question" (`scope-audit.md`: the nested ignore file's
+  mtime in his repos post-dates the run, "harness-mechanism ... vs.
+  model-behavior ... indeterminate") — not re-investigated or resolved by
+  this task; noted here only as the most plausible explanation for the
+  prediction miss, not as a settled cause.
+
+**Data-quality note, found while locating the 14 battery repos (must be
+guarded against in the scorer, not just noted):**
+`evals/results/cx-eff-cx-sdd-small-spinout-rep6/` contains a 15th directory
+matching the naming pattern
+(`cx-eff-cx-sdd-small-codex-.../coding-agent-workdir`, an artifact of a
+retried/duplicated run) that has **no `.git` of its own**. Running any git
+command with `cwd` set to it does not fail — it silently resolves upward
+through the filesystem to the **evals checkout's own git repo**
+(`git rev-parse --show-toplevel` from inside it prints
+`/Users/jesse/git/superpowers/superpowers/evals`; `--git-dir` prints
+`/Users/jesse/git/superpowers/superpowers/.git/modules/evals`, the
+submodule gitdir). Scoring that directory under the `cx-eff-...` label
+would silently report the *entire evals repo's* history as if it were one
+battery run's workdir. `score_e9.py` must check for a directory's **own**
+`.git` entry (`os.path.exists(os.path.join(d, ".git"))`) before invoking
+git at all, never rely on `git rev-parse --is-inside-work-tree` from
+inside the target directory for this decision. This directory is excluded
+from the "14" count above and will be excluded (skipped, logged) by the
+scorer.
+
+**Scorer (to be built next, `score_e9.py`, no `rollout_parser.py` change
+needed):** per repo, read-only `git` subprocess calls with `cwd=repo_dir`
+only (`log --all`, `log` [HEAD-reachable], `ls-tree`; never a mutating
+command) —
+
+- (a) workspace paths **ever added in history**: `git log --all
+  --diff-filter=A --name-only --pretty=... -- '.superpowers'`.
+- (b) workspace paths **present in HEAD**: `git ls-tree -r --name-only HEAD
+  -- '.superpowers'`.
+- (c) workspace paths added in **any commit reachable from HEAD** (same
+  query as (a), without `--all`) — classifies each path in (a) as
+  leaked-and-still-shipped (in (b)), leaked-then-removed (in (c) but not
+  (b)), or leaked-on-an-unreachable-ref (in (a) but not (c)).
+
+`FORCE=1`/`--force` overwrite guard on any JSON output, matching
+`score_e1.py`/`score_e8.py`'s convention.
+
+**Success criterion:** none — same as E7/E8, descriptive MINE-tier census,
+no new run spend. The check is whether the independently-built scorer
+reproduces the corrected Drew figure (2 of 4, not the task brief's 3 of 4)
+and the battery's 0-of-14 ground check above.
+
+**No budget spent** (MINE tier, existing corpora only, no quorum/Codex
+runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
