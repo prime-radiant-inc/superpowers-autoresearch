@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# usage: run-quorum.sh ARM SCENARIO REPS   (ARM: dev | spinout)
+# usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout)
 #
 # Runs one codex-efficiency-campaign scenario through the evals-container
 # quorum wrapper, REPS times, writing each rep to
-# results/cx-eff-<SCENARIO>-<ARM>-repN.
+# results/cx-eff-<SCENARIO>-<ARM>-repN. REP_START (default 1) offsets the
+# rep numbering so a battery can be resumed/extended without overwriting
+# already-scored reps, e.g. `run-quorum.sh dev cx-sdd-small 3 2` runs reps
+# 2-4.
 #
 # ARM selects which superpowers checkout is mounted into the container as
 # SUPERPOWERS_ROOT: 'dev' -> /tmp/sp-arm-dev (origin/dev), 'spinout' ->
@@ -24,9 +27,10 @@ set -euo pipefail
 EVALS=/Users/jesse/git/superpowers/superpowers/evals
 CAMP=/Users/jesse/git/superpowers/superpowers-autoresearch/campaigns/codex-efficiency
 
-ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS   (ARM: dev | spinout)"}
-SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS   (ARM: dev | spinout)"}
+ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout)"}
+SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout)"}
 REPS=${3:-1}
+REP_START=${4:-1}
 
 case "$ARM" in
   dev)     SP_ROOT=/tmp/sp-arm-dev ;;
@@ -69,7 +73,7 @@ grep -qxF "$dest" "$exclude_file" 2>/dev/null || echo "$dest" >> "$exclude_file"
 scripts/evals-container down >/dev/null 2>&1 || true
 scripts/evals-container --superpowers-root "$SP_ROOT" up
 
-for r in $(seq 1 "$REPS"); do
+for r in $(seq "$REP_START" $((REP_START + REPS - 1))); do
   echo "===== run-quorum: $ARM $SCEN rep$r ====="
   scripts/evals-container exec quorum run "$dest" \
     --coding-agent codex \

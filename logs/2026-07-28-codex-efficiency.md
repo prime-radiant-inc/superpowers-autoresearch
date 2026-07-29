@@ -16,7 +16,7 @@ fact.
 
 | Date | Battery | $ cost | Sub used_percent before | Sub used_percent after |
 |---|---|---|---|---|
-| — | (no batteries run yet) | — | — | — |
+| 2026-07-28 | E1 baseline (dev, cx-sdd-small, 4 reps) | $20.59 ($19.43 coding + $1.16 gauntlet) | 28.0% | 31.0% |
 
 ## Pre-registered predictions
 
@@ -125,3 +125,40 @@ implemented) future parser enhancement.
 
 **Verdict: parser trusted for corpus-relative scoring, subject to the
 window-boundary restriction above.**
+
+### 2026-07-28 — E1 baseline discrimination gate: BLOCKED (Task 6, FULL baseline)
+
+Ran the FULL baseline battery (4 reps, `dev` arm, `cx-sdd-small`) via
+`run-quorum.sh dev cx-sdd-small ...` (rep1 reused from the Task 5 smoke;
+reps 2-4 run fresh) and scored all 34 spawns with
+`campaigns/codex-efficiency/score_e1.py`. Full detail:
+`campaigns/codex-efficiency/out/e1-report.md`.
+
+**Result: 34/34 spawns (100%) `fork_turns:"none"` (isolated), 0%
+`"all"`/partial, 100% model-omitted** — identical across all 4
+independent reps.
+
+**Gate:** the registered prediction is compound — ≥40% `fork_turns`
+`"all"`/partial (observed 0%, **fails**) AND ≥60% model-omitted (observed
+100%, holds). Per the task-6 controller instruction, since the baseline
+does not exhibit the full pathology, **the treatment battery
+(`codex-spinout-fixes` arm) was not run.** Status returned: BLOCKED, for
+controller/Jesse adjudication.
+
+This sits in tension with the audit's own Finding 1 narrative ("The
+small SDD control case shows the behavioral consequence... Full-history
+'implementers'... recursively became SDD controllers") — our distilled
+scenario didn't reproduce that shape on current `dev`, even though `dev`'s
+`subagent-driven-development/SKILL.md` and `codex-tools.md` still don't
+mention `fork_turns` anywhere (confirmed by grep). The model-omission
+half of Finding 1 did reproduce, strongly. See the report's "Why this is
+surprising" section for candidate explanations (none confirmed).
+
+**Cost:** $20.59 ($19.43 coding + $1.16 gauntlet), sub used_percent
+28.0% → 31.0%. Ledger row above.
+
+**Next step:** re-plan with the controller/Jesse — options include
+re-scoping the scenario to exercise conditions more likely to trigger
+full-history forking, accepting the model-omission-only result as E1's
+baseline finding and adjusting the treatment's success bar accordingly,
+or treating E1 as inconclusive-by-construction for this scenario shape.
