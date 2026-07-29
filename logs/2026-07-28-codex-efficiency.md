@@ -447,3 +447,63 @@ any battery using this schema. Full detail:
 **No budget spent** (read-only analysis of existing external files, no
 quorum/Codex runs). Sub `used_percent` and $ cost: not applicable, no
 ledger row added.
+
+### 2026-07-29 — E7 PRE-REGISTRATION: wait-polling timeout rate (Amendment 1, Tasks E7-E9)
+
+Registered before `score_e7.py` (or the parser's `wait_outcomes()`) exists,
+per the campaign's build-order rule (Global Constraints: "a scorer issues
+no verdict until validated against corpus ground truth AND its matches are
+manually inspected" — this entry is the pre-registration half of that rule;
+the manual-inspection half follows in Task E7's own Findings entry once the
+scorer runs).
+
+**Prediction:**
+
+- **Drew's stress-2703 run:** ~78% of ~805 `wait_agent` polls time out.
+  This is Drew's own claimed figure (cited in the Amendment-1 task list and
+  registered as an *unverified* external prior in the Drew cross-validation
+  entry above — "the 78% wait-timeout claim specifically requires
+  call/outcome pairing `rollout_parser.py` doesn't have yet (E7's job); not
+  attempted here"). E7 is the first attempt to check it independently.
+- **Audit corpus, one Remux root:** ~74% (788/1058) `wait_agent` calls time
+  out. This is the audit's own published Finding 7 figure ("one Remux root
+  made 1,058 `wait_agent` calls, 788 of which timed out" —
+  `docs/superpowers/research/2026-07-28-codex-efficiency-audit.md`, Finding
+  7). Root identified by cross-referencing `session-manifest.json` (depth-0,
+  `thread_source:"user"`) against `metrics-all.jsonl`'s per-session
+  `tool_counts.wait_agent`: exactly one session anywhere in the corpus has
+  `tool_counts.wait_agent == 1058`, session/root id
+  `019f95af-9a8e-7cb3-bc01-edcfe8b343e8` (Remux key/file-provider family,
+  per the audit's own family table) — this identification uses only
+  pre-existing audit-artifact counters, not the not-yet-built pairing logic
+  E7 is about to add, so it doesn't pre-empt the prediction it's meant to
+  check.
+- **Our own `cx-eff-*` battery runs** (14 quorum reps across `dev`/
+  `spinout` arms, `cx-sdd-small` scenario, from Task 6/6b): materially
+  *lower* timeout rates than either corpus above. Rationale: the scenario
+  is a short (3-task) plan with brief child-agent lifetimes, giving
+  spawned children little time to still be running when the controller
+  polls — unlike the two corpora above, which are long-running,
+  heavily-loaded real sessions.
+
+**Scorer (to be built next, `score_e7.py` + `rollout_parser.wait_outcomes()`):**
+pairs each `wait_agent` `function_call` to its later `function_call_output`
+by `call_id`; classifies `timed_out` from the parsed JSON output's
+`timed_out` boolean key (both the `collaboration`-namespace envelope
+`{"message":...,"timed_out":bool}` and the `multi_agent_v1`-namespace
+envelope `{"status":{...},"timed_out":bool}` carry this same key — to be
+confirmed in Task E7's own build step); excludes argument-validation-error
+outputs (e.g. `"timeout_ms must be at least 10000"`) and calls with no
+matched output at all, as not-a-genuine-wait-outcome rather than counting
+them as `timed_out=False`. Reports, per session and per run: paired-call
+count, timeout rate, inter-poll interval p50/p95 (from consecutive
+`wait_agent` *call* timestamps), and a cache-read rebill estimate (token
+usage attributed to the intervals between consecutive polls where
+`token_count` events allow it; else the coarser proxy — session total
+cache-read tokens × (wait calls / total tool calls), labeled `proxy`).
+
+**Success criterion:** none — Amendment 1 scopes E7-E9 as descriptive
+MINE-tier census work ("no new run spend"), not a discrimination-gated
+experiment. The check is whether the independently-built scorer reproduces
+the two already-published external figures above and whether the battery
+runs land materially lower, as predicted.
