@@ -1840,3 +1840,34 @@ reviewers (4th occurrence); E5 rubric gains same-task duplicate review,
 serial-remediation count, criterion-less gate findings, wave-boundary
 violation. Fix-cycle candidates: the audit's six skill patches + pressure-test
 scenario list (see plan Amendment 3).
+
+## 2026-07-29 — MINE: 07-29 fallback session tree — corpus absent (controller entry)
+
+Attempted to mine root `019faf59-3a06-7f40-87e0-c8c84a5729ae` + its 13
+descendants (Amendment 3's pre-registered target) with the trusted,
+unmodified `rollout_parser.py`/`score_e2.py`/`score_e7.py`/`score_e8.py`
+via a new thin adapter (`audit0729_adapter.py`, same pattern as
+`drew_adapter.py`). **Result: the corpus is gone.** Three independent
+read-only searches — filename glob, byte-content grep (36 rollout files
+scanned across `~/.codex/sessions/2026/07/{28,29}`), and a read-only
+`thread_spawn_edges` query (4,724 live rows, zero touching this root ID)
+— all came up empty. No rollout file, no surviving child referencing the
+root as parent, no DB edge. `~/.codex/log/` and `~/.codex/archived_sessions/`
+were also checked (empty/no match). Full evidence trail and per-claim
+table: `out/e-audit0729.md`.
+
+Every pre-registered claim (193 root waits, 24 list_agents, 148 go-test
+invocations with a 12x cluster, implementer-spawned depth-2 reviewer +
+controller duplicate review, 9 reviewers vs 4 implementers, 1+13 session
+count) is **UNVERIFIABLE**, not confirmed or refuted — independent
+tooling simply arrived too late to see the files Jesse's manual audit
+saw. Nothing here contradicts that audit; Amendment 3's experiment-
+upgrade decisions (E3/E2-E6/E5) remain grounded in that external
+evidence alone, exactly as before this task ran — not doubly-confirmed,
+not undermined. Campaign methodology note: this is the first MINE task
+whose source corpus evaporated between being described and being mined,
+hours later, same day — a live `~/.codex/sessions/` tree is not a stable
+audit source on this timescale; future same-day MINE tasks against a
+live local rollout tree should snapshot the relevant files immediately
+rather than defer. No run spend. Existing test suites re-run clean
+(rollout_parser/e1/e2/e4/e9, 56 tests).
