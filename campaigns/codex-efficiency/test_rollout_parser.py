@@ -125,6 +125,47 @@ BARE_WAIT_OUTPUT = L("2026-07-28T17:07:05.000Z", "response_item", {
     "call_id": "call_bare_wait",
     "output": "Script completed\nWall time 8.0 seconds\nOutput:\n"})
 
+# --- lifecycle_calls() fixtures (E8, Amendment 1). Shapes copied verbatim
+# from real rollouts (see rollout_parser.py's lifecycle_calls() comment):
+# close_agent observed under BOTH the "collaboration" namespace (our battery
+# runs, most of the audit corpus) and the "multi_agent_v1" namespace (Drew's
+# codex-5_5 corpus, some audit sessions), same {"target": "<id>"} argument
+# shape in both. interrupt_agent/followup_task also key their argument
+# "target"; resume_agent keys it "id" (per its own tool_search_call schema);
+# list_agents takes no arguments. None of the five carry a "task_name" key
+# in any rollout inspected.
+CLOSE_AGENT_COLLAB = L("2026-07-28T17:08:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_30", "name": "close_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"target": "019fake-child-thread-id"}),
+    "call_id": "call_close_1"})
+CLOSE_AGENT_MULTI = L("2026-07-28T17:08:05.000Z", "response_item", {
+    "type": "function_call", "id": "fc_31", "name": "close_agent",
+    "namespace": "multi_agent_v1",
+    "arguments": json.dumps({"target": "019fake-child-thread-id-2"}),
+    "call_id": "call_close_2"})
+INTERRUPT_AGENT_CALL = L("2026-07-28T17:08:10.000Z", "response_item", {
+    "type": "function_call", "id": "fc_32", "name": "interrupt_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"target": "/root/task2_session"}),
+    "call_id": "call_interrupt_1"})
+FOLLOWUP_TASK_CALL = L("2026-07-28T17:08:15.000Z", "response_item", {
+    "type": "function_call", "id": "fc_33", "name": "followup_task",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"target": "/root/task2_session",
+                             "message": "gAAAAABencrypted"}),
+    "call_id": "call_followup_1"})
+RESUME_AGENT_CALL = L("2026-07-28T17:08:20.000Z", "response_item", {
+    "type": "function_call", "id": "fc_34", "name": "resume_agent",
+    "namespace": "multi_agent_v1",
+    "arguments": json.dumps({"id": "019fake-child-thread-id-3"}),
+    "call_id": "call_resume_1"})
+LIST_AGENTS_CALL = L("2026-07-28T17:08:25.000Z", "response_item", {
+    "type": "function_call", "id": "fc_35", "name": "list_agents",
+    "namespace": "collaboration",
+    "arguments": "{}",
+    "call_id": "call_list_1"})
+
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
     f.write("\n".join(lines) + "\n")
@@ -217,6 +258,32 @@ class TestWaitOutcomes(unittest.TestCase):
     def test_wait_outcomes_empty_file(self):
         p = write_fixture([NOT_A_SPAWN])
         self.assertEqual(rp.wait_outcomes(p), [])
+
+class TestLifecycleCalls(unittest.TestCase):
+    def test_lifecycle_calls_all_names_and_namespaces(self):
+        p = write_fixture([
+            CLOSE_AGENT_COLLAB, CLOSE_AGENT_MULTI, INTERRUPT_AGENT_CALL,
+            FOLLOWUP_TASK_CALL, RESUME_AGENT_CALL, LIST_AGENTS_CALL,
+            SPAWN_FULL, WAIT_CALL,
+        ])
+        calls = rp.lifecycle_calls(p)
+        self.assertEqual(
+            [c.name for c in calls],
+            ["close_agent", "close_agent", "interrupt_agent",
+             "followup_task", "resume_agent", "list_agents"])
+        self.assertEqual(
+            [c.call_id for c in calls],
+            ["call_close_1", "call_close_2", "call_interrupt_1",
+             "call_followup_1", "call_resume_1", "call_list_1"])
+        # None of the five tools carry a "task_name" argument in any
+        # observed rollout shape -- args_task_name stays the omitted
+        # sentinel for every one of them.
+        self.assertTrue(all(c.args_task_name == rp.OMIT for c in calls))
+        self.assertEqual(calls[0].timestamp, "2026-07-28T17:08:00.000Z")
+
+    def test_lifecycle_calls_excludes_spawn_and_wait(self):
+        p = write_fixture([SPAWN_FULL, WAIT_CALL, NOT_A_SPAWN])
+        self.assertEqual(rp.lifecycle_calls(p), [])
 
 if __name__ == "__main__":
     unittest.main()

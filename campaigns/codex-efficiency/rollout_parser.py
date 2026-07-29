@@ -315,3 +315,50 @@ def wait_outcomes(path) -> list[WaitCall]:
         out.append(WaitCall(call_id=call_id, timestamp=ts,
                              timed_out=parsed["timed_out"], duration_hint=duration_hint))
     return out
+
+# --- lifecycle_calls() (E8, Amendment 1): the other collaboration-namespace
+# tools alongside spawn_agent/wait_agent -- close_agent, interrupt_agent,
+# followup_task, resume_agent, list_agents. Verified directly against real
+# rollouts (audit corpus, Drew's corpus, our own battery runs): all five
+# appear as a `function_call` under `response_item`, exactly like
+# spawn_agent, and -- exactly like extract_spawns -- the `namespace` field
+# is NOT filtered on: close_agent has been observed under BOTH the
+# "collaboration" namespace (our battery runs, most of the audit corpus)
+# and the "multi_agent_v1" namespace (Drew's codex-5_5 run, and some audit
+# sessions) with an identical {"target": "<agent id>"} argument shape in
+# both. None of the five tools' arguments carry a "task_name" key in any
+# rollout inspected (close_agent/interrupt_agent/followup_task key their
+# single argument "target"; resume_agent keys it "id" per its own
+# tool_search_call schema; list_agents takes no arguments) -- so
+# args_task_name is virtually always "(omitted)" in practice. It's kept
+# anyway for structural symmetry with Spawn and in case a future tool
+# revision adds one.
+LIFECYCLE_NAMES = {"close_agent", "interrupt_agent", "followup_task",
+                    "resume_agent", "list_agents"}
+
+@dataclasses.dataclass
+class LifecycleCall:
+    call_id: str
+    name: str
+    timestamp: str
+    args_task_name: str
+
+def lifecycle_calls(path) -> list[LifecycleCall]:
+    """Every close_agent/interrupt_agent/followup_task/resume_agent/
+    list_agents function_call in file order. Same envelope handling as
+    extract_spawns() -- see the comment above for the shapes this was
+    verified against."""
+    out = []
+    for ts, typ, p in iter_records(path):
+        if typ == "response_item" and p.get("type") == "function_call" \
+           and p.get("name") in LIFECYCLE_NAMES:
+            try:
+                args = json.loads(p.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            out.append(LifecycleCall(
+                call_id=p.get("call_id", OMIT),
+                name=p.get("name"),
+                timestamp=ts,
+                args_task_name=str(args.get("task_name", OMIT))))
+    return out

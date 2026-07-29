@@ -683,3 +683,71 @@ MINE-tier census work ("no new run spend"), not a discrimination-gated
 experiment, same as E7. The check is whether the independently-built scorer
 reproduces the reconciled Drew figures and the audit/battery near-zero
 pattern registered above.
+
+### 2026-07-29 — E8 close_agent hygiene census: prediction check (Amendment 1)
+
+`rollout_parser.lifecycle_calls()` (call-level extraction of
+close_agent/interrupt_agent/followup_task/resume_agent/list_agents, TDD, 2
+new tests) + `score_e8.py` (per-controller census: spawn count, close_agent
+count, closure rate, context counts) built and run over all three
+pre-registered corpora, reusing `score_e7.py`'s own audit-population
+selection code directly. Full tables and the complete close_agent-call
+listing: `campaigns/codex-efficiency/out/e8-report.md`.
+
+**All three predicted clauses CONFIRMED:**
+
+1. **Drew's sol controllers 0/86 vs. codex-5_5 18/18: CONFIRMED.** codex-5_5
+   18/18 (100%), sol-5_6 0/19, stress-2703 0/84 (our own scorer's raw
+   denominator; 0/67 under Drew's own children-count denominator — both
+   agree the numerator is zero). Independently re-verified against raw
+   rollout bytes (an ad hoc Python re-scan of codex-5_5's root rollout
+   found the same 18 `(call_id, timestamp)` pairs the scorer did) and
+   against Drew's own `sessions.json` `tool_calls` census (bypassing our
+   scorer entirely) — not just reproduced by construction.
+2. **Audit corpus, window-scoped near-zero: CONFIRMED, and stronger than
+   predicted.** High-wait Remux root: 0/123 (not just near-zero — exactly
+   zero). Direct-human-`gpt-5.6-sol` proxy sample (E7's own 214-candidate
+   population, reused directly): 0/16, though this is a thin base (only 2
+   of 214 candidates spawn anything at all), flagged as thin in the
+   pre-registration before scoring, not discovered as a surprise after.
+3. **Our own battery runs, both arms: CONFIRMED.** dev 0/48, spinout 0/67
+   — zero `close_agent` calls anywhere in 14 scored reps, matching the
+   pre-registration's grep-confirmed prediction exactly, including the
+   exact `followup_task` count (3, spinout-only).
+
+**The underlying pattern is binary, not graded.** Across every controller
+in every corpus scored, closure rate is either ~100% (codex-5_5's single
+`multi_agent_v1`-namespace controller, 18/18) or exactly 0% (every other
+controller scored, all `collaboration`-namespace runs) — no partial-closure
+controller was found anywhere. Why codex-5_5 is the sole exception
+(model/harness config vs. a more disciplined controller run) was not
+investigated in this task.
+
+**`dispatch.json` does not carry close_agent data — checked directly, not
+assumed.** Both copies in Drew's package contain only per-spawn dispatch
+tuples (`args`/`hint`/`hint_honored`), no `close_agent` field. The
+reconciled numbers (and the "sol 0/86" figure this task's prediction was
+registered against) come from `sessions.json`'s `tool_calls` census
+instead, read directly this task.
+
+**Privacy finding (load-bearing for scorer design, not just a footnote):**
+a `close_agent` `function_call_output` carries `{"previous_status":
+{"completed": "<the child's full final message/report>"}}` — verified
+directly against a real audit rollout while building this task, unlike
+`wait_agent`'s content-free status envelope (E7). `lifecycle_calls()`
+never reads `function_call_output` at all (only the calling
+`function_call`'s `arguments`), so this scorer has no code path that could
+print child report content, by construction. The manual-inspection section
+lists every close_agent call found (n=18, all from codex-5_5) as
+call_id/timestamp/args_task_name only, per the task brief's "counts +
+task_name only" instruction.
+
+**Closure-rate definition:** a raw within-session call-count ratio
+(`close_agent` calls / `extract_spawns()` count), chosen to match Drew's
+own `sessions.json` `tool_calls` semantics exactly for cross-validation —
+not a `target`-id-matched measure against `child_links()`. Flagged as a
+scope restriction in `out/e8-report.md`, not fixed in this task (the
+`LifecycleCall` dataclass, per the task brief, has no `target` field).
+
+**No budget spent** (MINE tier, existing corpora only, no quorum/Codex
+runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
