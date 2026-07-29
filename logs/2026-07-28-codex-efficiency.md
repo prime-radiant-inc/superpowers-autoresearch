@@ -577,3 +577,109 @@ misclassification observed.
 **No budget spent** (MINE tier, existing corpora only, no quorum/Codex
 runs). Sub `used_percent` and $ cost: not applicable, no ledger row
 added.
+
+### 2026-07-29 — E8 PRE-REGISTRATION: close_agent hygiene census (Amendment 1, Tasks E7-E9)
+
+Registered before `score_e8.py` (or the parser's `lifecycle_calls()`) exists,
+per the campaign's build-order rule (Global Constraints: "a scorer issues no
+verdict until validated against corpus ground truth AND its matches are
+manually inspected"). Every figure below comes from pre-existing counters
+(Drew's own `sessions.json`, the audit's `metrics-all.jsonl` /
+`state_5.sqlite`) or a plain `grep` over raw rollout files — never from the
+not-yet-built `lifecycle_calls()`/`score_e8.py`, so this doesn't pre-empt the
+prediction it's meant to check.
+
+**Prediction:**
+
+- **Drew's corpus, reconciled figures verified this task (not taken from the
+  Drew-cross-validation entry on faith).** The Amendment-1 task brief's "sol
+  0/86" and "codex-5_5 18/18" come from Drew's `sessions.json`, not
+  `dispatch.json` — checked directly: `dispatch.json` (both the top-level and
+  `stress-2703/metrics/` copies) carries only per-spawn dispatch tuples
+  (`args`, `hint`, `hint_honored`, etc.), no `close_agent` field anywhere.
+  The actual close counts live in `sessions.json`'s per-session `tool_calls`
+  census, read directly for each run's controller (`role: "controller"`)
+  record:
+  - codex-5_5 root: `tool_calls.spawn_agent: 18`, `tool_calls.close_agent:
+    18` → 18/18.
+  - sol-5_6 root: `tool_calls.spawn_agent: 19`, `close_agent` key **absent**
+    (0/19).
+  - stress-2703 root (separate `sessions.json` under
+    `analysis/stress-2703/metrics/`): `tool_calls.spawn_agent: 83`,
+    `close_agent` key **absent**. Drew's own `report-addendum.md` cites this
+    as "0/67" using his children-file-count denominator (§"E8 priors" of the
+    Drew cross-validation entry above); our own scorer will use
+    `extract_spawns()`'s raw call count (83) as its denominator instead —
+    both conventions agree the numerator is exactly zero, only the
+    denominator differs, and that's registered explicitly here so a future
+    reader doesn't mistake a denominator-convention difference for a
+    mismatch. "Sol 0/86" = sol-5_6's 19 + stress-2703's 67 (Drew's own
+    children-count convention) — reconciled and holds; grep-confirmed
+    independently just now that **zero** rollout files in either the
+    sol-5_6 or stress-2703 corpus (root or any child) contain a
+    `"name":"close_agent"` string at all, vs. exactly **one** file
+    (codex-5_5's root) in the codex-5_5 corpus.
+  - **Our prediction:** `score_e8.py`, once built, reproduces `n_close_agent
+    == 0` for the sol-5_6 and stress-2703 root sessions and `18/18` for
+    codex-5_5's root, using `lifecycle_calls()` — independently, not copied
+    from Drew's numbers.
+
+- **Audit corpus, window-scoped (not the full-history sqlite).** The plan
+  brief's "`thread_spawn_edges` status 'open' 2,499 vs 'closed' 2,202"
+  figure is real — confirmed directly in this machine's local Codex CLI
+  state db (`sqlite3 ~/.codex/state_5.sqlite "SELECT status, COUNT(*) FROM
+  thread_spawn_edges GROUP BY status"` → `closed|2202`, `open|2499`) — but
+  that table is this machine's full lifetime history across every project,
+  not scoped to the 2026-07-14–07-28 audit window, so it is **not** used as
+  the registered audit-corpus prediction. Registered instead, from
+  pre-existing per-session `tool_counts` in `metrics-all.jsonl` (no rollout
+  parsing, matching E7's pre-registration discipline):
+  - E7's high-wait Remux root (`019f95af-9a8e-7cb3-bc01-edcfe8b343e8`,
+    model `gpt-5.6-luna`, not `-sol` — noted since the population below is
+    `-sol`-filtered and this root isn't a member of it, just a second data
+    point): `tool_counts.spawn_agent = 123`, `close_agent` key **absent**
+    (0/123). Same session also carries `followup_task: 71` and
+    `interrupt_agent: 13` — real, nonzero context counts for those two
+    tools, registered here so E8's "for context" columns have a concrete
+    expectation to check against, not just close_agent's near-zero.
+  - E7's direct-human-`gpt-5.6-sol` proxy population (214 candidate roots,
+    same selection filters `_direct_human_sol_candidates()` documents —
+    depth 0, `thread_source:"user"`, `model:"gpt-5.6-sol"`, root-family
+    size ≤20, excluding the high-wait root): summed directly from
+    `metrics-all.jsonl` `tool_counts` across all 214 (no rollout parsing) —
+    only 2 of 214 have any `spawn_agent` activity at all (16 raw
+    `spawn_agent` calls total across those 2), and `close_agent` is
+    **absent from every one of the 214** (0/16).
+  - **Prediction: near-zero close_agent calls among these window-scoped
+    audit populations** — for the high-wait root, exactly zero against 123
+    spawns; for the sol proxy population, exactly zero against a small
+    16-spawn base (most of the 214 candidates never spawn at all, so this
+    is a thin population — flagged as thin now, not discovered as a
+    surprise later).
+
+- **Our own `cx-eff-*` battery runs (12 scored reps across dev/spinout arms,
+  Tasks 6/6b):** predict **zero** close_agent calls in either arm —
+  grep-confirmed now, before the scorer exists: `close_agent` absent from
+  every rollout in all 12 reps; `followup_task` appears exactly 3 times,
+  only in the spinout arm (reps 3/7/8); `interrupt_agent`/`resume_agent`
+  absent everywhere.
+
+**Scorer (to be built next):** `rollout_parser.lifecycle_calls()` — same
+envelope handling as `extract_spawns()` (a `function_call` under
+`response_item`; `namespace` is NOT filtered on, matching `extract_spawns`'s
+own convention — confirmed directly that `close_agent` appears under BOTH
+the `"collaboration"` namespace, our battery runs and most of the audit
+corpus, AND the `"multi_agent_v1"` namespace, Drew's codex-5_5 run and some
+audit sessions, with an identical `{"target": "<agent id>"}` argument shape
+in both). `score_e8.py`: per-controller census (any session with ≥1
+`extract_spawns()` spawn counts as a controller) — spawn count, close_agent
+count, closure rate (`close/spawn`, our own scorer's raw-call convention,
+chosen to match Drew's own `sessions.json` `tool_calls` semantics exactly
+for cross-validation), plus `interrupt_agent`/`followup_task`/`resume_agent`/
+`list_agents` counts for context.
+
+**Success criterion:** none — Amendment 1 scopes E7-E9 as descriptive
+MINE-tier census work ("no new run spend"), not a discrimination-gated
+experiment, same as E7. The check is whether the independently-built scorer
+reproduces the reconciled Drew figures and the audit/battery near-zero
+pattern registered above.
