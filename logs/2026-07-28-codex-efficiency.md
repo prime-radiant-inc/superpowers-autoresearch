@@ -1467,3 +1467,119 @@ single instance of the phenomenon it was built to measure, exactly the
 alternative outcome named in the pre-registration before this battery
 ran. E2 stops here per the discrimination rule; the long-history
 condition lives in E6.
+
+### 2026-07-29 — E1-v611 PRE-REGISTRATION: fresh-session pathology reproduction against superpowers v6.1.1 (Amendment 2)
+
+Registered before any `v611`-arm battery runs, per the campaign's
+pre-registration discipline. This is Amendment 2's `Task E1-v611`: a third
+arm, `/tmp/sp-arm-v611` (superpowers tag `v6.1.1`, commit `d884ae0`,
+confirmed an exact tag match via `git describe --tags --exact-match` and
+`git rev-parse v6.1.1^{commit}`), isolating the **skill version** as the
+only variable at a **fixed** Codex CLI (0.146.0, same image, same
+`cx-sdd-small` scenario) — the same axis every prior E1/E2 fresh-session
+result (Task 6, Task 6b, Task 8) held constant at `dev`/`spinout` (both
+post-v6.2.0) and CLI-version-varied instead.
+
+**Why this axis, now:** every fresh-session battery run so far (E1 baseline
++ retest, both axes; E2-MICRO; E2-FULL) has landed clean or
+inconclusive-by-zero on `dev` and `spinout` at CLI 0.146 — the audit's
+original full-history-fork / model-omission narrative has not reproduced
+on this scenario shape on *either* of those two skill versions. The
+standing explanation (registered in the E1 axis-B re-scope and repeated at
+E2-FULL's own registration) is the **long-history theory**: the pathology
+is a property of long-running, heavily-loaded controller sessions
+(compaction, deep accumulated context), not fresh short dispatches,
+regardless of skill content — which is why axis B was re-scoped into E6.
+`v6.1.1` predates both `dev` and `spinout` and was never tested on this
+scenario; running it closes the one remaining live alternative — that the
+"clean" result was **skill-version-dependent** (something fixed between
+v6.1.1 and v6.2.0, not yet isolated) rather than session-shape-dependent.
+
+**Ground check performed before registering the prediction (not assumed):**
+diffed the relevant dispatch-governing files between `/tmp/sp-arm-v611`
+and `/tmp/sp-arm-dev` directly.
+
+- `fork_turns` appears **zero times** in either arm's
+  `subagent-driven-development/SKILL.md`, `implementer-prompt.md`,
+  `task-reviewer-prompt.md`, or (dev only) `re-review-prompt.md` — matching
+  the Task 6 baseline entry's own grep finding for `dev`. Neither skill
+  version's own text governs fork isolation at all; if it's CLI-default
+  behavior (unaffected by skill content), v6.1.1 should isolate identically
+  to `dev`/`spinout`.
+- The "**Always specify the model explicitly when dispatching a
+  subagent**" instruction (root-caused in the CLI-0.146 re-test as the
+  reason `dev`'s baseline jumped to 100% explicit-model once the CLI
+  unlocked the parameter) is present, byte-identical, in **both** arms'
+  `SKILL.md` (v611 line 115, dev line 177 — line-number shift only, from
+  unrelated content added between the versions).
+- The `model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an
+  omitted ...` dispatch-template placeholder is present, byte-identical, in
+  **both** arms' `implementer-prompt.md` and `task-reviewer-prompt.md`.
+  (`re-review-prompt.md` carries the same placeholder in `dev` only — it
+  doesn't exist in `v6.1.1` at all, consistent with v6.2.0's "resume-based
+  fix loop" changelog item replacing fresh re-review dispatches with a
+  resume in some fix-round path; `cx-sdd-small`'s 3-task plan rarely
+  reaches a fix round at all in the batteries run so far, so this
+  particular file's absence is unlikely to move axis A's root-controller
+  numbers, but is flagged here since it's a genuine, if probably
+  low-leverage, `v6.1.1`/`dev` difference this battery could in principle
+  surface.)
+
+**Prediction — both branches registered, no directional gate (matching
+E7/E8/E9's non-discrimination-gated framing, since this experiment's job is
+to choose between two live hypotheses, not clear a pathology-presence
+bar):**
+
+- **Branch 1 — pathology reproduces at v6.1.1** (signature: any
+  `fork_turns` `"all"`/partial at a rate resembling the audit's original
+  ≥40% full-history-fork claim, and/or root-controller `model` omission
+  materially above `dev`/`spinout`-at-0.146's ~0%, on this same short
+  fresh-session scenario). This would mean the "clean" result on `dev` and
+  `spinout` was **skill-version-dependent** — something fixed between
+  `v6.1.1` and `v6.2.0` (not yet identified) suppressed a pathology that
+  `v6.1.1` still exhibits — and the long-history theory would need
+  revisiting as at least an incomplete explanation.
+- **Branch 2 — clean, like `dev`/`spinout`-at-0.146** (signature:
+  root-controller spawns land at or near 100% isolated / 100%
+  explicit-model, matching `dev-cli0146`'s 14/14 and `spinout-cli0146`'s
+  31/31 root-controller rate, with any shortfall concentrated in the same
+  depth-2 child-initiated spawn shape already observed on `spinout`, not a
+  new root-level pattern). This would **strengthen** the long-history
+  theory: three independent skill versions (`v6.1.1`, `dev`, `spinout`),
+  spanning the one release (`v6.2.0`) with the most plausible candidate
+  fix, all behave identically on the same short scenario — the pathology's
+  absence here is a property of session shape, not skill content, at any
+  version tested so far.
+
+**Which I'd bet on, and why (one sentence, non-directional gate, stated
+per task instruction):** Branch 2 (clean) — the ground check above found
+the two specific mechanisms already implicated in every prior clean result
+(no `fork_turns` guidance anywhere, and an identical explicit-model
+instruction + dispatch-template placeholder) present and byte-identical in
+`v6.1.1`, leaving no skill-text difference for a CLI-0.146 run of this
+same short scenario to plausibly hang a different fork/model signature on.
+
+**Scorer:** `score_e1.py`, unmodified — the existing tuple/aggregate
+scorer, run against the new `v611`-arm run dirs exactly as for `dev`/
+`spinout`.
+
+**Battery plan:** 3 reps, `v611` arm, `cx-sdd-small`, run from **lane B**
+(`/Users/jesse/git/superpowers/evals-lane-b`, a second, independent
+`scripts/evals-container` checkout/container running concurrently with the
+primary lane so this battery doesn't contend with lane A's in-flight E2
+scoring container) — `EVALS_ROOT=/Users/jesse/git/superpowers/evals-lane-b
+JOBS=2 bash campaigns/codex-efficiency/run-quorum.sh v611 cx-sdd-small 3`.
+`run-quorum.sh` gained `EVALS_ROOT`/`JOBS`/`v611`-arm support for this task
+(see the implementation commit). Sequential fallback (`JOBS=1`) if the
+JOBS=2 parallel path misbehaves — to be documented in this entry's result
+if triggered.
+
+**Success criterion:** none directional — both branches are a landed,
+informative result (same framing as E7/E8/E9's descriptive census work and
+E1/E2's own re-scope entries); the check is which branch the 3-rep battery
+actually lands in, against the signatures registered above.
+
+**No run yet — this is the pre-registration.** Battery, three-arm
+comparison table (`v611` vs. `dev-cli0146` vs. `spinout-cli0146`), and
+verdict follow in a separate log entry once `out/e1-v611-report.md`
+exists.
