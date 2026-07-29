@@ -1340,3 +1340,20 @@ full report committed as docs/2026-07-29-codex-multiagent-v2-capabilities.md.
   So even a luna controller runs V2 under this config — luna gets V2's tool surface and
   cannot spawn any child (incl. itself; allowlist is sol/terra). True V1 behavior needs
   -c features.multi_agent_v2=false (not probed; budget 5 runs).
+
+## 2026-07-29 — Live probe round 2: preset-default V1 vs V2 (controller entry)
+
+4 runs, EMPTY config.toml (verified sufficient: preset governs when no override).
+- luna preset-default = V1 (3/3 arms). V1 luna spawns sol OK, luna OK, inherit OK;
+  V1 tool description advertises 5 spawnable models (sol/terra/luna/5.5/5.4) —
+  no allowlist under V1, matching source.
+- sol preset-default = V2 even with empty config — round 1's explicit
+  multi_agent_v2.enabled=true only mattered for luna (wrongly forcing it into V2,
+  where it cannot spawn at all).
+- Default concurrency: V2 = 4 slots (live hint text); V1 = 6 (source constant,
+  never surfaced in hint text).
+- V1 schema differences beyond fork_context: wait_agent REQUIRES targets:[agent_id];
+  V1 collab tools route through the code_mode JS sandbox as multi_agent_v1__* inside
+  exec custom_tool_calls — different calling convention from V2's direct
+  function_calls. This explains the audit's "older sessions invoke tools inside a
+  single exec/JS call" observation (Corpus section, nested-call caveat).
