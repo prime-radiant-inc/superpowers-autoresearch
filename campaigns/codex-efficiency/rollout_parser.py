@@ -1,5 +1,48 @@
 """Parse Codex rollout JSONL (three-key lines: timestamp/type/payload).
-Shapes verified against the 2026-07-28 audit corpus recon."""
+Shapes verified against the 2026-07-28 audit corpus recon.
+
+wait_outcomes() marker shapes (E7, Amendment 1): a `wait_agent`
+`function_call`'s `call_id` is later matched by a `function_call_output`
+whose `output` is a JSON string. Two envelope shapes have been observed
+across corpora, both carrying the same top-level `timed_out` boolean key:
+
+  - "collaboration" namespace (audit corpus 1,058-wait Remux root
+    019f95af-9a8e-7cb3-bc01-edcfe8b343e8; Drew's sol-5_6 and stress-2703
+    runs; our own eval-container battery runs):
+        timed out:  {"message": "Wait timed out.", "timed_out": true}
+        completed:  {"message": "Wait completed.", "timed_out": false}
+  - "multi_agent_v1" namespace (Drew's codex-5_5 run -- the same namespace
+    that leaves extract_spawns()'s fork_turns/task_name as "(omitted)",
+    see drew_adapter.py's module docstring): a different envelope, but the
+    same `timed_out` key at the top level, so wait_outcomes() needs no
+    namespace-specific handling here (unlike extract_spawns):
+        timed out:  {"status": {...}, "timed_out": true}
+        completed:  {"status": {...}, "timed_out": false}
+
+Non-outcome shapes observed and deliberately EXCLUDED from wait_outcomes()
+(the call never actually waited, so it is not a timed_out=True/False
+outcome; see wait_outcomes()'s implementation comment):
+  - argument-validation error, bare string:
+        "timeout_ms must be at least 10000"
+  - malformed-call error, bare string:
+        "failed to parse function arguments: unknown field `target`,
+         expected `timeout_ms` at line 1 column 9"
+  - no matching function_call_output at all (session truncated mid-poll).
+
+wait_outcomes() intentionally scopes to function_call records named
+EXACTLY "wait_agent" -- NOT the broader WAIT_NAMES/WAIT_RE set that
+parse_session()'s wait_calls counter uses for corpus-parity census
+purposes. Two other names live under that broader set: "wait_threads" was
+never observed in any inspected rollout (audit corpus, Drew's corpus, or
+our own battery runs) so its output shape is unconfirmed; the bare "wait"
+tool IS common but is a DIFFERENT tool entirely (waiting on a running
+script/build, not on a spawned agent) with an incompatible output shape
+that carries no `timed_out` key at all, e.g.:
+        "Script completed\nWall time 8.0 seconds\nOutput:\n..."
+        "aborted by user after 16.1s"
+Mixing either into wait_outcomes() would silently misclassify or crash on
+these unrelated shapes, so both are left out; a future extension would need
+its own inspected-and-documented marker before widening the name set."""
 import json, dataclasses, re
 from typing import Iterator
 
@@ -219,3 +262,56 @@ def parse_session(path) -> SessionMetrics:
     m.lines = stats["lines"]
     m.oversized_lines = stats["oversized_lines"]
     return m
+
+# Exactly "wait_agent" -- see the module docstring for why this is
+# deliberately narrower than parse_session's WAIT_NAMES.
+WAIT_AGENT_NAME = "wait_agent"
+
+@dataclasses.dataclass
+class WaitCall:
+    call_id: str
+    timestamp: str
+    timed_out: bool
+    duration_hint: str  # requested arguments["timeout_ms"], or OMIT
+
+def wait_outcomes(path) -> list[WaitCall]:
+    """Pair every `wait_agent` function_call to its function_call_output
+    (matched by call_id) and classify timed_out from the output's parsed
+    `timed_out` boolean key. See the module docstring for the exact marker
+    shapes this was built against.
+
+    Calls that never produced a genuine wait outcome are excluded, not
+    guessed at: no matching output at all, an output that isn't a JSON
+    object, or a JSON object without a boolean `timed_out` key (the
+    argument-validation-error shapes in the docstring)."""
+    calls = []  # (call_id, timestamp, duration_hint), in file order
+    outputs = {}  # call_id -> raw output value
+    for ts, typ, p in iter_records(path):
+        if typ != "response_item":
+            continue
+        ptype = p.get("type")
+        if ptype == "function_call" and p.get("name") == WAIT_AGENT_NAME:
+            try:
+                args = json.loads(p.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            calls.append((p.get("call_id", OMIT), ts, str(args.get("timeout_ms", OMIT))))
+        elif ptype == "function_call_output":
+            call_id = p.get("call_id")
+            if call_id is not None:
+                outputs[call_id] = p.get("output")
+
+    out = []
+    for call_id, ts, duration_hint in calls:
+        raw = outputs.get(call_id)
+        if not isinstance(raw, str):
+            continue  # unresolved: no matching output found
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            continue  # error shapes are bare strings, not JSON objects
+        if not isinstance(parsed, dict) or not isinstance(parsed.get("timed_out"), bool):
+            continue  # not a genuine wait outcome
+        out.append(WaitCall(call_id=call_id, timestamp=ts,
+                             timed_out=parsed["timed_out"], duration_hint=duration_hint))
+    return out

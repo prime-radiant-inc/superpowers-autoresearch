@@ -507,3 +507,73 @@ MINE-tier census work ("no new run spend"), not a discrimination-gated
 experiment. The check is whether the independently-built scorer reproduces
 the two already-published external figures above and whether the battery
 runs land materially lower, as predicted.
+
+### 2026-07-29 — E7 wait-polling census: prediction check (Amendment 1)
+
+`rollout_parser.wait_outcomes()` (call_id-paired `wait_agent` outcome
+classification, TDD, 2 new tests) + `score_e7.py` (per-session/per-run
+census: paired count, timeout rate, inter-poll interval p50/p95,
+cache-read rebill estimate) built and run over all three pre-registered
+corpora. Full tables and the manual-inspection sample:
+`campaigns/codex-efficiency/out/e7-report.md`.
+
+**Two of three predicted clauses CONFIRMED; one FAILS:**
+
+1. **Drew's stress-2703 run (~78% of ~805): CONFIRMED.** 805 raw calls,
+   78.3% of all calls / 78.4% of paired outcomes time out.
+2. **Audit's high-wait Remux root (788/1058, ~74%): CONFIRMED exactly.**
+   788/1058 = 74.5%, reproducing Finding 7's published figure via an
+   independently-built pairing algorithm (the root itself was located via
+   a pre-existing counter before `wait_outcomes()` existed — see the
+   pre-registration entry above — but the 788/1058 split is
+   `wait_outcomes()`'s own output, not assumed).
+3. **Our own `cx-eff-*` battery runs show materially lower timeout
+   rates: FAILS.** dev arm: 67.1%/69.3%. spinout arm: 60.2%/62.1%. Lower
+   than the external corpora (74-80%) by 10-20 points, but not
+   "materially lower" as the registered rationale implied. Reframed, not
+   walked back: the pre-registration's assumption was that timeout rate
+   tracks session length/load; the data instead points to a mismatch
+   between `wait_agent`'s typical poll timeout (10-30s, the dominant
+   `timeout_ms` value in *every* corpus scored, including ours) and how
+   long a spawned child actually takes to finish real work — a mismatch
+   present even in a fresh 3-task battery, not a pathology confined to
+   huge sessions. This is a genuine miss on the registered prediction.
+
+**Schema note:** the `multi_agent_v1` namespace (Drew's codex-5_5 run —
+the same namespace that leaves `extract_spawns()`'s `fork_turns`/
+`task_name` at `"(omitted)"`, per the Drew cross-validation entry above)
+uses a *different* wait-output envelope (`{"status":{...},"timed_out":
+bool}` vs. the `collaboration` namespace's `{"message":...,"timed_out":
+bool}`) but the **same top-level `timed_out` key**, so `wait_outcomes()`
+needed no namespace-specific branch — confirmed on codex-5_5's 26/26
+paired calls (0 excluded). No `multi_agent_v1` schema gap for wait
+pairing, unlike the fork-hygiene fields.
+
+**Corpus (b)'s "direct human `gpt-5.6-sol` task roots" — not a
+reproduction of Finding 8.** The audit's own methodology describes that
+population as manually deep-read, not filterable. We documented our own
+mechanical proxy instead (depth-0/`user`/`gpt-5.6-sol` roots with
+root-family ≤20 sessions) rather than guess at the original selection:
+214 candidate roots, only 3 with any `wait_agent` activity at all (80.4%
+of their 209 paired calls time out — weak, exploratory support, n=3, our
+own definition). Flagged in the report as not citable against Finding 8's
+"nine tasks, 111 reads" figure.
+
+**Cache-read rebill:** the "attributed" method (token_count events
+between consecutive polls) worked cleanly on every session scored — no
+session fell through to the coarser proxy (every session had ≥90% of its
+inter-poll intervals containing at least one `token_count` event). The
+audit's high-wait root: 381.8M of its 412.3M total cache-read tokens
+(92.6%) fall inside inter-poll windows; Drew's stress-2703 root: 369.1M
+of 376.6M (98.0%); our battery sessions: 43.3%/42.5% (dev/spinout) — much
+lower because these short sessions spend proportionally less of their
+activity polling.
+
+**Manual inspection (n=10, seed=42):** all 10 sampled marker texts match
+their `timed_out` classification exactly (`"Wait timed out."` ↔ `True`,
+`"Wait completed."` ↔ `False`), sampled across all three corpora — no
+misclassification observed.
+
+**No budget spent** (MINE tier, existing corpora only, no quorum/Codex
+runs). Sub `used_percent` and $ cost: not applicable, no ledger row
+added.

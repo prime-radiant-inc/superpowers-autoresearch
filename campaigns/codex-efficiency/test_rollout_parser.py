@@ -56,6 +56,75 @@ CUSTOM_EXEC_SPAWN_MENTION = L("2026-07-28T17:01:40.000Z", "response_item", {
     "input": "echo 'calling spawn_agent(task_name=\"x\") from a shell script'",
     "call_id": "call_exec_3"})
 
+# --- wait_outcomes() fixtures. Marker shapes are copied verbatim from real
+# rollouts (see rollout_parser.py module docstring): the "collaboration"
+# namespace envelope `{"message":...,"timed_out":bool}` (confirmed on the
+# audit's 1,058-wait Remux root and Drew's stress-2703 corpus) and the
+# "multi_agent_v1" namespace envelope `{"status":{...},"timed_out":bool}`
+# (confirmed on Drew's codex-5_5 corpus) -- both carry the same top-level
+# `timed_out` boolean key. Non-outcome error shapes (argument validation
+# errors) are copied verbatim too.
+WAIT_TIMEOUT_CALL = L("2026-07-28T17:02:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_20", "name": "wait_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"timeout_ms": 30000}), "call_id": "call_wait_timeout"})
+WAIT_TIMEOUT_OUTPUT = L("2026-07-28T17:02:30.000Z", "response_item", {
+    "type": "function_call_output", "id": "fco_20",
+    "call_id": "call_wait_timeout",
+    "output": json.dumps({"message": "Wait timed out.", "timed_out": True})})
+
+WAIT_SUCCESS_CALL = L("2026-07-28T17:03:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_21", "name": "wait_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"timeout_ms": 10000}), "call_id": "call_wait_ok"})
+WAIT_SUCCESS_OUTPUT = L("2026-07-28T17:03:05.000Z", "response_item", {
+    "type": "function_call_output", "id": "fco_21",
+    "call_id": "call_wait_ok",
+    "output": json.dumps({"message": "Wait completed.", "timed_out": False})})
+
+# multi_agent_v1 namespace shape (Drew's codex-5_5 corpus): different
+# envelope, same top-level `timed_out` bool key -- must still be recognized.
+WAIT_STATUS_SHAPE_CALL = L("2026-07-28T17:04:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_22", "name": "wait_agent",
+    "namespace": "multi_agent_v1",
+    "arguments": json.dumps({"timeout_ms": 60000}), "call_id": "call_wait_status"})
+WAIT_STATUS_SHAPE_OUTPUT = L("2026-07-28T17:04:10.000Z", "response_item", {
+    "type": "function_call_output", "id": "fco_22",
+    "call_id": "call_wait_status",
+    "output": json.dumps({"status": {"019fake-thread-id": {"complete": True}},
+                          "timed_out": False})})
+
+# Argument-validation error: the call never actually waited, so it is not a
+# genuine wait outcome -- must be excluded, not counted as timed_out=False.
+WAIT_ERROR_CALL = L("2026-07-28T17:05:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_23", "name": "wait_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"timeout_ms": 1000}), "call_id": "call_wait_err"})
+WAIT_ERROR_OUTPUT = L("2026-07-28T17:05:01.000Z", "response_item", {
+    "type": "function_call_output", "id": "fco_23",
+    "call_id": "call_wait_err",
+    "output": "timeout_ms must be at least 10000"})
+
+# Unresolved: no matching function_call_output at all (e.g. session
+# truncated mid-poll) -- must be excluded, not guessed at.
+WAIT_UNRESOLVED_CALL = L("2026-07-28T17:06:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_24", "name": "wait_agent",
+    "namespace": "collaboration",
+    "arguments": json.dumps({"timeout_ms": 20000}), "call_id": "call_wait_unresolved"})
+
+# The bare "wait" tool is a DIFFERENT tool (waits on a running script/build,
+# not on a spawned agent) with an incompatible output shape -- no
+# `timed_out` key at all. wait_outcomes() must not pick this up even though
+# parse_session's broader WAIT_NAMES classifier counts it for census
+# purposes.
+BARE_WAIT_CALL = L("2026-07-28T17:07:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_25", "name": "wait",
+    "arguments": "{}", "call_id": "call_bare_wait"})
+BARE_WAIT_OUTPUT = L("2026-07-28T17:07:05.000Z", "response_item", {
+    "type": "function_call_output", "id": "fco_25",
+    "call_id": "call_bare_wait",
+    "output": "Script completed\nWall time 8.0 seconds\nOutput:\n"})
+
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
     f.write("\n".join(lines) + "\n")
@@ -114,6 +183,40 @@ class TestSessionMetrics(unittest.TestCase):
         m = rp.parse_session(p)
         self.assertEqual(m.spawn_calls, 1)
         self.assertEqual(rp.extract_spawns(p), [])
+
+class TestWaitOutcomes(unittest.TestCase):
+    def test_wait_outcomes_pairing_and_classification(self):
+        p = write_fixture([
+            WAIT_TIMEOUT_CALL, WAIT_TIMEOUT_OUTPUT,
+            WAIT_SUCCESS_CALL, WAIT_SUCCESS_OUTPUT,
+            WAIT_STATUS_SHAPE_CALL, WAIT_STATUS_SHAPE_OUTPUT,
+            WAIT_ERROR_CALL, WAIT_ERROR_OUTPUT,
+            WAIT_UNRESOLVED_CALL,
+            BARE_WAIT_CALL, BARE_WAIT_OUTPUT,
+        ])
+        waits = rp.wait_outcomes(p)
+        # error / unresolved / bare-"wait"-tool calls are excluded; only the
+        # 3 genuine wait_agent outcomes remain
+        self.assertEqual(len(waits), 3)
+        by_id = {w.call_id: w for w in waits}
+        self.assertEqual(set(by_id), {"call_wait_timeout", "call_wait_ok", "call_wait_status"})
+
+        timeout = by_id["call_wait_timeout"]
+        self.assertTrue(timeout.timed_out)
+        self.assertEqual(timeout.duration_hint, "30000")
+        self.assertEqual(timeout.timestamp, "2026-07-28T17:02:00.000Z")
+
+        ok = by_id["call_wait_ok"]
+        self.assertFalse(ok.timed_out)
+        self.assertEqual(ok.duration_hint, "10000")
+
+        # multi_agent_v1 envelope: different shape, same timed_out semantics
+        status_shape = by_id["call_wait_status"]
+        self.assertFalse(status_shape.timed_out)
+
+    def test_wait_outcomes_empty_file(self):
+        p = write_fixture([NOT_A_SPAWN])
+        self.assertEqual(rp.wait_outcomes(p), [])
 
 if __name__ == "__main__":
     unittest.main()
