@@ -325,3 +325,125 @@ restored unmodified, verified), new-reps-only output re-saved under
 `out/e1-cx-sdd-small-{dev,spinout}-cli0146.json`. No data lost, but the
 script has a real collision risk for any future REP_START-extended
 re-score — flagged for a fix, not fixed in this task.
+
+### 2026-07-29 — EXTERNAL EVIDENCE: Drew-corpus cross-validation (Amendment 1)
+
+**Provenance:** Drew Ritter, 2026-07-27 package (`HANDOFF.md` dated
+2026-07-27; fractals runs 2026-07-25, stress-2703 stress specimen
+2026-07-24). All Codex runs: superpowers `codex-spinout-fixes @
+bd68a949`, Codex Desktop CLI `0.146` (`session_meta.cli_version` =
+`0.146.0-alpha.3.1` on every rollout, verified directly). Corpus path
+(external, read-only, never committed):
+`/Users/jesse/git/superpowers/_tmp/drew-sdd-head-to-head-2026-07-27/sdd-testing-fresh/`.
+Full reconciliation, methodology, and per-field match/mismatch table:
+`campaigns/codex-efficiency/out/drew-cross-validation.md`. Adapter used:
+`campaigns/codex-efficiency/drew_adapter.py` (thin run-dir-discovery
+adapter over unmodified `rollout_parser.py`; Drew's flat
+`transcripts/*/rollouts/` layout doesn't match `score_e1.py`'s quorum
+battery-dir convention).
+
+**Schema finding (load-bearing):** Drew's corpus contains two different
+`spawn_agent` tool schemas under the *same* CLI version string —
+`collaboration` namespace (`fork_turns` string + `task_name`, matching
+our own parser/eval-container schema exactly: sol-5_6, stress-2703) and
+`multi_agent_v1` namespace (`fork_context` bool, no `task_name`:
+codex-5_5 only). `rollout_parser.extract_spawns()`'s `fork_turns`/
+`task_name` fields correctly read `"(omitted)"` for every codex-5_5
+spawn (the key really is absent) — this is a schema gap, not a fork
+hygiene finding; an adapter-level raw peek confirms codex-5_5 is 18/18
+`fork_context: false` (isolated), same as the other two runs.
+`child_links()` also returns empty for every `multi_agent_v1` rollout
+(no `sub_agent_activity` event exists in that schema) — flagged as a
+concern for any future corpus ingestion (§5 of the cross-validation
+report), not patched in this task.
+
+**Headline numbers, reconciled (ours via `rollout_parser`+`drew_adapter`,
+independently, then cross-checked against his script-emitted
+`analysis/metrics/*.json`):**
+
+- **103/103 "letter-perfect" dispatch tuples** (18 codex-5_5 + 19
+  sol-5_6 + 66 stress "clean" tuples): verified independently — all 103
+  are isolated (`fork_context:false`/`fork_turns:"none"`) AND
+  100% explicit-model. Matches his `report-addendum.md` framing exactly.
+- **18 compactions in the stress run:** our `parse_session(root).
+  compactions` = 18, exact match to his `compaction.json`
+  (`compacted_records: 18` / `context_compacted_events: 18`). Plus 7
+  more inside 4 long-running child sessions (his `compaction.json`
+  `children` block agrees exactly) — total 25 across the run-tree, 18 at
+  root.
+- **805 wait polls in the stress run:** our root `wait_calls` = 809, not
+  805 — fully reconciled, not a real mismatch: his own `sessions.json`
+  keeps `wait_agent` (805) and a separate `wait` tool (4) as distinct
+  counters; our classifier's `WAIT_NAMES` merges both into one metric.
+  805 + 4 = 809, exact.
+- **67 stress children:** confirmed exactly, root-caused rather than
+  taken on faith. Root issued 83 raw `spawn_agent` calls (matches his
+  `sessions.json` `tool_calls.spawn_agent: 83` exactly); 17 of those 83
+  are a replay burst (all 17 timestamps cluster in the same ~150ms
+  window as the run's first `compacted` record, which his own
+  extraction tags `"phase": "replayed_import"` — historical records
+  re-emitted at a resume boundary, not fresh spawns) and correctly have
+  no separate rollout file; the remaining 66 match his `dispatch.json`
+  exactly. One additional child — invisible to his root-scoped
+  `dispatch.json` but present in his broader `sessions.json`
+  (`depth: 2`, `role: "other"`) — was spawned recursively by a depth-1
+  **implementer**, not by root. 66 + 1 = 67, matching the HANDOFF
+  headline exactly. That same depth-2 recursive spawn is also the one
+  spawn anywhere in Drew's 121-spawn corpus missing an explicit model —
+  the identical failure shape our own E1 CLI-0.146 re-test found
+  independently (two depth-2, implementer-issued spawns).
+- **Reviewer no-recursion:** could not locate a "0/53" figure anywhere
+  in Drew's shipped materials (searched exhaustively). Computed our own
+  instead: 0 of 64 reviewer-role spawns (`task_reviewer`/`fix_reviewer`/
+  `final_reviewer`, his own role labels, all three runs combined)
+  produced any descendant. The corpus's only recursive spawn (above) was
+  implementer-issued, not reviewer-issued. Reporting **0/64**, not 0/53
+  — the qualitative claim holds, the denominator in the task brief does
+  not trace to any file in the package.
+
+**Which E-experiments this bears on:**
+
+- **E1 axis A (model explicitness):** corroborating, not independently
+  discriminating — Drew's corpus has no `dev` arm to compare against.
+  All 103 clean dispatches across both fractals runs are 100%
+  explicit-model at the field CLI version, consistent with our own
+  CLI-0.146 re-test's finding that the CLI version (not spinout
+  specifically) is what unlocks the parameter. A second, larger,
+  independent data point for the same conclusion.
+- **E2 (reviewer recursion):** 0/64 reviewer spawns recursed, across
+  three independent sessions and two schemas — clean corroboration of
+  E2's baseline pathology-absence shape at a much larger n than our
+  battery has run.
+- **E6 (compaction recovery):** the only real-world evidence anywhere
+  (ours or his) of the compaction hook firing repeatedly under actual
+  load — 18/18 root re-injections, 7 more inside children, no observed
+  dispatch drift across any boundary. **Compliant-controller caveat**
+  (his own analysis, paraphrased not quoted): this controller was
+  independently well-behaved even in windows with no re-read prompt at
+  all, so the run shows hook + chokepoint + compliant model = zero
+  drift — it does not isolate the hook's own marginal contribution.
+  Treat as strong supporting evidence for the mechanism, not proof the
+  hook alone suffices against a less-compliant controller.
+- **E7 (wait-polling) / E8 (close_agent hygiene) / E9 (workspace
+  leaks) priors:** wait_calls (809 root, reconciling exactly to his
+  805+4 split), compactions (18 root / 7 child), and close_agent (cited
+  from his metrics only, not computed by us: codex-5_5 18/18 closed;
+  sol-5_6 0/19; stress-2703 0/67 — "sol 0/86" in the plan = 19+67, both
+  sol-controller runs, both zero) are registered here as the priors
+  those three experiments need before building their scorers. Not
+  scored — E7/E8/E9 are separate Amendment-1 tasks. The 78%
+  wait-timeout claim specifically requires call/outcome pairing
+  `rollout_parser.py` doesn't have yet (E7's job); not attempted here.
+
+**Concerns raised against our own tooling (not fixed, this task):**
+`extract_spawns()`'s `fork_turns`/`task_name` silently read
+`"(omitted)"` for `multi_agent_v1`-schema rollouts (technically correct,
+easy to misread as a fork-hygiene finding); `child_links()` returns an
+empty map for the entire schema (no `sub_agent_activity` event exists in
+it), so `score_e1.py`'s child-resolution would silently under-report on
+any battery using this schema. Full detail:
+`campaigns/codex-efficiency/out/drew-cross-validation.md` §5.
+
+**No budget spent** (read-only analysis of existing external files, no
+quorum/Codex runs). Sub `used_percent` and $ cost: not applicable, no
+ledger row added.

@@ -110,3 +110,28 @@ built on top of them doesn't have to rediscover them:
   `apply_patch`.
 - **Quorum invocation forms and `--scenarios-root`.**
 - **`codex exec` micro pattern** from `harnesses/codex-read-delivery-micro.py`.
+
+## External corpus: Drew head-to-head
+
+**Path (read-only, external to this repo):**
+`/Users/jesse/git/superpowers/_tmp/drew-sdd-head-to-head-2026-07-27/sdd-testing-fresh/`
+— Drew Ritter's SDD head-to-head package (fractals codex-5_5/sol-5_6/
+opus-4_8/opus-5 runs + the stress-2703 stress specimen), all Codex runs on
+superpowers `codex-spinout-fixes @ bd68a949`, Codex Desktop CLI 0.146.
+Read `HANDOFF.md` there first for layout.
+
+**Never-commit rule:** this corpus is READ-ONLY. No file from it is ever
+copied into this repo, and no content from it — session text, task
+names from the stress-2703 stress run (a real, private client session),
+message bodies — is ever committed here beyond aggregate numbers derived
+from it. `campaigns/codex-efficiency/drew_adapter.py` reads it in place
+and prints aggregates only; it never writes corpus content anywhere.
+Fractals task_names (e.g. `task1_implementer`) are low-sensitivity SDD
+taxonomy labels and are fine to cite; stress-run task_names are not
+(private plan) and must not appear in any committed file.
+
+**Provenance and findings:** `campaigns/codex-efficiency/out/
+drew-cross-validation.md` (reconciliation against Drew's script-emitted
+metrics, schema findings, what this corpus adds as treatment-arm
+evidence); registered as external evidence in
+`logs/2026-07-28-codex-efficiency.md`.
