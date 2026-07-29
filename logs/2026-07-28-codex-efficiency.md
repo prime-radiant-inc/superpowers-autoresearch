@@ -1583,3 +1583,165 @@ actually lands in, against the signatures registered above.
 comparison table (`v611` vs. `dev-cli0146` vs. `spinout-cli0146`), and
 verdict follow in a separate log entry once `out/e1-v611-report.md`
 exists.
+
+### 2026-07-29 — E4 PRE-REGISTRATION: proportional-ceremony census (Task 11)
+
+Registered before `score_e4.py` (or `rollout_parser.patch_applies()`)
+exists, per the campaign's build-order rule. This extends E4's original
+baseline entry above (registered 2026-07-28, Task 1) with the concrete
+scorer design and battery plan; that entry's prediction is reproduced here
+unedited, not restated with different wording:
+
+> **Prediction (baseline):** ceremony census (docs written, approval
+> gates, user turns before first code patch) is statistically
+> indistinguishable across spike/bounded/architectural task classes.
+> **Success criterion:** baseline lands if ceremony is statistically
+> indistinguishable across the three task classes. No treatment yet.
+
+**Scenario set (built this task, `campaigns/codex-efficiency/scenarios/
+cx-ceremony-{spike,bounded,arch}/`):** three task classes sharing one
+fixture, `fixtures/ceremony/` — a hand-authored, stdlib-only Python HTTP
+JSON "notes" service (`http.server`, in-memory store, GET/POST/DELETE on
+`/notes`) with an 11-test `unittest` suite, verified passing (11/11) before
+committing. `run-quorum.sh`'s existing fixture-sync convention derives each
+scenario's fixture directory from its name minus the `cx-` prefix (e.g.
+`cx-ceremony-spike` -> `fixtures/ceremony-spike`), which does not by
+itself match a single shared `fixtures/ceremony/` directory — resolved
+by making `fixtures/ceremony-spike`, `fixtures/ceremony-bounded`, and
+`fixtures/ceremony-arch` relative symlinks to `fixtures/ceremony/`
+(verified directly: `rsync -a` follows a trailing-slash symlink source and
+copies the real target's contents, and bash's `[[ -d ... ]]` follows
+symlinks too, so `run-quorum.sh`'s existing sync logic needs no change —
+deliberately not touched, since it's a live shared script another
+concurrent lane may be invoking). The three Gauntlet briefs use the task
+brief's exact task texts verbatim (spike: port-in-use detection, "quick
+and dirty is fine"; bounded: add `--quiet` to suppress request logging;
+architectural: split into a reusable library + thin CLI), with a plain
+persona opening and no scoring/measurement vocabulary anywhere in the
+body — Task 5's Gauntlet-blinding fix precedent, applied from the start
+rather than fixed after the fact. Gauntlet persona: cooperative, terse,
+minimal-reasonable-default answers to clarifying questions, never
+volunteers a process preference.
+
+**Scorer (`score_e4.py`, to be built next):** merges a run's full session
+tree (root + descendants via `child_links()`, the same transitive
+tree-walk `score_e2.py` already uses — a controller that plans first and
+dispatches an implementer child is exactly the shape where the real code
+change lands in a DIFFERENT rollout than the root's own) into one
+chronological view. **"First non-doc patch"** = the chronologically
+earliest `patch_apply_end` event (any rollout in the tree) with
+`success:true` whose `changes` dict contains at least one path that is
+neither under a `docs/` directory (any path component literally named
+`docs`) nor a `*.md` file (case-insensitive suffix) — i.e. the earliest
+point any REAL code file changed, as opposed to a plan/spec/report
+markdown artifact. Census, computed against that global timestamp T:
+
+- **user turns before T** — `user_message` event count in the ROOT
+  rollout ONLY, before T. Deliberately root-only, not tree-wide: this
+  field measures ceremony from the human/Gauntlet's side (the initial
+  ask plus any clarifying-question round trips), not a spawned child's
+  own internal dispatch message (which also arrives as a `user_message`
+  in the child's own rollout, per E1's prior finding, but isn't a "turn"
+  the human sat through).
+- **docs written before T** — count of distinct doc paths (under `docs/`
+  or `*.md`) added by any successful `patch_apply_end` anywhere in the
+  tree, before T.
+- **total tool calls before T** — count of `rollout_parser.TOOL_CALL_TYPES`
+  response_items (the existing classifier set: function_call,
+  custom_tool_call, tool_search_call, web_search_call, local_shell_call)
+  across every rollout in the tree, timestamped before T.
+- **wall-clock to T** — T minus the root rollout's very first record
+  timestamp.
+
+**New additive parser helper, TDD:** `rollout_parser.patch_applies(path)
+-> list[PatchApply(call_id, timestamp, success, paths)]`, reading each
+`patch_apply_end` event's `changes` dict keys. `parse_session().
+patch_applies` stays the existing bare counter; this is the structured
+per-event extraction (paths + timestamps) E4's census needs that the
+counter can't provide. Existing suites (`rollout_parser` 10, `score_e1` 6,
+`score_e2` 9, `score_e9` 7) must stay green.
+
+**Discrimination-gate metric, chosen and registered now, before any
+scoring:** the task brief's gate ("spike-class census within 25% of
+arch-class census") doesn't specify which of the four census fields it
+applies to. Registering **total tool calls before T** as the primary,
+gated metric — the most directly comparable proxy across task classes of
+different innate complexity (wall-clock conflates model-thinking/API
+latency variance the other three don't; user-turns and docs-written are
+low-resolution small integers unlikely to discriminate cleanly at n=3
+reps/class). The other three fields are reported descriptively, for
+corroboration, not gated. Per-class comparison uses the MEAN of each
+field across a class's 3 reps. If any rep never produces a non-doc patch
+at all (a real possibility for the spike class specifically — "find out,
+quick and dirty is fine" could resolve as pure investigation, no code),
+that rep's T-gated fields (tool calls before T, wall-clock to T) are
+reported as N/A and excluded from that class's mean (flagged separately,
+not silently imputed); docs-written is still reported for such a rep
+using the whole session instead of a T-cutoff.
+
+**Prediction, operationalized against this gate:** spike-class mean tool
+calls before T lands within 25% of arch-class mean tool calls before T
+(ceremony NOT proportional to task complexity — the pathology the audit's
+Finding 4 describes).
+
+**Alternative outcome, registered explicitly as a live possibility before
+this battery runs (per the campaign's discrimination-rule discipline,
+matching E1 axis B / E2-FULL's own registered alternative outcomes):** if
+spike-class ceremony instead comes in materially lower than arch-class
+(outside the 25% band) — i.e. the model already scales ceremony to task
+complexity on this scenario shape — that is recorded as
+**inconclusive-by-zero for the predicted pathology**, not a discriminating
+"pass" in the opposite direction. Per the task instruction, an
+inconclusive-by-zero result here has two live, non-exclusive
+explanations, neither resolved by this battery alone: (a) the
+`brainstorming` hard-gate's absolute wording ("This applies to EVERY
+project regardless of perceived simplicity") isn't actually binding in
+practice — the model exercises judgment despite the gate's literal text;
+or (b) this fresh-session, single-Gauntlet-turn scenario shape is too
+weak to elicit the hard-gate's activation at all, the same fresh-session
+non-triggering shape E1/E2 already found on `cx-sdd-small`/
+`cx-branch-review` (E1 axis B, E2-FULL: both inconclusive-by-zero on
+fresh short sessions). `ceremony-path-micro.py` (below) is registered as
+a follow-on probe for exactly this ambiguity, not a resolution of it —
+it isolates the entry-decision text from session-shape confounds by
+asking the question directly, out of band from any live Codex session.
+
+**MICRO (`ceremony-path-micro.py`, to be built next, Anthropic Messages
+API, no quorum/Codex spend):** three variants of a system-prompt paragraph
+governing how much ceremony to apply before starting work — **Z-null** (no
+guidance at all), **A-current** (the verbatim `<HARD-GATE>` block from
+`/tmp/sp-arm-dev/skills/brainstorming/SKILL.md` lines 12-14: "Do NOT
+invoke any implementation skill, write any code, scaffold any project, or
+take any implementation action until you have presented a design and the
+user has approved it. This applies to EVERY project regardless of
+perceived simplicity."), and **B-three-path** (a router paragraph drafted
+for this task, explicitly labeled treatment-phrasing pre-work per the task
+brief — no skill edits land in this campaign). Each of the three task
+briefs (spike/bounded/arch, verbatim) is put to the model under each
+variant, forced to a one-word answer (`SPIKE`/`BOUNDED`/`FULL`) scored by
+regex, MODEL `claude-opus-4-8`, REPS=5 (45 calls total). Prediction: under
+Z-null and A-current, the model's chosen path does not reliably track task
+class (consistent with the audit's proportional-ceremony finding); under
+B-three-path, it does. This is a pre-test of treatment phrasing in
+isolation from session-shape confounds — it cannot by itself confirm or
+refute the FULL battery's result, only report a second, independent
+data point on the same question.
+
+**Battery plan:** 3 reps x 3 classes (9 runs total), `dev` arm, lane A
+(`/Users/jesse/git/superpowers/superpowers/evals`, container already up
+`--superpowers-root /tmp/sp-arm-dev`), `JOBS=2`, via
+`bash run-quorum.sh dev cx-ceremony-{spike,bounded,arch} 3`. **Budget
+check performed before running:** ledger total logged so far is $70.89
+(E1: $20.59 + $21.28 + $7.27 + $17.74; E2-FULL: $4.01); this battery's own
+estimate (per the task brief) is ~$4-5/run x 9 = ~$36-45, landing the
+running total at ~$107-116 -- well under the $250 checkpoint named in this
+task's instructions, so the full 9-run battery (not a reduced 2-reps/class
+version) proceeds as planned.
+
+**Success criterion:** the discrimination gate above (spike-class mean
+tool-calls-before-T within 25% of arch-class), evaluated honestly in
+either direction per the alternative-outcome framing above.
+
+**No run yet — this is the pre-registration.** Scenarios, scorer, micro,
+battery, census tables, and verdict follow in a separate log entry once
+`out/e4-report.md` exists.
