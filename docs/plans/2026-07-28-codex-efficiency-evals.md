@@ -610,3 +610,26 @@ caveat) in the hypothesis log as external evidence with provenance.
 Ordering: 6b first (container down for rebuild blocks all quorum work), then
 Drew cross-validation, then E7–E9, then resume the original sequence at Task 7
 (E2 micro).
+
+## Amendment 2 (2026-07-29, Jesse-approved)
+
+### Task E1-v611: fresh-session pathology reproduction against v6.1.1
+
+Third arm `/tmp/sp-arm-v611` (tag v6.1.1) isolates the skill version at fixed
+CLI 0.146: add a `v611` mapping to run-quorum.sh, pre-register (full-history
+forks / omitted models at v6.1.1 ⇒ pathology was skill-version-dependent and
+v6.2.0 fixed it; clean ⇒ long-history theory strengthens), 3 reps of
+cx-sdd-small, score with score_e1.py, three-arm comparison table. Runs after
+Task 8's battery (container contention).
+
+### Task E10: lifecycle-truthfulness probe suite
+
+The audit's second P0 (completion/retry truthfulness) had no experiment in the
+original scoping — a gap. Probes, each a scenario child engineered to fail:
+(a) empty final output; (b) killed mid-run from outside the container; (c)
+tool budget exhausted without a conclusion. Scored per run: does the
+controller record explicit failure (vs empty success), retry at most once with
+stable inputs, and reconcile open children before its own completion (reuses
+E8's lifecycle census). Quota-forcing has no clean mechanism — documented as a
+probe gap, not simulated. Pre-register from audit Finding 7's observed
+failures. Position: after E6, before E3. Budget ≈ $20–30.
