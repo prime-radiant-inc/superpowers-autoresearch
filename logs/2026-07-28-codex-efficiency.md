@@ -892,3 +892,74 @@ and the battery's 0-of-14 ground check above.
 
 **No budget spent** (MINE tier, existing corpora only, no quorum/Codex
 runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
+
+### 2026-07-29 — E9 workspace-leak census: prediction check (Amendment 1)
+
+`score_e9.py` (no `rollout_parser.py` change -- E9 scores git history of
+run workdirs, not rollout JSONL; TDD, 6 new tests in `test_score_e9.py`)
+built and run over both pre-registered corpora. Full tables, the complete
+5-path leak listing with commit subjects, and the read-only verification
+section: `campaigns/codex-efficiency/out/e9-report.md`.
+
+**Both pre-registered clauses land as predicted; the scorer reproduces the
+pre-registration's hand count exactly, to the individual commit SHA:**
+
+1. **Drew's fractals set, corrected figure (2 of 4, not the task brief's
+   original 3 of 4): CONFIRMED exactly.** `codex-5_5`: 4 paths added, all 4
+   later removed (status=removed for all 4, 0 shipped). `sol-5_6`: 1 path
+   added, removed. `opus-4_8`/`opus-5`: 0. Every commit SHA and subject
+   line the scorer extracted matches the pre-registration's hand count
+   character-for-character, and matches Drew's own
+   `analysis/narratives/scope-audit.md` narrative independently (same six
+   SHAs he names: `2f72702`, `07d34e2`, `8842b73`, `f4fed14` for
+   codex-5_5's four leaks and cleanup, `d5e66d0` for sol-5_6's one).
+2. **Our own battery, both arms: FAILS as predicted-to-fail — 0 of 14
+   real repos leaked.** Matches the pre-registration's own ground check
+   exactly (that ground check was done by hand before the scorer existed;
+   this is the scorer independently reproducing it, not the scorer's only
+   evidence for the number). Not reframed as a pass: the pre-registration
+   predicted nonzero and got zero. The most plausible mechanism (the
+   workspace-internal `.superpowers/sdd/.gitignore` containing `*`,
+   present in all 14 repos, plus an agent-initiated root `.gitignore` in
+   10 of 14) was already identified during pre-registration and nothing
+   found while building the scorer contradicts it — see `out/e9-report.md`
+   Concerns for why this isn't treated as a settled explanation (it's the
+   same guard Drew's own domain review found present-but-not-always-
+   effective in his four fractals repos, and his own mechanism question
+   there stays open, un-re-investigated by this task).
+
+**Real bug found and regression-tested, not just a defensive check added
+on spec.** While locating the battery's 14 real repos, one candidate
+directory (an artifact of a retried run under
+`cx-eff-cx-sdd-small-spinout-rep6/`) turned out to have no `.git` of its
+own. `git rev-parse --show-toplevel` run with `cwd` set to it does not
+fail -- it silently resolves upward to the **`evals` checkout's own git
+repo** via the submodule gitdir
+(`.../superpowers/.git/modules/evals`). Had the scorer used
+`git rev-parse --is-inside-work-tree` (or any bare git subprocess call) as
+its "is this a repo" test, it would have silently scored that unrelated
+directory as a battery repo and reported the entire `evals` checkout's
+history under a misleading per-rep label. `score_e9.py` instead checks for
+the directory's own `.git` entry on the filesystem before ever invoking
+git; `test_score_e9.py::test_nested_dir_without_own_git_is_not_scorable`
+reconstructs the same nested-no-`.git`-inside-a-real-repo shape and
+asserts it is skipped, not silently escalated.
+
+**Read-only, verified not assumed.** Every scored repo's `git status
+--porcelain` was diffed before/after running `score_e9.py` (both corpora,
+all reps): identical every time; the only untracked entries present
+predate this task (setup.sh's `.agents/skills/superpowers` symlink,
+`__pycache__/` from the agent's own test runs, session-ID marker files in
+Drew's repos). The scorer issues only `git log`, `git ls-tree`, and `git
+rev-parse --verify` -- no command that can write.
+
+**Audit corpus not scored (by design, not omission).** E9 needs a
+persisted git working-tree history to query; the audit corpus is Codex
+rollout JSONL only, with no corresponding checked-out git repo to run `git
+log`/`git ls-tree` against. Amendment 1's task list already scopes E9 to
+"run workdir[s]" specifically (unlike E7/E8's three-corpora framing), read
+as intentional -- flagged explicitly in `out/e9-report.md` Concerns since
+Amendment 1's summary paragraph says "each scores three corpora."
+
+**No budget spent** (MINE tier, existing corpora only, no quorum/Codex
+runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
