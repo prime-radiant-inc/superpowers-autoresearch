@@ -1,10 +1,43 @@
-# E1 fork-hygiene verdict: baseline (dev), FULL battery
+# E1 fork-hygiene verdict: axis-split (baseline `dev` vs. treatment `codex-spinout-fixes`)
 
-**Status: BLOCKED at the discrimination gate.** The treatment battery
-(`codex-spinout-fixes` arm) was **not run**. This report scores the 4-rep
-`dev`-arm baseline in full, evaluates it against the registered E1
-prediction, and hands the mixed result back for adjudication per the
-task brief's "the controller adjudicates" instruction.
+**Status: treatment battery complete for axis A (model-explicitness).**
+Axis B (fork-isolation) was re-scoped out of E1 and into E6 by
+controller adjudication (Jesse-approved) before the treatment battery
+ran — see "Post-registration amendment" below and
+`logs/2026-07-28-codex-efficiency.md`.
+
+**Headline result:** axis A's literal success criterion (100% explicit
+`model`) was **not met** on the treatment arm (0% explicit, identical to
+baseline) — but this traces to a container infrastructure gap, not a
+behavioral failure of the `codex-spinout-fixes` branch: the eval
+container's installed Codex CLI is **0.144.4**, and the spinout branch's
+own fix documentation explicitly gates the model/`reasoning_effort`
+override on **Codex 0.145+**, saying pre-0.145 sessions correctly
+inherit model with no override available. See "Critical infrastructure
+finding" below.
+
+## Post-registration amendment (axis split)
+
+The original registered E1 prediction was compound (fork-hygiene clause
+AND model-omission clause). Baseline scoring (below) showed the two
+halves diverging sharply — 0% vs. 100% — rather than moving together.
+Controller adjudication, approved by Jesse, split E1 into two
+independently-gated axes (full text:
+`logs/2026-07-28-codex-efficiency.md`, "POST-REGISTRATION AMENDMENT"
+entry):
+
+- **Axis A — model-explicitness.** Discriminates on baseline (0/34
+  explicit). Proceed to treatment, scored here.
+- **Axis B — fork-isolation.** Inconclusive-by-zero on this
+  fresh-session scenario shape (0/34 non-isolated against a ≥40% bar).
+  Re-scoped into E6, whose long-history/forced-compaction scenario is
+  the corpus-supported condition for eliciting full-history forks. Not
+  attempted in this report.
+
+Before adjudicating, the controller independently re-counted the 34
+baseline spawns directly against raw rollout JSON (bypassing
+`score_e1.py`), confirming 34/34 `fork_turns:"none"`, 0/34 explicit
+`model` — the gate result is not a scorer artifact.
 
 ## Scorer design (`score_e1.py`)
 
@@ -25,8 +58,7 @@ For each RUNDIR (a quorum run's coding-agent directory, one level below
    the run contains that UUID substring.
 4. When a child rollout resolves, record its byte size and
    `parse_session()`'s `first_instruction_line`, `skill_reads_strict`,
-   and `task_complete` (the last as the completion-parity signal for the
-   spec's "no loss of task completion" success leg).
+   and `task_complete` (the last as the completion-parity signal).
 5. Emit a markdown table (raw tuples, per run + an aggregate across all
    RUNDIRs given in one invocation) to stdout, and a JSON blob of the
    same raw data to `out/e1-<label>.json` (label auto-derived from the
@@ -35,14 +67,12 @@ For each RUNDIR (a quorum run's coding-agent directory, one level below
 No message/instruction text is ever extracted — `extract_spawns()`'s
 `Spawn` dataclass has no such field, and nothing in `score_e1.py` reads
 `payload["arguments"]["message"]`. `task_name` values are fixture-derived
-(`task1_implementer`, `final_reviewer`, etc. — labels the SDD plan's own
-task structure produces) and safe to commit verbatim, per the task
-brief.
+(`task1_implementer`, `final_reviewer`, etc.) and safe to commit
+verbatim, per the task brief.
 
-Verified against raw rollout JSON by hand (rep2's controller rollout,
-`spawn_agent` function-call arguments minus the `message` key) — the
-scorer's tuples match the raw data exactly; this is not a parsing
-artifact of the extremely uniform result below.
+Verified against raw rollout JSON by hand on both arms (rep2 dev, rep1
+spinout — `spawn_agent` function-call arguments minus the `message`
+key) — the scorer's tuples match the raw data exactly on both arms.
 
 ## Baseline battery: run inventory (dev arm, `cx-sdd-small`, 4 reps)
 
@@ -56,36 +86,21 @@ artifact of the extremely uniform result below.
 
 Reps 2-4 spawned 9 (implementer+reviewer ×3 tasks, a final whole-branch
 reviewer, and a fix+re-review round after the final reviewer caught a
-bug); rep 1 spawned 7 (no fix round needed — the final reviewer found
-nothing to fix). This is scenario-organic variance in *how much* SDD
-work happened, not a scorer difference.
+bug); rep 1 spawned 7 (no fix round needed). rep1 was reused from the
+Task 5 smoke run and predates commit `292b548` ("blind the Gauntlet
+brief"); checked and confirmed **not an outlier** on any E1-relevant
+metric vs. reps 2-4 (identical 100%-isolated/100%-omitted pattern) —
+kept as-is, no replacement rep run.
 
-### rep1 / blinding-fix note
+### Baseline spawn-tuple table (all 34 spawns, every one inspected)
 
-Rep1 (`19:58:35Z`) ran before commit `292b548` ("blind the Gauntlet
-brief" — task-5-report.md, Fix round 1), which rewrote `story.md`'s
-Gauntlet-facing persona to stop naming the scored axes. Reps 2-4
-(`20:30`-`21:12Z`) ran against the blinded `story.md`.
+`child_first_instruction_line` is `None` for every row on both arms —
+verified structural, not a bug: child sessions receive their task via a
+`sub_agent_activity` payload, never an `event_msg/user_message` record,
+and `parse_session()`'s `first_instruction_line` only fires on
+`user_message` (flagged for E6, which also reads this field).
 
-Checked whether rep1 is an outlier on the metrics that matter to E1: **it
-is not.** Rep1's 7/7 spawns are 100% `fork_turns:"none"`, 100%
-model-omitted, 100% child-rollout-resolved, 100% child `task_complete` —
-byte-for-byte the same hygiene pattern as every spawn in reps 2-4. The
-only difference (7 vs 9 spawns) is the presence/absence of a fix round,
-unrelated to blinding. Per the task instructions ("if clearly outlier,
-run a replacement rep 5 and exclude rep1"): **not an outlier, rep1 kept,
-no replacement rep run.**
-
-## Full spawn-tuple table (all 34 baseline spawns)
-
-`child_bytes` in bytes; `child_first_instruction_line` is `None` for
-every row because child sessions receive their task via a
-`sub_agent_activity` payload, not an `event_msg/user_message` record —
-`parse_session()`'s `first_instruction_line` only fires on
-`user_message`, so it's structurally `None` for every spawned child in
-this harness (worth noting for E6, which also reads this field).
-
-### rep1 (7 spawns)
+**rep1 (7 spawns)**
 
 | call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
 |---|---|---|---|---|---:|---:|---:|
@@ -97,7 +112,7 @@ this harness (worth noting for E6, which also reads this field).
 | call_9Q9WoPBlbXPMZ7KDslsZ7o9S | task3_reviewer | none | (omitted) | (omitted) | 75338 | 1 | 1 |
 | call_FxvIHBTQXWEIJZMznmkfZV8i | final_reviewer | none | (omitted) | (omitted) | 94511 | 1 | 1 |
 
-### rep2 (9 spawns)
+**rep2 (9 spawns)**
 
 | call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
 |---|---|---|---|---|---:|---:|---:|
@@ -111,7 +126,7 @@ this harness (worth noting for E6, which also reads this field).
 | call_CtiYRy4aK4uIdf4ZXRLv3xW9 | final_fixer | none | (omitted) | (omitted) | 145615 | 2 | 1 |
 | call_8AL5mbu1swL7bixBEnFmuP4O | final_rereviewer | none | (omitted) | (omitted) | 89681 | 1 | 1 |
 
-### rep3 (9 spawns)
+**rep3 (9 spawns)**
 
 | call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
 |---|---|---|---|---|---:|---:|---:|
@@ -125,7 +140,7 @@ this harness (worth noting for E6, which also reads this field).
 | call_bEiWZSfwlBu29UD4oTSUoCPK | final_fix | none | (omitted) | (omitted) | 159696 | 2 | 1 |
 | call_vFLo8ceSu02qfYt67ttzfNkK | final_fix_reviewer | none | (omitted) | (omitted) | 76548 | 1 | 1 |
 
-### rep4 (9 spawns)
+**rep4 (9 spawns)**
 
 | call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
 |---|---|---|---|---|---:|---:|---:|
@@ -139,141 +154,215 @@ this harness (worth noting for E6, which also reads this field).
 | call_alespbPXOFuxOK4Uz3V0cnhw | final_fix | none | (omitted) | (omitted) | 169274 | 2 | 1 |
 | call_xrgH4bYezcZR4Y1TDtbkLwgu | final_fix_reviewer | none | (omitted) | (omitted) | 75860 | 1 | 1 |
 
-Every one of the 34 spawns was manually inspected in the tables above
-(none elided).
+**Baseline aggregate (34/34 spawns):** 100% isolated, 0% `"all"`/partial,
+0% explicit model, 100% model-omitted, 100% child-resolved, 100% child
+`task_complete`. Identical across all 4 reps individually.
 
-## Aggregate (34/34 spawns, all 4 reps)
+## Treatment battery: run inventory (spinout arm, `cx-sdd-small`, 4 reps)
 
-| Metric | Count | % |
+| Rep | Run dir (leaf) | Gauntlet | Spawns | Coding cost | Gauntlet cost |
+|---|---|---|---:|---:|---:|
+| 1 | `cx-eff-cx-sdd-small-spinout-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T031843Z-7b72` | pass | 9 | $5.06 | $0.37 |
+| 2 | `cx-eff-cx-sdd-small-spinout-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T033825Z-d4dc` | pass | 9 | $4.76 | $0.34 |
+| 3 | `cx-eff-cx-sdd-small-spinout-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T035556Z-637b` | pass | 9 | $6.40 | $0.37 |
+| 4 | `cx-eff-cx-sdd-small-spinout-rep4/cx-sdd-small-codex-codex_sub-linux-20260729T041642Z-1878` | pass | 7 | $3.69 | $0.31 |
+| **Total** | | 4/4 pass | **34** | **$19.90** | **$1.38** |
+
+Run via `bash run-quorum.sh spinout cx-sdd-small 4` (the `REP_START`
+mechanism wasn't needed here — spinout had no pre-existing reps, so the
+default `REP_START=1` covers all 4). Sequential, one quorum run at a
+time, ~13-21 min wall each.
+
+### Treatment spawn-tuple table (all 34 spawns, every one inspected)
+
+**rep1 (9 spawns)**
+
+| call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
+|---|---|---|---|---|---:|---:|---:|
+| call_jU6cuztdAmf6xtEWzLvYVTMS | task1_implementer | none | (omitted) | (omitted) | 155509 | 1 | 1 |
+| call_vfg5Hxkg8ab6K9FDRCNlMeFz | task1_reviewer | none | (omitted) | (omitted) | 82801 | 1 | 1 |
+| call_XgYU5iUe7P2C4UbNQWdhZlRI | task2_implementer | none | (omitted) | (omitted) | 177573 | 1 | 1 |
+| call_187gbG43n1ag6XYDWix8mtSQ | task2_reviewer | none | (omitted) | (omitted) | 89694 | 1 | 1 |
+| call_A0EGFZif4Xvo8t42rmWnKaxZ | task3_implementer | none | (omitted) | (omitted) | 138514 | 2 | 1 |
+| call_f92CDgb011RmI6zXHX6tnYgW | task3_reviewer | none | (omitted) | (omitted) | 79559 | 1 | 1 |
+| call_JRH7redWS3nRpyZu3eFn6N18 | final_reviewer | none | (omitted) | (omitted) | 122038 | 1 | 1 |
+| call_KrMAgvTcE06pQdAg5DavT7j9 | final_fix_implementer | none | (omitted) | (omitted) | 167837 | 2 | 1 |
+| call_HaNhfFN6Cw0sACjrv5NRUEqv | final_fix_reviewer | none | (omitted) | (omitted) | 84448 | 1 | 1 |
+
+**rep2 (9 spawns)**
+
+| call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
+|---|---|---|---|---|---:|---:|---:|
+| call_nDMOg2nWc4TR1ffmAnRJZxIx | task1_implementer | none | (omitted) | (omitted) | 154941 | 1 | 1 |
+| call_cFMWvPgj6Zw9GA3poi77zaGQ | task1_reviewer | none | (omitted) | (omitted) | 81978 | 1 | 1 |
+| call_6AF7HrKYXTQ74Bz9FGunsaWD | task2_implementer | none | (omitted) | (omitted) | 151993 | 1 | 1 |
+| call_RzMRmFJVEfeta4na1epqZdmM | task2_reviewer | none | (omitted) | (omitted) | 79344 | 1 | 1 |
+| call_JhhEAVMhbY3GzmyBuf91vijN | task3_implementer | none | (omitted) | (omitted) | 148426 | 2 | 1 |
+| call_FSvRy3Kc7CwnyksREy2OvpE5 | task3_reviewer | none | (omitted) | (omitted) | 76483 | 1 | 1 |
+| call_yLDr7LzOXU6LI7xvPDCmZeEh | final_reviewer | none | (omitted) | (omitted) | 99157 | 1 | 1 |
+| call_hYHWemUKXA2vKXfsEWZvUoj4 | final_fix | none | (omitted) | (omitted) | 151630 | 2 | 1 |
+| call_fWSnjQn9tJpWtVb3Lz2Q4QgH | final_fix_reviewer | none | (omitted) | (omitted) | 99273 | 1 | 1 |
+
+**rep3 (9 spawns)**
+
+| call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
+|---|---|---|---|---|---:|---:|---:|
+| call_3UvqwQR3cJGwNVK5KatLU6Gn | task1_implementer | none | (omitted) | (omitted) | 148744 | 1 | 1 |
+| call_cp7T9LxDVmwFi2bUF6rv35k2 | task1_reviewer | none | (omitted) | (omitted) | 88228 | 1 | 1 |
+| call_c9VGUTMLUTrOheDfIouFt35L | task2_implementer | none | (omitted) | (omitted) | 159493 | 1 | 1 |
+| call_PjgPnaKUVAGNrzQYuGAo7oi1 | task2_reviewer | none | (omitted) | (omitted) | 91281 | 1 | 1 |
+| call_CvTOpuROH6CAyWFJJPxwbHUu | task3_implementer | none | (omitted) | (omitted) | 165649 | 4 | 1 |
+| call_IJMIYzzwepwXq6APJldV266t | task3_reviewer | none | (omitted) | (omitted) | 96404 | 1 | 1 |
+| call_UPjQPlIxcmB7RgHLlIwtk3bO | final_reviewer | none | (omitted) | (omitted) | 136809 | 1 | 1 |
+| call_62RkXZRdgFr6NB2ocGISVEJS | final_fix_implementer | none | (omitted) | (omitted) | 211903 | 2 | 2 |
+| call_pHssWjWsNcBfh2PepiSB46YK | final_fix_reviewer | none | (omitted) | (omitted) | 96107 | 1 | 1 |
+
+**rep4 (7 spawns)**
+
+| call_id | task_name | fork_turns | model | reasoning_effort | child_bytes | child_skill_reads_strict | child_task_complete |
+|---|---|---|---|---|---:|---:|---:|
+| call_lhZPAlML3h0MrAqOr4pb7YAH | task1_implementer | none | (omitted) | (omitted) | 136057 | 1 | 1 |
+| call_P6MYZXmyPZYKwUjVkEH46mHI | task1_reviewer | none | (omitted) | (omitted) | 83112 | 1 | 1 |
+| call_RVHGMWr34Q3KRsUVdIJFyTVg | task2_implementer | none | (omitted) | (omitted) | 167522 | 1 | 1 |
+| call_8oproGuBeNsSZxnjQlzRT65e | task2_reviewer | none | (omitted) | (omitted) | 98035 | 1 | 1 |
+| call_sj2Gn5yymrD31fVMH80TVul0 | task3_implementer | none | (omitted) | (omitted) | 148539 | 2 | 1 |
+| call_i9H0YaV4G12xYHDvgPzafsld | task3_reviewer | none | (omitted) | (omitted) | 94352 | 1 | 1 |
+| call_YDnKj2mPl8TQSGBRrNJmFgNf | final_reviewer | none | (omitted) | (omitted) | 101840 | 1 | 1 |
+
+**Treatment aggregate (34/34 spawns):** 100% isolated, 0% `"all"`/partial,
+0% explicit model, 100% model-omitted, 100% child-resolved, 100% child
+`task_complete`. **Bit-identical distribution to baseline on every
+metric.**
+
+## Combined aggregate (both arms, 68 spawns)
+
+| Metric | dev (baseline) | spinout (treatment) |
 |---|---:|---:|
-| `fork_turns == "none"` (isolated) | 34/34 | **100.0%** |
-| `fork_turns == "all"` (full history) | 0/34 | 0.0% |
-| `fork_turns == "all"` OR partial-numeric | 0/34 | 0.0% |
-| Explicit `model` | 0/34 | 0.0% |
-| `model` omitted | 34/34 | **100.0%** |
-| Child rollout resolved | 34/34 | 100.0% |
-| Child `task_complete` present (of resolved) | 34/34 | 100.0% |
+| spawns | 34 | 34 |
+| isolated (`fork_turns:"none"`) | 100.0% | 100.0% |
+| `fork_turns:"all"` or partial | 0.0% | 0.0% |
+| explicit model | 0.0% | 0.0% |
+| model omitted | 100.0% | 100.0% |
+| child rollout resolved | 100.0% | 100.0% |
+| child `task_complete` present | 100.0% | 100.0% |
 
-Identical across all 4 reps individually — this is not an averaging
-artifact; every single rep independently produced 100% isolated / 0%
-full-or-partial / 100% model-omitted.
+**Fork_turns regression check (secondary readout):** no regression —
+treatment stayed at 100% `"none"`, matching the expectation stated in
+the axis-split decision.
 
-## Discrimination gate evaluation
+**Completion parity:** full parity — 34/34 children reached
+`task_complete` on both arms.
 
-**Registered prediction** (hypothesis log, `logs/2026-07-28-codex-efficiency.md`):
-"≥40% of SDD spawns use `fork_turns:"all"`; ≥60% omit model" — phrased as
-a single compound prediction ("the ≥40%/≥60% prediction holds"). The
-task-6 controller message restated it as "≥40% of SDD spawns use
-fork_turns 'all' OR partial numeric; ≥60% omit model" (the OR there is
-*within* the fork_turns clause — "all" or partial-numeric both count as
-non-isolated — not between the two clauses).
+## Critical infrastructure finding: Codex CLI version gates axis A
 
-Both clauses of the compound prediction must hold for baseline to "land"
-(exhibit the registered pathology):
+`session_meta.cli_version` was read directly from the controller
+rollout of every one of the 8 runs (both arms, all reps):
+**`0.144.4`, unanimously.** This is the actual installed Codex CLI in
+the eval container — the arm only changes which superpowers checkout is
+mounted (`/tmp/sp-arm-dev` vs. `/tmp/sp-arm-spinout`), not the container
+image or its `codex` binary.
 
-| Clause | Threshold | Observed | Holds? |
-|---|---|---:|:---:|
-| fork_turns "all" or partial-numeric | ≥40% | 0.0% | **NO** |
-| model omitted | ≥60% | 100.0% | YES |
+The spinout branch's own
+`skills/using-superpowers/references/codex-tools.md` (read directly off
+`/tmp/sp-arm-spinout`) says, verbatim:
 
-**The compound prediction does not hold** — the fork-isolation clause
-fails decisively (0% against a ≥40% bar, not a borderline miss), even
-though the model-omission clause is satisfied more strongly than
-predicted. Per the task brief: *"If the baseline does NOT exhibit the
-pathology, do NOT run the treatment battery — return status BLOCKED with
-the scored evidence; the controller adjudicates."*
+> If your `spawn_agent` schema has `model` and `reasoning_effort`
+> parameters (Codex 0.145+), set both on every dispatch: task-brief and
+> review-package print a `dispatch:` hint line with the exact values...
+>
+> Without those parameters (Codex 0.144 and earlier), children inherit
+> your model and effort with no override... Tell your human partner
+> before starting a plan of more than a few tasks, and offer a
+> lower-effort session instead.
 
-This is a genuinely mixed result, not a clean pass or fail, so I did not
-resolve the AND/OR ambiguity in the gate's phrasing unilaterally by
-picking whichever reading justifies spending the ~$20 treatment battery.
+**The container's Codex CLI (0.144.4) is exactly the "0.144 and
+earlier" case the fix's own documentation calls out.** Per the branch's
+own conditional logic, there is no `model`/`reasoning_effort` parameter
+on `spawn_agent` to set in this environment, and inheriting model with
+no override is the *documented-correct* behavior — not a fix failure.
+This is consistent with the observed 0% explicit-model rate being
+bit-identical between baseline and treatment: axis A literally cannot be
+exercised by this eval container as currently provisioned.
 
-### Why this is surprising given Finding 1's own narrative
+**This was not independently confirmed via the raw tool schema** (the
+rollout JSONL logs conversation content, not the API request's tool
+definitions) — the finding rests on (a) the branch's own documented
+version gate, (b) the container's confirmed `cli_version`, and (c) the
+observed behavior being identical across both arms despite the fix
+being present only on `codex-spinout-fixes`. All three point the same
+direction, but a direct check of the container's actual `spawn_agent`
+tool schema would make this conclusive rather than well-supported.
 
-The audit doc (`docs/superpowers/research/2026-07-28-codex-efficiency-audit.md`,
-Finding 1) says: *"The small SDD control case shows the behavioral
-consequence. Full-history 'implementers' saw the controller's SDD
-instructions and recursively became SDD controllers..."* — i.e. the
-audit's own corpus already contained a small-SDD example exhibiting the
-fork-hygiene pathology this scenario was built to reproduce. Our
-distilled `cx-sdd-small` scenario, run 4 times against current `dev`,
-produced the opposite: 100% isolated forks, no recursive controllers,
-every child terminated with `task_complete`. Sanity-checked directly
-against raw rollout JSON (not just the scorer's output) — this is real
-observed Codex behavior, not a parsing artifact.
+## Axis A verdict: success criterion NOT MET, root-caused to CLI version
 
-Current `dev`'s `subagent-driven-development/SKILL.md` and
-`using-superpowers/references/codex-tools.md` still don't mention
-`fork_turns` at all (grepped both on the `/tmp/sp-arm-dev` worktree,
-`bb2a34b` — zero matches), confirming Finding 1's diagnosis that the
-Codex-specific routing tuple is genuinely undocumented on `dev`. Yet
-Codex chose `fork_turns:"none"` unprompted for all 34 spawns here. The
-model-omission pathology (Finding 1's other observation, "925 omitted
-models") *did* reproduce at 100%, consistent with `SKILL.md`'s "always
-specify the model explicitly" instruction (line 177) simply not being
-followed for Codex dispatches.
+Success criterion (controller): 100% explicit `model` on SDD spawns,
+task completion parity.
 
-Plausible explanations, none confirmed by this battery alone: (a) this
-specific "3-task SDD plan via subagent-driven-development" shape isn't
-the part of the corpus that produced Finding 1's full-history forking
-— the corpus spans a much wider mix of skills/workflows than this one
-distilled scenario; (b) Codex's own tool-level default for `spawn_agent`
-may have shifted since the corpus window closed
-(`2026-07-14T07:00:00Z`-`2026-07-28T16:50:29Z`) independent of any
-Superpowers-side fix; (c) sampling variance that 4 reps aren't enough to
-rule out, though 34/34 identical is a strong signal against pure chance.
-Adjudication (re-plan vs. accept the model-omission-only finding vs.
-widen the scenario) is for the controller/Jesse, not this scorer.
+| | Baseline | Treatment | Target |
+|---|---:|---:|---:|
+| Explicit model | 0.0% | 0.0% | 100% |
+| Task-completion parity | 100% (34/34) | 100% (34/34) | preserved |
+
+**The literal criterion fails** — treatment shows no improvement over
+baseline on model-explicitness. **Root cause, per the evidence above: an
+eval-container infrastructure gap (Codex CLI 0.144.4 < the fix's 0.145+
+requirement), not a `codex-spinout-fixes` design or skill-content
+failure.** Task-completion parity holds cleanly.
+
+**Recommendation for the controller:** re-run this treatment battery
+(or a smaller MICRO check) against a container image with Codex CLI
+≥0.145 before drawing any conclusion about whether the spinout branch's
+model-explicitness fix works — the current battery cannot discriminate
+that question. Until then, axis A is **inconclusive, not failed**.
+
+## Axis B: fork-isolation — re-scoped to E6, not evaluated here
+
+Per the post-registration amendment, axis B is out of scope for this
+report. Both arms show 100% isolated forks (0% "all"/partial) on this
+fresh-session scenario shape, consistent with the earlier
+inconclusive-by-zero baseline finding — E6's long-history/
+forced-compaction scenario remains the intended vehicle for eliciting
+and scoring full-history forking.
 
 ## Cost / budget
 
-| | Coding | Gauntlet | Total |
+| Battery | Coding | Gauntlet | Total |
 |---|---:|---:|---:|
-| Baseline battery (4 reps) | $19.43 | $1.16 | **$20.59** |
+| Baseline (dev, 4 reps) | $19.43 | $1.16 | $20.59 |
+| Treatment (spinout, 4 reps) | $19.90 | $1.38 | $21.28 |
+| **E1 total (both batteries)** | **$39.33** | **$2.54** | **$41.87** |
 
 Subscription `used_percent` (`rate_limits.primary.used_percent`, last
 `token_count` event of the controller rollout):
 
-- First run of battery (rep1): **28.0%**
-- Last run of battery (rep4): **31.0%**
-- Delta: +3.0 points over the battery.
+- Baseline: 28.0% (rep1) → 31.0% (rep4).
+- Treatment: 45.0% (rep1) → 1.0% (rep4) — a rate-limit window rollover
+  occurred between the treatment reps (the raw drop is reported as
+  observed, not adjusted; not a budget anomaly — the primary window is
+  `window_minutes: 10080`, i.e. 7 days, so a reset mid-battery is
+  plausible and not investigated further here).
 
-See `logs/2026-07-28-codex-efficiency.md` budget ledger for the
-campaign-running total.
+See `logs/2026-07-28-codex-efficiency.md` budget ledger for both rows
+and the campaign-running total.
 
-## Treatment battery: NOT RUN
+## Deviations from the brief / addendum instructions
 
-Per the discrimination gate result above, the `codex-spinout-fixes`
-(spinout) arm battery was not started. No `out/e1-cx-sdd-small-spinout.json`
-exists. `run-quorum.sh spinout cx-sdd-small ...` is unchanged and ready
-to run once the controller adjudicates whether/how to proceed (e.g.
-re-scope the scenario to actually exercise full-history forking, accept
-the model-omission-only finding as E1's baseline result, or treat E1 as
-inconclusive-by-construction for this scenario shape).
-
-## Success-criterion check (spec: 100% isolated + 100% explicit model + completion parity)
-
-Not evaluated against treatment (none run). For reference, baseline
-already meets the isolation leg (100% `fork_turns:"none"`) and the
-completion-parity leg (100% child `task_complete`) trivially — it is
-*only* the model-explicitness leg (0% explicit) where baseline fails the
-spec's target, which is a different axis than the discrimination gate's
-fork_turns clause.
-
-## Deviations from the brief
-
-1. **Treatment battery not run** — the discrimination gate's primary
-   clause failed; running it anyway would have spent ~$20-25 and ~60-90
-   min on a battery whose scientific value is unclear until the gate's
-   AND/OR ambiguity and the Finding-1 tension above are resolved.
-2. **rep1 kept, no replacement rep 5** — checked per the task
-   instructions and found rep1 is not an outlier on any E1-relevant
-   metric relative to reps 2-4 (see "rep1 / blinding-fix note" above).
-3. **`run-quorum.sh` gained a `REP_START` 4th argument** (default 1) so
-   baseline reps 2-4 could be appended without overwriting the existing
-   rep1 smoke run — `bash run-quorum.sh dev cx-sdd-small 3 2` ran reps
-   2, 3, 4. Documented in the script's header comment.
-4. **`child_first_instruction_line` is `None` for all 34 spawns** — not
-   a scorer bug; children receive their task via a `sub_agent_activity`
-   payload rather than a `user_message` record, so
-   `parse_session().first_instruction_line` structurally never fires for
-   spawned children in this harness. Noted above and flagged for E6.
+1. **Axis split via post-registration amendment**, not a straight
+   baseline→treatment pass — recorded in the hypothesis log per the
+   controller's explicit instruction, with independent verification
+   noted (controller re-counted 34/34 fork-none, 0/34 model via raw
+   grep before adjudicating).
+2. **Axis A's literal success criterion fails**, but the report
+   root-causes this to the eval container's Codex CLI version rather
+   than presenting it as a clean negative result — the fix's own
+   documentation names the exact version gate the container falls
+   below.
+3. **`run-quorum.sh`'s `REP_START` arg** (added for the baseline
+   battery) wasn't needed for the treatment battery since spinout had no
+   pre-existing reps; used the plain 3-arg form.
+4. Polled the treatment battery with long-timeout blocking loops inside
+   the session (per the controller's explicit instruction) rather than
+   an external Monitor task.
+5. As with baseline, no message/instruction text was extracted or
+   printed anywhere in this report or its JSON blobs — only
+   fixture-derived `task_name` labels and technical metadata.
