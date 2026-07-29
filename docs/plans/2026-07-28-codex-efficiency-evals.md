@@ -633,3 +633,54 @@ stable inputs, and reconcile open children before its own completion (reuses
 E8's lifecycle census). Quota-forcing has no clean mechanism — documented as a
 probe gap, not simulated. Pre-register from audit Finding 7's observed
 failures. Position: after E6, before E3. Budget ≈ $20–30.
+
+## Amendment 3 (2026-07-29, Jesse-provided session audit)
+
+Jesse supplied a deep audit of a 2026-07-29 session tree (root
+019faf59… + 13 descendants, ~4h8m, plugin-agent-model-fallback work). It
+independently replicates several campaign findings in a FRESH session and
+sharpens three experiments. Root rollouts live under
+~/.codex/sessions/2026/07/29/ (read-only, private-content rules apply).
+
+### Task: MINE the 2026-07-29 session tree (new, no run spend)
+
+Score the root + descendants with every existing scorer (parser census,
+score_e2 subtree census, score_e7 waits, score_e8 lifecycle) and reconcile
+against the audit's claims BEFORE trusting them: 193 root wait_agent calls
+(mostly 30s polls), 24 list_agents, 148 textual go-test invocations with a
+12x-repeated identical regression cluster, an implementer-spawned reviewer
+(Task 1) followed by a controller-dispatched duplicate review, 9 reviewer
+agents for 4 implementers. Pre-register those numbers as predictions; verify
+per rollout; aggregates only in committed output (out/e-audit0729.md).
+
+### Experiment upgrades
+
+- **E3 (evidence receipts):** the duplicate-gate pathology now has FRESH-
+  session confirmation (148 test invocations, same targeted regression 12x,
+  root rerunning implementer checks, final reviewer rerunning bundles 3x,
+  waived-baseline rerun after explicit user waiver). E3's discrimination
+  odds are strong; add two census measures to its scorer: identical-command
+  repeat count per session (not just cross-session pairs) and
+  waiver-violation detection (rerun of a user-waived known-red command with
+  no intervening mutation). The audit's "verification lease" proposal is the
+  treatment candidate; record in the log.
+- **E2→E6 (recursion signature sharpened):** the fresh-session recursion
+  shape is IMPLEMENTER-spawned reviewers at depth 2 — 4th occurrence now.
+  E6's scorer must report depth-2 spawns by role (implementer vs reviewer)
+  and same-task duplicate reviews (worker-review followed by controller
+  review of the same task).
+- **E5 (review scope):** replicated pathologies to encode in the rubric:
+  same-task duplicate review; discover-one-fix-one serial remediation
+  (count remediation cycles per task); gate findings lacking a violated
+  acceptance criterion / reachable failure path (the withdrawn restore
+  finding is the archetype); final-fix-wave boundary violation (mutation
+  under an active re-review).
+
+### Fix-cycle candidates registered (not campaign work)
+
+The audit's six skill patches (verification leases; SDD worker-review
+prohibition + event-driven waiting + remediation cap + frozen re-review SHA;
+writing-plans invariant matrices; criterion-backed blocking findings;
+systematic-debugging occurrence fingerprint; finishing-a-development-branch
+worktree detection + waiver honor) plus its pressure-test scenario list go
+to the fix cycle, gradeable by E3/E5/E6/E7 scorers.
