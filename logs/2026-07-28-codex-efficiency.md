@@ -18,6 +18,8 @@ fact.
 |---|---|---|---|---|
 | 2026-07-28 | E1 baseline (dev, cx-sdd-small, 4 reps) | $20.59 ($19.43 coding + $1.16 gauntlet) | 28.0% | 31.0% |
 | 2026-07-29 | E1 treatment (spinout, cx-sdd-small, 4 reps, axis A) | $21.28 ($19.90 coding + $1.38 gauntlet) | 45.0% | 1.0% (window rollover mid-battery) |
+| 2026-07-29 | E1 re-test @ CLI 0.146.0, baseline (dev, cx-sdd-small, rep5-6) | $7.27 ($6.64 coding + $0.63 gauntlet) | 3.0% | 3.0% |
+| 2026-07-29 | E1 re-test @ CLI 0.146.0, treatment (spinout, cx-sdd-small, rep5-8, axis A) | $17.74 ($16.42 coding + $1.31 gauntlet) | 4.0% | 7.0% |
 
 ## Pre-registered predictions
 
@@ -255,3 +257,71 @@ E1 running total across both batteries: **$41.87**.
 **Recommendation:** before drawing any conclusion about the spinout
 branch's axis-A fix, re-run this battery (or a cheaper MICRO check)
 against a container image with Codex CLI ≥0.145.
+
+### 2026-07-29 — E1 RE-TEST at Codex CLI 0.146.0 (Task 6b, Amendment 1): axis A no longer discriminates
+
+Bumped the eval container's pinned Codex CLI (`evals/container/Dockerfile`)
+from `0.144.4` to `0.146.0` (newest published exact-version npm release;
+local commit only in the `evals` checkout, not pushed —
+`6266ced`). Rebuilt, verified `codex --version` -> `codex-cli 0.146.0`
+and confirmed `session_meta.cli_version` == `0.146.0` on all 6 new reps
+before spending. Re-ran E1 as a small confirmatory battery: **2 new
+baseline reps** (dev, rep5-6, extending Task 6's rep1-4) and **4 new
+treatment reps** (spinout, rep5-8, extending Task 6's rep1-4), scored
+with `score_e1.py`. Full detail:
+`campaigns/codex-efficiency/out/e1-retest-cli0146.md`.
+
+**(a) Baseline fork_turns confound: holds cleanly.** 14/14 new baseline
+spawns are `fork_turns:"none"` at 0.146.0, identical to Task 6's 34/34
+at 0.144.4. The CLI-version confound registered in the Amendment 1 scope
+note does not disturb the fork-isolation result.
+
+**(b) Axis A: the headline result from the Task 6 addendum does NOT
+survive at the field CLI version, and the direction of the surprise
+matters.** Treatment jumps from 0% explicit model (Task 6, 0.144.4) to
+93.9% (31/33, this re-test) — but **baseline also jumps, from 0% to
+100% (14/14)**. Root cause: `dev`'s own
+`subagent-driven-development/SKILL.md` already instructs "Always
+specify the model explicitly when dispatching a subagent" (pre-existing,
+not spinout-specific) — it had no `model` parameter to act on before
+0.145, so the CLI gate was masking a `dev`-side capability all along,
+not just a spinout-side one. Every root-controller spawn on both arms
+(45/45 combined) is explicit-model at 0.146.0. **Axis A no longer
+discriminates baseline from treatment at the field CLI version** — this
+supersedes the Task 6 addendum's "inconclusive by infrastructure, would
+likely show the fix working once unblocked" framing. The evidence at the
+field CLI version does not show the spinout branch's specific
+`codex-tools.md` content doing incremental work beyond what the CLI
+unlock + `dev`'s pre-existing generic instruction already produce.
+
+Treatment's 2 shortfalls from literal 100% are **both depth-2 spawns
+issued by an implementer child recursively calling `spawn_agent` itself**
+(`agent_path` traced to `/root/task2_implementer/cli_review` and
+`/root/task1_implementer/task1_reviewer` respectively via
+`parent_rollout`), not root-controller dispatches. One of these two is
+also the *only* `fork_turns:"all"` spawn in either new battery — a
+full-history fork issued by a child. Both occur only on the treatment
+arm in this sample (n=2, small); baseline (2 reps) shows zero depth-2
+forking. Reported as an observation for E6 (which owns the fork-isolation
+axis), not adjudicated here — sample too small to claim the spinout
+branch causes more child-initiated recursion.
+
+**(c) Completion parity: full, both arms** — 14/14 dev + 33/33 spinout
+children resolved with `task_complete` present; 6/6 new reps
+gauntlet-passed.
+
+**Cost:** $25.01 ($7.27 baseline + $17.74 treatment), against the plan's
+≈$32 estimate. E1 running total across all three batteries (Task 6
+baseline + Task 6 axis-A treatment + this re-test): **$66.88**.
+
+**Process note:** `score_e1.py`'s output-JSON filename is derived from
+the battery-dir label only (`cx-sdd-small-dev` / `cx-sdd-small-spinout`),
+which collides across `REP_START`-extended batteries scoring different
+rep ranges under the same label — first invocation here silently
+overwrote Task 6's committed `out/e1-cx-sdd-small-{dev,spinout}.json`.
+Caught via `git status`/`git diff --stat` immediately after, recovered
+with `git checkout --` (Task 6's original 34/34-spawn aggregates
+restored unmodified, verified), new-reps-only output re-saved under
+`out/e1-cx-sdd-small-{dev,spinout}-cli0146.json`. No data lost, but the
+script has a real collision risk for any future REP_START-extended
+re-score — flagged for a fix, not fixed in this task.
