@@ -21,6 +21,7 @@ fact.
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, baseline (dev, cx-sdd-small, rep5-6) | $7.27 ($6.64 coding + $0.63 gauntlet) | 3.0% | 3.0% |
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, treatment (spinout, cx-sdd-small, rep5-8, axis A) | $17.74 ($16.42 coding + $1.31 gauntlet) | 4.0% | 7.0% |
 | 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
+| 2026-07-29 | E1-v611 (v611, cx-sdd-small, 3 reps, lane B, JOBS=2) | $12.17 ($11.24 coding + $0.93 gauntlet) | 17.0% | 19.0% |
 
 ## Pre-registered predictions
 
@@ -1745,3 +1746,78 @@ either direction per the alternative-outcome framing above.
 **No run yet — this is the pre-registration.** Scenarios, scorer, micro,
 battery, census tables, and verdict follow in a separate log entry once
 `out/e4-report.md` exists.
+
+### 2026-07-29 — E1-v611 RESULT: Branch 2 (clean) confirmed — pathology is not skill-version-dependent (Amendment 2)
+
+Ran the pre-registered battery (3 reps, `v611` arm — superpowers tag
+`v6.1.1`, commit `d884ae0` — `cx-sdd-small`, from a second independent
+`scripts/evals-container` lane, "lane B" at
+`/Users/jesse/git/superpowers/evals-lane-b`, brought up alongside lane A's
+in-flight E2 container) via `EVALS_ROOT=/Users/jesse/git/superpowers/evals-lane-b
+JOBS=2 bash campaigns/codex-efficiency/run-quorum.sh v611 cx-sdd-small 3`
+and scored all 23 spawns with `score_e1.py`. Full detail, per-rep spawn
+tables, and the three-arm comparison table:
+`campaigns/codex-efficiency/out/e1-v611-report.md`.
+
+**Result: 22/22 root-controller spawns across all 3 reps are isolated
+(`fork_turns:"none"`) and explicit-model (100%/100%)** — matching
+`dev-cli0146`'s 14/14 and `spinout-cli0146`'s 31/31 root-controller rate
+exactly, at the same field CLI version (0.146.0, confirmed via
+`session_meta.cli_version` on all 3 reps). The one non-clean spawn (23rd,
+4.3% of the raw 23-spawn total: `fork_turns:"all"`, model omitted) is a
+depth-2 spawn issued by `task2_implementer` (confirmed via
+`parent_rollout`), not the root controller.
+
+**Branch 2 (clean) confirmed — the pre-registered bet lands.** The
+pre-registration's ground check (neither `v6.1.1` nor `dev` mentions
+`fork_turns` anywhere in their dispatch-governing files; both carry the
+byte-identical "always specify the model explicitly" instruction and
+`model: [MODEL — REQUIRED...]` dispatch-template placeholder) predicted no
+skill-text lever existed for `v6.1.1` to diverge on, and the data confirms
+it: 100% root-controller isolation/explicit-model now holds on **three**
+independent skill versions (`v6.1.1`, `dev`, `spinout`) spanning the
+`v6.2.0` release. **This closes the one live alternative to the
+long-history theory** registered alongside E1 axis B and E2-FULL's own
+inconclusive-by-zero results: the "clean" fresh-session result was never
+skill-version-dependent, at any version tested so far. The audit's
+original full-history-fork / model-omission narrative remains unreproduced
+on this scenario shape regardless of skill version — strengthening, not
+weakening, the standing explanation that the pathology requires
+long-running, heavily-loaded controller sessions (E6's territory), not a
+property of skill content this experiment family can surface.
+
+**The depth-2 finding is now a 3-occurrence, cross-skill-version pattern.**
+`v611`'s one depth-2 spawn (`cli_reviewer`, from `task2_implementer`,
+`fork_turns:"all"`, model omitted) reproduces the *exact* shape already
+seen twice on `spinout-cli0146` (a `cli_review`/`task1_reviewer` spawn,
+also depth-2, also model-omitted, one also `fork_turns:"all"`) — same
+task-name family, same parent-role family, same fork/model signature, on a
+different skill version. Still a small sample (3 occurrences across 9
+combined reps / 70 spawns, 0 on `dev`'s smaller 2-rep sample) — not
+adjudicated as a skill-version effect (root-controller behavior is
+identical across all three versions, and this is a non-root pattern), but
+strengthened as a real, reproducible, skill-version-independent phenomenon
+worth a dedicated look under E6, which already owns the fork-isolation
+axis.
+
+**Lane-B infrastructure note (not a result, a setup gap worth flagging):**
+lane B required copying `node_modules` from lane A in addition to the
+`.env`/`.env.container` files the task anticipated — a fresh `bun install`
+run inside the container against the freshly-cloned, bind-mounted lane-B
+checkout failed with `bun is unable to write files to tempdir:
+AccessDenied` (consistent with a cross-filesystem, Docker-Desktop
+bind-mount-vs-overlay2 hardlink limitation in Bun's package store, not a
+lane-B misconfiguration). Worked around by `rsync`-ing lane A's
+already-installed `node_modules` directly (`bun.lock`/`package.json`
+confirmed byte-identical between lanes first) rather than reinstalling.
+Both lane-isolation assumptions the task asked to verify held cleanly:
+lane B's container name derives automatically from its own checkout path
+hash (`superpowers-evals-6017feb5c517`, distinct from lane A's
+`superpowers-evals-0e67a6421d23` — no `--name` override needed), and
+bringing lane B up (`docker ps` before/after) left lane A's container
+running untouched throughout.
+
+**Cost:** $12.17 ($11.24 coding + $0.93 gauntlet), 3 reps, JOBS=2 (no
+sequential fallback needed — confirmed from the run log that rep1/rep2
+started concurrently before either finished). Sub `used_percent` 17.0% →
+19.0%. Ledger row above.
