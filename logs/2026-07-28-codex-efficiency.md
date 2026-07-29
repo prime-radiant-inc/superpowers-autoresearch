@@ -1357,3 +1357,10 @@ full report committed as docs/2026-07-29-codex-multiagent-v2-capabilities.md.
   exec custom_tool_calls — different calling convention from V2's direct
   function_calls. This explains the audit's "older sessions invoke tools inside a
   single exec/JS call" observation (Corpus section, nested-call caveat).
+
+## 2026-07-29 — Probe round 3 (controller entry)
+
+Arm J: sol controller, empty config, no -m flag (implicit default): spawn
+model=gpt-5.6-luna rejected byte-identically to round 1. The V2 sol/terra
+allowlist holds under all three config regimes tested; sol can never spawn
+luna children regardless of configuration.
