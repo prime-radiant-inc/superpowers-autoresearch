@@ -1821,3 +1821,22 @@ running untouched throughout.
 sequential fallback needed — confirmed from the run log that rep1/rep2
 started concurrently before either finished). Sub `used_percent` 17.0% →
 19.0%. Ledger row above.
+
+## 2026-07-29 — EXTERNAL EVIDENCE: Jesse's audit of the 07-29 fallback session (controller entry)
+
+Provenance: Jesse-supplied audit of root 019faf59-3a06 + 13 descendants (~4h8m),
+superpowers on Codex, 2026-07-29. Claims to verify by mining (pre-registered
+here BEFORE our scorers touch the tree): 193 root waits (~30s polls), 24
+list_agents, 148 textual go-test invocations (12x identical regression cluster;
+per-agent split root 15 / catalog 23 / model-selector 66 / direct 9 / durable 22
+/ final reviewer 13), implementer-spawned reviewer on Task 1 + controller
+duplicate review, 9 reviewers vs 4 implementers, plan/design contradiction that
+became a review finding, withdrawn overly-broad final-review finding,
+final-fix-wave boundary violation, waived-baseline rerun.
+
+Campaign impact: E3 discrimination now expected (fresh-session duplicate-gate
+pathology LIVE); E2/E6 recursion signature = implementer-spawned depth-2
+reviewers (4th occurrence); E5 rubric gains same-task duplicate review,
+serial-remediation count, criterion-less gate findings, wave-boundary
+violation. Fix-cycle candidates: the audit's six skill patches + pressure-test
+scenario list (see plan Amendment 3).
