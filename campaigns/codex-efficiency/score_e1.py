@@ -24,9 +24,15 @@ Prints a markdown report (per-run spawn-tuple table + summary, then an
 aggregate summary across all given RUNDIRs) to stdout, and writes a JSON
 blob of the same raw tuples to
 campaigns/codex-efficiency/out/e1-<label>.json (label auto-derived from the
-RUNDIRs' parent directory names, e.g. "cx-sdd-small-dev" for
-results/cx-eff-cx-sdd-small-dev-repN/<run>). Exits 0 on success, 1 on usage
-error or a run with zero resolvable rollouts.
+RUNDIRs' parent directory names PLUS the actual rep numbers scored, e.g.
+"cx-sdd-small-dev-rep5-8" for results/cx-eff-cx-sdd-small-dev-rep{5..8}/<run>
+-- the rep-range suffix exists so a REP_START-extended re-score of a
+different rep range under the same arm_scenario lands in a different file
+instead of silently colliding with an earlier score). Refuses to overwrite
+an existing output file unless env FORCE=1 is set (prints an error naming
+the collision and exits 1 instead). Exits 0 on success, 1 on usage error,
+an existing-output-file collision without FORCE, or a run with zero
+resolvable rollouts.
 """
 import glob
 import json
@@ -192,6 +198,44 @@ def print_run_table(run):
     return summ
 
 
+def _rep_range_suffix(runs):
+    """Derive a rep-range suffix ('rep5-8', or 'rep5' for a single rep)
+    from the reps actually scored -- so a REP_START-extended re-score of a
+    different rep range under the same arm_scenario doesn't collide with
+    an earlier score's output file. Falls back to 'unknown-reps' if no run
+    in the batch matched the rep-dir naming convention (rep is None)."""
+    reps = sorted({r["rep"] for r in runs if r["rep"] is not None})
+    if not reps:
+        return "unknown-reps"
+    if len(reps) == 1:
+        return f"rep{reps[0]}"
+    return f"rep{reps[0]}-{reps[-1]}"
+
+
+def _out_label(runs):
+    arm_scenarios = sorted({r["arm_scenario"] for r in runs})
+    base = arm_scenarios[0] if len(arm_scenarios) == 1 else "mixed-" + "-".join(arm_scenarios)
+    return f"{base}-{_rep_range_suffix(runs)}"
+
+
+def write_output(runs, agg, out_dir, force=False):
+    """Write the aggregate JSON blob for `runs` to out_dir/e1-<label>.json,
+    where <label> encodes both the arm_scenario and the actual rep range
+    scored (see _out_label). Refuses to overwrite an existing file unless
+    `force` is set, printing an error naming the collision instead.
+    Returns (out_path, wrote: bool)."""
+    label = _out_label(runs)
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"e1-{label}.json")
+    if os.path.exists(out_path) and not force:
+        print(f"score_e1: refusing to overwrite existing {out_path} "
+              f"-- set env FORCE=1 to overwrite", file=sys.stderr)
+        return out_path, False
+    with open(out_path, "w") as f:
+        json.dump({"label": label, "aggregate": agg, "runs": runs}, f, indent=2)
+    return out_path, True
+
+
 def main(argv):
     if len(argv) < 2:
         print("usage: score_e1.py RUNDIR...", file=sys.stderr)
@@ -221,13 +265,11 @@ def main(argv):
         f"({_fmt_pct(agg['pct_child_task_complete'])} of resolved children)")
     print()
 
-    arm_scenarios = sorted({r["arm_scenario"] for r in runs})
-    label = arm_scenarios[0] if len(arm_scenarios) == 1 else "mixed-" + "-".join(arm_scenarios)
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"e1-{label}.json")
-    with open(out_path, "w") as f:
-        json.dump({"label": label, "aggregate": agg, "runs": runs}, f, indent=2)
+    force = os.environ.get("FORCE") == "1"
+    out_path, wrote = write_output(runs, agg, out_dir, force=force)
+    if not wrote:
+        return 1
     print(f"wrote {out_path}", file=sys.stderr)
     return 0
 
