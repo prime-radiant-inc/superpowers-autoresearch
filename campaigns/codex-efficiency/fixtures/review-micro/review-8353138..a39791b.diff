@@ -1,0 +1,81 @@
+diff --git a/src/rolling.py b/src/rolling.py
+new file mode 100644
+index 0000000..e7bd734
+--- /dev/null
++++ b/src/rolling.py
+@@ -0,0 +1,36 @@
++"""Utilities for windowed aggregation over a sequence of numbers."""
++
++
++def moving_average(values, window):
++    """Return the average of each `window`-sized slice, sliding by one.
++
++    For an input of length n and a window of size w, this returns exactly
++    n - w + 1 averages: one for every valid starting index 0..(n - w).
++
++    Raises ValueError if `window` is not between 1 and len(values).
++    """
++    if window <= 0 or window > len(values):
++        raise ValueError("window must be between 1 and len(values)")
++    result = []
++    for i in range(len(values) - window):
++        window_slice = values[i:i + window]
++        result.append(sum(window_slice) / window)
++    return result
++
++
++def cumulative_sums(values):
++    """Return the running total after each element of `values`."""
++    total = 0
++    sums = []
++    for v in values:
++        total += v
++        sums.append(total)
++    return sums
++
++
++def normalize(values):
++    """Scale `values` so they sum to 1.0. Returns [] for an empty input."""
++    total = sum(values)
++    if total == 0:
++        return [0.0 for _ in values]
++    return [v / total for v in values]
+diff --git a/tests/__init__.py b/tests/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/tests/test_rolling.py b/tests/test_rolling.py
+new file mode 100644
+index 0000000..453165c
+--- /dev/null
++++ b/tests/test_rolling.py
+@@ -0,0 +1,30 @@
++from src.rolling import moving_average, cumulative_sums, normalize
++
++
++def test_moving_average_basic():
++    assert moving_average([1, 2, 3, 4, 5], 2) == [1.5, 2.5, 3.5]
++
++
++def test_moving_average_wide_window():
++    assert moving_average([10, 20, 30, 40], 3) == [20.0]
++
++
++def test_moving_average_rejects_bad_window():
++    try:
++        moving_average([1, 2], 0)
++    except ValueError:
++        pass
++    else:
++        raise AssertionError("expected ValueError")
++
++
++def test_cumulative_sums():
++    assert cumulative_sums([1, 2, 3]) == [1, 3, 6]
++
++
++def test_normalize():
++    assert normalize([1, 1, 2]) == [0.25, 0.25, 0.5]
++
++
++def test_normalize_all_zero():
++    assert normalize([0, 0]) == [0.0, 0.0]

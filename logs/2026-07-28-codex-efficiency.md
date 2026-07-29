@@ -1117,3 +1117,56 @@ honestly either way, including a zero-across-the-board outcome.
 
 **No run yet — this is the pre-registration.** Battery and verdict follow
 in a separate log entry once `out/e2-micro.md` exists.
+
+### 2026-07-29 — E2-MICRO RESULT: inconclusive-by-zero (Task 7)
+
+Ran the pre-registered battery (`reviewer-recursion-micro.py`, 4 variants
+x 5 reps = 20 single-turn `codex exec` samples, `campaigns/codex-efficiency/
+fixtures/review-micro/` fixture). Full table, variant text, and manual-read
+notes: `campaigns/codex-efficiency/out/e2-micro.md`.
+
+**Result: 0/20 spawns (0%) across every variant, no exceptions —
+independently confirmed by raw `grep -l '"name":"spawn_agent"'` across all
+20 rollouts (zero matches), bypassing `extract_spawns()` entirely.**
+Bug-found rate: 20/20 (100%) — every reviewer, including Z-null with no
+SDD template at all, correctly named the seeded off-by-one loop bound
+(`src/rolling.py`: `range(len(values) - window)` should be
+`range(len(values) - window + 1)`) with file:line and the exact fix;
+manually verified by reading all 20 answer files in full, not just the
+3-per-variant sample the written report quotes from.
+
+**This is the inconclusive-by-zero outcome the pre-registration named as a
+live possibility, not a surprise reframed after the fact.** None of the
+three predicted clauses can be evaluated as registered: Z-null/A-control
+did not spawn in "some reps" (0/10 combined), B-contract/C-budget's
+predicted zero holds trivially (0/10) but only because nothing in this
+rig ever attempts delegation regardless of phrasing, and bug-found-rate
+parity holds (100% flat) but for the same reason — there is no delegation
+axis, phrasing or otherwise, for this MICRO shape to discriminate on.
+
+**Root cause (hypothesis, not fully investigated): the rig's single-turn,
+single-diff review has no natural sub-task to delegate**, independent of
+prompt content — consistent with E1's own finding that every observed
+spawn came from a long-lived, multi-task SDD controller session, never a
+single fresh `codex exec` call. The corpus's recursive-reviewer pathology
+(129-session Remux tree, 31-session Serf tree) involves large, long-lived
+review trees, not a single small diff. **This MICRO does not confirm or
+refute the registered E2 baseline prediction** (>=1 descendant in >=half
+of reps at FULL/whole-branch scale) in either direction — it remains
+untested. The FULL scenario (Task 8: one branch review dispatched over a
+prepared moderately-complex branch) is still required to answer the
+baseline question; per the pre-registration's own caveat, it "carries the
+real baseline question."
+
+**Side observation, not scored:** A-control/B-contract/C-budget samples
+each issued exactly one `exec_command` (a single combined `sed -n`
+reading all three fixture files); Z-null samples issued 2-4 separate
+reads of the same files. Consistent with, not proof of, the template's
+own "read the diff file once" instruction doing real work on a dimension
+unrelated to delegation.
+
+**Cost:** subscription-billed `codex exec`, no $ split. `used_percent`
+flat at 8.0% across the entire battery (no measurable movement — the
+battery's real cost was too small to register against the primary
+window). Codex CLI `0.146.0` confirmed on all 20 samples. No ledger row
+added (not a $-costed battery).
