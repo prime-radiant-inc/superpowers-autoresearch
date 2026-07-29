@@ -1304,3 +1304,25 @@ discrimination gate depends on.
 
 **No run yet — this is the pre-registration.** Battery, census, and
 verdict follow in a separate log entry once `out/e2-report.md` exists.
+
+## 2026-07-29 — EXTERNAL EVIDENCE: Codex source recon resolves E8's open question (controller entry)
+
+Provenance: read-only recon of the Codex CLI source at ~/git/agent-harnesses/codex,
+full report committed as docs/2026-07-29-codex-multiagent-v2-capabilities.md.
+
+- E8's open question ("why is codex-5_5 the sole 18/18 closer?") is RESOLVED:
+  close_agent exists only in multi-agent V1. codex-5_5 ran V1; sol/terra
+  presets select V2, whose schema has no close_agent at all. E8's 0% closure
+  on modern controllers is the harness schema, not agent indiscipline. V2
+  auto-evicts finished children (LRU); unclosed children cost nothing.
+  Drew's "checklist close_agent" recommendation is unexecutable on V2 and
+  unnecessary. E8's scorer remains valid as a V1/V2 schema detector.
+- E7's fix direction is confirmed and sharpened by source: wait_agent is an
+  event subscription with a 1-hour max timeout; completed children push
+  FINAL_ANSWERs into the controller mailbox with no wait needed while local
+  work remains (trigger_turn=false caveat: one long wait when idle).
+- Model-omission fix candidates: [agents].default_subagent_model config knob;
+  note V2 spawn allowlist is sol/terra only, and the model-without-effort
+  trap (effort resets to model default, sol->low).
+- codex-tools.md (spinout branch) has five source-contradicted claims,
+  enumerated in the doc — fix-cycle input.
