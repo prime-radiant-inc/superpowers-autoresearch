@@ -145,6 +145,49 @@ class TestScoreRepo(unittest.TestCase):
             self.assertFalse(se.is_scorable_git_repo(inner))
             self.assertIsNone(se.score_repo(inner, label="nested"))
 
+    def test_review_package_workspace_in_diff_is_flagged(self):
+        """Fix round 1: the plan's E9 bullet requires a second surface
+        beyond git-history leaks -- 'workspace-in-diff at review packages'
+        (a review diff, per the SDD `review-<sha>..<sha>.diff` convention,
+        that itself includes a `.superpowers/` path in its diff headers --
+        the thing Drew's own report.md cites as the reviewer's own
+        automatic-finding rule). Only diff HEADER lines (`diff --git`,
+        `---`, `+++`) are ever read for path extraction -- never a hunk
+        body line -- so this test's fake diff's placeholder content line
+        is deliberately named to make that failure mode obvious if broken."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = os.path.join(tmp, "repo")
+            os.makedirs(repo)
+            _git(repo, "init", "-q", "-b", "main")
+            _git(repo, "config", "user.email", "test@example.com")
+            _git(repo, "config", "user.name", "Test")
+            _write(repo, "README.md", "hello\n")
+            _git(repo, "add", "README.md")
+            _git(repo, "commit", "-q", "-m", "initial commit")
+
+            # A review-package artifact left in the workspace (matching the
+            # real SDD convention: review diffs live under
+            # .superpowers/sdd/<plan>/, normally gitignored, never
+            # committed) whose diff itself touches a workspace path.
+            diff_text = (
+                "diff --git a/.superpowers/sdd/task-1-report.md b/.superpowers/sdd/task-1-report.md\n"
+                "index 0000000..1111111 100644\n"
+                "--- a/.superpowers/sdd/task-1-report.md\n"
+                "+++ b/.superpowers/sdd/task-1-report.md\n"
+                "@@ -0,0 +1 @@\n"
+                "+HUNK_BODY_MUST_NEVER_BE_READ_FOR_PATH_EXTRACTION\n"
+            )
+            _write(repo, ".superpowers/sdd/review-abc123..def456.diff", diff_text)
+
+            report = se.score_repo(repo, label="synthetic")
+            self.assertEqual(len(report.review_packages), 1)
+            rp = report.review_packages[0]
+            self.assertEqual(rp.path, ".superpowers/sdd/review-abc123..def456.diff")
+            self.assertEqual(rp.source, "working-tree")
+            self.assertTrue(rp.workspace_in_diff)
+            self.assertEqual(rp.workspace_paths_in_diff,
+                              [".superpowers/sdd/task-1-report.md"])
+
 
 class TestWriteJsonForceGuard(unittest.TestCase):
     def test_refuses_overwrite_without_force(self):

@@ -17,6 +17,16 @@ pre-registration's corrected number, not the task brief's original "3 of
 registered "some nonzero leak rate" prediction — a genuine miss, with a
 plausible (not exhaustively verified) mechanism identified below.
 
+**Fix round 1 (post-review addition): a second scoring surface, "workspace-
+in-diff at review packages,"** was implemented after task review found the
+original submission only covered the plan's first E9 clause
+(git-history leaks) and silently dropped the second without flagging it as
+a scope decision. See "Review-package census" below: both corpora were
+searched (working tree + git history, no location restriction) for
+`review*.diff`-style artifacts and scored zero in both — a census result,
+not an omission (no review-package artifact of any kind exists in either
+corpus to be flagged either way).
+
 ## Scorer design (`score_e9.py`)
 
 E9 differs from every other scorer in this campaign: it reads **git
@@ -68,6 +78,29 @@ inspection" below; no commit subject in either corpus needed redaction).
 without `FORCE` refuses, exit 1, naming both colliding files; `FORCE=1`
 overwrites cleanly, exit 0).
 
+**Second surface (fix round 1): review-package workspace-in-diff.** The
+plan's E9 bullet is two clauses: git-history leaks (above) "plus
+workspace-in-diff at review packages." A review package is a diff artifact
+following the SDD skill's `review-<sha>..<sha>.diff` naming convention (or
+any other `*review*.diff`-shaped filename — matched broadly by filename,
+never by expected location); "workspace-in-diff" means the diff ITSELF has
+a `.superpowers/` path in one of its own header lines (`diff --git a/...
+b/...`, `--- a/...`, `+++ b/...`) — the exact condition Drew Ritter's own
+review-prompt convention treats as an automatic finding (`analysis/report.md`/
+`cross-run-comparison.md`: "any workspace path (`.superpowers/**`)
+appearing in the review diff is an automatic finding"). `score_review_packages()`
+looks in two places per repo: the current working tree (plain filesystem
+walk, excluding `.git/` — this is how a review package left in the
+normally-gitignored `.superpowers/sdd/<plan>/` workspace is found at all)
+and anywhere in git history (`git log --all --diff-filter=A --name-only`,
+unrestricted by the `.superpowers` pathspec this time since a review
+package need not live under it, filtered client-side by filename). Content
+is read only to extract HEADER lines (working-tree files directly off
+disk; historical ones via `git show <commit>:<path>`, still read-only, no
+checkout) — `_extract_diff_header_paths()` matches only lines starting
+with `diff --git `, `--- `, or `+++ `, never a hunk (`@@`) or content
+(`+`/`-`) line, so a review diff's actual code changes are never read.
+
 ## Corpus (a): Drew Ritter's four `awesome-fractals-fcu-*` repos
 
 Read-only, external, never committed beyond these aggregates
@@ -113,6 +146,45 @@ design above.
 | spinout-rep8 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 **0 of 14 leaked, on either arm.**
+
+## Review-package census (workspace-in-diff) — added in fix round 1
+
+Both corpora were searched for review-package artifacts (`review*.diff` /
+`*review*.diff`, working tree AND git history, any ref, no location
+restriction) — see "Second surface" above for the exact search and
+extraction method.
+
+**Drew's fractals corpus: 0 review-package artifacts found (working tree
+or git history) across all 4 repos.** SCORED ZERO, not an omission: these
+four repos hold the fractals *product* code Drew's Codex/Claude runs
+produced; his review-diff artifacts (the ones his own `analysis/report.md`
+describes reviewer prompts checking) live in his separate `analysis/`
+directory tree outside these four git repos entirely, so there is nothing
+under this scorer's per-repo git history to find. This is consistent with,
+not contradicted by, his own scope-audit narrative — his review process
+operated externally to the repos being reviewed.
+
+**Our own battery corpus: 0 review-package artifacts found (working tree
+or git history) across all 14 real repos.** SCORED ZERO: the `cx-sdd-small`
+fixture's 3-task plan does not appear to have triggered a fix-round review
+loop that would produce a `review-<sha>..<sha>.diff` artifact inside the
+scored workdir in any of the 14 reps scored to date (unlike this very
+campaign's own SDD workspace, `.superpowers/sdd/2026-07-28-codex-efficiency-evals/`,
+which DOES contain multiple such files — see e.g. the file listing
+referenced in `task-e8-report.md` — confirming the naming convention and
+detection pattern are correct against a real example, just not one that
+exists inside either corpus E9 scores).
+
+**No workspace-in-diff artifact was found in either corpus** — there is
+nothing to flag, because there is no review-package artifact of any kind
+to inspect. `test_score_e9.py::test_review_package_workspace_in_diff_is_flagged`
+demonstrates the detection itself works (a synthetic
+`review-abc123..def456.diff` whose diff header names
+`.superpowers/sdd/task-1-report.md` is correctly flagged
+`workspace_in_diff=True` with exactly that one path extracted, and only
+from header lines — the test's hunk-body placeholder line is deliberately
+named `HUNK_BODY_MUST_NEVER_BE_READ_FOR_PATH_EXTRACTION` to make a
+header/body extraction bug obvious if the regexes ever regress).
 
 ## Prediction check
 
@@ -188,14 +260,22 @@ Battery corpus: zero leaked paths found across all 14 repos scored — the
   marker files in Drew's repos) that predate this task entirely — none
   created by this scorer, which issues only `git log`, `git ls-tree`, and
   `git rev-parse --verify`.
-- `test_score_e9.py` (6 tests, TDD red->green): synthetic repo fixture
+- `test_score_e9.py` (7 tests, TDD red->green): synthetic repo fixture
   covering a normal-pathed leak (plain `git add` before any `.gitignore`
   exists) and a force-added leak (`git add -f` past a `.gitignore` rule
   added in between), one later removed (status=removed) and one left
   shipped (status=shipped) — both detection classes exercised in one
   fixture. Plus: a clean-repo case (0 leaks), a non-repo directory
   (`score_repo` returns `None`), the own-`.git` regression guard described
-  above, and both `FORCE`/no-`FORCE` branches of `write_json`.
+  above, both `FORCE`/no-`FORCE` branches of `write_json`, and (fix round
+  1) a synthetic `review-abc123..def456.diff` whose diff header names a
+  `.superpowers/` path, asserting `workspace_in_diff=True` and the exact
+  path extracted.
+- Review-package content reads are also read-only: `git show
+  <commit>:<path>` reads a historical blob without touching the working
+  tree or index; working-tree review-package files are opened for reading
+  only. Same before/after `git status --porcelain` diff (above) covers
+  this pass too — identical in every case.
 - `python3 test_rollout_parser.py`: 10/10 pass (no change to
   `rollout_parser.py` in this task — verified unmodified).
 - `python3 test_score_e1.py`: 6/6 pass (no regression).
@@ -234,3 +314,17 @@ Battery corpus: zero leaked paths found across all 14 repos scored — the
   scopes E9 to "run workdir[s]" specifically, unlike E7/E8's three-corpora
   framing — read as intentional, not an oversight, but noted explicitly
   since Amendment 1's summary paragraph says "each scores three corpora."
+- **The review-package/workspace-in-diff surface (fix round 1) is verified
+  only against a synthetic fixture, not against any real review-package
+  artifact, because none exists in either corpus scored here.** The
+  detection logic (header-line-only diff parsing, working-tree + git-history
+  discovery) is exercised end-to-end by `test_score_e9.py`'s positive case,
+  and both real corpora were genuinely searched (not skipped) and
+  genuinely scored zero — but "the extraction logic is correct on a
+  synthetic example" is a weaker claim than "the extraction logic has been
+  checked against a real leaked review diff," which this task had no real
+  example of to check against. If a future battery run produces a
+  `review-*.diff` (a longer/deeper `cx-sdd-small`-style plan is more likely
+  to trigger a fix-round review loop than the current 3-task fixture), this
+  surface's real-data behavior should be spot-checked then, not assumed
+  correct by extension from the synthetic case alone.

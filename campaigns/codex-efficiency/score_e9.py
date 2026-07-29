@@ -32,11 +32,33 @@ and resolves straight through to the `evals` checkout's OWN git history
 gitdir `.../superpowers/.git/modules/evals`). Scoring that directory under
 its battery label would silently report an unrelated repo's full history.
 
+**Second surface (fix round 1): review-package workspace-in-diff.** The
+plan's E9 bullet is two clauses, not one: git-history leaks (above) "plus
+workspace-in-diff at review packages." A review package is a diff artifact
+following the SDD skill's own `review-<sha>..<sha>.diff` naming convention
+(and any other `*review*.diff`-shaped filename); "workspace-in-diff" means
+the diff ITSELF has a `.superpowers/` path in one of its header lines
+(`diff --git a/... b/...`, `--- a/...`, `+++ b/...`) -- i.e. a review
+package that would trip the reviewer's own "any workspace path in the diff
+is an automatic finding" rule (the exact rule Drew Ritter's own
+`analysis/report.md`/`cross-run-comparison.md` describe his review prompts
+using). `score_review_packages()` looks for review-package files in two
+places per repo: the current working tree (a plain filesystem walk,
+excluding `.git/`) and anywhere in git history (`git log --all
+--diff-filter=A --name-only`, UNrestricted by the `.superpowers` pathspec
+this time, since a review package need not live under `.superpowers/` --
+filtered client-side by filename instead), reading each one's content
+(working-tree files directly off disk; historical ones via `git show
+<commit>:<path>`, still read-only, no checkout) ONLY to extract header
+lines -- `_extract_diff_header_paths()` matches exclusively lines starting
+with `diff --git `, `--- `, or `+++ `, and never touches a hunk body (`@@`
+context or `+`/`-` content) line.
+
 Only path names, commit SHAs, and commit SUBJECT LINES are ever read or
-printed -- never file contents, never `git show <rev>:<path>`, never a diff
-body. Workspace paths (task-N-brief.md etc.) and their commit subjects are
-process/fixture text, not user content -- safe to print per this task's
-brief.
+printed -- never a diff's hunk-body content, never a reviewed file's actual
+contents. Workspace paths (task-N-brief.md etc.), review-package
+filenames, and their commit subjects are process/fixture text, not user
+content -- safe to print per this task's brief.
 
 Usage: score_e9.py [--force]
 Prints a markdown report to stdout. Writes aggregates-only JSON blobs
@@ -55,6 +77,18 @@ import sys
 
 WORKSPACE_PATHSPEC = ".superpowers"
 COMMIT_MARKER = "@@E9COMMIT@@"
+
+# Review-package filename convention: the SDD skill's own
+# `review-<sha>..<sha>.diff` naming, plus any other `*review*.diff`-shaped
+# name (Drew's corpus uses varying conventions -- match broadly by filename,
+# never by location).
+REVIEW_PACKAGE_RE = re.compile(r"review.*\.diff$", re.IGNORECASE)
+
+# Unified-diff HEADER lines only -- deliberately excludes any hunk line
+# (`@@ ... @@` or a `+`/`-` content line). See module docstring.
+DIFF_GIT_HEADER_RE = re.compile(r"^diff --git a/(.+?) b/(.+)$")
+DIFF_MINUS_HEADER_RE = re.compile(r"^--- (?:a/(.+)|/dev/null)$")
+DIFF_PLUS_HEADER_RE = re.compile(r"^\+\+\+ (?:b/(.+)|/dev/null)$")
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 
@@ -152,6 +186,115 @@ def _first_add_by_path(events):
     return first
 
 
+# --- review-package discovery ("workspace-in-diff") -------------------------
+#
+# A review package is a diff artifact (SDD's `review-<sha>..<sha>.diff`
+# convention). "workspace-in-diff" means the diff itself has a
+# `.superpowers/` path in a HEADER line -- never inspected via hunk-body
+# content. See module docstring for the full rationale.
+
+def _extract_diff_header_paths(text):
+    """Every path named in a unified diff's HEADER lines only (`diff --git
+    a/X b/Y`, `--- a/X`, `+++ b/X`) -- never a hunk (`@@`) or content
+    (`+`/`-`) line. `text` may be an entire diff file's content; this never
+    returns or retains anything from a non-header line."""
+    paths = set()
+    for line in text.splitlines():
+        m = DIFF_GIT_HEADER_RE.match(line)
+        if m:
+            paths.add(m.group(1))
+            paths.add(m.group(2))
+            continue
+        m = DIFF_MINUS_HEADER_RE.match(line)
+        if m and m.group(1):
+            paths.add(m.group(1))
+            continue
+        m = DIFF_PLUS_HEADER_RE.match(line)
+        if m and m.group(1):
+            paths.add(m.group(1))
+    return paths
+
+
+def _workspace_paths(paths):
+    return sorted(p for p in paths
+                  if p == WORKSPACE_PATHSPEC or p.startswith(WORKSPACE_PATHSPEC + "/"))
+
+
+def find_working_tree_review_packages(repo_dir):
+    """Every file anywhere under repo_dir (excluding .git/) whose basename
+    matches REVIEW_PACKAGE_RE. Plain filesystem walk, read-only, no git
+    subprocess -- this is how a review package left in an ignored workspace
+    directory (the normal case: .superpowers/sdd/<plan>/ is gitignored) is
+    found at all."""
+    found = []
+    for root, dirs, files in os.walk(repo_dir):
+        if ".git" in dirs:
+            dirs.remove(".git")
+        for fname in files:
+            if REVIEW_PACKAGE_RE.search(fname):
+                found.append(os.path.relpath(os.path.join(root, fname), repo_dir))
+    return sorted(found)
+
+
+def find_history_review_packages(repo_dir):
+    """Every (commit, subject, path) Added anywhere in history (--all)
+    whose basename matches REVIEW_PACKAGE_RE. Reuses the same
+    log --diff-filter=A --name-only query shape as added_events(), but
+    WITHOUT the .superpowers pathspec restriction -- a review package need
+    not live under .superpowers/ -- filtered client-side by filename
+    instead."""
+    args = ["log", "--reverse", "--all", "--diff-filter=A", "--name-only",
+            f"--pretty=format:{COMMIT_MARKER}%H\t%s"]
+    events = _parse_added_log(_run_git(repo_dir, args))
+    return [e for e in events if REVIEW_PACKAGE_RE.search(os.path.basename(e.path))]
+
+
+def _read_working_tree_file(repo_dir, relpath):
+    with open(os.path.join(repo_dir, relpath), "r", errors="replace") as f:
+        return f.read()
+
+
+def _read_git_blob(repo_dir, commit, path):
+    """Read-only: `git show <commit>:<path>` -- reads a historical blob
+    without touching the working tree or index at all."""
+    result = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=repo_dir,
+                             capture_output=True, text=True)
+    if result.returncode != 0:
+        return ""
+    return result.stdout
+
+
+@dataclasses.dataclass
+class ReviewPackageFinding:
+    path: str
+    source: str  # "working-tree" | "history"
+    commit: str  # commit sha ("" for working-tree source)
+    subject: str  # commit subject ("" for working-tree source)
+    workspace_paths_in_diff: list  # sorted list[str], possibly empty
+
+    @property
+    def workspace_in_diff(self):
+        return len(self.workspace_paths_in_diff) > 0
+
+
+def score_review_packages(repo_dir):
+    """Locates every review-package artifact in repo_dir (working tree +
+    git history) and reports whether each one's diff touches a
+    `.superpowers/` path in a header line. Read-only throughout."""
+    findings = []
+    for relpath in find_working_tree_review_packages(repo_dir):
+        content = _read_working_tree_file(repo_dir, relpath)
+        findings.append(ReviewPackageFinding(
+            path=relpath, source="working-tree", commit="", subject="",
+            workspace_paths_in_diff=_workspace_paths(_extract_diff_header_paths(content))))
+    for e in find_history_review_packages(repo_dir):
+        content = _read_git_blob(repo_dir, e.commit, e.path)
+        findings.append(ReviewPackageFinding(
+            path=e.path, source="history", commit=e.commit, subject=e.subject,
+            workspace_paths_in_diff=_workspace_paths(_extract_diff_header_paths(content))))
+    return findings
+
+
 # --- per-repo scoring -------------------------------------------------------
 
 @dataclasses.dataclass
@@ -170,6 +313,7 @@ class RepoReport:
     reachable_added_count: int
     head_count: int
     leaked: list  # list[LeakedPath], sorted by path
+    review_packages: list  # list[ReviewPackageFinding]
 
 
 def score_repo(repo_dir, label=""):
@@ -201,6 +345,7 @@ def score_repo(repo_dir, label=""):
         reachable_added_count=len(reachable_first),
         head_count=len(head_set),
         leaked=leaked,
+        review_packages=score_review_packages(repo_dir),
     )
 
 
@@ -236,6 +381,12 @@ def _leaked_to_dict(lp):
     return dataclasses.asdict(lp)
 
 
+def _review_package_to_dict(rp):
+    d = dataclasses.asdict(rp)
+    d["workspace_in_diff"] = rp.workspace_in_diff  # a @property, not a dataclass field
+    return d
+
+
 def _report_to_dict(r):
     return {
         "repo_dir": r.repo_dir,
@@ -244,6 +395,7 @@ def _report_to_dict(r):
         "reachable_added_count": r.reachable_added_count,
         "head_count": r.head_count,
         "leaked": [_leaked_to_dict(lp) for lp in r.leaked],
+        "review_packages": [_review_package_to_dict(rp) for rp in r.review_packages],
     }
 
 
@@ -282,6 +434,41 @@ def print_leak_listing(reports):
     print()
 
 
+def print_review_package_section(corpus_name, reports):
+    """Second E9 surface (fix round 1): review-package census +
+    workspace-in-diff flags. Explicitly states a scored zero -- a corpus
+    with no review-package artifacts at all prints that fact, not a bare
+    empty table (per the fix instruction: 'a scored zero, not an
+    omission')."""
+    all_findings = [(r, rp) for r in reports for rp in r.review_packages]
+    print(f"Review-package census (corpus: {corpus_name}): "
+          f"{len(all_findings)} review-package artifact(s) found across "
+          f"{len(reports)} repo(s) scored (working tree + git history).")
+    print()
+    if not all_findings:
+        print(f"SCORED ZERO: no file anywhere (working tree or git "
+              f"history, any ref) in the {corpus_name} corpus matches the "
+              f"review-package naming convention (`review*.diff` / "
+              f"`*review*.diff`). This is a census result, not a gap in "
+              f"the search.")
+        print()
+        return
+    print("| repo | path | source | commit | workspace-in-diff | workspace paths in diff |")
+    print("|---|---|---|---|---|---|")
+    n_flagged = 0
+    for r, rp in all_findings:
+        if rp.workspace_in_diff:
+            n_flagged += 1
+        commit_disp = rp.commit[:12] if rp.commit else "-"
+        ws_disp = ", ".join(f"`{p}`" for p in rp.workspace_paths_in_diff) or "-"
+        print(f"| {r.label} | `{rp.path}` | {rp.source} | {commit_disp} | "
+              f"{'YES' if rp.workspace_in_diff else 'no'} | {ws_disp} |")
+    print()
+    print(f"{n_flagged}/{len(all_findings)} review-package artifact(s) in "
+          f"the {corpus_name} corpus are workspace-in-diff.")
+    print()
+
+
 def main(argv):
     force = "--force" in argv or os.environ.get("FORCE") == "1"
 
@@ -301,6 +488,7 @@ def main(argv):
     print("Leaked paths (every one found, commit subject that added it):")
     print()
     print_leak_listing(drew_reports)
+    print_review_package_section("drew", drew_reports)
 
     print("## Corpus (b): our own `cx-eff-cx-sdd-small-{dev,spinout}` battery workdirs")
     print()
@@ -322,6 +510,7 @@ def main(argv):
     print("Leaked paths (every one found, commit subject that added it):")
     print()
     print_leak_listing(battery_reports)
+    print_review_package_section("battery", battery_reports)
 
     os.makedirs(OUT_DIR, exist_ok=True)
     wrote_all = True

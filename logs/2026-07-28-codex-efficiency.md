@@ -963,3 +963,83 @@ Amendment 1's summary paragraph says "each scores three corpora."
 
 **No budget spent** (MINE tier, existing corpora only, no quorum/Codex
 runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
+
+### 2026-07-29 — E9 fix round 1: review-package surface (workspace-in-diff)
+
+Task review found the initial E9 submission implemented only the first
+half of the plan's E9 bullet (git-history leaks) and silently dropped the
+second half ("plus workspace-in-diff at review packages") without flagging
+it as a scope decision -- breaking the scorer's otherwise-consistent
+practice of flagging every scope decision explicitly. This entry appends
+the fix; the two entries above (pre-registration, prediction check) are
+unedited.
+
+**What "workspace-in-diff at review packages" means, operationalized:** a
+review package is a diff artifact following the SDD skill's own
+`review-<sha>..<sha>.diff` naming convention (matched broadly:
+`review*.diff` / `*review*.diff`, any filename shape); "workspace-in-diff"
+means the diff ITSELF names a `.superpowers/` path in one of its own
+header lines (`diff --git a/... b/...`, `--- a/...`, `+++ b/...`) -- the
+exact condition Drew Ritter's own review-prompt convention treats as an
+automatic finding (`analysis/report.md`/`cross-run-comparison.md`: "any
+workspace path (`.superpowers/**`) appearing in the review diff is an
+automatic finding").
+
+**`score_review_packages()` added to `score_e9.py`** (TDD, 1 new test in
+`test_score_e9.py`, total 7/7 passing): searches each repo's working tree
+(plain filesystem walk excluding `.git/` -- how a review package left in
+the normally-gitignored `.superpowers/sdd/<plan>/` workspace is found at
+all) and git history (`git log --all --diff-filter=A --name-only`,
+UNrestricted by the `.superpowers` pathspec this time since a review
+package need not live under it -- filtered client-side by filename
+instead). Content is read ONLY to extract diff HEADER lines -- never a
+hunk (`@@`) or content (`+`/`-`) line -- via a regex that matches
+exclusively `diff --git `/`--- `/`+++ `-prefixed lines; historical blobs
+are read via `git show <commit>:<path>` (still read-only, no checkout).
+The new test's synthetic diff's hunk-body placeholder line is deliberately
+named `HUNK_BODY_MUST_NEVER_BE_READ_FOR_PATH_EXTRACTION` so a
+header/body-boundary regression would be obvious, not silent.
+
+**Both corpora genuinely searched, both SCORED ZERO -- a census result,
+not an omission, matching the fix instruction's explicit requirement:**
+
+- **Drew's fractals corpus (4 repos, working tree + all-refs history):
+  0 review-package artifacts found.** Consistent with, not contradicted
+  by, his own materials -- his review-diff artifacts live in a separate
+  `analysis/` directory tree outside these four product-code repos
+  entirely, so there is nothing under any of their own git histories to
+  find.
+- **Our own battery corpus (14 real repos, working tree + all-refs
+  history): 0 review-package artifacts found.** The `cx-sdd-small`
+  fixture's 3-task plan does not appear to have produced a fix-round
+  review loop (and its `review-<sha>..<sha>.diff` artifact) inside any of
+  the 14 scored workdirs -- unlike this very campaign's own SDD workspace
+  (`.superpowers/sdd/2026-07-28-codex-efficiency-evals/`), which genuinely
+  does contain multiple such files (visible in `task-e8-report.md`'s
+  directory listing), confirming the naming convention and detection
+  pattern are correct against a real example -- just not one inside either
+  corpus E9 scores.
+- **No workspace-in-diff artifact found anywhere** -- there is nothing to
+  flag, because there is no review-package artifact of any kind in either
+  corpus to inspect. The detection logic itself is verified only against
+  `test_score_e9.py`'s synthetic fixture (a fake `review-abc123..def456.diff`
+  whose header names `.superpowers/sdd/task-1-report.md`, correctly
+  flagged `workspace_in_diff=True` with exactly that one path extracted)
+  -- flagged in `out/e9-report.md` Concerns as a real (not just
+  theoretical) gap: the extraction logic has not been checked against any
+  real leaked review diff, because none exists in the data available to
+  this task.
+
+**Read-only preserved.** Every scored repo's `git status --porcelain` was
+diffed before/after this pass too (both corpora, all reps): identical in
+every case, same as the original E9 pass. `FORCE=1` re-run to regenerate
+`out/e9-battery.json` (force-added, tracked) and `out/e9-drew.json`
+(regenerated on disk, still deliberately left untracked -- same rationale
+as before: real absolute paths into an external/private corpus).
+
+`python3 test_score_e9.py`: 7/7 pass. `python3 test_rollout_parser.py`:
+10/10 pass (unchanged). `python3 test_score_e1.py`: 6/6 pass (no
+regression).
+
+**No budget spent** (MINE tier, existing corpora only, no quorum/Codex
+runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
