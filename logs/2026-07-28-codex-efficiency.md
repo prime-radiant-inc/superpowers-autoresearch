@@ -1326,3 +1326,17 @@ full report committed as docs/2026-07-29-codex-multiagent-v2-capabilities.md.
   trap (effort resets to model default, sol->low).
 - codex-tools.md (spinout branch) has five source-contradicted claims,
   enumerated in the doc — fix-cycle input.
+
+## 2026-07-29 — Live probe: V2 spawn allowlist confirmed with codex children (controller entry)
+
+5 codex exec probes (CLI 0.146.0, container, scratch homes; report in session scratchpad).
+- sol controller: spawn model=terra OK (child ran terra); model=luna and model=gpt-5.5 both
+  rejected verbatim "Unknown model `X` for spawn_agent. Available models: gpt-5.6-sol,
+  gpt-5.6-terra"; model omitted inherits sol.
+- Collaboration tools ARE present in codex exec mode (all 5 sessions) — E2 micro's 0/20
+  spawn result is a genuine elicitation finding, not a tool-availability artifact.
+- SURPRISE: Jesse's host ~/.codex/config.toml sets [features.multi_agent_v2] enabled=true,
+  which OVERRIDES the model preset default (config/mod.rs multi_agent_version_override).
+  So even a luna controller runs V2 under this config — luna gets V2's tool surface and
+  cannot spawn any child (incl. itself; allowlist is sol/terra). True V1 behavior needs
+  -c features.multi_agent_v2=false (not probed; budget 5 runs).
