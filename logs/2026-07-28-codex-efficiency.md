@@ -1043,3 +1043,77 @@ regression).
 
 **No budget spent** (MINE tier, existing corpora only, no quorum/Codex
 runs). Sub `used_percent` and $ cost: not applicable, no ledger row added.
+
+### 2026-07-29 — E2-MICRO PRE-REGISTRATION: reviewer non-delegation phrasing sweep (Task 7)
+
+Registered before `reviewer-recursion-micro.py` runs, per the campaign's
+pre-registration discipline. E2's own baseline entry above (registered
+2026-07-28) predicts a dispatched branch reviewer produces >=1 descendant
+in >=half of reps at FULL scale; this MICRO is the cheap first probe at a
+fix, per the spec's MINE -> MICRO -> FULL tier plan for E2. It does not
+attempt to reproduce the FULL-scale baseline pathology itself (a single
+task-scoped review, not a whole-branch review over a long session) — see
+the scoring-nuance caveat below.
+
+**Design:** four variants, holding a fixed review task (a real 60-line
+diff, `campaigns/codex-efficiency/fixtures/review-micro/`, containing one
+seeded off-by-one loop-bound bug in `moving_average` that the fixture's
+own shipped tests do not catch — verified by hand: all 6 shipped tests
+pass against the buggy implementation) constant and varying only the
+dispatch prompt's delegation guidance:
+
+- **Z-null** — a bare review request, no SDD template, no delegation
+  guidance either way (negative control).
+- **A-control** — the current `dev`-arm
+  `subagent-driven-development/task-reviewer-prompt.md` template,
+  verbatim (the exact text Finding 2 was raised against), with this
+  fixture's placeholders filled in. This template currently says nothing
+  about delegation in either direction.
+- **B-contract** — A + an explicit personal-performance contract:
+  "You personally perform this review. Do not spawn, delegate to, or
+  wait on any other agent; produce findings directly."
+- **C-budget** — A + a hard numeric budget framed as a protocol
+  violation: "Hard budget: 0 subagents. Any delegation is a protocol
+  violation reported as failure."
+
+REPS=5 per variant (20 single-turn `codex exec` samples total), cached
+per (variant, rep). Scored two ways: `len(extract_spawns(rollout)) > 0`
+(does the reviewer delegate at all) and whether the seeded bug is named
+in the answer file (a regex over the bug's identifying tokens, findings-
+quality guard — cross-checked by a full manual read of every answer file
+before the regex count is trusted, not just the 3-per-variant sample the
+written report quotes from).
+
+**Prediction:**
+
+- **Z-null and A-control may spawn in some reps** — neither variant tells
+  the reviewer not to delegate, and A-control is the literal template
+  Finding 2 was raised against, so if the underlying pathology exists at
+  all at this task-scoped (not whole-branch) scale, it should show up
+  here first, not be fully suppressed.
+- **B-contract and C-budget spawn in zero reps** — both variants add an
+  explicit, unambiguous prohibition on delegation to the same base
+  template; if phrasing is the lever, an explicit contract should drive
+  spawn incidence to zero.
+- **Bug-found rate is comparable across all four variants** — the
+  question this micro is built to answer is whether suppressing
+  delegation costs findings quality. The prediction is that it does not:
+  a competent reviewer catches this diff-visible, docstring-contradicting
+  off-by-one whether or not it delegates.
+
+**Scoring-nuance caveat, registered up front (per the task instruction,
+citing E1's own experience):** fresh, single-turn `codex exec` sessions
+rarely delegate at all, independent of phrasing — E1's baseline SDD
+battery spawned readily, but every one of those spawns came from a
+long-lived, skill-primed controller session running a multi-task plan,
+not a single fresh `codex exec` call. If ALL FOUR variants (including
+Z-null) show zero spawns, that is an **inconclusive-by-zero** result for
+this MICRO, not a confirmation that any phrasing "works" — it would mean
+this rig's single-turn task-scoped shape doesn't elicit the pathology at
+all, and the FULL scenario (Task 8: one branch review dispatched over a
+prepared moderately-complex branch, matching the spec's E2 FULL tier)
+carries the real baseline question. This MICRO's result will be reported
+honestly either way, including a zero-across-the-board outcome.
+
+**No run yet — this is the pre-registration.** Battery and verdict follow
+in a separate log entry once `out/e2-micro.md` exists.
