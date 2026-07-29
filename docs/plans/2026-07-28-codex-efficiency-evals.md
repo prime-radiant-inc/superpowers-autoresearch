@@ -561,3 +561,52 @@ In-container: `codex exec --help` and Codex config docs (`codex config --help` /
 - Known deviations from spec text: none material. Spec's "MICRO for E2" is a codex-exec micro (Task 7) not an Anthropic-API micro — matches spec intent (observe real spawn behavior).
 - Type consistency: `Spawn`, `ExecCmd`, `SessionMetrics`, `child_links` signatures used identically across Tasks 2–12.
 - Open risk carried: `quorum run` scenario-path visibility inside the container (Task 5 Step 3 carries the rsync fallback); compaction forcing (Task 9 Step 1 is explicitly exploratory with fallback).
+
+---
+
+## Amendment 1 (2026-07-28, post-Task-6, Jesse-approved)
+
+Three scope changes, each grounded in evidence that arrived mid-campaign:
+
+### Task 6b: Container Codex CLI upgrade + E1 axis-A re-test
+
+The eval container pins `@openai/codex@0.144.4`; the field (audit corpus, Drew's
+runs) is on 0.146, and the spinout branch's `model`/`reasoning_effort` spawn
+params require ≥0.145. Every remaining Codex battery must run on the field
+version. Steps: bump the version in `evals/container/Dockerfile` (local change
+in the evals checkout; do not push), `scripts/evals-container build` + re-up,
+verify `session_meta.cli_version` ≥0.145 in a fresh run, then re-run E1: 2
+baseline reps on dev (does fork_turns stay 100% "none" at 0.146? — CLI version
+is now a registered confound for the Task 6 baseline result) + 4 treatment reps
+on spinout scored on axis A. Budget ≈ $32.
+
+### Tasks E7–E9: Drew-derived MINE-tier scorers (no new run spend)
+
+- **E7 wait-polling**: parser gains wait-call outcome pairing (call → its
+  function_call_output; timeout detection from output text); scorer reports
+  poll counts, timeout rate, inter-poll interval. Pre-registered priors from
+  Drew: 78% timeout rate on the stress run's 805 polls; audit: 788/1058 on one
+  root.
+- **E8 close_agent hygiene**: per-controller census of spawned vs closed
+  children (close_agent calls; also followup/interrupt). Priors: Drew sol
+  0/86 closed; codex-5.5 18/18.
+- **E9 workspace leaks**: scorer over run workdir git history — any
+  `.superpowers/sdd/` path ever committed (git log --all --diff-filter=A),
+  plus workspace-in-diff at review packages. Priors: 3 leak runs in Drew's
+  fractals set.
+
+Each scores three corpora: Drew's (external), the audit corpus, our battery
+runs. Validation follows the standing rules (manual inspection before verdicts).
+
+### Task: Drew-corpus cross-validation and evidence ingestion
+
+Run rollout_parser + E1/E2 scorers over Drew's Codex rollouts
+(`/Users/jesse/git/superpowers/_tmp/drew-sdd-head-to-head-2026-07-27`,
+external, never committed); reconcile against his script-emitted metrics;
+register his treatment-arm evidence (103/103 dispatch tuples at 0.146,
+reviewer no-recursion 0/53, compaction hook 18/18 with compliant-controller
+caveat) in the hypothesis log as external evidence with provenance.
+
+Ordering: 6b first (container down for rebuild blocks all quorum work), then
+Drew cross-validation, then E7–E9, then resume the original sequence at Task 7
+(E2 micro).
