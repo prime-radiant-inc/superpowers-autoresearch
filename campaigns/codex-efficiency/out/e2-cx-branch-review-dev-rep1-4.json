@@ -1,0 +1,149 @@
+{
+  "label": "cx-branch-review-dev-rep1-4",
+  "runs": [
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep1/cx-branch-review-codex-codex_sub-linux-20260729T095026Z-a829",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 1,
+      "root_rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+      "root_matches_review_request": true,
+      "rollout_count_total": 2,
+      "total_sessions": 2,
+      "max_depth": 1,
+      "spawns_by_nonroot": 0,
+      "missing_task_complete": [],
+      "n_missing_task_complete": 0,
+      "total_wait_calls": 3,
+      "root_wait_calls": 3,
+      "orphan_rollouts": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 3
+        },
+        {
+          "rollout": "rollout-2026-07-29T09-51-34-019fad49-5f2e-7413-85f1-a27af2d34b3a.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0
+        }
+      ]
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep2/cx-branch-review-codex-codex_sub-linux-20260729T095435Z-5ce7",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 2,
+      "root_rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+      "root_matches_review_request": true,
+      "rollout_count_total": 2,
+      "total_sessions": 2,
+      "max_depth": 1,
+      "spawns_by_nonroot": 0,
+      "missing_task_complete": [],
+      "n_missing_task_complete": 0,
+      "total_wait_calls": 2,
+      "root_wait_calls": 2,
+      "orphan_rollouts": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 2
+        },
+        {
+          "rollout": "rollout-2026-07-29T09-55-38-019fad4d-180b-78e1-80f6-6230fe22b505.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0
+        }
+      ]
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 3,
+      "root_rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+      "root_matches_review_request": true,
+      "rollout_count_total": 2,
+      "total_sessions": 2,
+      "max_depth": 1,
+      "spawns_by_nonroot": 0,
+      "missing_task_complete": [],
+      "n_missing_task_complete": 0,
+      "total_wait_calls": 3,
+      "root_wait_calls": 3,
+      "orphan_rollouts": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 3
+        },
+        {
+          "rollout": "rollout-2026-07-29T10-00-43-019fad51-c001-7d60-ab1a-65ac894beb74.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0
+        }
+      ]
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep4/cx-branch-review-codex-codex_sub-linux-20260729T100350Z-3012",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 4,
+      "root_rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+      "root_matches_review_request": true,
+      "rollout_count_total": 2,
+      "total_sessions": 2,
+      "max_depth": 1,
+      "spawns_by_nonroot": 0,
+      "missing_task_complete": [],
+      "n_missing_task_complete": 0,
+      "total_wait_calls": 2,
+      "root_wait_calls": 2,
+      "orphan_rollouts": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 2
+        },
+        {
+          "rollout": "rollout-2026-07-29T10-04-59-019fad55-a6ae-7420-bf41-097bb056e761.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0
+        }
+      ]
+    }
+  ]
+}

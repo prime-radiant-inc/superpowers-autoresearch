@@ -20,6 +20,7 @@ fact.
 | 2026-07-29 | E1 treatment (spinout, cx-sdd-small, 4 reps, axis A) | $21.28 ($19.90 coding + $1.38 gauntlet) | 45.0% | 1.0% (window rollover mid-battery) |
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, baseline (dev, cx-sdd-small, rep5-6) | $7.27 ($6.64 coding + $0.63 gauntlet) | 3.0% | 3.0% |
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, treatment (spinout, cx-sdd-small, rep5-8, axis A) | $17.74 ($16.42 coding + $1.31 gauntlet) | 4.0% | 7.0% |
+| 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
 
 ## Pre-registered predictions
 
@@ -1364,3 +1365,105 @@ Arm J: sol controller, empty config, no -m flag (implicit default): spawn
 model=gpt-5.6-luna rejected byte-identically to round 1. The V2 sol/terra
 allowlist holds under all three config regimes tested; sol can never spawn
 luna children regardless of configuration.
+
+### 2026-07-29 — E2-FULL RESULT: inconclusive-by-zero (Task 8)
+
+Ran the pre-registered battery (4 reps, `dev` arm, `cx-branch-review`,
+sequential, via `run-quorum.sh dev cx-branch-review 4`) and scored all 4
+with `score_e2.py`. Full detail: `campaigns/codex-efficiency/out/e2-report.md`.
+
+**Housekeeping note, zero cost:** the first `run-quorum.sh` invocation used
+a `checks.sh` with a bug (`git-branch main` — that verb checks the
+*current* branch, not existence; the fixture deliberately leaves `feature`
+checked out at the end, so this always fails) and produced an
+`indeterminate` rep1 with `gauntlet: null` / `economics: null` — no
+Gauntlet or Codex session ever started, $0 spent. Fixed
+`checks.sh` to assert `git-branch feature` (dropping the bad `git-branch
+main` line), re-validated with `bun run quorum check`, then ran the real
+4-rep battery. The leftover indeterminate directory
+(`cx-eff-cx-branch-review-dev-rep1/..-1cc4`) was left in place, unscored.
+
+**Result: 4/4 reps show the root dispatching exactly ONE reviewer child
+(`total_sessions=2`, `max_depth=1` in every rep) — the expected, intended
+single delegation. ZERO of the 4 reviewer children themselves spawned any
+further descendant** (`spawns_by_nonroot=0` in all 4 reps) —
+**independently confirmed** by raw `grep -c '"name":"spawn_agent"'`
+against each of the 4 reviewer-child rollout files directly, bypassing
+`extract_spawns()`/`score_e2.py` entirely: 0 matches in all 4. The
+recursion pathology this experiment is built to detect never occurred
+once across the battery.
+
+**Discrimination gate, per the pre-registration's explicit operational
+definition** (`spawns_by_nonroot > 0`, equivalently `max_depth >= 2`,
+NOT counting the root's own single expected reviewer dispatch): **0/4
+reps clear the bar. This is the alternative outcome registered above —
+INCONCLUSIVE-BY-ZERO, not a pathology-absent "pass."** Per the
+pre-registration and the task instruction, no further reps were run
+chasing this shape. **E2's baseline question (does review recursion
+happen at all, absent intervention) is folded into E6's scope
+(long-history/compaction elicitation), the same terminal state as E1's
+axis B** — consistent with the corpus's own Finding 1/Finding 2
+narratives describing long-running, heavily-loaded controller sessions,
+not a single fresh interactive dispatch. `score_e2.py`'s root-identity
+assertion passed on all 4 reps (chronologically-earliest rollout's first
+instruction matched the review-request marker in all 4) — the tree this
+census is built on is the right tree; the zero result is not a
+misidentified-root artifact.
+
+**Seeded-issue recall (secondary readout, does not gate the
+discrimination verdict), read from each rep's root session
+`task_complete.last_agent_message` — the message actually relayed to the
+Gauntlet, not just the dispatched reviewer's own private findings —
+plus a check of the workdir for any left-behind report file (none found
+in any rep; findings live only in the transcript, matching
+`requesting-code-review`'s "return findings directly" convention, no
+`.superpowers/` report artifact anywhere):**
+
+- **Issue 2 (docstring/behavior mismatch, `queue.py` `peek()` raising
+  `IndexError` instead of returning `None`): 4/4 (100%).** Every rep
+  named the exact file:line, the exact contradiction (docstring +
+  `docs/DESIGN.md` promise `None`, code doesn't check for empty), and the
+  fix, and rated it "Important." This is the finding every reviewer
+  converged on independently.
+- **Issue 1 (missing edge-case test for `dequeue_batch(n)` at `n` >
+  queue length / on an empty queue): 0/4 by strict match (no rep's
+  *relayed* review named this gap at all).** One partial, not counted in
+  the 0/4: rep1's dispatched reviewer's own sub-agent transcript (not
+  relayed to the top-level summary above) included, in a Recommendations
+  section, "Add tests for `dequeue_batch(0)` ..." — an adjacent but
+  distinct boundary (n=0 on any queue, not n > queue length / empty
+  queue) from what was seeded, and never surfaced to the user-facing
+  message. **Reported honestly as a miss, not stretched into a hit** —
+  all 4 reviewers instead spent their "Important"/"Minor" budget on real,
+  independently-discovered issues never seeded here: unvalidated/
+  malformed JSON input in the CLI producing raw tracebacks (rep1, rep3,
+  rep4), non-atomic JSON persistence risking store corruption (all 4),
+  `dequeue_batch` accepting `True` as a valid batch size via Python's
+  `bool`-is-an-`int` subtyping (rep2 only — a genuine, real bug, not one
+  I planted), and missing packaging metadata for the README's `pip
+  install -e .` instruction (all 4). These are substantive, correct
+  findings — the recall miss on Issue 1 reflects reviewers doing
+  independent analysis and landing on different real gaps, not
+  perfunctory or low-effort reviews.
+
+**Other observations, not scored (E1's territory, noted for
+completeness):** all 4 root dispatches used `fork_turns:"none"`
+(isolated) with `model` omitted from the `spawn_agent` call — consistent
+with E1's baseline fork-isolation finding on this fresh-session `dev`
+arm, at a different scenario shape.
+
+**Cost:** $4.01 total (4 reps: $0.99/$0.96/$0.92/$1.14 — $3.40 coding +
+$0.61 gauntlet), materially cheaper per-rep than E1's SDD batteries
+(~$5/rep) since this is a single-turn interactive review, not a
+multi-task plan execution. Sub `used_percent` 8.0% → 9.0% (root
+rollout's last `token_count` event, rep1 vs. rep4), +1.0 point. Ledger
+row above. Codex CLI `0.146.0` confirmed on all 4 reps
+(`session_meta.cli_version`, read directly).
+
+**Verdict vs. the registered prediction: TERMINAL, inconclusive-by-zero.**
+The registered `>=1 descendant in >=half of reps` prediction cannot be
+evaluated as either confirmed or refuted — the rig never produced a
+single instance of the phenomenon it was built to measure, exactly the
+alternative outcome named in the pre-registration before this battery
+ran. E2 stops here per the discrimination rule; the long-history
+condition lives in E6.
