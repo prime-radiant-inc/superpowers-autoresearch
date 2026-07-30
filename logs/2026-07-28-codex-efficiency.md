@@ -2534,3 +2534,71 @@ precedent, not forced into a verdict).
 **Budget:** <=$30 of new runs (2 reps per probe arm max, `dev` arm only),
 against a campaign cumulative of ~$130.57 (well under the $250 checkpoint
 and the $1000 total).
+
+### 2026-07-30 — E10 MINE-tier scan: citation-integrity + free empty-child check over the existing corpus (Task 14, before any new spend)
+
+Built `score_e10.py` (TDD, `test_score_e10.py`, 27 tests) and ran it over
+every existing `cx-eff-*` battery rundir with a `coding-agent-workdir`
+(35 runs across `cx-sdd-small`/`cx-ceremony-{spike,bounded,arch}`/
+`cx-branch-review`/`cx-compaction`, dev+spinout+v611 arms combined) --
+the free check the task instructions require before any new-run spend.
+Full output: `campaigns/codex-efficiency/out/e10-battery.json`.
+
+**Real bug found and fixed via the corpus scan itself, before trusting any
+result (per the standing "validate against corpus ground truth, manually
+inspect" rule):** the first pass of `is_null_child_result()`'s
+`NULL_RESULT_RE` (`does not exist|not found|...|missing|halt...`) was
+checked as a keyword search over the ENTIRE payload regardless of length --
+it misfired on every long, substantive reviewer FINAL_ANSWER in the corpus
+that happened to discuss a "missing" file or something that "could not"
+pass as ONE finding among several hundred characters of real review prose
+(17 false positives on the first run, e.g. a `not ready to merge` review
+flagged null despite being a complete, substantive review). Fixed with a
+length gate (`NULL_RESULT_MAX_CHARS = 150` -- the pattern is now only
+checked against payloads short enough that a real "I couldn't do anything"
+halt message would actually produce), a new regression test
+(`test_long_substantive_review_mentioning_missing_is_not_null`), verified
+non-regressive against the rest of the suite (56 tests) before re-running.
+
+**(d) Citation-integrity result, MINE tier — prediction #1 (short runs
+mostly accurate) HOLDS, cleanly:** 35 runs scored, 32 with a resolvable root
+`final_answer`. 14/35 make a merge claim, 17/35 make a test-count claim
+(`N/N tests pass` / `all N tests pass`) -- **17/17 (100%) are corroborated**
+by a real test-invocation exec command found in that run's own rollout
+tree. File-creation claims: **0 found** across all 35 runs -- this
+corpus's real phrasing style (calibrated during this task's build, see
+pre-registration entry) favors bulleted feature descriptions over
+backtick-quoted "created `path`" claims, so the file-claim check is a
+genuine SCORED ZERO on this corpus, not a gap (E9's "scored zero, not an
+omission" convention). Zero unverifiable claims of any kind found. Only
+1/35 final answers mention any fail/incomplete/blocked-ish language (the
+architecture-class rep that hit a genuine plan/TDD-rule conflict and
+stopped to ask -- a legitimate use of that language, not evidence against
+the reframed prediction).
+
+**(a) Empty-child free scan — prediction confirmed, this pathology does not
+occur naturally:** 161 child->parent `FINAL_ANSWER` messages scored across
+the same 35 runs, **after the bug fix above, exactly 1 flagged** --
+`/root/task1_implementer/task1_review` in `cx-eff-cx-compaction-dev-rep3`,
+payload `"no findings"` (11 chars, under the near-empty threshold).
+**Manually inspected per the standing rule: this is judged a legitimate,
+complete review conclusion (the reviewer read the code and had nothing to
+flag), not a Finding-7-style null result** -- a real agent that fails to
+produce a result does not produce a confident one-line verdict, it
+produces silence, an error, or a budget-exhaustion cutoff. Registered here
+rather than silently reclassified: the free scan's true count of genuine
+engineered-pathology null results in the existing corpus is **0/161**,
+confirming the pre-registered prediction that probe (a) requires a fresh,
+deliberately engineered run -- proceeding to that next.
+
+**Privacy:** `out/e10-battery.json` is the first E10-family output to store
+actual claim TEXT (`final_answer_text`, `payload_preview`) rather than
+counts/structure only -- a deliberate, necessary departure from E1/E7/E8/E9's
+"never print message content" convention, because citation-integrity
+checking is the extraction of that text against reality. Justified because
+every scored run in this corpus is this campaign's own synthetic fixture
+content (a toy `strutils` CLI, synthetic ceremony/compaction specs) --
+never real client/production data. Grepped the full output before
+committing for API-key-shaped strings, email addresses, and unexpected
+absolute-path leakage beyond the already-established `rundir` convention
+(matches E1's own committed JSON shape): zero hits on all three.
