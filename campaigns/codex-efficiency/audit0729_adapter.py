@@ -54,6 +54,28 @@ If all five legs come up empty, main() reports NOT_FOUND with the exact
 evidence (paths searched, row/file counts) rather than guessing or
 falling back to Jesse's numbers as if independently verified.
 
+`SESSIONS_ROOT` is overridable via the `AUDIT0729_SESSIONS_ROOT` env var
+(fix round 2) -- additive, default unchanged (`~/.codex/sessions`) --
+so this same discovery/census code can run against a corpus rsynced
+somewhere other than the live local `~/.codex` (e.g.
+`/Users/jesse/git/superpowers/_tmp/audit0729/sessions/`, preserving the
+`YYYY/MM/DD/*.jsonl` layout the discovery legs expect). `archived_sessions`
+and the state DB are NOT overridden by this var -- they're specific to
+*this* machine's local Codex install and aren't part of a rsynced
+rollout set.
+
+`_pick_root(disc)` (fix round 2) picks the root rollout FILE PATH to
+hand to `run_census()` from whichever leg(s) actually produced a hit --
+covers every file-producing leg `found()` ORs in (1-2, 3, 4), in the
+same priority order `found()` implicitly checks them. `spawn_edge_rows`
+(leg 5) is deliberately excluded from the fallback chain: a DB row is a
+`(parent_thread_id, child_thread_id, status)` tuple, not a file path, so
+it cannot seed a census on its own -- `_pick_root` returns `None` in
+that DB-only case and `main()` reports it distinctly rather than
+crashing (an earlier draft's fallback chain only checked 3 of the 5
+legs and raised `IndexError` if the root was found solely via the
+`archived_sessions` legs added in fix round 1 -- fixed here).
+
 If the root IS found (e.g. on a future rerun, or in an environment where
 the corpus wasn't pruned), build_tree() walks the resolved tree and each
 node is censused with ALREADY-TRUSTED functions only:
@@ -95,7 +117,9 @@ import score_e7 as e7
 import score_e8 as e8
 
 DEFAULT_ROOT_ID = "019faf59-3a06-7f40-87e0-c8c84a5729ae"
-SESSIONS_ROOT = os.path.expanduser("~/.codex/sessions")
+# Overridable (fix round 2) so this file can be pointed at a corpus
+# rsynced elsewhere -- see module docstring. Default unchanged.
+SESSIONS_ROOT = os.environ.get("AUDIT0729_SESSIONS_ROOT") or os.path.expanduser("~/.codex/sessions")
 ARCHIVED_SESSIONS_ROOT = os.path.expanduser("~/.codex/archived_sessions")
 STATE_DB = os.path.expanduser("~/.codex/state_5.sqlite")
 # Audit date +/- 1 day, per the task brief's "same date dir or adjacent".
@@ -226,6 +250,32 @@ def found(disc):
                 or disc["spawn_edge_rows"])
 
 
+# Priority order for _pick_root(): every disc[] key that can hold a FILE
+# PATH, in the same legs-1-2-3-4 order the module docstring lists them.
+# "spawn_edge_rows" (leg 5) is deliberately excluded -- see _pick_root()'s
+# docstring.
+_ROOT_PATH_LEGS = ("filename_hits", "full_tree_filename_hits", "content_hits",
+                    "archived_filename_hits", "archived_content_hits")
+
+
+def _pick_root(disc):
+    """Choose a root rollout FILE PATH from whichever leg(s) actually
+    produced one. Covers every leg found() ORs in that can hold a file
+    path (fix round 2 -- an earlier draft's inline fallback chain in
+    main() only checked 3 of the 5 legs and raised IndexError if the
+    root was found solely via the archived_sessions legs). Returns None
+    if found() is True only because of a DB-only thread_spawn_edges
+    match with no backing file in any searched location -- a
+    (parent_thread_id, child_thread_id, status) DB row is not a file
+    path and cannot seed a census by itself; callers must handle that
+    case separately (see main())."""
+    for leg in _ROOT_PATH_LEGS:
+        hits = disc.get(leg) or []
+        if hits:
+            return hits[0]
+    return None
+
+
 # --- census (only reached if discovery succeeds; reuses trusted funcs) ----
 
 def classify_role(path):
@@ -325,10 +375,15 @@ def main(argv):
               "root_id. See legs 1-5 evidence above. No census performed.")
         return 1
 
+    root_path = _pick_root(disc)
+    if root_path is None:
+        print("RESULT: FOUND (thread_spawn_edges only) -- a DB row names "
+              "this root_id, but no leg found a backing rollout file "
+              "anywhere searched, so there is nothing to build a census "
+              "from. No census performed.")
+        return 1
+
     print("RESULT: FOUND -- proceeding to census.")
-    root_path = disc["filename_hits"][0] if disc["filename_hits"] else (
-        disc["full_tree_filename_hits"][0] if disc["full_tree_filename_hits"] else
-        disc["content_hits"][0])
     nodes, censused = run_census(root_path, disc)
     print(f"tree sessions: {len(nodes)}")
     total_waits = sum(c["n_wait_agent"] for c in censused.values())
