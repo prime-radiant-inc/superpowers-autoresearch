@@ -3982,3 +3982,14 @@ plus per-subtree greps of Drew's corpus to establish which run each string
 belongs to — a stricter check than the review's, and it is what turned up
 the string-1-vs-string-2 asymmetry. This entry swept substring-aware
 against both needle sets before commit: zero hits.
+
+## 2026-07-30 — Pre-publication redaction pass (controller entry)
+
+Jesse authorized publishing this repo. Per his rulings: machine hostnames
+replaced with remote-host-{a..g} labels and ticket-ID references generalized,
+across all tracked files, the full branch history, and commit messages
+(git filter-repo, branch-scoped); the one private-corpus task_name that had
+been embedded in six historical commit trees was scrubbed from history in the
+same pass. Client-project codenames retained per Jesse's ruling. Verification:
+per-string sweeps show zero occurrences on the published branch (files and
+history); scorer suite green post-rewrite (273 tests).
