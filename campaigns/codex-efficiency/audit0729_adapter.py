@@ -10,10 +10,11 @@ Corpus (read-only, external, private, NEVER committed):
     (fetched read-only via rsync to a local, gitignored scratch dir,
     never committed) + its 13-descendant tree -- see
     logs/2026-07-28-codex-efficiency.md, "EXTERNAL EVIDENCE: Jesse's
-    audit of the 07-29 fallback session". ROOT_ID is cited here only
-    because it already appears in the committed plan doc
-    (docs/plans/2026-07-28-codex-efficiency-evals.md, Amendment 3) --
-    not audited-project content.
+    audit of the 07-29 fallback session". ROOT_ID is the corrected value
+    Jesse independently confirmed (see the log's reconciliation entry,
+    "RESOLVED: 07-29 session reconciled") -- session UUIDs are treated
+    as non-sensitive operational metadata throughout this campaign, not
+    audited-project content.
 
     CITATION-INTEGRITY FINDING (reconciliation round 3): the audit's OWN
     two evidence citations -- `...T11-36-36-019faf59-3a06-...` (the
