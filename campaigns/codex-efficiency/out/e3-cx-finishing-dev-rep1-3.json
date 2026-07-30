@@ -1,0 +1,140 @@
+{
+  "label": "cx-finishing-dev-rep1-3",
+  "runs": [
+    {
+      "label": "cx-finishing-dev-rep1",
+      "rollout_count": 1,
+      "n_test_occurrences": 3,
+      "n_mutation_events": 1,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-30T09:16:30.667Z",
+            "rollout": "rollout-2026-07-30T09-15-20-019fb24e-8d5b-76b1-bcc1-80cb5df9aedb.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T09:17:15.160Z",
+            "rollout": "rollout-2026-07-30T09-15-20-019fb24e-8d5b-76b1-bcc1-80cb5df9aedb.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T09-15-20-019fb24e-8d5b-76b1-bcc1-80cb5df9aedb.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-dev-rep1/cx-finishing-codex-codex_sub-linux-20260730T091459Z-b482",
+      "arm_scenario": "cx-finishing-dev",
+      "rep": 1
+    },
+    {
+      "label": "cx-finishing-dev-rep2",
+      "rollout_count": 1,
+      "n_test_occurrences": 3,
+      "n_mutation_events": 1,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-30T09:16:07.777Z",
+            "rollout": "rollout-2026-07-30T09-15-21-019fb24e-91d6-7630-8d58-1bf668796ebc.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T09:17:31.453Z",
+            "rollout": "rollout-2026-07-30T09-15-21-019fb24e-91d6-7630-8d58-1bf668796ebc.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T09-15-21-019fb24e-91d6-7630-8d58-1bf668796ebc.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-dev-rep2/cx-finishing-codex-codex_sub-linux-20260730T091459Z-c135",
+      "arm_scenario": "cx-finishing-dev",
+      "rep": 2
+    },
+    {
+      "label": "cx-finishing-dev-rep3",
+      "rollout_count": 1,
+      "n_test_occurrences": 4,
+      "n_mutation_events": 3,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd3",
+          "first": {
+            "timestamp": "2026-07-30T09:19:52.544Z",
+            "rollout": "rollout-2026-07-30T09-18-50-019fb251-c3f4-7e13-9e68-c9f536620bfb.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T09:21:46.829Z",
+            "rollout": "rollout-2026-07-30T09-18-50-019fb251-c3f4-7e13-9e68-c9f536620bfb.jsonl"
+          },
+          "mutations_between": 3,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T09-18-50-019fb251-c3f4-7e13-9e68-c9f536620bfb.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-dev-rep3/cx-finishing-codex-codex_sub-linux-20260730T091840Z-7080",
+      "arm_scenario": "cx-finishing-dev",
+      "rep": 3
+    }
+  ]
+}
