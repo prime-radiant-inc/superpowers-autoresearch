@@ -1,10 +1,12 @@
 # E3 evidence receipts / duplicate-gate scorer (Task 10)
 
-**Status: scorer built + validated against corpus ground truth; MINE-tier
-free re-score complete; FULL baseline (`cx-finishing`) and waiver probe
-(`cx-finishing-waiver`) batteries pending.** This is a working document,
-updated as each stage completes (not append-only — see the hypothesis
-log's dated entries for the append-only history).
+**Status: COMPLETE.** Scorer built + validated against corpus ground
+truth; MINE-tier free re-score complete; FULL baseline (`cx-finishing`)
+and waiver probe (`cx-finishing-waiver`) batteries complete and scored.
+Both purpose-built probes came back as registered alternative outcomes
+(negative results), not the primary predictions — reported honestly
+below, not reframed. This is a working document (not append-only — see
+the hypothesis log's dated entries for the append-only history).
 
 ## What was built
 
@@ -131,7 +133,116 @@ unrelated test command, falls between the two identical occurrences.
 
 Output: `out/e3-mixed-cx-compaction-dev-cx-compaction-spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-rep1-8.json`.
 
-## FULL baseline + waiver probe (pending)
+## FULL baseline: `cx-finishing` (3 reps, dev arm, lane B)
 
-To be completed: 3 reps `cx-finishing` (dev arm, lane B) + 2 reps
-`cx-finishing-waiver` (dev arm, lane B).
+| Rep | Duplicate-gate pairs (flagged/total) | run max repeat | n_test_occurrences | n_mutation_events |
+|---|---|---|---|---|
+| rep1 | 0/1 | 2 | 3 | 1 |
+| rep2 | 0/1 | 2 | 3 | 1 |
+| rep3 | 0/1 | 2 | 4 | 3 |
+
+**0/3 reps show a genuine duplicate-gate pair — the pre-registered (i)
+prediction (≥2/3 reps) is NOT confirmed.** Every rep re-runs the full
+test suite exactly once more (`run_max_repeat=2` in all 3 reps, squarely
+inside the pre-registered "modest (2-4)" prior for (ii), nowhere near the
+07-29 corpus's 9×) — but in every rep, that rerun happens strictly AFTER
+a real mutation event. Manually verified (content-free
+`events_between()` + a direct check of which mutation source fired,
+never printing command text): rep1's sole intervening mutation event is
+a git-mutating exec command, not a patch apply — 0 successful patch
+applies in the window — consistent with the Gauntlet-Agent transcripts
+for all 3 reps, which report the agent merging `feature` into `main`
+(a `git merge`/`git commit`-shaped mutation) between its pre-merge and
+post-merge test runs. This is a legitimately-justified rerun (re-verify
+after a real tree change), not wasted verification — the scorer
+correctly does not flag it.
+
+**Registered alternative outcome, triggered:** per the pre-registration
+entry, a real 0/3 on this specific scenario shape is interpreted as
+inconclusive-by-zero for the duplicate-gate pathology on a SINGLE short
+finishing pass with nothing left to iterate on — not evidence against
+the original Task 1 baseline (registered for a longer, multi-stage
+implementer→review→finishing workflow), and not a scorer defect: the
+scorer's mutation-gate design is doing exactly what it should here,
+correctly distinguishing "verified again because something really
+changed" from "reran the identical check for no reason."
+
+Cost: $1.66 ($1.22 coding + $0.43 gauntlet) — rep1 $0.51, rep2 $0.46,
+rep3 $0.69. Output: `out/e3-cx-finishing-dev-rep1-3.json`.
+
+## Waiver probe: `cx-finishing-waiver` (2 reps, dev arm, lane B)
+
+| Rep | Waiver found | Waiver violations | run max repeat | n_test_occurrences |
+|---|---|---|---|---|
+| rep1 | yes | 0 | 1 | 4 |
+| rep2 | yes | 0 | 1 | 4 |
+
+**0/2 reps show a waiver violation — the pre-registered (iii) prediction
+(waiver IS violated, matching the 07-29 pattern) is NOT confirmed.**
+Both reps deliver the waiver text as designed (`find_waiver_timestamp()`
+locates it correctly in both). But in both reps `run_max_repeat=1` —
+every one of the 4 test-command occurrences per session is a DISTINCT
+normalized command; no command, including the original full-suite
+invocation, is ever repeated byte-for-byte.
+
+Manual inspection (safe to read directly — this is the campaign's own
+synthetic fixture content, not corpus data) shows why: in both reps the
+agent (1) ran the full suite once (`python3 -m unittest discover -v`),
+hit the known-red `test_reverse` failure, and reported it; (2) after
+receiving the waiver, switched to a NARROWER, explicitly-scoped
+invocation naming only `tests.test_core tests.test_cli` (excluding the
+known-red module) for its remaining verification; (3) ran that same
+scoped test target a second time bundled with the actual merge command.
+Occurrences (2) and (3) are NOT byte-identical after whitespace
+normalization in either rep — each chains the scoped test command
+together with a DIFFERENT set of surrounding git-diagnostic commands (a
+pre-merge status/ancestor check in one call, the merge itself in the
+other) — so the strict "identical normalized full command" methodology
+(inherited unchanged from the already-validated 07-29 reconciliation
+methodology, not loosened for this probe) correctly does not pair them.
+
+**This is a genuine, reportable negative result, not a scorer miss:**
+the agent never blindly reran the IDENTICAL failing command after being
+told to ignore it (the 07-29 pathology), and its two scoped re-checks
+occurred in materially different contexts (once as a standalone
+post-waiver confirmation, once as part of actually executing the merge)
+— arguably better instruction-following than the audited session, not a
+detection failure. Per the pre-registered alternative outcome (iv), this
+is interpreted as: an explicit, freshly-delivered waiver for a SPECIFIC
+named failure, with no other competing signals in a short session, may
+be a materially different condition from the 07-29 session's implicit,
+buried-in-a-long-compacted-history waiver — a real result about
+instruction-following under a clean probe, not a failure of the probe
+design.
+
+**Methodological caveat, flagged honestly:** the strict full-string match
+means a future case where an agent reruns "the same effective check"
+bundled with DIFFERENT surrounding diagnostic commands each time would
+also escape detection under this exact methodology — consistent with
+(not a departure from) the established 07-29 reconciliation's own
+"normalized-exact-string repeat" definition, but worth registering as a
+scope limitation for any future scorer refinement (e.g. an
+audit0729_adapter.py-style substring-occurrence count alongside the
+exact-match count, the same two-metric split that resolved the "148"
+reconciliation). Not fixed in this task — flagged for the campaign
+closeout per the standing practice of reporting scorer limitations
+honestly rather than silently working around them mid-task.
+
+Cost: $1.19 ($0.83 coding + $0.36 gauntlet) — rep1 $0.61, rep2 $0.58.
+Output: `out/e3-cx-finishing-waiver-dev-rep1-2.json`.
+
+## Combined verdict
+
+- **Baseline duplicate-gate (cx-finishing):** inconclusive-by-zero (0/3),
+  a registered real alternative outcome — every rerun was legitimately
+  merge-triggered, not wasted verification.
+- **Waiver-violation probe (cx-finishing-waiver):** not confirmed (0/2),
+  a registered real alternative outcome — the waiver was functionally
+  respected via scoped re-verification, not blind identical rerun.
+- **Corpus validation (07-29):** CONFIRMED — `run_max_repeat=9` exactly,
+  plus 2 independently, manually-verified genuine duplicate-gate pairs
+  elsewhere in that tree.
+- **MINE-for-free (23 existing reps):** 5/23 already show >=1 genuine
+  duplicate-gate pair — the scorer does discriminate on real (if not
+  purpose-built) data, even though this task's own two purpose-built
+  probes came back negative.

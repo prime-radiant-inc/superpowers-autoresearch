@@ -1,0 +1,67 @@
+{
+  "label": "cx-finishing-waiver-dev-rep1-2",
+  "runs": [
+    {
+      "label": "cx-finishing-waiver-dev-rep1",
+      "rollout_count": 1,
+      "n_test_occurrences": 4,
+      "n_mutation_events": 2,
+      "duplicate_gate_pairs": [],
+      "n_duplicate_gate_pairs": 0,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T10-46-43-019fb2a2-369a-7341-bb73-3f2e802ec7c5.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 1,
+      "repeat_distribution": [
+        1
+      ],
+      "waiver": {
+        "marker_configured": true,
+        "found": true,
+        "timestamp": "2026-07-30T10:48:20.305Z",
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-waiver-dev-rep1/cx-finishing-waiver-codex-codex_sub-linux-20260730T104635Z-f26b",
+      "arm_scenario": "cx-finishing-waiver-dev",
+      "rep": 1
+    },
+    {
+      "label": "cx-finishing-waiver-dev-rep2",
+      "rollout_count": 1,
+      "n_test_occurrences": 4,
+      "n_mutation_events": 2,
+      "duplicate_gate_pairs": [],
+      "n_duplicate_gate_pairs": 0,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T10-46-44-019fb2a2-3d33-7c73-853e-a19c98f43fa8.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 1,
+      "repeat_distribution": [
+        1
+      ],
+      "waiver": {
+        "marker_configured": true,
+        "found": true,
+        "timestamp": "2026-07-30T10:48:20.207Z",
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-waiver-dev-rep2/cx-finishing-waiver-codex-codex_sub-linux-20260730T104635Z-7e8c",
+      "arm_scenario": "cx-finishing-waiver-dev",
+      "rep": 2
+    }
+  ]
+}
