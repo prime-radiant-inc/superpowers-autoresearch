@@ -135,3 +135,95 @@ drew-cross-validation.md` (reconciliation against Drew's script-emitted
 metrics, schema findings, what this corpus adds as treatment-arm
 evidence); registered as external evidence in
 `logs/2026-07-28-codex-efficiency.md`.
+
+## E6 compaction forcing (Task 9 Step 1)
+
+**Chosen mechanism: the `model_auto_compact_token_limit` config knob
+(preferred, deterministic) — not the padding-file fallback.**
+
+Source recon against `~/git/agent-harnesses/codex` (codex-rs, read-only):
+`core/src/config/mod.rs` declares `model_context_window: Option<i64>` and
+`model_auto_compact_token_limit: Option<i64>` as top-level `Config` fields
+(`config.schema.json` confirms both are root-level TOML keys, not nested
+under a table). `core/src/session/context_window.rs::context_window_token_status()`
+forces compaction (`token_limit_reached = true`) once
+`auto_compact_scope_tokens >= model_auto_compact_token_limit` (default
+scope `Total`: the session's full active context) OR
+`active_context_tokens >= model_context_window` (the hard model cap).
+Setting `model_auto_compact_token_limit` low is therefore a genuine Codex
+config field doing exactly what we want, not a rig hack — confirmed
+directly against the merge point in `session.rs`/`context_window.rs`, not
+inferred from behavior alone.
+
+**Verified working, 2 adhoc calibration runs (in-container, throwaway
+`CODEX_HOME` + workdir under `evals/results/.e6-calibration/`, gitignored,
+not committed), both 100% reliable:**
+
+1. `codex exec -c model_auto_compact_token_limit=30000` against 2×200KB
+   synthetic padding files (read-then-summarize prompt): 1 compaction
+   fired at line 28 of a 45-line rollout (`rollout_parser.parse_session().
+   compactions == 1`, matching the `context_compacted` marker count
+   exactly — no double-count from the paired bare `compacted` record).
+2. The SAME knob set via a prepended `config.toml` line (not `-c`) —
+   the actual mechanism the real scenario uses, since quorum's codex
+   launcher takes no extra CLI flags — also fired reliably (2 compactions
+   in that run's 48-line rollout; confirmed both via the CLI's own visible
+   "context compacted" output and independently via
+   `rollout_parser.parse_session()`).
+
+**Delivery mechanism for the real scenario:** `scenarios/cx-compaction/
+setup.sh` prepends `model_auto_compact_token_limit = <N>` (env-overridable,
+default 40000) to the codex-agent's already-provisioned `config.toml`
+BEFORE the coding agent launches. This works because (verified directly
+against `evals/src/agents/codex.ts` + `evals/src/runner/index.ts`):
+`CodexAgent.provision()` writes a plugins-only `config.toml` to
+`<runDir>/home/.codex/config.toml` and runs strictly BEFORE `runSetup()`
+(`setup.sh`) — so by the time `setup.sh` executes, the file already
+exists at a path computable from `$QUORUM_WORKDIR`
+(`<runDir>/coding-agent-workdir`) as `$(dirname
+"$QUORUM_WORKDIR")/home/.codex/config.toml`. The new key MUST be
+prepended, not appended: TOML keys after a `[section]` header belong to
+that table, not the document root, and the provisioned file already has
+`[features]`/`[plugins."superpowers@debug"]` tables.
+
+**Threshold choice (40000), not a guess:** Task 6's real dev-rep root
+rollout (`cx-eff-cx-sdd-small-dev-rep1`) has a `token_count` event curve
+that climbs ~20K tokens (turn 1, system prompt + tool defs) → ~34K (turn
+3) → a slow, roughly monotonic climb to a 60,422-token peak by turn 66 of
+a 302-line session. 40,000 lands ~25-30% into that curve: past the
+controller's own initial skill reads and first subagent dispatch (real
+"pre-compaction" activity to compare), with most of a typical run's turns
+still ahead (real "post-compaction" activity too). A real cx-compaction
+session will grow differently (compaction adds recovery turns; the knob
+changes behavior, not just counting) — if the baseline battery shows 0 or
+all-immediate compactions, `out/e6-report.md` reports that honestly
+rather than re-tuning the threshold after the fact to manufacture a
+result.
+
+**Scenario reuses `cx-sdd-small`'s exact plan/spec fixture** (copied to
+`fixtures/compaction/`, per `run-quorum.sh`'s per-scenario fixture-merge
+convention) and its Gauntlet prompt verbatim — the only difference from
+`cx-sdd-small` is `setup.sh`'s config-knob injection and a longer
+`quorum_max_time` (30m, generous headroom for compaction-recovery turns).
+`checks.sh` is deliberately minimal (`git-repo`/`file-exists` pre,
+rollout `file-exists` post only) — no `tool-called Agent` or skill-read
+check, per the E2/E4 scenario-authoring lesson already in the ledger: a
+post-check must not assert a behavioral choice the experiment itself
+measures.
+
+**Treatment mechanism (why baseline=dev, treatment=spinout):** the
+spinout branch ships a real Codex `SessionStart` hook
+(`hooks/hooks-codex.json`, matcher `"compact"` → `hooks/session-start-codex`)
+that dev does NOT have at all (dev's `hooks.json` has no codex-specific
+hooks). Codex re-fires `SessionStart` with `source:"compact"` after every
+compaction (documented in the hook's own header comment, verified on
+codex-cli 0.145.0); the hook re-injects the full `using-superpowers`
+bootstrap and explicitly instructs: "Re-read the SKILL.md of any skill you
+are mid-way through executing. If you are executing
+subagent-driven-development, re-read
+skills/subagent-driven-development/SKILL.md... also re-read
+skills/using-superpowers/references/codex-tools.md and follow its
+dispatch rules on every spawn_agent call." This is the literal, concrete
+mechanism E6's axis-B/bootstrap-retention question (b) is designed to
+detect the presence or absence of — dev has no such recovery path, spinout
+does.
