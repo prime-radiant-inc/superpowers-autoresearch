@@ -2261,3 +2261,120 @@ baseline lands if BOTH clauses hold (>=1 re-read AND >=1 degraded
 post-compaction spawn). (i)-(iii) above sharpen what "degraded" and
 "pathology" mean and register the alternative outcome in advance so a
 null result is reported as a real finding, not quietly reframed.
+
+### 2026-07-30 — E6 RESULT: compaction recovery — split verdict, same character as E1's axis split (Task 9)
+
+Ran the pre-registered baseline (3 reps, `dev` arm, `cx-compaction`, lane
+A) and treatment (3 reps, `spinout` arm, `cx-compaction`, lane B,
+`JOBS=2`) batteries, scored with `score_e6.py`, plus free re-scores of
+Task 6/6b's existing `cx-sdd-small` corpus (dev/spinout/v611, 17 reps, no
+compaction knob) and Drew's stress-2703 corpus (external, read-only,
+never committed — the one corpus with genuine long-history compaction
+under real load). Full tables, manual-verification detail, and the exact
+numbers behind every claim below: `campaigns/codex-efficiency/out/
+e6-report.md`.
+
+**Mechanism fully reliable: 6/6 battery reps (both arms) show >=1 real
+compaction**, confirmed live in the scenario transcripts (the CLI's own
+"context compacted" output, corroborated by `rollout_parser.
+compaction_events()`), not just in the 2 pre-battery adhoc calibration
+runs.
+
+**Clause (a) — post-compaction skill re-reads: FAILS on the dev baseline
+(0/3 reps, 0 events), but this is NOT inconclusive-by-zero in the
+E1-axis-B sense — it's corroborated in both directions elsewhere in the
+SAME evidence base.** Spinout (1/3 reps) shows a direct, live
+confirmation of the treatment mechanism: the root controller re-read
+`skills/subagent-driven-development/SKILL.md` after its first
+compaction, having read it before -- exactly what the spinout branch's
+`hooks/session-start-codex` (fires on Codex's `SessionStart`
+`source:"compact"` re-injection) explicitly instructs. Drew's
+stress-2703 corpus (no hook, real long-history session) shows the SAME
+thing happening organically: the root re-read
+`skills/systematic-debugging/SKILL.md` after a compaction, having read
+it before. **Interpretation: a short (2-compaction, ~15-25min), forced-
+compaction scenario does not by itself generate enough organic re-read
+pressure — eliciting it needs either a recovery mechanism (spinout's
+hook) or much longer real accumulated context (Drew's 16,830 root
+lines vs. our ~360-430).** This is the nuanced form of the pre-
+registered alternative outcome (iii), not its clean "rig can't reproduce
+this at all" form -- real signal exists elsewhere in this same evidence
+base.
+
+**Clause (b) — spawn-hygiene degradation: holds, narrowly, and breaks a
+previously-unbroken streak.** dev: 20/21 (95.2%) post-compaction spawns
+explicit-model vs. 4/4 (100%) pre; spinout: 21/21 (100%) post vs. 3/4
+(75%, pre-existing/unrelated to compaction) pre. Isolation
+(`fork_turns`) never degrades on either arm (100% isolated in every
+bucket). **The one dev-arm degradation is a root-controller dispatch
+(`final_reviewer_after_fix`, dev rep3, immediately post-compaction) that
+omitted `model` — the FIRST such failure anywhere in this campaign's
+dev-arm corpus at CLI 0.146 (which had been 45/45=100% reliable across
+E1's whole corpus before E6 introduced forced compaction).** Thin (1/21)
+but real, correctly directional, and exactly at the predicted boundary.
+Drew's stress-2703 shows ZERO degradation on this clause (78/78 post
+spawns clean) -- in tension with the dev finding, not resolved here; the
+original Drew cross-validation entry's "compliant-controller caveat" is
+the leading explanation.
+
+**Sharpened prediction (i) (hygiene drop on dev vs. flat on spinout):
+confirmed directionally, modest in magnitude** (as above).
+
+**Sharpened prediction (ii) (depth-2 spawns concentrated in
+implementer-spawned reviewers + same-task duplicate reviews): STRONGLY
+CONFIRMED, now the most repeatedly-reproduced finding in the campaign.**
+Every depth-2 spawn observed anywhere in this new battery (4/4: dev
+rep1 ×1, dev rep3 ×2, spinout rep1 ×1) was implementer-issued. Combined
+with Amendment 3's real 07-29 audit-tree occurrence (1), the E1
+CLI-0.146 re-test's own battery (2), and this task's free re-score of
+the EXISTING `cx-sdd-small` corpus (3 more: spinout rep5/rep8, v611
+rep2) and Drew's stress-2703 (1 more: an implementer-role session
+spawning a reviewer-role child at depth 2) -- **11 independently-
+confirmed depth-2-by-implementer occurrences across 5 distinct
+corpora/sources, 8 of which also match the stricter same-task-
+duplicate-review pattern (a worker-initiated depth-2 review of a task
+ALONGSIDE a separate root-initiated review of the same task), zero
+counter-examples anywhere** (no reviewer-spawned depth-2 child was ever
+observed, in any corpus this campaign has scored).
+
+**A real bug was found and fixed via manual verification, not glossed
+over.** Dev rep1's controller-initiated duplicate review of task1 was
+named `task1_controller_review` -- a wording the original
+`task_family()` suffix-stripping heuristic (built from the prior
+`cx-sdd-small` corpus's `task1_reviewer`/`task1_implementer` naming)
+didn't match, so the scorer initially reported zero duplicates for a rep
+that plainly has one (visible directly in the raw session tree). Fixed
+with 4 new TDD tests (a broader task<N>/final PREFIX rule, superseding
+the old suffix-only fallback) before re-scoring anything, verified
+non-regressive against every prior corpus already scored (commit
+`99c5ad7`).
+
+**Discrimination gate: split verdict, same character as E1's axis split
+and E4's mixed ceremony finding.** Clause (a) fails on the dev battery
+specifically but is corroborated elsewhere in the same evidence set;
+clause (b) holds narrowly but really; predictions (i)/(ii) confirmed
+(directionally / strongly respectively); prediction (iii)'s clean
+terminal form does not trigger, but its nuanced scenario-shape-specific
+form is itself a genuine registered-in-advance finding. **E6 is DONE,
+mixed result, honestly reported in both directions** -- not collapsed
+into a clean pass or fail.
+
+**Task completion held cleanly throughout**: 6/6 `gauntlet.status: pass`
+across both new battery arms, all three plan.md tasks addressed, clean
+merges to `main`, all unit tests passing, in every rep.
+
+**Cost:** calibration ~$0.4 (2 adhoc `codex exec` runs, uninstrumented --
+raw exec, not quorum-priced); baseline battery $12.66 ($11.56 coding +
+$1.10 gauntlet); treatment battery $13.06 ($11.98 coding + $1.09
+gauntlet). E6 total: **~$26.12**. Sub `used_percent` 56.0% -> 58.0%
+(shared across both lanes' credential). Campaign running total (previous
+$104.45 + this battery): **≈$130.57**, well under the $250/$1000
+checkpoints. Free re-scores (existing `cx-sdd-small` corpus + Drew's
+stress-2703): no additional spend. Ledger rows in
+`campaigns/codex-efficiency/out/e6-report.md`.
+
+**Privacy:** Drew's stress-2703 corpus is cited by aggregate numbers and
+generic skill-path names only (e.g. `skills/systematic-debugging/
+SKILL.md`) -- no task_name string, absolute path with a username, or
+message/instruction text from that corpus appears in any committed file,
+verified by grep across every file this task touched before commit.

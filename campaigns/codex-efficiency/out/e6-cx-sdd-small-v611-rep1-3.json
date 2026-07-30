@@ -1,0 +1,512 @@
+{
+  "label": "cx-sdd-small-v611-rep1-3",
+  "runs": [
+    {
+      "label": "cx-sdd-small-v611-rep1",
+      "root_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+      "total_sessions": 8,
+      "max_depth": 1,
+      "sessions_with_compaction": 0,
+      "total_compactions": 0,
+      "root_compactions": 0,
+      "root_lines": 266,
+      "sessions_with_reread": 0,
+      "total_reread_events": 0,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        },
+        "post": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        }
+      },
+      "depth2_by_spawner_role": {},
+      "depth2_details": [],
+      "duplicate_review_families": [],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 266
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-53-09-019faf39-3221-7460-b703-f1a2a2b48309.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 81
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-55-41-019faf3b-8629-7a83-bfba-c814656a8f77.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 21
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-56-32-019faf3c-4d8d-7e73-99c2-a44670c57638.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 111
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-59-16-019faf3e-cbaf-7f51-a521-b16924a553cf.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 30
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-00-24-019faf3f-d70d-7520-9488-3f45ac0ec615.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 113
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-02-20-019faf41-9d66-7041-be6e-e62682250513.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 48
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-05-06-019faf44-2458-79f3-8f66-c5c625002ecf.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl",
+          "is_root": false,
+          "task_name": "final_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 40
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T185106Z-7a5d",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 1
+    },
+    {
+      "label": "cx-sdd-small-v611-rep2",
+      "root_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+      "total_sessions": 10,
+      "max_depth": 2,
+      "sessions_with_compaction": 0,
+      "total_compactions": 0,
+      "root_compactions": 0,
+      "root_lines": 391,
+      "sessions_with_reread": 0,
+      "total_reread_events": 0,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        },
+        "post": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        }
+      },
+      "depth2_by_spawner_role": {
+        "implementer": 1
+      },
+      "depth2_details": [
+        {
+          "child_rollout": "rollout-2026-07-29T18-59-42-019faf3f-33c0-7f40-af94-2962c144f8d2.jsonl",
+          "child_task_name": "cli_reviewer",
+          "spawner_rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl",
+          "spawner_role": "implementer",
+          "spawner_task_name": "task2_implementer"
+        }
+      ],
+      "duplicate_review_families": [
+        {
+          "family": "task2",
+          "implementer_rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl",
+          "worker_reviewer_rollouts": [
+            "rollout-2026-07-29T18-59-42-019faf3f-33c0-7f40-af94-2962c144f8d2.jsonl"
+          ],
+          "controller_reviewer_rollouts": [
+            "rollout-2026-07-29T19-01-15-019faf40-9ee0-7c20-b5de-94aa63211f21.jsonl"
+          ]
+        }
+      ],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 391
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-54-12-019faf3a-283a-7e93-8feb-33a1201689ad.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 99
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-56-51-019faf3c-980d-7ff3-8ecd-44c8b701c6f3.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 21
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 127
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-01-15-019faf40-9ee0-7c20-b5de-94aa63211f21.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 29
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-02-26-019faf41-b2b7-7132-8d3a-a5fc3c8b7e6e.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 87
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-04-52-019faf43-ee9b-78b0-b565-f936c24acfb6.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-05-53-019faf44-dd68-79e1-9292-4fe6b94aa7c6.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "final_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 46
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-07-15-019faf46-1e60-7372-819b-9e01e709bcfc.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl",
+          "is_root": false,
+          "task_name": "final_fixer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 92
+        },
+        {
+          "rollout": "rollout-2026-07-29T18-59-42-019faf3f-33c0-7f40-af94-2962c144f8d2.jsonl",
+          "depth": 2,
+          "parent_rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl",
+          "is_root": false,
+          "task_name": "cli_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 77
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T185106Z-4ff0",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 2
+    },
+    {
+      "label": "cx-sdd-small-v611-rep3",
+      "root_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+      "total_sessions": 8,
+      "max_depth": 1,
+      "sessions_with_compaction": 0,
+      "total_compactions": 0,
+      "root_compactions": 0,
+      "root_lines": 319,
+      "sessions_with_reread": 0,
+      "total_reread_events": 0,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        },
+        "post": {
+          "n": 0,
+          "pct_isolated": null,
+          "pct_explicit_model": null
+        }
+      },
+      "depth2_by_spawner_role": {},
+      "depth2_details": [],
+      "duplicate_review_families": [],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 319
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-15-37-019faf4d-c4b2-7780-94d8-70704f31b9e8.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 70
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-17-30-019faf4f-7e70-7c50-a67e-f13146dd88fb.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 21
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-18-05-019faf50-06f0-7dd2-bcd7-6c6614bc82cc.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 86
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-20-16-019faf52-055d-72c2-8e8e-41b11ee7b0b6.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 29
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-21-18-019faf52-f8c4-7420-b3e4-2b13bae555c6.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 72
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-23-31-019faf55-0031-7371-94b1-62cb21d50460.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 29
+        },
+        {
+          "rollout": "rollout-2026-07-29T19-24-40-019faf56-1066-7373-bba6-4824ddf30918.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl",
+          "is_root": false,
+          "task_name": "final_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 37
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T191312Z-2d73",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 3
+    }
+  ]
+}

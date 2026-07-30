@@ -1,0 +1,751 @@
+{
+  "label": "cx-compaction-spinout-rep1-3",
+  "runs": [
+    {
+      "label": "cx-compaction-spinout-rep1",
+      "root_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+      "total_sessions": 9,
+      "max_depth": 2,
+      "sessions_with_compaction": 2,
+      "total_compactions": 4,
+      "root_compactions": 3,
+      "root_lines": 519,
+      "sessions_with_reread": 0,
+      "total_reread_events": 0,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 2,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 50.0
+        },
+        "post": {
+          "n": 6,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 100.0
+        }
+      },
+      "depth2_by_spawner_role": {
+        "implementer": 1
+      },
+      "depth2_details": [
+        {
+          "child_rollout": "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl",
+          "child_task_name": "task1_review",
+          "spawner_rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "spawner_role": "implementer",
+          "spawner_task_name": "task1_implementer"
+        }
+      ],
+      "duplicate_review_families": [
+        {
+          "family": "task1",
+          "implementer_rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "worker_reviewer_rollouts": [
+            "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl"
+          ],
+          "controller_reviewer_rollouts": [
+            "rollout-2026-07-30T06-30-03-019fb1b7-3afe-7c12-abf1-87d10dcc273e.jsonl"
+          ]
+        }
+      ],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 3,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T06:28:49.913Z",
+          "re_read_skill_paths": [],
+          "pre_spawns": [
+            {
+              "call_id": "call_Nzvx2wNrmRKIaBKL3DHOMKH7",
+              "task_name": "task1_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:24:01.569Z"
+            }
+          ],
+          "post_spawns": [
+            {
+              "call_id": "call_liELod50VR5CHg9m8SreFGUI",
+              "task_name": "task1_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:30:03.250Z"
+            },
+            {
+              "call_id": "call_ptsaK1wD94FByQ8CO0sikdma",
+              "task_name": "task2_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:31:25.498Z"
+            },
+            {
+              "call_id": "call_o6ZRyXl8dNMmnRMhaQsd2vD7",
+              "task_name": "task2_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:35:51.224Z"
+            },
+            {
+              "call_id": "call_VgzQhtHFD4O6tcKqfbRW8KWF",
+              "task_name": "task3_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:37:21.252Z"
+            },
+            {
+              "call_id": "call_hTdlMLjTif1dOguR1BqJZjj4",
+              "task_name": "task3_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:40:39.198Z"
+            },
+            {
+              "call_id": "call_bhFez7tF7H3A3TgqQ7frdQ1s",
+              "task_name": "final_branch_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:42:15.749Z"
+            }
+          ],
+          "lines": 519
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 1,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T06:28:55.466Z",
+          "re_read_skill_paths": [],
+          "pre_spawns": [
+            {
+              "call_id": "call_C0u5iknpwNsDEjEDpDG1cMu3",
+              "task_name": "task1_review",
+              "fork_turns": "none",
+              "model": "(omitted)",
+              "reasoning_effort": "(omitted)",
+              "timestamp": "2026-07-30T06:25:55.448Z"
+            }
+          ],
+          "post_spawns": [],
+          "lines": 154
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-30-03-019fb1b7-3afe-7c12-abf1-87d10dcc273e.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 27
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-31-25-019fb1b8-7c47-7aa2-8fa1-2ed266fae63e.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 137
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-35-51-019fb1bc-8a47-73e1-922d-c3211d77bbec.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 42
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-37-21-019fb1bd-e9f2-7501-bd4d-e3c9e052c445.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 106
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-40-39-019fb1c0-ef2d-7541-969b-f4fcf0b40be7.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 26
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-42-15-019fb1c2-6857-7611-9dc8-9871ad62b24f.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "task_name": "final_branch_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 59
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl",
+          "depth": 2,
+          "parent_rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "is_root": false,
+          "task_name": "task1_review",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 46
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep1/cx-compaction-codex-codex_sub-linux-20260730T062123Z-b918",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 1
+    },
+    {
+      "label": "cx-compaction-spinout-rep2",
+      "root_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+      "total_sessions": 10,
+      "max_depth": 1,
+      "sessions_with_compaction": 2,
+      "total_compactions": 3,
+      "root_compactions": 2,
+      "root_lines": 431,
+      "sessions_with_reread": 1,
+      "total_reread_events": 1,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 1,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 100.0
+        },
+        "post": {
+          "n": 8,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 100.0
+        }
+      },
+      "depth2_by_spawner_role": {},
+      "depth2_details": [],
+      "duplicate_review_families": [],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 2,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T06:26:58.344Z",
+          "re_read_skill_paths": [
+            "/workspace/superpowers/skills/subagent-driven-development/SKILL.md"
+          ],
+          "pre_spawns": [
+            {
+              "call_id": "call_MKw4JsFOfihmLvZq7kXQbVqW",
+              "task_name": "task1_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:23:25.633Z"
+            }
+          ],
+          "post_spawns": [
+            {
+              "call_id": "call_DKSHeXrXiC7KJLuyzfeM7P7b",
+              "task_name": "task1_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:27:12.920Z"
+            },
+            {
+              "call_id": "call_SwkAZnJO0Gwif4DagCb9zkmT",
+              "task_name": "task2_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:28:19.316Z"
+            },
+            {
+              "call_id": "call_dOpAqnYfKTQEXYCzYD7Xi5Ss",
+              "task_name": "task2_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:30:52.289Z"
+            },
+            {
+              "call_id": "call_8xwMBQd4GHZk2Q2wZJvgeh8Y",
+              "task_name": "task3_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:31:49.841Z"
+            },
+            {
+              "call_id": "call_w0vmf7mkPW9ekS7h4bdYmvRH",
+              "task_name": "task3_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:35:33.622Z"
+            },
+            {
+              "call_id": "call_vW3V4TmyCzUO68zfosJxWp0L",
+              "task_name": "final_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:36:55.851Z"
+            },
+            {
+              "call_id": "call_8rauQ2S0ECpLxGyzOhT3l9vO",
+              "task_name": "final_fixer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:38:05.476Z"
+            },
+            {
+              "call_id": "call_CId1VJQMCdPMkuwhOIPdLIg7",
+              "task_name": "final_fix_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "medium",
+              "timestamp": "2026-07-30T06:41:13.475Z"
+            }
+          ],
+          "lines": 431
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-23-25-019fb1b1-29ce-7640-8841-aa69e3dc9948.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 85
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-27-12-019fb1b4-a1a1-7133-ac67-39a398021972.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-28-19-019fb1b5-a4fc-7f52-8366-1ee1cf797e37.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 99
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-30-52-019fb1b7-fa9b-71d1-b762-7c3e7fcf3402.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 1,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T06:35:11.846Z",
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 109
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-35-33-019fb1bc-4586-78b0-860a-42c0fd81dca9.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 36
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-36-55-019fb1bd-86ba-7e03-81f0-f7adb04fc0d5.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "final_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 26
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-38-05-019fb1be-96b7-7671-847d-5338f9a93173.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "final_fixer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 99
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-41-13-019fb1c1-7513-7262-a520-a43defe63cfa.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "task_name": "final_fix_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep2/cx-compaction-codex-codex_sub-linux-20260730T062123Z-569b",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 2
+    },
+    {
+      "label": "cx-compaction-spinout-rep3",
+      "root_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+      "total_sessions": 9,
+      "max_depth": 1,
+      "sessions_with_compaction": 2,
+      "total_compactions": 3,
+      "root_compactions": 2,
+      "root_lines": 367,
+      "sessions_with_reread": 0,
+      "total_reread_events": 0,
+      "spawn_hygiene": {
+        "pre": {
+          "n": 1,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 100.0
+        },
+        "post": {
+          "n": 7,
+          "pct_isolated": 100.0,
+          "pct_explicit_model": 100.0
+        }
+      },
+      "depth2_by_spawner_role": {},
+      "depth2_details": [],
+      "duplicate_review_families": [],
+      "sessions": [
+        {
+          "rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "task_name": null,
+          "role": "unclassified",
+          "n_compactions": 2,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T06:51:04.668Z",
+          "re_read_skill_paths": [],
+          "pre_spawns": [
+            {
+              "call_id": "call_n14MSOKfHjaoUeQ9KSIP4fWh",
+              "task_name": "task1_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:50:36.782Z"
+            }
+          ],
+          "post_spawns": [
+            {
+              "call_id": "call_s1MVrAKCDtkRkHuGnOsjaGRf",
+              "task_name": "task1_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:53:01.776Z"
+            },
+            {
+              "call_id": "call_Ublaqupslm0pzzniMF6YsU3A",
+              "task_name": "task2_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:54:11.692Z"
+            },
+            {
+              "call_id": "call_2syHHCksxGl7zjrTMwTVaZf2",
+              "task_name": "task2_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:56:53.400Z"
+            },
+            {
+              "call_id": "call_IzyQG3YkPIjvdi14sMafiXor",
+              "task_name": "task3_implementer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T06:57:44.697Z"
+            },
+            {
+              "call_id": "call_irWWcNLdNGt2MAp4SaMBe1dC",
+              "task_name": "task3_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T07:00:22.224Z"
+            },
+            {
+              "call_id": "call_0cTU3JxoCv34n1XiuS0Q8iLf",
+              "task_name": "final_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T07:01:38.966Z"
+            },
+            {
+              "call_id": "call_mKV57nbBP4dbkfT7Orj66JLx",
+              "task_name": "final_fix_reviewer",
+              "fork_turns": "none",
+              "model": "gpt-5.6-terra",
+              "reasoning_effort": "high",
+              "timestamp": "2026-07-30T07:05:07.857Z"
+            }
+          ],
+          "lines": 367
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-50-36-019fb1ca-0d79-7310-a093-4b3e049fb532.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task1_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 80
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-53-01-019fb1cc-43df-7c30-91e5-1a6b31119ef4.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task1_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task2_implementer",
+          "role": "implementer",
+          "n_compactions": 1,
+          "has_compaction": true,
+          "first_compaction_timestamp": "2026-07-30T07:03:35.273Z",
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 178
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-56-53-019fb1cf-cca8-7062-9e9c-ace2c1a77268.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task2_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 29
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-57-44-019fb1d0-9507-7563-9c2e-46470dcff904.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task3_implementer",
+          "role": "implementer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 95
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-00-22-019fb1d2-fc5b-7642-bb13-fea03b74e02c.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "task3_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 25
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-01-39-019fb1d4-2823-7b70-9082-bdbcb818a6c3.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "final_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 28
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-05-07-019fb1d7-581f-7920-a3b4-7800f5fce6f8.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "task_name": "final_fix_reviewer",
+          "role": "reviewer",
+          "n_compactions": 0,
+          "has_compaction": false,
+          "first_compaction_timestamp": null,
+          "re_read_skill_paths": [],
+          "pre_spawns": [],
+          "post_spawns": [],
+          "lines": 39
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep3/cx-compaction-codex-codex_sub-linux-20260730T064834Z-6a11",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 3
+    }
+  ]
+}
