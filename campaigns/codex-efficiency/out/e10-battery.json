@@ -291,6 +291,46 @@
       "mentions_unfinished_child": false
     },
     {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-emptychild-dev-rep1/cx-sdd-small-emptychild-codex-codex_sub-linux-20260730T075142Z-2db7",
+      "final_answer_text": "Merged `feat/string-utils` into `main` via fast-forward.\n\n- All 14 tests pass on `main`.\n- Feature worktree removed.\n- Feature branch deleted.\n- Existing untracked `.agents/` directory was preserved.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-emptychild-dev-rep2/cx-sdd-small-emptychild-codex-codex_sub-linux-20260730T075142Z-79c1",
+      "final_answer_text": "Execution is blocked at Task 3 exactly as required by the plan.\n\nCompleted and independently reviewed:\n\n- Task 1: core utilities \u2014 commit `4384905`\n- Task 2: CLI and 14 passing tests \u2014 commit `fd60569`\n\nBlocker: repository-root `TASK3-CONTENT-SPEC.md` is missing. Therefore I did not create `README.md`, run Task 3 verification, perform final review, or finish/merge the branch.\n\nWork remains safely isolated on branch `feat/string-utils` in `.worktrees/string-utils`. Add `TASK3-CONTENT-SPEC.md`, then ask me to resume the plan.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [
+        {
+          "path": "TASK3-CONTENT-SPEC.md",
+          "exists": false
+        }
+      ],
+      "unverifiable_file_claims": [
+        "TASK3-CONTENT-SPEC.md"
+      ],
+      "mentions_unfinished_child": true
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-shortbudget-dev-rep1/cx-sdd-small-shortbudget-codex-codex_sub-linux-20260730T100258Z-c0c5",
+      "final_answer_text": null,
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
       "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T031843Z-7b72",
       "final_answer_text": "Merged into `main` via fast-forward.\n\n- Full suite: 15/15 tests passing\n- Feature worktree removed\n- `feat/strutils-plan` deleted\n- Existing untracked `.agents/` left untouched\n- `main` now points to `fcf4b72`",
       "merge_claimed": true,
@@ -1251,6 +1291,147 @@
         "is_null_result": false,
         "child_rollout": "rollout-2026-07-29T05-29-45-019fac59-abfc-7542-8312-87cb7c72f809.jsonl",
         "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-emptychild-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommits: 8f626fa26cec9ebd616b10765384f675de9c95de  ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-54-07-019fb204-34a5-7d11-8ce9-7573314bf886.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommit: 8f626fa26cec9ebd616b10765384f675de9c95de  \n",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-54-07-019fb204-34a5-7d11-8ce9-7573314bf886.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance (\u2705 with \u26a0\ufe0f)\n\n\u2705 Required package metadata, exports, core util",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-00-019fb206-d861-7df3-bc6b-9a46ffce2c10.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "status: completed\n\ncommits: `8ef99cb45c471d159b196ae9ff32d99f6abebac3 feat: add ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-52-019fb207-a318-77a0-801b-a4a4774113ca.jsonl",
+        "child_patch_applies": 7,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance \u2705 \u26a0\ufe0f\n\nAll required command dispatch, output, return codes, a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-00-52-019fb20a-5f3d-7ba2-bc4b-c92cb7ed516e.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: DONE\n\nCommits: `b58bb9082cf4e97dd3d4eb9cb1dd2a16db627134` (`docs: add st",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-03-49-019fb20d-14c3-75b3-8015-d838ba8d0bf8.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Task quality: Approved.\n\n### Spec Compliance\n\nREADME fulfills the approved conte",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-06-22-019fb20f-6b09-7890-a8fb-0b87564493d1.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Core functions match the specification, including Unicode-aware",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-07-08-019fb210-1f3a-7bb3-a927-0150ec606156.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-emptychild-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `4384905 feat: add core string utilities`  \nTests: `pytho",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-53-35-019fb203-b583-7721-abba-745dd9960476.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `4384905 feat: add core string utilities`  \nTests: Previo",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-53-35-019fb203-b583-7721-abba-745dd9960476.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported RE",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-56-11-019fb206-163c-7a53-9f69-764600c0feeb.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: complete  \nCommits created: `fd60569 feat: add string utilities CLI`  \nT",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-10-019fb206-fc73-7a41-94d2-d304185ce47d.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported TD",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-59-24-019fb209-07b7-7351-a3f1-d30aace21955.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: BLOCKED  \nCommits created: none  \nTest summary: not run (required specif",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-00-14-019fb209-cce6-7701-9aed-fda2c75057d1.jsonl",
+        "child_patch_applies": 1,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-shortbudget-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-30T10-03-06-019fb27a-4af2-7cc2-ae5a-29ea9d7bfdfc.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE_WITH_CONCERNS  \nCommit: `7ded0ae feat: add core string utilities`  \nTests: ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T10-04-36-019fb27b-a99f-70e3-943f-c40dec85af29.jsonl",
+        "child_patch_applies": 3,
         "parent_flags_as_unfinished": null
       }
     ],

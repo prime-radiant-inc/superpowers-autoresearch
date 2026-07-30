@@ -89,6 +89,19 @@ class TestFileClaims(unittest.TestCase):
         text = "Created `strutils/core.py` and `strutils/cli.py`."
         self.assertEqual(se.extract_file_claims(text), ["strutils/core.py", "strutils/cli.py"])
 
+    def test_excludes_did_not_create(self):
+        # Real false positive found scoring a live E10 probe (a) run (Task
+        # 14): "Therefore I did not create `README.md`, run Task 3
+        # verification..." explicitly NEGATES the creation, but the
+        # original negation check only looked for
+        # untouched/preserved/removed/deleted/unchanged -- it missed
+        # "did not create" entirely and flagged this as an unverified
+        # creation claim.
+        text = ("Blocker: repository-root `TASK3-CONTENT-SPEC.md` is missing. "
+                 "Therefore I did not create `README.md`, run Task 3 "
+                 "verification, perform final review, or finish/merge the branch.")
+        self.assertEqual(se.extract_file_claims(text), [])
+
 
 class TestCheckFileClaims(unittest.TestCase):
     def test_reports_existence_against_workdir(self):
