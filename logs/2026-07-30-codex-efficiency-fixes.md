@@ -606,3 +606,124 @@ PASS with 2 more reps given how large each miss is (a 2-6x gap for T2,
 a real and root-caused-not-noise miss for T1/T5) — but the
 pre-registered n=8 was not reached and that shortfall is reported
 honestly rather than silently backfilled.**
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 2 PRE-REGISTRATION: T1/T2/T5 on the fix arm post-fix-commits (Task 8b)
+
+This is round 2 of the shared SDD battery. Round 1 (the three entries
+directly above — "SHARED SDD BATTERY PRE-REGISTRATION," the smoke-test/
+Docker-crash anomaly entry, and "T1/T2/T5 verdicts on n=6") ran the
+five original treatments' arm and FAILed all three gated criteria: T1
+(2/6 reps had a worker-issued depth-2 spawn from a controller-dispatched
+`final_reviewer` role, because commit `62c0180`'s no-subagents contract
+was scoped only to `implementer-prompt.md`), T2 (65.1% wait-timeout
+rate vs the <25% bar — the docs-only `codex-tools.md` polling guidance
+changed nothing measurable), and T5 (2/50 spawns, exactly the T1
+depth-2 pair, omitted explicit model/effort — the reviewer role was
+never told to set them any more than it was told not to spawn).
+
+**Two fix commits landed on top of the arm since round 1, both on
+`codex-efficiency-fixes`:**
+- `c07cf7e` — "reviewers never dispatch subagents either": extends the
+  "You Do Not Dispatch Subagents" contract (previously
+  implementer-prompt.md only) verbatim into
+  `skills/requesting-code-review/code-reviewer.md`,
+  `skills/subagent-driven-development/re-review-prompt.md`, and
+  `skills/subagent-driven-development/task-reviewer-prompt.md` — every
+  dispatched review role now carries the same "never spawn a subagent
+  to review part of the diff, and never spawn another reviewer" text
+  that `implementer-prompt.md` already had. Directly targets round 1's
+  T1/T5 root cause (the reviewer-role gap).
+- `3da65fb` — "controllers wait long or not at all": adds an eight-line
+  "Waiting on dispatched subagents" paragraph to
+  `skills/subagent-driven-development/SKILL.md` §1 (the controller loop
+  the session actually re-reads on every turn) instructing "never poll
+  a wait interface with short timeouts... wait only when you are
+  genuinely idle, and then issue one long wait (fifteen minutes or
+  more...) instead of many short ones." Directly targets round 1's T2
+  finding that the platform-reference-only guidance (`codex-tools.md`)
+  never got re-read mid-session and changed nothing.
+
+**Arm SHA (verified this task):** `git -C /tmp/sp-arm-fix log --oneline
+-1` → `3da65fb` — matches the `codex-efficiency-fixes` branch tip in
+the working worktree. The arm worktree was already refreshed to this
+SHA before this task started (no `checkout --detach` needed this time).
+Both fix commits are present on top of the original five treatments
+(confirmed via `git -C /tmp/sp-arm-fix log --oneline -5`: `3da65fb` →
+`c07cf7e` → `3ef84f0` (Amendment 1 plan doc) → `5ea8821` (T4 router) →
+`2a4c11b` (T5 original fix) — i.e. this arm is the round-1 arm plus
+exactly these two commits, nothing else changed underneath it).
+
+**Battery config (unchanged from round 1 except rep numbering — see
+below):**
+- Arm: `fix` (`/tmp/sp-arm-fix` @ `3da65fb`)
+- Scenario: `cx-sdd-small`
+- Reps: 8 total, same lane split as round 1 (4 reps/lane) — **but
+  renumbered reps 9-16, not 1-8**, specifically so this round's
+  `--out-root` RUNDIRs (`results/cx-eff-cx-sdd-small-fix-rep{9..16}`)
+  and this round's scorer output files (`out/e1-cx-sdd-small-fix-
+  rep9-16.json` etc., derived automatically by `score_e1.py`/
+  `score_e6.py`'s own `_rep_range_suffix()` from the rep number embedded
+  in the RUNDIR name) cannot collide with round 1's already-committed
+  `rep1-8`-suffixed aggregates or round 1's still-present on-disk
+  `rep1`..`rep8` run directories (round 1's raw rundirs, including the
+  crash-orphaned rep4/rep7, were left in place — not deleted, not
+  reused). `FORCE` is never set on any scorer invocation this round
+  either; a collision is an anomaly to report, not a flag to
+  suppress. Rep9 = smoke (lane A), reps 10-12 = lane A batch (JOBS
+  TBD by what's cheapest to babysit, not gated), reps 13-16 = lane B
+  batch (`JOBS=2`), mirroring round 1's 1+3 / 4 split exactly.
+- Scorers: `score_e6.py` (T1), `score_e7.py`'s tested
+  `census_session()`/`aggregate()` functions via a fresh one-off script
+  (round 1's `score_e7.py` still hardcodes `arms=("dev","spinout")` and
+  a single results dir — confirmed unchanged this task — so the fix arm
+  split across two lane checkouts still doesn't fit its CLI; the
+  one-off script again writes only a new, non-colliding
+  `out/e7-battery-fix-round2.json`, never touching `e7-battery-fix.json`
+  (round 1) or any of the four frozen corpus (a)/(b) blobs) (T2),
+  `score_e1.py` (T5).
+
+**Criteria (verbatim from this log's "Pre-registered criteria" section
+above — unchanged from round 1):**
+- **T1:** 0 worker-issued depth-2 spawns AND review coverage preserved
+  (every task still gets exactly one controller-dispatched task review).
+- **T2:** timeout rate < 25% with no loss of task completion.
+- **T5:** every spawn at every depth carries explicit model + effort.
+  Caveat: if T1 eliminates depth-2 spawns entirely, T5 grades as
+  root-spawn regression (hold 100%) plus doc correctness and is recorded
+  inconclusive-by-zero at depth-2.
+
+**Round-1 result, cited as the comparison baseline this round's verdicts
+are measured against (not re-run):** T1 FAIL (2/6 reps, both
+reviewer-role depth-2 spawns, 0 same-task duplicates); T2 FAIL (65.1%
+paired-timeout rate, 63.3% of all calls, vs dev baseline 67.1%/69.3% —
+a 2-6 point shift only); T5 FAIL (48/50 explicit, 96.0%, the 2 misses
+identical to the T1 pair) — all three from
+`logs/2026-07-30-codex-efficiency-fixes.md`'s "SHARED SDD BATTERY:
+T1/T2/T5 verdicts on n=6" entry above, n=6 of the pre-registered 8 (reps
+4/7 lost to the Docker crash, not backfilled).
+
+**Docker status (verified this task, before any spend):** the daemon
+had been in a crash loop and was just restored; `docker ps -a`
+immediately before this entry showed both lane containers
+`Exited (255)`. Cycled per `scripts/evals-container`'s own commands in
+each lane checkout — `scripts/evals-container down` then
+`scripts/evals-container --superpowers-root /tmp/sp-arm-fix up` — both
+lanes came up clean (`status` → `exists, running` for both container
+names, `docker ps -a` shows both `Up`, no `--force`/manual container
+surgery). Per this task's operational instructions: if Docker crashes
+again mid-battery, stop immediately, record the anomaly, and report
+BLOCKED rather than retrying through a crashing daemon — same standing
+rule round 1 already established.
+
+**Budget estimate:** ~$40 for 8 reps, same figure as round 1's
+pre-registration, now anchored to round 1's own measured actuals rather
+than the pre-campaign estimate it originally cited: 6 valid round-1 reps
+cost $26.82 total ($4.47/rep average) → ~$35.76 projected for 8 reps at
+that rate; budgeting ~$40 for headroom given the two new fix commits
+add a small amount of prompt text every dispatched role/turn re-reads
+(negligible per-rep, but not zero).
+
+**No run yet — this is the pre-registration.** Docker cycle above was
+verification, not the smoke rep. Smoke test, full battery, scoring,
+manual inspection, and verdicts (each verdict stating its round 1 →
+round 2 delta) follow in later log entries.
