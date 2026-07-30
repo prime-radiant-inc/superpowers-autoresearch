@@ -1125,3 +1125,266 @@ battery, scoring, and manual hand-verification (one rep per class
 against raw `patch_apply_end` timestamps, the same non-circular method
 used for the dev-arm bounded-rep1 citation above) follow in later log
 entries.
+
+### 2026-07-30 — T4 LAYER 2 RESULT: Codex ceremony battery — bounded's doc/plan pathology cleanly fixed, its approval-gate compliance only partial; arch two-doc flow intact 3/3; spike minimal; one scenario-timeout anomaly (Task 9)
+
+**Smoke test (bounded rep1, lane A): PASS, scenario health confirmed.**
+`gauntlet.status: pass`. Root-identity marker match confirmed
+("suppresses request logging" present in the first `user_message`).
+Bootstrap loaded and reachable: raw rollout shows 173 `SKILL.md`
+mentions, 139 `superpowers` mentions, and a full `using-superpowers`
+skill-body read via the `host_skills` world-state mechanism — the
+skill system is live for Codex in this container, not a silent no-op.
+Deterministic checks and Economics block both present, no infra
+anomaly. One important behavioral observation flagged for the full
+battery rather than adjudicated on n=1: the smoke rep's agent invoked
+systematic-debugging + test-driven-development directly, never
+brainstorming, and applied both patches (`tests/test_server.py` then
+`server.py`) BEFORE the Gauntlet-Agent's "looks good, that's what I
+wanted" confirmation — i.e. approval arrived after implementation, not
+gating it. Proceeded to Step 3.
+
+**Step 3 battery launch:** lane A ran `cx-ceremony-bounded` reps 2-3
+(`JOBS=2`, one batch) then, once that finished cleanly, `cx-ceremony-spike`
+reps 1-3 (`JOBS=2`, two batches); lane B ran `cx-ceremony-arch` reps 1-3
+(`JOBS=2`, two batches) concurrently with lane A's queue. All launched as
+disowned background processes, polled in-session via repeated foreground
+`sleep 30` loops checking for a written `EXIT:` sentinel (never a detached
+monitor). `docker ps -a` checked repeatedly through the run: both lane
+containers stayed `Up` for the entire ~50-minute battery, no `Exited`
+transition — **no Docker loss this task**, unlike round 1 of the shared
+SDD battery.
+
+**ANOMALY — arch rep3 hit the scenario's own 30-minute `quorum_max_time`
+budget before the Gauntlet-Agent could render a clean verdict; NOT a
+Docker/infra failure.** Confirmed directly: `docker ps -a` showed both
+containers healthy throughout: rep3's own `verdict.json` has
+`economics.partial: false` (a complete, non-crash-orphaned run, unlike
+the shared-SDD battery's Docker-crash casualties which never got a
+`verdict.json` at all) and 12 rollout files (root + an implementer/reviewer
+tree — this rep's agent chose to run the architectural split through
+`subagent-driven-development`, unlike rep1/rep2 which each stayed a single
+un-spawned session). `final: indeterminate`, `gauntlet.status: investigate`.
+The Gauntlet-Agent's own verdict text states the mechanism plainly: "every
+checkpoint showed forward progress (new commits, new task completions, a
+real bug found in review)... It's more likely that this scenario's very
+thorough 'spec → plan → subagent implementation → whole-branch review →
+fix wave → re-review' ceremony simply takes longer wall-clock time than
+the 1800s budget allowed." Per this task's operational rule, a genuine
+infra crash stops the battery; this is not that — it is the same
+character of side effect Task 8b already documented (a scenario-shape
+constraint interacting with how long a legitimate SDD-style ceremony
+takes), and the run produced complete, scoreable rollout data despite
+the non-`pass` verdict, so **the battery was allowed to run to
+completion, not stopped** — consistent with Task 8b's own precedent for
+exactly this distinction (infra-integrity anomalies stop the battery;
+harness/scenario-budget anomalies on an otherwise-healthy run get
+recorded and scored). `run-quorum.sh`'s own exit code for lane B was 1
+(`a parallel rep failed (JOBS=2)`, because `quorum run` itself exits
+nonzero on a non-`pass` verdict) — this is the shell script's batch-level
+signal, not evidence of data loss; rep3's RUNDIR is complete and was
+scored normally below.
+
+**All 9 pre-registered reps produced usable, complete rollout data** (1
+smoke + 8 remaining, no reps lost) — bounded 1-3, spike 1-3, arch 1-3, all
+with `economics.partial: false`. `gauntlet.status`: 8/9 `pass`, 1/9
+(`arch rep3`) `investigate` (the anomaly above).
+
+**Scoring:** `score_e4.py`, invoked directly against all 9 RUNDIRs in one
+call (no arm-hardcoding workaround needed — confirmed by reading the
+script before this task's pre-registration: `main()` takes `RUNDIR...`
+positional args and infers scenario/arm from each RUNDIR's own parent
+directory name, unlike `score_e7.py`'s hardcoded arm list). Output:
+`out/e4-mixed-cx-ceremony-arch-fix-cx-ceremony-bounded-fix-cx-ceremony-spike-fix-rep1-3.json`.
+
+**Results (from the scorer's own per-run table):**
+
+```
+class     rep  no-patch  user turns  docs written  tool calls  wall-clock(s)
+bounded    1      no          1           0             4          31
+bounded    2      no          1           0             4          35
+bounded    3      no          2           0             5          84
+spike      1      no          1           0             5          45
+spike      2     YES         N/A          0            N/A         N/A
+spike      3     YES         N/A          0            N/A         N/A
+arch       1      no          7           2            13         528
+arch       2      no          7           2            18         630
+arch       3      no          8           2            19         770
+```
+
+Per-class means: spike 5.0 tool calls (n=1 rep with a measurable patch;
+0.0 docs); bounded 4.3 tool calls, 0.0 docs; arch 16.7 tool calls, 2.0
+docs. Discrimination gate (spike vs. arch mean tool-calls-before-T):
+ratio 0.30, NOT within 25% → **"ceremony scales with task complexity"**
+— in direct contrast to the dev-arm baseline, where the same gate was
+inconclusive-by-zero because ALL 3 dev spike reps had zero patches of
+any kind. This fix-arm spike class has 1/3 reps with a measurable
+patch, giving the gate an actual (if thin, n=1) data point instead of
+an undefined one.
+
+**Manual hand-verification (non-circular — independent `json.loads` +
+own `patch_apply_end` timestamp sort, not `rollout_parser`), one rep
+per class plus both no-patch spike reps and both non-smoke bounded
+reps (beyond the brief's 1-rep-per-class minimum):**
+
+- **bounded rep1:** raw patches — `tests/test_server.py` at
+  `21:40:13.660Z`, `server.py` at `21:40:39.672Z`. T = `21:40:13.660Z`
+  (first is already non-doc — no docs preceded it). Independently
+  recomputed: user_turns_before_T=1, tool_calls_before_T=4,
+  wall_clock=session_start(`21:39:43.069Z`) to T = 30.591s ≈ 31s.
+  **Matches the scorer's row exactly (1 / 0 docs / 4 / 31).**
+- **arch rep1:** raw patches, chronological —
+  `docs/superpowers/specs/2026-07-30-reusable-notes-library-design.md`
+  (`21:48:11.062Z`), `docs/superpowers/plans/2026-07-30-reusable-notes-library.md`
+  (written twice, `21:50:36.421Z` and `21:50:53.081Z` — a revision, still
+  one distinct path), then `.gitignore` (`21:53:25.754Z`, the first
+  NON-doc patch — same edge case the dev-arm baseline already flagged:
+  a worktree-setup `.gitignore`, not real service code, but correctly
+  classified non-doc under the registered rule), then a long sequence of
+  real implementation files under `.worktrees/reusable-notes-library/`.
+  T = `21:53:25.754Z`. Independently recomputed:
+  user_turns_before_T=7, tool_calls_before_T=13,
+  wall_clock=session_start(`21:44:37.542Z`) to T = 528.212s ≈ 528s.
+  **Matches the scorer's row exactly (7 / 2 docs / 13 / 528), and the 2
+  distinct doc paths are exactly one `docs/superpowers/specs/*.md` and
+  one `docs/superpowers/plans/*.md` — the two-document ritual, not two
+  arbitrary `.md` files.**
+- **spike rep1:** raw patches — `tests/test_server.py`
+  (`21:56:39.529Z`, already non-doc, T here) then `server.py`
+  (`21:56:53.954Z`). Independently recomputed: user_turns_before_T=1,
+  tool_calls_before_T=5, wall_clock=session_start(`21:55:55.000Z`) to
+  T = 44.529s ≈ 45s. **Matches the scorer's row exactly (1 / 0 docs / 5
+  / 45).**
+- **spike rep2/rep3 (the two no-patch reps):** raw transcripts read in
+  full (not just the scorer's boolean). Both show the exact scripted
+  spike shape: agent reads the bind path, proposes a throwaway probe
+  ("Sound good?" / a description of the plan), Gauntlet-Agent gives a
+  nod (`"Yes, go ahead."` / `"Sounds good."`) BEFORE the probe runs, the
+  probe executes via ephemeral shell/Python only (confirmed: zero
+  `patch_apply_end` events of any kind in either rollout, matching
+  `no_non_doc_patch: true`), and the session ends cleanly after the
+  Gauntlet-Agent's "thanks, that answers it." Genuinely minimal,
+  genuinely healthy runs — not truncated or broken.
+- **bounded rep2/rep3 (the approval-timing check — the finding that
+  drives this battery's verdict below):** raw transcripts read in full.
+  **Rep2** matches the smoke rep's shape exactly: task at `21:46:11Z`,
+  immediate systematic-debugging+TDD narration, patch to
+  `tests/test_server.py` at `21:46:46Z`, patch to `server.py` at
+  `21:47:14Z`, THEN "looks good, that's what I wanted" at `21:48:32Z` —
+  approval arrives after both patches, not before. **Rep3 is different:**
+  task at `21:45:05Z`, the agent explicitly says "This is a bounded
+  change. Proposed design: add `--quiet` to the CLI..." at `21:45:34Z`,
+  Gauntlet-Agent replies "looks good, that's what I wanted" at
+  `21:45:58Z`, the agent says "Approved. I'll now follow the TDD
+  cycle..." at `21:46:06Z`, and ONLY THEN does the first patch land
+  (`21:46:29Z`). Rep3 genuinely gates implementation behind a
+  pre-implementation approval turn, exactly as the router's HARD-GATE
+  text mandates ("Do NOT invoke any implementation skill, write any
+  code... until you have told your human partner what you intend and
+  they have approved it. This applies to EVERY task on EVERY path").
+  Rep1 and rep2 do not: both implement first, both receive an
+  approval-shaped message only afterward as a post-hoc confirmation, not
+  a gate.
+
+**Verdicts against the pre-registered criteria (verbatim from this log's
+T4-layer-2 pre-registration entry above):**
+
+- **Bounded — "0 committed spec/plan docs": PASS, 3/3.** Every bounded
+  rep's `doc_paths_written_before_first_non_doc_patch` is the empty
+  list — confirmed by the scorer's JSON and independently by the raw
+  `patch_apply_end` scan of all 3 reps (only `tests/test_server.py` and
+  `server.py` ever get touched). This is a clean, complete fix of the
+  dev-arm pathology (which wrote exactly 2 docs unconditionally on
+  every bounded rep).
+- **Bounded — "0 writing-plans ritual": PASS, 3/3.** No
+  `docs/superpowers/plans/*.md` path appears in any bounded rep's patch
+  history — the writing-plans skill's own artifact never appears,
+  consistent with "0 committed spec/plan docs" above (a plan file would
+  itself be a spec/plan doc).
+- **Bounded — "approval turn present": MIXED, not a clean pass — real
+  and honestly reported, not collapsed to a single number.** Under a
+  loose reading (some approval-shaped Gauntlet-Agent message exists
+  anywhere in the transcript), 3/3 — the scripted stimulus phrase
+  ("looks good, that's what I wanted") appears in all 3 reps. Under the
+  strict reading the router's own HARD-GATE text actually specifies
+  (approval must come BEFORE any implementation action, on EVERY path,
+  no exception), only **1/3 (rep3)** complies: rep1 and rep2 both
+  implement first and receive the approval-shaped message only after
+  code already exists. **This is a genuine, real gap in live Codex-agent
+  compliance with the shipped router text's mandatory gate** — one the
+  layer-1 MICRO (literal one-word classification against a static
+  prompt, no live multi-turn session) structurally could not detect,
+  since it only tested whether the model NAMES the right path, not
+  whether it actually ENFORCES the gate across a real multi-turn
+  session where jumping straight into familiar skills
+  (systematic-debugging, TDD) is an easy, plausible-looking shortcut
+  around the approval step.
+- **Arch — "two-doc flow intact 3/3": PASS, 3/3.** Every arch rep writes
+  exactly one `docs/superpowers/specs/*.md` and one
+  `docs/superpowers/plans/*.md` before its first non-doc patch —
+  confirmed by the scorer's JSON and independently hand-verified for
+  rep1 against raw timestamps. Matches the dev-arm baseline's own
+  unconditional two-doc shape on this class (the fix targets bounded's
+  over-ceremony, not arch's correctly-heavy ceremony, and arch shows no
+  regression). Same minor edge case as the dev baseline: all 3 reps'
+  first NON-doc patch is a `.gitignore` addition (worktree setup),
+  seconds-to-tens-of-seconds before real implementation files — noted,
+  not qualitatively significant.
+- **Spike — "no docs, minimal ceremony": PASS, 3/3.** Zero doc paths in
+  any spike rep. 2/3 reps produce no patch at all (pure ephemeral
+  investigation, hand-verified as genuinely healthy above); the 1/3 rep
+  with a measurable patch shows the lowest tool-call count of any class
+  (5, vs. bounded's 4.3 mean and arch's 16.7 mean) and a 45-second
+  wall-clock — minimal by every measure available.
+- **Cross-cutting — "gauntlet task completion preserved per cell":
+  PASS for bounded (3/3) and spike (3/3); FAIL for arch (2/3, rep3
+  `investigate` on the scenario-timeout anomaly above) — an honest,
+  scenario-budget-driven miss, not a router-text pathology. Rep3's own
+  ceremony shape (2 docs, T at 528s-equivalent scale... actually 770s
+  wall-clock to T) is itself still consistent with the two-doc-flow
+  PASS above; only the FULL task's completion, not the ceremony
+  question this battery targets, is affected.
+
+**Cost (9 reps, from each rep's own `verdict.json.economics.total_est_cost_usd`,
+all `partial: false`):** bounded $0.71 + $0.91 + $0.67 = $2.30; spike
+$0.62 + $0.55 + $0.55 = $1.72; arch $3.02 + $2.43 + $5.76 = $11.21 (arch
+rep3's cost is the highest of any rep in the battery — consistent with
+it running the full scenario-timeout budget before being cut off).
+**Total: $15.23**, well under the ~$40 pre-registered budget.
+
+**Ledger row:** 2026-07-30 | T4 layer-2 Codex ceremony battery (fix arm
+@ `3da65fb`, `cx-ceremony-{spike,bounded,arch}`, n=9 of 9 pre-registered
+— no Docker loss) | $15.23 (9/9 measured, `partial: false` on all) |
+bounded: doc/plan ritual PASS 3/3, approval-gate compliance 1/3 strict
+(3/3 loose) | arch: two-doc flow PASS 3/3, completion FAIL 2/3
+(scenario-timeout, not infra) | spike: PASS 3/3 | discrimination gate:
+ceremony scales with complexity (ratio 0.30, thin n=1 spike sample).
+
+**Status: DONE, mixed result, honestly reported in both directions —
+the same character as the original campaign's E4 finding, not a clean
+win.** The router text's most measurable, mechanical claim — bounded
+tasks should produce NO spec/plan documents and NO writing-plans
+ritual — is now **cleanly fixed**: 0/3 docs on the fix arm vs. the dev
+arm's unconditional 2/3 docs every single bounded rep. Arch's
+two-document ceremony (the scenario class where heavy ceremony IS
+correct) is fully intact at 3/3, matching the dev baseline with no
+regression. But the router text's OTHER core claim — the HARD-GATE's
+"approval never scales down, not on any path" — is only 1/3 compliant
+under a strict live-session reading; 2/3 bounded reps route correctly
+(no doc ceremony) but skip the mandatory pre-implementation approval
+turn entirely, jumping straight from task receipt into
+systematic-debugging/TDD execution and only requesting confirmation
+after the code already exists. **This is a new finding this layer-2
+battery was specifically positioned to catch and layer-1's micro
+structurally could not:** removing unnecessary DOCUMENT ceremony
+(fixed) is not the same claim as preserving the APPROVAL gate (only
+partially fixed), and a router text whose bounded-path instructions
+read "Ask the clarifying questions that matter, present a short design
+IN CHAT... and get approval" can still get literally-correctly
+skipped by a capable model that treats "no spec file needed" as
+license to skip presenting a design at all, not just skip writing one
+to a file. Recommend flagging this specific gap (bounded-path
+approval-before-implementation compliance) for a future fix iteration
+if the campaign continues past this cycle — out of scope for this
+task's own mandate, which was to measure the shipped text as-is, not
+to patch it further.
