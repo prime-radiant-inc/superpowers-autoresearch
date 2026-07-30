@@ -441,3 +441,168 @@ Economics table.** Rep4/rep7's partial spend before the crash is
 for either (the crash pre-empted it), so no dollar figure is
 reconstructible, consistent with this log's "no figure exists" rule
 rather than an estimate.
+
+### 2026-07-30 — SHARED SDD BATTERY: T1/T2/T5 verdicts on n=6 (Task 8)
+
+Scored the 6 valid reps (1/2/3/5/6/8; 4/7 lost to the Docker crash
+above) with `score_e6.py` (T1), a small one-off script reusing
+`score_e7.py`'s own tested `census_session()`/`aggregate()` functions
+against the fix-arm RUNDIRs across both lanes (T2 — `score_e7.py`
+itself hardcodes `arms=("dev","spinout")` and a single results dir,
+neither of which fits `fix` split across two lane checkouts; rather
+than modify score_e7.py's tested discovery logic or risk colliding
+with its four frozen census blobs, the one-off script
+(`/private/tmp/.../scratchpad/score_e7_fix_battery.py`, not committed —
+scratch, not a campaign artifact) writes only a new
+`out/e7-battery-fix.json`, untouched otherwise), and `score_e1.py`
+(T5). Outputs: `out/e6-cx-sdd-small-fix-rep1-8.json`,
+`out/e7-battery-fix.json`, `out/e1-cx-sdd-small-fix-rep1-8.json` (the
+"rep1-8" filename suffix is `score_e1`/`score_e6`'s own
+min-rep-to-max-rep naming convention — it does NOT mean reps 4/7 are
+included; every one of the three JSON blobs lists exactly 6 runs with
+explicit `rep` fields 1,2,3,5,6,8).
+
+**Manual inspection (non-circular — raw rollout JSONL, not scorer
+helpers), beyond the brief's 2-run minimum:**
+- **Depth-2 spawn census (T1):** `grep -c '"name":"spawn_agent"'`
+  against every rollout file in all 6 reps' session trees (not a
+  sample — the full corpus, cheap enough to do exhaustively). Confirms
+  score_e6's finding exactly: rep1/2/3/5/8 have `spawn_agent` calls
+  ONLY in their root rollout file (0 elsewhere); rep6 has 2 additional
+  `spawn_agent` calls in a NON-root file
+  (`rollout-...18-39-46...jsonl`). Traced that file's identity via
+  `score_e1`'s own `parent_rollout`/`child_rollout` linkage (data, not
+  trusted classification) and independently confirmed by re-reading
+  the raw JSONL: root spawned it as `final_reviewer`
+  (`model=gpt-5.6-sol`, `reasoning_effort=xhigh`), and that
+  `final_reviewer` session ITSELF issued 2 more `spawn_agent` calls —
+  `behavior_tests_review` and `packaging_docs_review` — confirmed via
+  direct `json.loads` of the raw `arguments` string: both call sites'
+  argument dict has keys `['fork_turns','message','task_name']` only —
+  no `model` or `reasoning_effort` key present at all (not
+  present-but-null; genuinely absent from the tool call). **A real
+  worker-issued depth-2 spawn, from a reviewer role.**
+- **Root cause, confirmed from source:** commit `62c0180`'s
+  "no-subagents" contract (`## You Do Not Dispatch Subagents`) was
+  added ONLY to `skills/subagent-driven-development/
+  implementer-prompt.md`. `task-reviewer-prompt.md` and
+  `re-review-prompt.md` (`grep -n
+  'dispatch\|subagent\|spawn'` on both) contain **zero** matching
+  contract language — reviewers were never told not to dispatch. This
+  directly explains rep6: the controller-dispatched `final_reviewer`
+  found a defect area needing deeper investigation and, with no rule
+  against it, spawned two specialized sub-reviewers itself instead of
+  reporting back to the controller.
+- **Wait-timeout classification (T2):** independently re-parsed two
+  full sessions' raw `wait_agent`/`function_call_output` pairs with a
+  fresh from-scratch script (own `json.loads` + call_id pairing, not
+  `rollout_parser.wait_outcomes()`): rep1's root session (26 calls) —
+  MANUAL: 25 paired, 18 timed out (72.0%); rep2's root session (9
+  calls) — MANUAL: 9 paired, 0 timed out (0.0%). Both **exactly** match
+  `out/e7-battery-fix.json`'s per-session numbers for the same two
+  rollout files. High per-rep variance (72% vs 0%) is itself notable —
+  not every rep polls the same way — but the 6-rep aggregate (below)
+  is what the pre-registered criterion grades.
+- **Explicit-model claims (T5):** independently re-parsed rep3's root
+  session's 9 raw `spawn_agent` argument blobs — all 9 carry explicit
+  `model`+`reasoning_effort`, matching `score_e1`'s table exactly.
+  Cross-checked against rep6's 2 depth-2 spawns above (already
+  manually confirmed model-omitted from the raw argument keys, not
+  scorer inference).
+- **Review coverage:** every one of the 6 reps' root sessions spawns
+  exactly one `task{1,2,3}_reviewer` per task (verified in the same
+  raw `spawn_agent` argument dumps used for the T5 check above) plus
+  one whole-branch `final_reviewer`; `score_e6`'s aggregate confirms
+  `reps with >=1 same-task duplicate review=0/6` — the rep6 depth-2
+  spawns cover NEW areas (behavior tests, packaging docs) that no
+  depth-1 reviewer already covered, not a duplicate of an
+  already-reviewed task.
+
+**Aggregate numbers (6 reps, from the three JSON blobs):**
+- T1: **2 worker-issued depth-2 spawns** across 6 reps (1/6 reps
+  affected), both `reviewer`-role-spawned, 0 same-task duplicate-review
+  families.
+- T2: **150 wait_agent calls, 146 paired, 95 timed out — 65.1%
+  timeout rate (paired), 63.3% (of all calls).** All 6 reps' gauntlet
+  verdict = `pass`; `score_e1`'s aggregate shows 50/50 (100%) resolved
+  child rollouts with `task_complete` present — no loss of task
+  completion.
+- T5: **48/50 spawns (96.0%) carry explicit model; 2/50 (4.0%)
+  omitted — both the T1 depth-2 pair.** 48/48 root-issued (depth-1)
+  spawns are explicit (100% — the pre-existing root-controller
+  guarantee holds). `fork_turns:"none"` on all 50/50 spawns (isolation
+  unaffected).
+
+**T5's pre-registered zero-depth-2 caveat does NOT apply.** The
+caveat was: "if T1 eliminates depth-2 spawns entirely, T5... is
+recorded inconclusive-by-zero at depth-2." T1 did NOT eliminate
+depth-2 spawns — 2 real ones exist, in 1/6 reps — so T5 is directly
+gradable at depth-2, and both real depth-2 spawns fail its criterion.
+**Additional context, not part of the pre-registered criterion but
+relevant to interpreting the miss:** T5's fix (`2a4c11b`) also
+documents an advisory config-level backstop
+(`~/.codex/config.toml`'s `[agents] default_subagent_model` /
+`default_subagent_reasoning_effort`) as the safety net for exactly
+this kind of slip — checked rep6's actual container
+`home/.codex/config.toml`: no `[agents]`/`default_subagent_*` keys
+present. **The backstop was never provisioned in this eval
+environment**, so this battery cannot speak to whether it would have
+caught rep6's omission; only the docs-only guidance was live, and it
+did not prevent the miss.
+
+**Verdicts against the pre-registered criteria:**
+
+- **T1 (0 worker-issued depth-2 spawns AND review coverage
+  preserved): FAIL.** The "review coverage preserved" clause passes
+  cleanly (6/6 reps, every task gets exactly one controller-dispatched
+  reviewer, 0/6 same-task duplicates). The "0 worker-issued depth-2
+  spawns" clause fails: 2 found, in 1/6 reps (16.7%), both from a
+  reviewer role. Root cause is a real, fixable gap, not noise: the
+  fix's own no-subagents contract was scoped to
+  `implementer-prompt.md` only and never reached
+  `task-reviewer-prompt.md`/`re-review-prompt.md`. The pathology this
+  fix targeted (9/9 same-task duplicate reviews across 4 corpora, per
+  commit `62c0180`'s own message) is gone in this battery — 0/6
+  same-task duplicates — but a related, previously-undocumented
+  pathology (reviewer-initiated depth-2 fan-out, not
+  same-task-duplicate in shape) surfaced in its place.
+- **T2 (timeout rate < 25% with no loss of task completion): FAIL.**
+  65.1%/63.3% vs the <25% bar — not close, and barely distinguishable
+  from the dev baseline this exact scenario measured in the prior
+  campaign (67.1%/69.3%, `logs/2026-07-28-codex-efficiency.md` E7
+  RESULT entry): a 2-6 point shift, not the order-of-magnitude
+  reduction the fix aimed for. "No loss of task completion" clause
+  passes (6/6 gauntlet pass, 100% child task_complete) but the overall
+  conjunction fails on the timeout-rate clause. The fix is docs-only
+  (`codex-tools.md` guidance to issue one long `timeout_ms>=900000`
+  wait instead of short polls); the smoke rep's own root session shows
+  the model still escalating short timeouts (1000/10000/20000/30000ms)
+  rather than adopting the recommended single long wait — the
+  documentation did not change the behavior it targeted.
+- **T5 (every spawn at every depth carries explicit model + effort):
+  FAIL, not inconclusive-by-zero** (caveat doesn't apply — see above).
+  48/50 (96.0%) explicit; the 2 misses are exactly the T1 depth-2
+  pair, i.e. the same fix-coverage gap (reviewer role never told to
+  set model/effort on its own spawns, mirroring never being told not
+  to spawn at all) produces both the T1 and T5 misses from the same 2
+  events. Root-controller (depth-1) spawns hold 100% (48/48), matching
+  the "root-spawn regression" backstop framing from the caveat even
+  though the caveat's trigger condition didn't fire. The advisory
+  config backstop that's supposed to catch exactly this slip was not
+  provisioned in this eval environment (see above) — untested here.
+
+**Ledger row:** 2026-07-30 | Shared SDD battery T1/T2/T5 (fix arm,
+cx-sdd-small, n=6 of pre-registered 8 — Docker crash cost reps 4/7) |
+$26.82 (6 measured reps; rep4/rep7 partial spend unmeasured, no
+token-usage file written before the crash) | sub used_percent not
+read this task.
+
+**Status: T1/T2/T5 verdicts delivered on n=6. Task remains BLOCKED on
+Docker Desktop infrastructure for the 2 missing reps (4 and 7) — not
+re-attempted after the second immediate crash (see the anomaly entry
+above). All three verdicts are FAILs against their absolute
+pre-registered criteria; none of the three would plausibly flip to
+PASS with 2 more reps given how large each miss is (a 2-6x gap for T2,
+a real and root-caused-not-noise miss for T1/T5) — but the
+pre-registered n=8 was not reached and that shortfall is reported
+honestly rather than silently backfilled.**
