@@ -89,15 +89,16 @@ a **root-controller** dispatch (`final_reviewer_after_fix`, dev rep3,
 timestamp `2026-07-30T07:13:08.330Z`, immediately post-compaction) that
 omitted `model` — the config field `dev`'s own
 `subagent-driven-development/SKILL.md` mandates be always explicit. Per
-the E1 CLI-0.146 re-test entry in the hypothesis log, every dev-arm
+the E1 CLI-0.146 re-test entry in the hypothesis log, every
 root-controller spawn scored anywhere in this campaign before E6 was
-100% explicit-model (45/45 combined across E1's full corpus at CLI
-0.146). **This is the first such failure anywhere in this campaign's
-dev-arm corpus at the field CLI version, and it happened exactly at a
-post-compaction dispatch, on the arm with no recovery hook.** One
-instance is a thin signal (1/21 post-compaction spawns), but its
-direction is exactly the pre-registered prediction (i), and it breaks a
-previously-unbroken 45/45 streak.
+100% explicit-model: **45/45 combined across both arms of E1's CLI-0.146
+corpus (dev 14/14 + spinout 31/31)** — the dev arm's own share of that
+streak is 14/14. **This is the first such failure anywhere in this
+campaign's dev-arm corpus at the field CLI version, and it happened
+exactly at a post-compaction dispatch, on the arm with no recovery
+hook.** One instance is a thin signal (1/21 post-compaction spawns), but
+its direction is exactly the pre-registered prediction (i), and it breaks
+a previously-unbroken streak — 14/14 on dev alone, 45/45 combined.
 
 **Drew's stress-2703 corpus tells a different story on this specific
 clause: ZERO degradation** — 5/5 pre and 78/78 post spawns are 100%
@@ -113,20 +114,55 @@ undecided explanation, not resolved by this task.
 **Every depth-2 spawn observed anywhere in this battery (4/4) was
 issued by an implementer, none by a reviewer** — dev rep1 (1), dev rep3
 (2), spinout rep1 (1); spinout reps 2-3 had none. This is now one of the
-most repeatedly-confirmed findings in the whole campaign. Tally, counting
-only depth-2-spawn-issued-by-implementer occurrences (not requiring the
-stricter duplicate-review match below): Amendment 3's real 07-29
-audit-tree session (1) + the E1 CLI-0.146 re-test's own battery (2) +
-this task's own new `cx-compaction` battery (4: dev rep1, dev rep3 ×2,
+most repeatedly-confirmed findings in the whole campaign.
+
+**Terminology (this section counts by SPAWNER role).** "Depth-2 spawn by
+role" here means *the role of the session that issued the spawn* — an
+implementer child calling `spawn_agent` a second level down. The same
+phrase in `out/e-audit0729.md`'s cross-corpus table counts by *child*
+role (what the depth-2 child itself is). Both descriptions fit the same
+underlying events: the observed shape is always an implementer spawning a
+reviewer, so it is 100% implementer-issued by spawner role and 100%
+reviewer by child role. Neither count is a disagreement with the other.
+
+Tally, counting only depth-2-spawn-issued-by-implementer occurrences (not
+requiring the stricter duplicate-review match below), deduplicated by
+underlying run: Amendment 3's real 07-29 audit-tree session (1) + this
+task's own new `cx-compaction` battery (4: dev rep1, dev rep3 ×2,
 spinout rep1) + this task's free re-score of the EXISTING `cx-sdd-small`
 corpus (3: spinout rep5, spinout rep8, v611 rep2) + Drew's stress-2703
 (1: an implementer-role session spawning a reviewer-role child at depth
 2 — task_name strings from this corpus are not cited, per the standing
-never-commit rule) = **11 independently-confirmed
-occurrences across 5 distinct corpora/sources** (a real desktop session,
-two of our own quorum battery families, and one external corpus), **with
-zero counter-examples** — no reviewer-spawned depth-2 child was ever
-observed anywhere, in any corpus this campaign has scored.
+never-commit rule) = **9 independently-confirmed occurrences across 4
+distinct corpora/sources** (a real desktop session, two of our own
+quorum battery families, and one external corpus), **with zero
+counter-examples** — no reviewer-spawned depth-2 child was ever observed
+anywhere, in any corpus this campaign has scored.
+
+**Correction (this was "11 across 5 corpora" in an earlier draft of this
+report):** the earlier tally added "the E1 CLI-0.146 re-test's own
+battery (2)" as a separate source. It is not one — the E1 re-test's
+treatment arm IS `cx-sdd-small` spinout rep5-8, the same runs the free
+re-score covers, so its 2 depth-2 spawns are the same two events already
+counted as "spinout rep5, spinout rep8". Verified by summing
+`depth2_details` across every E6-scored run: `cx-compaction` dev 3 +
+`cx-compaction` spinout 1 + `cx-sdd-small` spinout 2 (rep5, rep8) +
+`cx-sdd-small` v611 1 + `cx-sdd-small` dev 0 = **7 in-campaign
+occurrences**, plus the 07-29 session (1) and Drew's stress-2703 (1) =
+**9 distinct**. `duplicate_review_families` sums to 7 over the same runs,
+so all 7 in-campaign occurrences — and, with 07-29 and Drew, all 9 — also
+match the stricter same-task-duplicate pattern. See the hypothesis log's
+dated correction entry.
+
+**Terminology (E6's "duplicate review" is not E5's).** E6 scores a
+**same-task** duplicate: two reviews of the *same task family*, one of
+them worker-initiated at depth 2, the other controller-initiated at depth
+1 — the recursion-shape measure Amendment 3 registered. E5
+(`out/e5-report.md`, "same-scope duplicate review") scores a different
+thing: two reviews covering the *same review scope* regardless of who
+issued them or at what depth, which is why E5 can report 0/3 in a
+battery where E6-style same-task duplicates are common. The two measures
+are complementary, not competing counts of one phenomenon.
 
 **Same-task duplicate reviews** (a worker-initiated depth-2 review of a
 task, alongside a separate controller-initiated depth-1 review of the
@@ -223,18 +259,22 @@ same pattern as E1's axis split:
   re-read-anything).
 - **Clause (b) degradation: holds, narrowly** (1/21 post-compaction
   spawns on dev, 0/21 on spinout) — a real, if thin, signal that breaks
-  a previously-unbroken 45/45 dev-arm explicit-model streak, in exactly
-  the predicted direction and exactly at the predicted boundary.
+  a previously-unbroken root-controller explicit-model streak (14/14 on
+  the dev arm alone, 45/45 combined across both E1 CLI-0.146 arms), in
+  exactly the predicted direction and exactly at the predicted boundary.
 - Sharpened prediction (i) (hygiene drop on dev vs. flat on spinout):
   **confirmed directionally**, modest in magnitude.
 - Sharpened prediction (ii) (depth-2 concentrated in implementer
   spawners + same-task duplicates): **strongly confirmed**, now the most
-  repeatedly-reproduced finding in the campaign (11 depth-2-by-
-  implementer occurrences across 5 corpora/sources, **9** of those also
-  matching the stricter same-task-duplicate-review pattern — corrected
-  from an earlier draft's "8", which omitted Drew's stress-2703
-  occurrence on a stale pre-fix run; see the Concerns section — 0
-  counter-examples).
+  repeatedly-reproduced finding in the campaign (**9** depth-2-by-
+  implementer occurrences across **4** corpora/sources, **all 9** also
+  matching the stricter same-task-duplicate-review pattern — 0
+  counter-examples). Two corrections landed on this tally: an earlier
+  draft said "8" same-task duplicates, omitting Drew's stress-2703
+  occurrence on a stale pre-fix run (see the Concerns section), and the
+  occurrence total was "11 across 5 corpora" until the E1-re-test /
+  `cx-sdd-small`-spinout double-count was removed (see the correction in
+  section (c) above).
 - Sharpened prediction (iii) (rig-can't-reproduce alternative outcome):
   **not triggered as a clean terminal finding** — real signal exists on
   both clauses somewhere in the evidence base — but its NUANCED form

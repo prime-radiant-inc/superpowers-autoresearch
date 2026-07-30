@@ -315,11 +315,28 @@ Real numbers now, computed from the fetched tree the same way
 
 \* rate/all_calls, matching `score_e7.py`'s own column (see `out/e7-report.md`).
 
+**Terminology for the last column: it counts CHILD role.** "Depth-2
+spawns by role" in this table means *what the depth-2 child itself is*
+(reviewer or implementer), which is why the 07-29 row reads "1/1 depth-2
+spawn is a reviewer (0 implementer)". `score_e6.py` and
+`out/e6-report.md` count the same events by *spawner* role — *who issued
+the depth-2 spawn* — and therefore describe them as
+"implementer-issued". Same events, two axes; neither count contradicts
+the other, and any cross-report comparison has to name which axis it
+means.
+
 The 07-29 tree's root-alone timeout rate (79.8%) sits squarely inside
 the range every other real/near-real corpus in this campaign has shown
-(60–80%), and its depth-2 shape (a single implementer-spawned reviewer,
-zero implementer-issued depth-2 spawns) matches the pattern already
-noted 3 times elsewhere in this campaign (`out/e1-v611-report.md`,
+(60–80%). Its depth-2 shape, stated unambiguously on both axes: **the
+tree has exactly one depth-2 spawn; the session that ISSUED it is an
+implementer (1/1 implementer-issued by spawner role, 0 reviewer-issued),
+and the CHILD it spawned is a reviewer (1/1 reviewer by child role, 0
+implementer)** — confirmed two independent ways in claim 5 above
+(`child_links()`/`extract_spawns()` rollout content and `remote-host-a`'s
+live `thread_spawn_edges` DB: the "catalog" implementer, a direct root
+child, has exactly one DB-recorded child of its own, the depth-2
+reviewer). This matches the pattern already noted 3 times elsewhere in
+this campaign (`out/e1-v611-report.md`,
 `out/drew-cross-validation.md`) — recursive, child-initiated spawning is
 where dispatch/recursion pathology concentrates, not the root controller
 directly. This is now a 4th occurrence of that same shape, in a real

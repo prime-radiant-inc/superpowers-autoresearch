@@ -20,13 +20,59 @@ fact.
 | 2026-07-29 | E1 treatment (spinout, cx-sdd-small, 4 reps, axis A) | $21.28 ($19.90 coding + $1.38 gauntlet) | 45.0% | 1.0% (window rollover mid-battery) |
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, baseline (dev, cx-sdd-small, rep5-6) | $7.27 ($6.64 coding + $0.63 gauntlet) | 3.0% | 3.0% |
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, treatment (spinout, cx-sdd-small, rep5-8, axis A) | $17.74 ($16.42 coding + $1.31 gauntlet) | 4.0% | 7.0% |
+| 2026-07-29 | E2 MICRO (`reviewer-recursion-micro.py`, 4 variants × 5 reps, `codex exec`) | no dollar figure exists — `codex exec` bills the Codex subscription with no coding/gauntlet split; the primary window read a flat **8.0% across all 20 rollouts** (too small to register), so the honest entry is "subscription-billed, unresolvable to dollars" rather than a made-up number | 8.0% | 8.0% |
 | 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
 | 2026-07-29 | E1-v611 (v611, cx-sdd-small, 3 reps, lane B, JOBS=2) | $12.17 ($11.24 coding + $0.93 gauntlet) | 17.0% | 19.0% |
 | 2026-07-29/30 | E4 ceremony census (dev, cx-ceremony-{spike,bounded,arch}, 3 reps/class + 2 outage-tainted arch reps, lane A) | $21.39 ($16.85 clean/scored + $4.54 outage-tainted/excluded) | 18.0% | 55.0% |
+| 2026-07-29/30 | E4 ceremony MICRO (`ceremony-path-micro.py`, Anthropic Messages API, `claude-opus-4-8`, REPS=5, 45 calls) | **unmeasured — API cost not captured** (the harness records no token/cost totals and none were read from the API response at run time; not reconstructible after the fact, so no figure is stated) | n/a (not a Codex subscription run) | n/a |
+| 2026-07-30 | E6 calibration (2 adhoc `codex exec` runs, no gauntlet) | ~$0.4 (uninstrumented estimate — raw `codex exec`, not quorum-priced; ~264K tokens combined) | -- | -- |
+| 2026-07-30 | E6 baseline (dev, cx-compaction, 3 reps, lane A) | $12.66 ($11.56 coding + $1.10 gauntlet: rep1 $4.11+$0.45, rep2 $3.50+$0.33, rep3 $3.95+$0.32) | 56.0% | -- |
+| 2026-07-30 | E6 treatment (spinout, cx-compaction, 3 reps, lane B, JOBS=2) | $13.06 ($11.98 coding + $1.09 gauntlet: rep1 $4.71+$0.41, rep2 $3.94+$0.36, rep3 $3.33+$0.32) | -- | 58.0% |
+| 2026-07-30 | E10 probe (a) empty-output child (dev, cx-sdd-small-emptychild, 2 reps) | $5.93 (rep1 $3.58 + rep2 $2.35) | not read | not read |
+| 2026-07-30 | E10 probe (b) killed child (dev, cx-sdd-small + `probe-kill-child.sh --live`, 2 reps) | $2.19 (rep A $0.70 + rep B $1.49) | not read | not read |
+| 2026-07-30 | E10 probe (c) budget cut (dev, cx-sdd-small-shortbudget, 1 rep) | $1.08 | not read | not read |
 | 2026-07-30 | E3 baseline (dev, cx-finishing, 3 reps, lane B, JOBS=2) | $1.66 ($1.22 coding + $0.43 gauntlet; sums to $1.65 — $0.01 is independent per-rep rounding, not an arithmetic error) | 58.0% | 61.0% |
 | 2026-07-30 | E3 waiver probe (dev, cx-finishing-waiver, 2 reps, lane B, JOBS=2) | $1.19 ($0.83 coding + $0.36 gauntlet) | 61.0% | 63.0% |
 | 2026-07-30 | E3 invalidation probe (dev, cx-finishing-invalidation, 1 rep, lane B) | $0.84 ($0.67 coding + $0.17 gauntlet) | 63.0% | 64.0% |
 | 2026-07-30 | E5 FULL baseline (dev, cx-scope-review, 3 reps, lane A) | $9.28 ($8.59 coding + $0.69 gauntlet, per-rep: $3.51/$2.07/$3.70) + ≈$0.4-0.7 wasted from a mid-battery infrastructure mistake (own container-teardown/duplicate-relaunch, caught and killed same-turn — see "E5 RESULT" entry) | not read (no live `codex_sub` CLI session queried during this battery) | not read |
+| 2026-07-28/30 | MINE-tier work: parser validation, E7/E8/E9 censuses, Drew cross-validation, the 07-29 audit-tree reconciliation, and every free re-score (E3/E5/E6 over existing corpora) | **$0 new run spend** (all read-only scoring of already-paid-for or external corpora) | -- | -- |
+
+**Ledger reconciliation (2026-07-30, whole-branch review fix wave).** Rows
+above, added up:
+
+- **Instrumented, dollar-measured spend: $152.34.** The eleven original
+  rows total $117.42; the two E6 batteries add $25.72; the three E10
+  probes add $9.20.
+- **Estimated, uninstrumented spend: ≈$0.8–1.1.** E6's calibration runs
+  (~$0.4, raw `codex exec`) and E5's mid-battery waste (≈$0.4–0.7, part
+  reconstructed from a real `coding-agent-token-usage.json` at $0.21,
+  part token-ratio estimate).
+- **True campaign total: ≈$153.1–153.4 (call it ≈$153.2)**, of which
+  $152.34 is measured. Against the $250 checkpoint and the $1000 budget.
+- **Not included, because no figure exists:** E4's ceremony MICRO
+  (Anthropic API, 45 calls — unmeasured, see its row) and E2's MICRO
+  (subscription-billed `codex exec`, no dollar split). Both are real
+  spend that this ledger cannot quantify; neither is estimated here,
+  because guessing at them would be inventing data. E4's is the larger
+  omission (45 opus-class calls); E2's moved the subscription window not
+  at all.
+- **Subscription usage:** the `codex_sub` primary window was read
+  before/after most batteries (the per-row values above), running from
+  28.0% at the first E1 rep to 64.0% after E3's invalidation probe — the
+  last reading anyone took. One full window rollover happened
+  mid-E1-treatment (45.0% → 1.0%), and E4's census was the single
+  biggest mover in one window (18.0% → 55.0%). E5's and E10's batteries
+  took no reading at all, so the percentages do not form a continuous
+  series and no total-percent-consumed figure can be derived from them.
+  The defensible summary: no window ever approached exhaustion, and one
+  rollover was observed.
+
+**This supersedes the running-total arithmetic in the narrative entries
+below**, which chained battery-to-battery and skipped E3's three
+batteries entirely ($3.69 combined): 66.88 → 70.89 → 83.06 → 104.45 →
+130.57 → 139.77 → "≈$149.5-150" at the E5 RESULT entry. Those entries
+are left unedited per the append-only rule; each was correct against the
+rows it knew about, and the table above is now the authority.
 
 ## Pre-registered predictions
 
@@ -3772,3 +3818,167 @@ citability precedent as the RESULT entry above.
 **Commit:** "fix(codex-efficiency): E5 corrections — remediation tally
 (0,1,2), criterion-less gate-findings measure". Fix report appended to
 `task-12-e5-report.md`'s Concerns section (item 6).
+
+### 2026-07-30 — CORRECTION to the "E6 RESULT" entry above: the depth-2 tally double-counted one corpus (11 → 9), and the 45/45 explicit-model streak is a COMBINED figure, not a dev-arm one (whole-branch review fix wave, controller entry)
+
+Filed against the "E6 RESULT" entry (2026-07-30) by the final
+whole-branch review before merge. Per this log's append-only rule that
+entry is left unedited; this is a correction appended after it. Neither
+correction changes any E6 verdict — both are counting/attribution errors
+in prose that overstate how much independent evidence exists.
+
+**1. The depth-2-by-implementer tally was 11 across "5 distinct
+corpora/sources"; it is 9 across 4.** The earlier tally listed "the E1
+CLI-0.146 re-test's own battery (2)" as a source separate from "the free
+re-score of the EXISTING `cx-sdd-small` corpus (3)". Those are not
+independent: the E1 CLI-0.146 re-test's treatment arm IS `cx-sdd-small`
+spinout rep5-8. Its 2 depth-2 spawns (rep5, rep8) are the same two events
+the re-score already counted, so they were counted twice and the source
+list inflated by one.
+
+Recomputed from the committed scorer output rather than from prose —
+summing `depth2_details` over every run E6 scored:
+
+| Scored corpus | depth-2 spawns | same-task duplicate families |
+|---|---:|---:|
+| `cx-compaction` dev rep1-3 | 3 (rep1 ×1, rep3 ×2) | 3 |
+| `cx-compaction` spinout rep1-3 | 1 (rep1) | 1 |
+| `cx-sdd-small` spinout rep1-8 | 2 (rep5, rep8) | 2 |
+| `cx-sdd-small` v611 rep1-3 | 1 (rep2) | 1 |
+| `cx-sdd-small` dev rep1-6 | 0 | 0 |
+| **in-campaign total** | **7** | **7** |
+
+Plus the two external/independent sources: Amendment 3's real 07-29
+audit-tree session (1) and Drew's stress-2703 (1). **Corrected claim: 9
+occurrences, all 9 also matching the stricter same-task-duplicate-review
+pattern, across 4 distinct corpora/sources** (one real desktop session,
+two of our own quorum battery families, one external corpus), still with
+**zero counter-examples**. The finding remains the most-reproduced in the
+campaign; the correction removes one duplicated corpus and one duplicated
+pair of events, and it also resolves the previous entry's odd 11-vs-8
+split (the 3-occurrence gap was mostly the double-count, not genuinely
+non-duplicate spawns): the duplicate-review count and the depth-2 count
+are now the same 9, because every distinct occurrence observed anywhere
+is both.
+
+Corrected in place (not an append-only document, per its own convention)
+in `out/e6-report.md` §(c) and its discrimination-gate bullet (ii).
+
+**2. "45/45" is a both-arms figure; the dev arm's own streak was
+14/14.** The entry above says the broken streak "had been 45/45=100%
+reliable across E1's whole corpus" in the same sentence as "the FIRST
+such failure anywhere in this campaign's dev-arm corpus". Read together
+that attributes a 45-spawn denominator to the dev arm alone. The real
+decomposition, as stated correctly at `out/e1-retest-cli0146.md`'s
+depth-2 finding: **dev 14/14 + spinout 31/31 = 45/45 combined** root-
+controller spawns explicit-model at CLI 0.146. So E6's single dev-arm
+omission breaks a **14/14** dev streak, and a 45/45 combined streak — a
+materially thinner prior than "45/45 on dev" implies, and the honest way
+to state a 1-instance finding. The verdict (clause (b) holds, narrowly,
+1/21 post-compaction dev spawns) is unchanged.
+
+Corrected in place in `out/e6-report.md` (three sites: the §(b)
+narrative, the clause-(b) discrimination bullet, and the streak
+restatement).
+
+**Verification:** the 7-in-campaign figure was recomputed directly from
+the committed JSON (`json.load` over all five `out/e6-*.json` files,
+summing `len(depth2_details)` and `len(duplicate_review_families)` per
+run), not re-read from any report. Full test suite green. This entry and
+both edited reports swept substring-aware against the standing
+sensitive-string needle sets (Drew corpus, 07-29 corpus) before commit —
+zero hits.
+
+### 2026-07-30 — DISCLOSURES that were living only in untracked task reports, now recorded in the tracked log (whole-branch review fix wave, controller entry)
+
+The whole-branch review found that three campaign decisions were disclosed
+only inside `.superpowers/sdd/2026-07-28-codex-efficiency-evals/` task
+reports. That directory is gitignored (`*`), so those disclosures would
+have vanished at merge, leaving decisions in the tracked history with no
+recorded reasoning. Recorded here instead.
+
+**1. Commit `193167c` contains a log entry that precedes its own backing
+files — a real ordering anomaly, ruled "disclose, do not rewrite".**
+`193167c` ("E3 invalidation probe", 2026-07-30 04:55:35 -0700) appended
+**two** entries to this log: its own E3 entry and, unintentionally, Task
+12's "E5 RESULT" entry. E5's backing artifacts — `score_e5.py`,
+`test_score_e5.py`, `out/e5-report.md`, `out/e5-defect-key.md`, and the
+four `out/e5-*.json` blobs — did not land until `031937f` four minutes
+later (04:59:53). So for those four minutes the branch tip carried an
+entry citing files that did not yet exist at HEAD.
+
+- **Root cause: my own concurrency model, not a tooling failure.** Two
+  tasks (Task 10's fix round and Task 12's E5 battery) were in flight in
+  the SAME working tree at the same time. Both append to this one log
+  file. `git add logs/...` in the earlier commit therefore swept up the
+  other task's already-appended entry. Nothing detected this because the
+  log is append-only by convention and each task only inspected its own
+  additions.
+- **Ruling (parked, not rewritten):** no history rewrite. At HEAD every
+  file the entry cites exists, the entry's content is accurate, and the
+  four-minute window is a provenance artifact rather than a false claim —
+  the alternative (rebasing two commits to re-split one file's hunks)
+  risks more than it fixes on a branch this size.
+- **Lesson for the closeout:** concurrent tasks must not share a working
+  tree when they both append to the same file. One tree per concurrent
+  task (worktrees), or serialize the log-appending step.
+
+**2. The SDD ledger is now a tracked file, by controller decision.**
+`.superpowers/sdd/2026-07-28-codex-efficiency-evals/progress.md` — the
+campaign's per-task decision record (adjudications, amendments, deferred
+minors, parking rulings, spend checkpoints) — is force-added
+(`git add -f`) as a deliberate, approved exception to the
+workspace-cleanup convention. Everything else in that directory stays
+untracked and dies at merge, which is correct for briefs, per-task
+reports, and review diffs; the ledger is the one artifact whose loss
+would erase why the campaign made the calls it made.
+
+**3. Two history-embedded strings remain Jesse's call at merge — and they
+are NOT equally sensitive.** Re-derived independently for this entry (per
+needle, per commit, tracked trees and commit messages both; only SHAs,
+paths and counts were ever printed, never the strings):
+
+- **String 1 — genuinely private, six commit trees.** A real task_name
+  from Drew's stress-2703 stress run (the private client session), committed
+  verbatim in `test_score_e6.py` at `99c5ad7` as a `task_family()` test
+  input. It is present in the TREES of exactly six commits — `99c5ad7`,
+  `51607a9`, `85725ce`, `d66b8a8`, `befb06e`, `f32350b` — and was removed
+  at `aeb77e6`. It appears in NO commit message, and in no other tracked
+  file at any commit. Confirmed distinctive to the private run: a
+  per-subtree grep of Drew's corpus finds it in `transcripts/stress-2703`
+  only (3 files), and in none of the four fractals runs. **This is the
+  one that would justify a history rewrite.**
+- **String 2 — a coincidental collision, low sensitivity.** The second
+  string is a generic SDD-taxonomy label (a `final_*_review`-shaped
+  task_name). It does occur in the stress corpus, but it is NOT
+  distinctive to it: the same per-subtree grep finds it in Drew's
+  `sol-5_6` fractals run as well, and this campaign's OWN battery output
+  contains it independently — `out/e2-report.md` (Task 8) and
+  `out/e10-battery.json` (Task 14), both predating any Drew-corpus work,
+  plus `test_score_e6.py`'s own `final`-prefix regression test. So the
+  token is at HEAD, legitimately, as our own data. Its only
+  history-embedded *Drew-attributed* mention is `aeb77e6`'s COMMIT
+  MESSAGE, where fix-round-2's own prose named it while explaining the
+  first leak. `aeb77e6`'s message says as much itself. **The leak here is
+  the attribution, not the token** — worth Jesse knowing, much weaker
+  grounds for a rewrite.
+- String 1 is absent from the working tree at HEAD (zero hits,
+  substring-aware sweep over all tracked text files).
+- Also flagged, and accepted-with-rationale during the E9 review rather
+  than swept: Drew repo/run/branch identifiers in 13 files, 5 SDD report
+  paths and 8 commit SHAs (`out/e9-report.md`, and this log's own
+  Amendment-1 entries), and the 07-29 corpus's root UUID plus its host
+  name in `audit0729_adapter.py`. These are provenance identifiers, not
+  session content, and the campaign judged them citable; they have never
+  been swept and Jesse should know that before merge if his own bar is
+  stricter.
+
+**Verification:** the `193167c`/`031937f` ordering was re-derived directly
+from git (`git show --stat --format='%h %ad %s'`, both commits), not taken
+from the task reports that first disclosed it. The string-scope figures
+above were re-derived by walking every commit in `42892fa..HEAD` and
+testing each needle against that commit's tracked tree and its message,
+plus per-subtree greps of Drew's corpus to establish which run each string
+belongs to — a stricter check than the review's, and it is what turned up
+the string-1-vs-string-2 asymmetry. This entry swept substring-aware
+against both needle sets before commit: zero hits.

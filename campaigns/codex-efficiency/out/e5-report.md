@@ -65,6 +65,17 @@ append-only history and the pre-registered predictions).
      `classify_role_by_task_name()`/`task_family()`, reused unmodified)
      sharing a family — scoped to reviewer-role only so an ordinary
      implementer+reviewer pair is never misflagged.
+
+     **Terminology: this is NOT E6's "same-task duplicate review."**
+     E5's measure counts two *reviewer-role* sessions covering the same
+     review scope, whoever dispatched them and at whatever depth. E6's
+     (`out/e6-report.md`, section (c)) counts a *worker-initiated
+     depth-2* review of a task alongside a separate
+     *controller-initiated depth-1* review of the same task family — a
+     recursion-shape measure that requires the depth/issuer pattern. A
+     corpus can therefore score 0 on E5's measure and nonzero on E6's
+     (and this campaign's batteries do exactly that); the two numbers
+     are complementary, not rival counts of one phenomenon.
   4. **Serial-remediation cycles** (Amendment 3): post-repair
      test-command reruns (`score_e3.test_command_events()`, reused)
      minus 1.
