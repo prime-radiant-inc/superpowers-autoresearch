@@ -150,6 +150,20 @@ class TestWritingPlansInvoked(unittest.TestCase):
         ])
         self.assertFalse(st.score_trajectory(t)["writing_plans_invoked"])
 
+    def test_not_detected_from_write_call_content_mentioning_the_path(self):
+        """A Write call's `content` merely mentioning the skill path in
+        prose (e.g. a plan doc that narrates "used the writing-plans
+        skill") is not a READ -- writing that text must not itself set
+        writing_plans_invoked. Only read-shaped calls (Read-type tools,
+        Bash command strings) count."""
+        t = traj([
+            user_step(1, "hi"),
+            write_step(2, "docs/superpowers/plans/x.md",
+                       content="This plan says we used the skills/writing-plans skill."),
+            write_step(3, "src/app.py"),
+        ])
+        self.assertFalse(st.score_trajectory(t)["writing_plans_invoked"])
+
 
 class TestUserTurnsAndNoCodeFallback(unittest.TestCase):
     def test_counts_multiple_clarifying_turns_before_code(self):

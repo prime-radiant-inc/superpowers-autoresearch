@@ -34,13 +34,16 @@ For a single trajectory, computes a ceremony census:
   - user_turns_before_first_code -- count of ATIF steps with
     `source == "user"` at a step index before the first code write's
     step (whole-trajectory count when there is no code write).
-  - writing_plans_invoked -- True iff any tool call anywhere in the
-    trajectory references a path containing `skills/writing-plans`,
-    wherever it appears in that call's arguments (a discrete
-    `file_path` on a Read call, or embedded in a shell command string on
-    a Bash call -- codex reads skill files via `sed`/`cat`, not a
-    dedicated read tool, so the check is argument-content-wide rather
-    than keyed to one argument name).
+  - writing_plans_invoked -- True iff any READ-shaped tool call anywhere
+    in the trajectory references a path containing
+    `skills/writing-plans`: a discrete `Read`-type call (checked across
+    its whole arguments dict), or a `Bash` call's `command` string
+    (codex reads skill files via `sed`/`cat`, not a dedicated read
+    tool). Deliberately NOT a scan of every tool call's arguments --a
+    `Write`/`Edit` call's `content` can coincidentally mention the
+    skill path in prose (e.g. a plan doc narrating "used the
+    writing-plans skill") without the skill ever having been read, and
+    that must not set this field.
 
 Granularity is deliberately STEP-level (not sub-step tool-call order,
 unlike score_e4.py's timestamp-level cutoff) -- ATIF steps are the unit
@@ -61,6 +64,12 @@ import re
 # shared set (see e.g. GEMINI_TOOL_MAP, CODEX_TOOL_MAP, CLINE_TOOL_MAP in
 # superpowers/evals/src/normalize/*.ts) before trajectory.json is written.
 WRITE_TOOL_NAMES = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
+
+# Canonical read-shaped tool name(s) -- checked for the writing-plans
+# needle across their whole arguments dict. Bash is handled separately
+# below (only its `command` string is checked, not its whole arguments
+# dict, though in practice Bash calls carry no other argument).
+READ_TOOL_NAMES = {"Read"}
 
 # Priority-ordered set of argument keys that carry a tool call's target
 # file path, mirroring superpowers/evals/src/atif/project.ts's `toolPath`.
@@ -132,11 +141,22 @@ def _step_write_paths(step):
 
 
 def _writing_plans_invoked(steps):
+    """True iff a READ-shaped call references skills/writing-plans --
+    restricted to Read-type calls and Bash command strings, NOT every
+    tool call's arguments, so a Write/Edit call whose `content` merely
+    mentions the path in prose is never mistaken for a read."""
     for step in steps:
         for call in step.get("tool_calls") or []:
-            blob = json.dumps(call.get("arguments") or {}, ensure_ascii=False)
-            if WRITING_PLANS_NEEDLE in blob:
-                return True
+            name = call.get("function_name")
+            args = call.get("arguments") or {}
+            if name in READ_TOOL_NAMES:
+                blob = json.dumps(args, ensure_ascii=False)
+                if WRITING_PLANS_NEEDLE in blob:
+                    return True
+            elif name == "Bash":
+                command = args.get("command")
+                if isinstance(command, str) and WRITING_PLANS_NEEDLE in command:
+                    return True
     return False
 
 
