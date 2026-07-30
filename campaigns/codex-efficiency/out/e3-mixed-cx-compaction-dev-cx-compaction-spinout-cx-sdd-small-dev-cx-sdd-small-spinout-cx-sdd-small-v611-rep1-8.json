@@ -1,0 +1,2016 @@
+{
+  "label": "mixed-cx-compaction-dev-cx-compaction-spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-rep1-8",
+  "runs": [
+    {
+      "label": "cx-sdd-small-dev-rep1",
+      "rollout_count": 8,
+      "n_test_occurrences": 16,
+      "n_mutation_events": 20,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-28T20:03:20.264Z",
+            "rollout": "rollout-2026-07-28T20-02-49-019faa52-a1e8-7cd2-abcb-c7645af22029.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:03:29.716Z",
+            "rollout": "rollout-2026-07-28T20-02-49-019faa52-a1e8-7cd2-abcb-c7645af22029.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-28T19-59-59-019faa50-082b-7553-b557-56244de76599.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-28T20-02-49-019faa52-a1e8-7cd2-abcb-c7645af22029.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-28T20-06-29-019faa55-fc93-74e2-991e-2424c3921b7d.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep1/cx-sdd-small-codex-codex_sub-linux-20260728T195835Z-c0bf",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 1
+    },
+    {
+      "label": "cx-sdd-small-dev-rep2",
+      "rollout_count": 10,
+      "n_test_occurrences": 17,
+      "n_mutation_events": 25,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-28T20:34:05.781Z",
+            "rollout": "rollout-2026-07-28T20-33-11-019faa6e-6da6-7db2-bc4a-540e6401d398.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:34:23.774Z",
+            "rollout": "rollout-2026-07-28T20-33-11-019faa6e-6da6-7db2-bc4a-540e6401d398.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-28T20:37:24.733Z",
+            "rollout": "rollout-2026-07-28T20-36-55-019faa71-d673-7592-8498-ab386ca31ef2.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:37:37.173Z",
+            "rollout": "rollout-2026-07-28T20-36-55-019faa71-d673-7592-8498-ab386ca31ef2.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd9",
+          "first": {
+            "timestamp": "2026-07-28T20:41:28.364Z",
+            "rollout": "rollout-2026-07-28T20-40-31-019faa75-254b-7f83-8b3d-13875ceb5397.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:42:34.427Z",
+            "rollout": "rollout-2026-07-28T20-40-31-019faa75-254b-7f83-8b3d-13875ceb5397.jsonl"
+          },
+          "mutations_between": 0,
+          "is_duplicate_gate": true
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 1,
+      "has_duplicate_gate": true,
+      "per_session_repeat": {
+        "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-28T20-33-11-019faa6e-6da6-7db2-bc4a-540e6401d398.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-28T20-36-55-019faa71-d673-7592-8498-ab386ca31ef2.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-28T20-40-31-019faa75-254b-7f83-8b3d-13875ceb5397.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-28T20-46-05-019faa7a-3de4-72a1-8063-a6bbdd194a19.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep2/cx-sdd-small-codex-codex_sub-linux-20260728T203056Z-de3b",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 2
+    },
+    {
+      "label": "cx-sdd-small-dev-rep3",
+      "rollout_count": 10,
+      "n_test_occurrences": 18,
+      "n_mutation_events": 26,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd3",
+          "first": {
+            "timestamp": "2026-07-28T20:55:28.783Z",
+            "rollout": "rollout-2026-07-28T20-54-55-019faa82-54a9-7601-b04f-c2e79cc43e8e.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:55:40.538Z",
+            "rollout": "rollout-2026-07-28T20-54-55-019faa82-54a9-7601-b04f-c2e79cc43e8e.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-28T20:58:07.693Z",
+            "rollout": "rollout-2026-07-28T20-57-37-019faa84-cc8d-7171-b2f7-08a1cde54613.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T20:58:18.924Z",
+            "rollout": "rollout-2026-07-28T20-57-37-019faa84-cc8d-7171-b2f7-08a1cde54613.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-28T20:58:38.736Z",
+            "rollout": "rollout-2026-07-28T20-57-37-019faa84-cc8d-7171-b2f7-08a1cde54613.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T21:01:24.516Z",
+            "rollout": "rollout-2026-07-28T21-01-05-019faa87-f993-7762-9360-5b8294f20825.jsonl"
+          },
+          "mutations_between": 4,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-28T21:06:18.308Z",
+            "rollout": "rollout-2026-07-28T21-05-44-019faa8c-386d-73c1-b44c-10b95e104465.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T21:06:26.895Z",
+            "rollout": "rollout-2026-07-28T21-05-44-019faa8c-386d-73c1-b44c-10b95e104465.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 4,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-28T20-54-55-019faa82-54a9-7601-b04f-c2e79cc43e8e.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-28T20-57-37-019faa84-cc8d-7171-b2f7-08a1cde54613.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-28T21-01-05-019faa87-f993-7762-9360-5b8294f20825.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-28T21-05-44-019faa8c-386d-73c1-b44c-10b95e104465.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep3/cx-sdd-small-codex-codex_sub-linux-20260728T205321Z-dad9",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 3
+    },
+    {
+      "label": "cx-sdd-small-dev-rep4",
+      "rollout_count": 10,
+      "n_test_occurrences": 19,
+      "n_mutation_events": 25,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-28T21:16:47.270Z",
+            "rollout": "rollout-2026-07-28T21-16-19-019faa95-e977-7330-b339-6daf62b3c5c2.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T21:16:56.600Z",
+            "rollout": "rollout-2026-07-28T21-16-19-019faa95-e977-7330-b339-6daf62b3c5c2.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-28T21:19:23.202Z",
+            "rollout": "rollout-2026-07-28T21-18-58-019faa98-579b-7003-80af-4fc44ae6f1b1.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T21:19:56.773Z",
+            "rollout": "rollout-2026-07-28T21-18-58-019faa98-579b-7003-80af-4fc44ae6f1b1.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd12",
+          "first": {
+            "timestamp": "2026-07-28T21:22:57.854Z",
+            "rollout": "rollout-2026-07-28T21-22-21-019faa9b-6f68-7713-93e9-2478dd8e8f7d.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-28T21:23:08.744Z",
+            "rollout": "rollout-2026-07-28T21-22-21-019faa9b-6f68-7713-93e9-2478dd8e8f7d.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-28T21-13-34-019faa93-6478-7b60-a963-c8eac86e20b6.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-28T21-16-19-019faa95-e977-7330-b339-6daf62b3c5c2.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-28T21-18-58-019faa98-579b-7003-80af-4fc44ae6f1b1.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-28T21-22-21-019faa9b-6f68-7713-93e9-2478dd8e8f7d.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 1
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep4/cx-sdd-small-codex-codex_sub-linux-20260728T211212Z-fd5e",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 4
+    },
+    {
+      "label": "cx-sdd-small-dev-rep5",
+      "rollout_count": 8,
+      "n_test_occurrences": 15,
+      "n_mutation_events": 19,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-29T05:07:42.897Z",
+            "rollout": "rollout-2026-07-29T05-07-03-019fac44-e2d8-78d1-8568-c81c7c8367b9.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:07:53.637Z",
+            "rollout": "rollout-2026-07-29T05-07-03-019fac44-e2d8-78d1-8568-c81c7c8367b9.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd12",
+          "first": {
+            "timestamp": "2026-07-29T05:10:31.633Z",
+            "rollout": "rollout-2026-07-29T05-10-00-019fac47-94dc-7510-adca-3d31e633b7d1.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:11:41.212Z",
+            "rollout": "rollout-2026-07-29T05-10-00-019fac47-94dc-7510-adca-3d31e633b7d1.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 1
+        },
+        "rollout-2026-07-29T05-03-23-019fac41-8687-74f0-ab5e-cd091b42b8dd.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T05-07-03-019fac44-e2d8-78d1-8568-c81c7c8367b9.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-29T05-10-00-019fac47-94dc-7510-adca-3d31e633b7d1.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T050129Z-4e24",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 5
+    },
+    {
+      "label": "cx-sdd-small-dev-rep6",
+      "rollout_count": 8,
+      "n_test_occurrences": 23,
+      "n_mutation_events": 23,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-29T05:23:55.865Z",
+            "rollout": "rollout-2026-07-29T05-23-27-019fac53-e737-7532-acf0-dbfb8bab769c.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:24:05.560Z",
+            "rollout": "rollout-2026-07-29T05-23-27-019fac53-e737-7532-acf0-dbfb8bab769c.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T05-20-15-019fac50-f8b7-76a3-9860-e8b0e734247e.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 8,
+          "n_test_occurrences": 8
+        },
+        "rollout-2026-07-29T05-23-27-019fac53-e737-7532-acf0-dbfb8bab769c.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-29T05-26-19-019fac56-8495-70e2-ae8c-d20f19b61b89.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T051838Z-1912",
+      "arm_scenario": "cx-sdd-small-dev",
+      "rep": 6
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep1",
+      "rollout_count": 10,
+      "n_test_occurrences": 19,
+      "n_mutation_events": 26,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T03:21:14.405Z",
+            "rollout": "rollout-2026-07-29T03-20-39-019fabe3-7897-7202-97fe-c218642ffe3d.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:21:28.075Z",
+            "rollout": "rollout-2026-07-29T03-20-39-019fabe3-7897-7202-97fe-c218642ffe3d.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-29T03:24:13.219Z",
+            "rollout": "rollout-2026-07-29T03-23-39-019fabe6-39c0-7f42-a74e-ebc3118c77fc.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:24:23.814Z",
+            "rollout": "rollout-2026-07-29T03-23-39-019fabe6-39c0-7f42-a74e-ebc3118c77fc.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd9",
+          "first": {
+            "timestamp": "2026-07-29T03:27:48.499Z",
+            "rollout": "rollout-2026-07-29T03-27-28-019fabe9-b5e7-7450-8734-d96aff1ab0c9.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:28:22.772Z",
+            "rollout": "rollout-2026-07-29T03-27-28-019fabe9-b5e7-7450-8734-d96aff1ab0c9.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-29T03:33:00.154Z",
+            "rollout": "rollout-2026-07-29T03-32-25-019fabee-3dcb-7031-9c4e-b262c661591b.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:33:08.900Z",
+            "rollout": "rollout-2026-07-29T03-32-25-019fabee-3dcb-7031-9c4e-b262c661591b.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 4,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T03-20-39-019fabe3-7897-7202-97fe-c218642ffe3d.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T03-23-39-019fabe6-39c0-7f42-a74e-ebc3118c77fc.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T03-27-28-019fabe9-b5e7-7450-8734-d96aff1ab0c9.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T03-32-25-019fabee-3dcb-7031-9c4e-b262c661591b.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T031843Z-7b72",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 1
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep2",
+      "rollout_count": 10,
+      "n_test_occurrences": 19,
+      "n_mutation_events": 21,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-29T03:43:36.432Z",
+            "rollout": "rollout-2026-07-29T03-43-05-019fabf8-03f1-7693-b436-24ff4fbc7768.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:43:46.021Z",
+            "rollout": "rollout-2026-07-29T03-43-05-019fabf8-03f1-7693-b436-24ff4fbc7768.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-29T03:46:23.035Z",
+            "rollout": "rollout-2026-07-29T03-45-51-019fabfa-8cfd-7911-85a9-058f1b86a2af.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:47:02.688Z",
+            "rollout": "rollout-2026-07-29T03-45-51-019fabfa-8cfd-7911-85a9-058f1b86a2af.jsonl"
+          },
+          "mutations_between": 0,
+          "is_duplicate_gate": true
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 1,
+      "has_duplicate_gate": true,
+      "per_session_repeat": {
+        "rollout-2026-07-29T03-40-08-019fabf5-50b6-7e01-81ab-4b3af2de30af.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T03-43-05-019fabf8-03f1-7693-b436-24ff4fbc7768.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T03-45-51-019fabfa-8cfd-7911-85a9-058f1b86a2af.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T03-49-50-019fabfe-32fb-7482-9ffb-a4b7d5b53f77.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T033825Z-d4dc",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 2
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep3",
+      "rollout_count": 10,
+      "n_test_occurrences": 15,
+      "n_mutation_events": 26,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T03:58:18.153Z",
+            "rollout": "rollout-2026-07-29T03-57-40-019fac05-5dd8-7583-bc47-1b0a7b10bdb3.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T03:58:30.490Z",
+            "rollout": "rollout-2026-07-29T03-57-40-019fac05-5dd8-7583-bc47-1b0a7b10bdb3.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd4",
+          "first": {
+            "timestamp": "2026-07-29T04:01:22.468Z",
+            "rollout": "rollout-2026-07-29T04-00-53-019fac08-4f86-7b72-bced-02160f075f8e.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:01:31.669Z",
+            "rollout": "rollout-2026-07-29T04-00-53-019fac08-4f86-7b72-bced-02160f075f8e.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-29T04:01:53.253Z",
+            "rollout": "rollout-2026-07-29T04-00-53-019fac08-4f86-7b72-bced-02160f075f8e.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:04:54.814Z",
+            "rollout": "rollout-2026-07-29T04-04-20-019fac0b-773f-7750-8cf1-9c91689d3444.jsonl"
+          },
+          "mutations_between": 4,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-29T04:04:54.814Z",
+            "rollout": "rollout-2026-07-29T04-04-20-019fac0b-773f-7750-8cf1-9c91689d3444.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:05:41.501Z",
+            "rollout": "rollout-2026-07-29T04-04-20-019fac0b-773f-7750-8cf1-9c91689d3444.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd8",
+          "first": {
+            "timestamp": "2026-07-29T04:09:48.305Z",
+            "rollout": "rollout-2026-07-29T04-09-20-019fac10-0a95-71c3-9dbd-0587749b108f.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:09:56.527Z",
+            "rollout": "rollout-2026-07-29T04-09-20-019fac10-0a95-71c3-9dbd-0587749b108f.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 5,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 1
+        },
+        "rollout-2026-07-29T03-57-40-019fac05-5dd8-7583-bc47-1b0a7b10bdb3.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T04-00-53-019fac08-4f86-7b72-bced-02160f075f8e.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T04-04-20-019fac0b-773f-7750-8cf1-9c91689d3444.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T04-09-20-019fac10-0a95-71c3-9dbd-0587749b108f.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T035556Z-637b",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 3
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep4",
+      "rollout_count": 8,
+      "n_test_occurrences": 15,
+      "n_mutation_events": 22,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T04:18:40.479Z",
+            "rollout": "rollout-2026-07-29T04-18-03-019fac18-057b-7971-b12a-83141719c020.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:18:52.352Z",
+            "rollout": "rollout-2026-07-29T04-18-03-019fac18-057b-7971-b12a-83141719c020.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-29T04:21:12.831Z",
+            "rollout": "rollout-2026-07-29T04-20-44-019fac1a-7980-7341-8557-2c62bdf8c348.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T04:21:26.679Z",
+            "rollout": "rollout-2026-07-29T04-20-44-019fac1a-7980-7341-8557-2c62bdf8c348.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T04-18-03-019fac18-057b-7971-b12a-83141719c020.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T04-20-44-019fac1a-7980-7341-8557-2c62bdf8c348.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T04-24-04-019fac1d-891b-70c3-bbbb-329006ad6127.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep4/cx-sdd-small-codex-codex_sub-linux-20260729T041642Z-1878",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 4
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep5",
+      "rollout_count": 9,
+      "n_test_occurrences": 18,
+      "n_mutation_events": 28,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T05:36:42.546Z",
+            "rollout": "rollout-2026-07-29T05-36-03-019fac5f-6e06-7323-a321-bc238323a91d.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:36:55.672Z",
+            "rollout": "rollout-2026-07-29T05-36-03-019fac5f-6e06-7323-a321-bc238323a91d.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-29T05:39:53.983Z",
+            "rollout": "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:40:05.601Z",
+            "rollout": "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-29T05:40:26.827Z",
+            "rollout": "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:44:26.030Z",
+            "rollout": "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl"
+          },
+          "mutations_between": 10,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-29T05:44:26.030Z",
+            "rollout": "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:45:26.149Z",
+            "rollout": "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 4,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T05-36-03-019fac5f-6e06-7323-a321-bc238323a91d.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T05-41-20-019fac64-47bd-7253-accf-32c5b8a39858.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T053429Z-3ac1",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 5
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep6",
+      "rollout_count": 8,
+      "n_test_occurrences": 18,
+      "n_mutation_events": 28,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T05:58:36.777Z",
+            "rollout": "rollout-2026-07-29T05-57-32-019fac73-1ae8-7be1-a481-81a73fa11a7f.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T05:58:48.834Z",
+            "rollout": "rollout-2026-07-29T05-57-32-019fac73-1ae8-7be1-a481-81a73fa11a7f.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-29T06:03:41.097Z",
+            "rollout": "rollout-2026-07-29T06-02-53-019fac77-fecc-7460-9ccf-65892ba23ee9.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:03:52.520Z",
+            "rollout": "rollout-2026-07-29T06-02-53-019fac77-fecc-7460-9ccf-65892ba23ee9.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd12",
+          "first": {
+            "timestamp": "2026-07-29T06:09:08.230Z",
+            "rollout": "rollout-2026-07-29T06-08-23-019fac7d-093f-7440-8ffa-d4d5ccb716ea.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:10:56.652Z",
+            "rollout": "rollout-2026-07-29T06-08-23-019fac7d-093f-7440-8ffa-d4d5ccb716ea.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T05-57-32-019fac73-1ae8-7be1-a481-81a73fa11a7f.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T06-02-53-019fac77-fecc-7460-9ccf-65892ba23ee9.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T06-08-23-019fac7d-093f-7440-8ffa-d4d5ccb716ea.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T055537Z-e62f",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 6
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep7",
+      "rollout_count": 10,
+      "n_test_occurrences": 22,
+      "n_mutation_events": 26,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-29T06:23:04.079Z",
+            "rollout": "rollout-2026-07-29T06-22-23-019fac89-db5b-77e0-99d0-1da179d01ef5.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:23:17.200Z",
+            "rollout": "rollout-2026-07-29T06-22-23-019fac89-db5b-77e0-99d0-1da179d01ef5.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-29T06:26:28.336Z",
+            "rollout": "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:26:40.664Z",
+            "rollout": "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd7",
+          "first": {
+            "timestamp": "2026-07-29T06:27:02.954Z",
+            "rollout": "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:27:25.768Z",
+            "rollout": "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl"
+          },
+          "mutations_between": 0,
+          "is_duplicate_gate": true
+        },
+        {
+          "cmd_id": "cmd12",
+          "first": {
+            "timestamp": "2026-07-29T06:35:11.093Z",
+            "rollout": "rollout-2026-07-29T06-34-37-019fac95-0cfd-7440-a342-eb8ce1b028a5.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:35:21.514Z",
+            "rollout": "rollout-2026-07-29T06-34-37-019fac95-0cfd-7440-a342-eb8ce1b028a5.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 4,
+      "n_flagged_duplicate_gate_pairs": 1,
+      "has_duplicate_gate": true,
+      "per_session_repeat": {
+        "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T06-22-23-019fac89-db5b-77e0-99d0-1da179d01ef5.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T06-29-54-019fac90-babf-77c1-b9e4-a3e61bf88233.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T06-34-37-019fac95-0cfd-7440-a342-eb8ce1b028a5.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep7/cx-sdd-small-codex-codex_sub-linux-20260729T061915Z-19d1",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 7
+    },
+    {
+      "label": "cx-sdd-small-spinout-rep8",
+      "rollout_count": 10,
+      "n_test_occurrences": 25,
+      "n_mutation_events": 24,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd3",
+          "first": {
+            "timestamp": "2026-07-29T06:44:07.076Z",
+            "rollout": "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:44:19.373Z",
+            "rollout": "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-29T06:48:14.318Z",
+            "rollout": "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:48:24.568Z",
+            "rollout": "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd12",
+          "first": {
+            "timestamp": "2026-07-29T06:48:46.922Z",
+            "rollout": "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T06:51:20.056Z",
+            "rollout": "rollout-2026-07-29T06-50-49-019faca3-e3b8-7c70-8dfb-051c7e475fc4.jsonl"
+          },
+          "mutations_between": 4,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T06-44-35-019fac9e-2ec7-7123-9dba-d81b458d4219.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 9,
+          "n_test_occurrences": 10
+        },
+        "rollout-2026-07-29T06-50-49-019faca3-e3b8-7c70-8dfb-051c7e475fc4.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep8/cx-sdd-small-codex-codex_sub-linux-20260729T064125Z-f70d",
+      "arm_scenario": "cx-sdd-small-spinout",
+      "rep": 8
+    },
+    {
+      "label": "cx-compaction-dev-rep1",
+      "rollout_count": 11,
+      "n_test_occurrences": 33,
+      "n_mutation_events": 31,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd3",
+          "first": {
+            "timestamp": "2026-07-30T06:15:04.065Z",
+            "rollout": "rollout-2026-07-30T06-14-17-019fb1a8-cdb7-7a32-b2dc-2d8b34bf483b.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:15:17.490Z",
+            "rollout": "rollout-2026-07-30T06-14-17-019fb1a8-cdb7-7a32-b2dc-2d8b34bf483b.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-30T06:19:48.454Z",
+            "rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:20:30.454Z",
+            "rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl"
+          },
+          "mutations_between": 2,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-30T06:20:30.454Z",
+            "rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:20:49.333Z",
+            "rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-30T06-14-17-019fb1a8-cdb7-7a32-b2dc-2d8b34bf483b.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T06-15-39-019fb1aa-0c5f-7b23-aae3-537c12daa503.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl": {
+          "max_repeat": 3,
+          "n_distinct_commands": 8,
+          "n_test_occurrences": 10
+        },
+        "rollout-2026-07-30T06-24-04-019fb1b1-c1db-71f3-bc9f-73e6d1dafd55.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T06-29-18-019fb1b6-8b81-72d0-89ac-16e72e5aca61.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 6
+        }
+      },
+      "run_max_repeat": 3,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        3
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep1/cx-compaction-codex-codex_sub-linux-20260730T061202Z-dfb8",
+      "arm_scenario": "cx-compaction-dev",
+      "rep": 1
+    },
+    {
+      "label": "cx-compaction-dev-rep2",
+      "rollout_count": 8,
+      "n_test_occurrences": 21,
+      "n_mutation_events": 24,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd2",
+          "first": {
+            "timestamp": "2026-07-30T06:40:08.900Z",
+            "rollout": "rollout-2026-07-30T06-39-24-019fb1bf-c991-7fb0-84b3-d49d8afbc6a7.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:40:21.948Z",
+            "rollout": "rollout-2026-07-30T06-39-24-019fb1bf-c991-7fb0-84b3-d49d8afbc6a7.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd6",
+          "first": {
+            "timestamp": "2026-07-30T06:43:50.811Z",
+            "rollout": "rollout-2026-07-30T06-43-05-019fb1c3-29d5-7c62-8f5b-01e223ed2c66.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:44:01.172Z",
+            "rollout": "rollout-2026-07-30T06-43-05-019fb1c3-29d5-7c62-8f5b-01e223ed2c66.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T06-39-24-019fb1bf-c991-7fb0-84b3-d49d8afbc6a7.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-30T06-43-05-019fb1c3-29d5-7c62-8f5b-01e223ed2c66.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-30T06-46-54-019fb1c6-a7da-7f63-9dc0-0b8d6e1a8b48.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep2/cx-compaction-codex-codex_sub-linux-20260730T063713Z-2ae9",
+      "arm_scenario": "cx-compaction-dev",
+      "rep": 2
+    },
+    {
+      "label": "cx-compaction-dev-rep3",
+      "rollout_count": 12,
+      "n_test_occurrences": 29,
+      "n_mutation_events": 27,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-30T07:01:30.888Z",
+            "rollout": "rollout-2026-07-30T07-00-48-019fb1d3-64b7-7f33-afd1-e39c6b7d59cf.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T07:01:40.528Z",
+            "rollout": "rollout-2026-07-30T07-00-48-019fb1d3-64b7-7f33-afd1-e39c6b7d59cf.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-30T06-56-57-019fb1cf-db35-7093-aa50-2a507b9c585b.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-30T06-58-09-019fb1d0-f6e1-7431-b812-d141284df0bb.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-30T07-00-48-019fb1d3-64b7-7f33-afd1-e39c6b7d59cf.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-30T07-04-01-019fb1d6-564c-7411-80e7-d3e87b6c6e66.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T07-08-42-019fb1da-9cab-7d22-abfc-67fff55604fd.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-30T07-10-04-019fb1db-dd30-7be2-ad0f-a77b7290641d.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T07-13-08-019fb1de-acf9-7ef1-9ce1-84963f483af9.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 1
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep3/cx-compaction-codex-codex_sub-linux-20260730T065523Z-86b1",
+      "arm_scenario": "cx-compaction-dev",
+      "rep": 3
+    },
+    {
+      "label": "cx-sdd-small-v611-rep1",
+      "rollout_count": 8,
+      "n_test_occurrences": 23,
+      "n_mutation_events": 21,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-29T18:57:05.328Z",
+            "rollout": "rollout-2026-07-29T18-56-32-019faf3c-4d8d-7e73-99c2-a44670c57638.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T18:57:18.910Z",
+            "rollout": "rollout-2026-07-29T18-56-32-019faf3c-4d8d-7e73-99c2-a44670c57638.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T18-53-09-019faf39-3221-7460-b703-f1a2a2b48309.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T18-56-32-019faf3c-4d8d-7e73-99c2-a44670c57638.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T19-00-24-019faf3f-d70d-7520-9488-3f45ac0ec615.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T185106Z-7a5d",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 1
+    },
+    {
+      "label": "cx-sdd-small-v611-rep2",
+      "rollout_count": 10,
+      "n_test_occurrences": 26,
+      "n_mutation_events": 36,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd11",
+          "first": {
+            "timestamp": "2026-07-29T18:58:23.713Z",
+            "rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T18:58:33.174Z",
+            "rollout": "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-29T18-54-12-019faf3a-283a-7e93-8feb-33a1201689ad.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 8,
+          "n_test_occurrences": 8
+        },
+        "rollout-2026-07-29T18-57-51-019faf3d-80db-7f60-a0ac-5fc46cd0d19c.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 6
+        },
+        "rollout-2026-07-29T19-02-26-019faf41-b2b7-7132-8d3a-a5fc3c8b7e6e.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-29T19-07-15-019faf46-1e60-7372-819b-9e01e709bcfc.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T185106Z-4ff0",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 2
+    },
+    {
+      "label": "cx-sdd-small-v611-rep3",
+      "rollout_count": 8,
+      "n_test_occurrences": 17,
+      "n_mutation_events": 20,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd8",
+          "first": {
+            "timestamp": "2026-07-29T19:18:40.070Z",
+            "rollout": "rollout-2026-07-29T19-18-05-019faf50-06f0-7dd2-bcd7-6c6614bc82cc.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T19:18:52.239Z",
+            "rollout": "rollout-2026-07-29T19-18-05-019faf50-06f0-7dd2-bcd7-6c6614bc82cc.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd14",
+          "first": {
+            "timestamp": "2026-07-29T19:21:49.870Z",
+            "rollout": "rollout-2026-07-29T19-21-18-019faf52-f8c4-7420-b3e4-2b13bae555c6.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-29T19:22:37.056Z",
+            "rollout": "rollout-2026-07-29T19-21-18-019faf52-f8c4-7420-b3e4-2b13bae555c6.jsonl"
+          },
+          "mutations_between": 0,
+          "is_duplicate_gate": true
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 1,
+      "has_duplicate_gate": true,
+      "per_session_repeat": {
+        "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
+        "rollout-2026-07-29T19-15-37-019faf4d-c4b2-7780-94d8-70704f31b9e8.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-29T19-18-05-019faf50-06f0-7dd2-bcd7-6c6614bc82cc.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-29T19-21-18-019faf52-f8c4-7420-b3e4-2b13bae555c6.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 3
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-v611-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T191312Z-2d73",
+      "arm_scenario": "cx-sdd-small-v611",
+      "rep": 3
+    },
+    {
+      "label": "cx-compaction-spinout-rep1",
+      "rollout_count": 9,
+      "n_test_occurrences": 28,
+      "n_mutation_events": 28,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd13",
+          "first": {
+            "timestamp": "2026-07-30T06:32:17.407Z",
+            "rollout": "rollout-2026-07-30T06-31-25-019fb1b8-7c47-7aa2-8fa1-2ed266fae63e.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:32:31.637Z",
+            "rollout": "rollout-2026-07-30T06-31-25-019fb1b8-7c47-7aa2-8fa1-2ed266fae63e.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 1,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 7,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-30T06-31-25-019fb1b8-7c47-7aa2-8fa1-2ed266fae63e.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 8,
+          "n_test_occurrences": 9
+        },
+        "rollout-2026-07-30T06-37-21-019fb1bd-e9f2-7501-bd4d-e3c9e052c445.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 3
+        },
+        "rollout-2026-07-30T06-42-15-019fb1c2-6857-7611-9dc8-9871ad62b24f.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep1/cx-compaction-codex-codex_sub-linux-20260730T062123Z-b918",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 1
+    },
+    {
+      "label": "cx-compaction-spinout-rep2",
+      "rollout_count": 10,
+      "n_test_occurrences": 27,
+      "n_mutation_events": 27,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd10",
+          "first": {
+            "timestamp": "2026-07-30T06:28:58.171Z",
+            "rollout": "rollout-2026-07-30T06-28-19-019fb1b5-a4fc-7f52-8366-1ee1cf797e37.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:29:07.640Z",
+            "rollout": "rollout-2026-07-30T06-28-19-019fb1b5-a4fc-7f52-8366-1ee1cf797e37.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd15",
+          "first": {
+            "timestamp": "2026-07-30T06:32:50.444Z",
+            "rollout": "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:33:41.890Z",
+            "rollout": "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl"
+          },
+          "mutations_between": 0,
+          "is_duplicate_gate": true
+        },
+        {
+          "cmd_id": "cmd19",
+          "first": {
+            "timestamp": "2026-07-30T06:39:02.717Z",
+            "rollout": "rollout-2026-07-30T06-38-05-019fb1be-96b7-7671-847d-5338f9a93173.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:39:18.117Z",
+            "rollout": "rollout-2026-07-30T06-38-05-019fb1be-96b7-7671-847d-5338f9a93173.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 3,
+      "n_flagged_duplicate_gate_pairs": 1,
+      "has_duplicate_gate": true,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-23-25-019fb1b1-29ce-7640-8841-aa69e3dc9948.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 8,
+          "n_test_occurrences": 8
+        },
+        "rollout-2026-07-30T06-28-19-019fb1b5-a4fc-7f52-8366-1ee1cf797e37.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 7
+        },
+        "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-30T06-38-05-019fb1be-96b7-7671-847d-5338f9a93173.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 5
+        },
+        "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        2,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep2/cx-compaction-codex-codex_sub-linux-20260730T062123Z-569b",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 2
+    },
+    {
+      "label": "cx-compaction-spinout-rep3",
+      "rollout_count": 9,
+      "n_test_occurrences": 21,
+      "n_mutation_events": 26,
+      "duplicate_gate_pairs": [
+        {
+          "cmd_id": "cmd5",
+          "first": {
+            "timestamp": "2026-07-30T06:54:44.354Z",
+            "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T06:54:56.287Z",
+            "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl"
+          },
+          "mutations_between": 1,
+          "is_duplicate_gate": false
+        },
+        {
+          "cmd_id": "cmd19",
+          "first": {
+            "timestamp": "2026-07-30T07:07:19.791Z",
+            "rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl"
+          },
+          "second": {
+            "timestamp": "2026-07-30T07:08:36.859Z",
+            "rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl"
+          },
+          "mutations_between": 2,
+          "is_duplicate_gate": false
+        }
+      ],
+      "n_duplicate_gate_pairs": 2,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "per_session_repeat": {
+        "rollout-2026-07-30T06-50-36-019fb1ca-0d79-7310-a093-4b3e049fb532.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 7,
+          "n_test_occurrences": 8
+        },
+        "rollout-2026-07-30T06-57-44-019fb1d0-9507-7563-9c2e-46470dcff904.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
+        },
+        "rollout-2026-07-30T07-05-07-019fb1d7-581f-7920-a3b4-7800f5fce6f8.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 1,
+          "n_test_occurrences": 1
+        },
+        "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl": {
+          "max_repeat": 2,
+          "n_distinct_commands": 3,
+          "n_test_occurrences": 4
+        }
+      },
+      "run_max_repeat": 2,
+      "repeat_distribution": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep3/cx-compaction-codex-codex_sub-linux-20260730T064834Z-6a11",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 3
+    }
+  ]
+}
