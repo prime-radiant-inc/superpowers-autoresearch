@@ -340,3 +340,104 @@ session shape).
 **No run yet — this is the pre-registration.** Smoke test, full
 battery, scoring, manual inspection, and verdicts follow in later log
 entries.
+
+### 2026-07-30 — SHARED SDD BATTERY: smoke test PASS; ANOMALY — Docker Desktop crash mid-battery costs 2 of 8 reps (Task 8)
+
+**Smoke test (rep1, lane A): PASS.** Gauntlet verdict `status: pass`.
+7 rollout files (1 root + 6 task implementer/reviewer pairs + 1
+`final_reviewer`). Manual inspection of the raw root rollout JSONL
+(not scorer output): all 7 `spawn_agent` calls issued by the ROOT
+session only (`grep -c` of every non-root rollout file for
+`spawn_agent` = 0) — zero worker-issued depth-2 spawns. Every one of
+the 7 spawns carries explicit `model` + `reasoning_effort`
+(`gpt-5.6-terra`/`medium` x6, `gpt-5.6-sol`/`high` for
+`final_reviewer`), and `fork_turns:"none"` throughout. Task coverage:
+`task{1,2,3}_{implementer,reviewer}` + `final_reviewer` — every task
+gets exactly one reviewer. Root session's `wait_agent` calls (n=26,
+manually parsed from the raw rollout, paired against
+`function_call_output`): timeout_ms escalates 1000 -> 10000 -> 20000 ->
+30000 (never reaching the fix's own recommended >=900000ms single long
+wait), 18/25 paired calls (72.0%) still time out — **well above the
+T2 <25% criterion on this single rep**, a first, honest signal that
+the docs-only fix (`codex-tools.md` guidance to issue one long wait)
+did not change this rep's actual polling behavior. Flagged here for
+the full battery's verdict, not adjudicated on n=1.
+
+No infra anomaly on the smoke rep. Proceeded to Step 3.
+
+**Step 3 battery launch:** `EVALS_ROOT=<lane A> JOBS=2 bash
+run-quorum.sh fix cx-sdd-small 3 2` (reps 2-4) and `EVALS_ROOT=<lane B>
+JOBS=2 bash run-quorum.sh fix cx-sdd-small 4 5` (reps 5-8), launched
+concurrently. Batch 1 of each lane (reps 2+3, reps 5+6) completed
+cleanly — 5 more full passes, verdict.json + full rollout trees
+present, matching the smoke rep's shape (spawns root-only, explicit
+model+effort, `fork_turns:"none"`).
+
+**ANOMALY — Docker Desktop crashed mid-battery, killing 2 in-flight
+reps.** Batch 2 of each lane (rep4 alone on lane A; reps 7+8
+concurrent on lane B) started around 18:49-18:50Z. Both lanes' logs
+end with `run-quorum.sh: a parallel rep failed (JOBS=2)`; rep8 (lane
+B) completed and printed a normal verdict, but **rep4 (lane A) and
+rep7 (lane B) both stop mid-session with no verdict.json, no
+`trajectory.json`, no `coding-agent-token-usage.json`** — only
+`phase.json` (stuck at `"phase":"agent"`) and a `gauntlet-agent/`
+directory whose `run.jsonl` cuts off mid-turn (~19:05:2xZ, no
+`tool_result` for the last-issued `wake_on_idle_log`/`read_screen`
+call) with no error message, in the middle of otherwise normal
+gauntlet-agent activity (rep7's last visible line: "Final review found
+a defect, now doing a fix wave. Continuing to monitor." — a routine
+in-progress status, not a crash message).
+
+**Root cause, confirmed:** `docker ps` immediately after (while
+investigating) failed with `cannot connect to the Docker API... no
+such file or directory` — the Docker Desktop daemon itself was down.
+`docker ps -a` (once briefly reachable) showed both lane containers
+`Exited (255)` at the same wall-clock moment despite running in two
+independent Docker containers on two independent evals checkouts —
+the simultaneity across independent containers rules out a
+scenario/treatment-side cause and points at a host-level VM crash.
+Restarted Docker Desktop (`open -a Docker`); it came up once
+(`docker info` succeeded, ~10s), but **crashed again within seconds of
+`scripts/evals-container up`** on the very next command (`docker ps`
+immediately after: connection refused again). A second 2-minute poll
+confirmed the daemon stayed down. **Likely contributing factor:** host
+disk (`/System/Volumes/Data`) at **95% capacity, 103Gi free** of 1.8Ti
+at the time of the crash — Docker Desktop's own VM disk image alone is
+30G, and a nearly-full host disk is a known Docker Desktop VM
+instability trigger. Not proven (no crash-report/panic log located via
+`log show` — the unified log query for `com.docker.docker` returned no
+usable output, and no explicit OOM/panic string appeared in a 1-hour
+`log show` window), but consistent with the evidence and the only
+concrete anomaly on the host at the time. Four concurrent `codex`
+sessions were in flight system-wide at the crash moment (JOBS=2 x 2
+lanes), which is also consistent with a resource-pressure trigger,
+though this campaign has run JOBS=2 batteries before
+(`2026-07-28-codex-efficiency.md`'s E1-v611 and E6 treatment rows)
+without a recorded crash.
+
+**Decision (per this log's standing rule and this task's operational
+instructions — anomalies stop the battery, record honestly, report
+BLOCKED rather than improvising around infrastructure problems):**
+stopped attempting further Docker restarts after the second crash
+recurred immediately. Did NOT re-launch reps 4/7 a third time, did NOT
+substitute other reps, did NOT use `FORCE`. **6 of the pre-registered
+8 reps are valid, complete, real runs** (rep1/2/3 lane A, rep5/6/8
+lane B) with full verdict.json + rollout trees, unaffected by the
+later crash (they finished and were written to disk before the
+daemon died). Proceeding to score and manually inspect those 6 valid
+reps against the pre-registered T1/T2/T5 criteria, honestly reporting
+n=6 rather than the pre-registered n=8, and flagging this task
+**BLOCKED** on Docker Desktop infrastructure for completing the full
+battery (reps 4 and 7 need a re-run once the host's Docker/disk
+situation is confirmed stable — not attempted further by this task).
+
+**Cost so far (6 completed reps, from each rep's own printed Economics
+block):** rep1 $3.69 ($3.36 coding + $0.33 gauntlet), rep2 $4.40
+($3.98 + $0.42), rep3 $4.77 ($4.42 + $0.35), rep5 $4.62 ($4.28 +
+$0.34), rep6 $6.32 ($5.94 + $0.38), rep8 $3.02 ($2.74 + $0.27) —
+**$26.82 total, all 6 measured directly from each verdict's own
+Economics table.** Rep4/rep7's partial spend before the crash is
+**unmeasured** — no `coding-agent-token-usage.json` was ever written
+for either (the crash pre-empted it), so no dollar figure is
+reconstructible, consistent with this log's "no figure exists" rule
+rather than an estimate.
