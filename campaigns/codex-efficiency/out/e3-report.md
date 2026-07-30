@@ -1,12 +1,26 @@
 # E3 evidence receipts / duplicate-gate scorer (Task 10)
 
-**Status: COMPLETE.** Scorer built + validated against corpus ground
-truth; MINE-tier free re-score complete; FULL baseline (`cx-finishing`)
-and waiver probe (`cx-finishing-waiver`) batteries complete and scored.
-Both purpose-built probes came back as registered alternative outcomes
-(negative results), not the primary predictions — reported honestly
-below, not reframed. This is a working document (not append-only — see
-the hypothesis log's dated entries for the append-only history).
+**Status: CORRECTED (fix round 1); invalidation probe pending.** Scorer
+built + validated against corpus ground truth; MINE-tier free re-score
+complete; FULL baseline (`cx-finishing`) and waiver probe
+(`cx-finishing-waiver`) batteries complete and scored. Both purpose-built
+probes came back as registered alternative outcomes (negative results),
+not the primary predictions — reported honestly below, not reframed.
+The brief's Step 4 invalidation probe (a correctness regression guard)
+has not been run yet as of this revision.
+
+**Fix round 1 correction (this revision):** a real bug in both
+`rollout_parser.MUTATION_GIT_RE`'s and `score_e3.TEST_INVOCATION_RE`'s
+matching — undecoded JS-string escapes in `custom_exec`-encoded commands
+defeating their leading `\b` — caused the original MINE-tier pass to
+over-report duplicate-gate pairs. **The original "5/23" claim is
+corrected to 1/23** (see "MINE-for-free" below); the 07-29 corpus
+validation and both fresh batteries are UNCHANGED after the fix (numbers
+re-verified, not assumed). Full root-cause, fix, and non-circular
+re-verification: `task-10-report.md`'s "Fix round 1" section. This is a
+working document (not append-only — see the hypothesis log's dated
+entries, including the append-only correction entry, for the historical
+record).
 
 ## What was built
 
@@ -14,7 +28,13 @@ the hypothesis log's dated entries for the append-only history).
   of every successful `patch_apply_end` plus every exec command matching
   `\bgit (commit|merge|rebase|reset|checkout)\b` — the "did anything
   change the tree" signal the duplicate-gate check needs. TDD, one
-  fixture test class (6 tests). Commit `c78149e`.
+  fixture test class (6 tests). Commit `c78149e`. **Fix round 1:**
+  matches against `rollout_parser.deescape_custom_exec()`'s de-escaped
+  text (a `custom_exec` command's raw JS-source `input` can carry a
+  literal, undecoded `\n`/`\t`/`\"`/`\\`, which defeated the leading
+  `\b`) — an absolute-truth fix, deliberately never applied to
+  `parse_session()`'s corpus-parity counters/regexes (those must stay
+  byte-parity with the audit's `scan-rollouts.mjs`, per `validate_corpus.py`).
 - `score_e3.py`: duplicate-gate pairs (identical whitespace-normalized
   test commands, merged across ALL sessions of a run into one
   chronological timeline, flagged when zero `mutation_events()` fall
@@ -27,7 +47,10 @@ the hypothesis log's dated entries for the append-only history).
   carries only an anonymized per-run `cmd_id` label, never raw/normalized
   command text — asserted directly in tests, matching
   `audit0729_adapter.py`'s "never print corpus content" precedent.
-  Commit `dfda964`.
+  Commit `dfda964`. **Fix round 1:** `test_command_events()` also matches
+  and normalizes against the de-escaped text — the same custom_exec
+  escape bug defeated `TEST_INVOCATION_RE` too, silently dropping real
+  test-command occurrences.
 - `scenarios/cx-finishing/` + `fixtures/finishing/`: the sdd-small String
   Utils CLI plan already implemented as 3 commits on a `feature` branch,
   14/14 tests passing. Built fresh from `fixtures/sdd-small/plan.md`'s
@@ -73,6 +96,16 @@ verified with the content-free `events_between()` window — both windows
 contain other test-command occurrences (a different command each) but
 zero mutation events.
 
+**Re-verified after the fix round 1 de-escape fix (this revision):**
+`run_max_repeat=9` and the same 2 flagged pairs (identical rollout,
+identical timestamps) hold EXACTLY unchanged. `n_test_occurrences`
+(91) is also unchanged; `n_mutation_events` picked up exactly +1
+(101→102) elsewhere in the tree, in a session that does not affect
+`run_max_repeat` or either flagged pair — confirmed by re-running the
+same reused-`audit0729_adapter.py`-discovery validation script against
+the fixed code. This 07-29 corpus reproduction was NOT an artifact of
+the custom_exec escape bug.
+
 **Scope note:** only the per-session-repeat census was validated against
 this real corpus. Waiver-violation detection has NOT been validated
 against it — that would require this campaign to know (and search for)
@@ -92,16 +125,24 @@ All 23 existing rollout-bearing reps from Tasks 6/6b/9/13 — no new run
 spend. "All arms" of `cx-sdd-small` (dev ×6, spinout ×8, v611 ×3) and
 "both arms" of `cx-compaction` (dev ×3, spinout ×3).
 
+**CORRECTED (fix round 1) — see `task-10-report.md`'s "Fix round 1"
+section for the full root cause and non-circular re-verification
+methodology. The table below is the corrected, current result; the
+original "5/23" figure this section first reported was wrong (a real
+scorer bug, not a data artifact) and is superseded here, not silently
+edited away — the hypothesis log's append-only correction entry is the
+permanent record of the original claim and its correction.**
+
 | Run | Duplicate-gate pairs (flagged/total) | run max repeat |
 |---|---|---|
 | cx-sdd-small-dev rep1 | 0/1 | 2 |
-| cx-sdd-small-dev rep2 | **1/3** | 2 |
+| cx-sdd-small-dev rep2 | 0/3 | 2 |
 | cx-sdd-small-dev rep3 | 0/4 | 2 |
 | cx-sdd-small-dev rep4 | 0/3 | 2 |
 | cx-sdd-small-dev rep5 | 0/2 | 2 |
 | cx-sdd-small-dev rep6 | 0/1 | 2 |
 | cx-sdd-small-spinout rep1 | 0/4 | 2 |
-| cx-sdd-small-spinout rep2 | **1/2** | 2 |
+| cx-sdd-small-spinout rep2 | 0/2 | 2 |
 | cx-sdd-small-spinout rep3 | 0/5 | 2 |
 | cx-sdd-small-spinout rep4 | 0/2 | 2 |
 | cx-sdd-small-spinout rep5 | 0/4 | 2 |
@@ -110,28 +151,52 @@ spend. "All arms" of `cx-sdd-small` (dev ×6, spinout ×8, v611 ×3) and
 | cx-sdd-small-spinout rep8 | 0/3 | 2 |
 | cx-sdd-small-v611 rep1 | 0/1 | 2 |
 | cx-sdd-small-v611 rep2 | 0/1 | 2 |
-| cx-sdd-small-v611 rep3 | **1/2** | 2 |
+| cx-sdd-small-v611 rep3 | 0/2 | 2 |
 | cx-compaction-dev rep1 | 0/3 | 3 |
 | cx-compaction-dev rep2 | 0/2 | 2 |
 | cx-compaction-dev rep3 | 0/1 | 2 |
 | cx-compaction-spinout rep1 | 0/1 | 2 |
-| cx-compaction-spinout rep2 | **1/3** | 2 |
+| cx-compaction-spinout rep2 | 0/3 | 2 |
 | cx-compaction-spinout rep3 | 0/2 | 2 |
 
-**5/23 reps already show ≥1 genuine duplicate-gate pair** (zero
-intervening mutation). `run_max_repeat` tops out at 3 (`cx-compaction-dev`
-rep1) across this corpus — these short 3-task SDD scenarios don't reach
-the audited real session's accumulated-context regime, but already
-contain the narrower "identical command run twice, zero intervening
-mutation" signal often enough for real discriminating signal, not an
-inconclusive zero. 0/23 waiver violations (expected — no waiver marker
-configured for any of these pre-existing, non-waiver runs).
+**1/23 reps show a genuine duplicate-gate pair** (zero intervening
+mutation) — `cx-sdd-small-spinout` rep7 only. `run_max_repeat` is
+unaffected by the fix (still tops out at 3, `cx-compaction-dev` rep1)
+across this corpus — these short 3-task SDD scenarios don't reach the
+audited real session's accumulated-context regime, and the true
+duplicate-gate signal here is much rarer than first reported: a single
+real occurrence, not five. 0/23 waiver violations (expected — no waiver
+marker configured for any of these pre-existing, non-waiver runs).
 
-One flagged pair manually spot-checked (`cx-sdd-small-dev` rep2):
-`events_between()` window is empty — nothing at all, not even an
-unrelated test command, falls between the two identical occurrences.
+**What changed and why (root cause, fixed):** the original 5 flagged
+reps (`cx-sdd-small-dev` rep2, `cx-sdd-small-spinout` rep2/rep7,
+`cx-sdd-small-v611` rep3, `cx-compaction-spinout` rep2) were scored
+before `rollout_parser.deescape_custom_exec()` existed. 4 of those 5
+(all except `cx-sdd-small-spinout` rep7) turned out to have a REAL `git
+commit` inside their flagged pair's window, issued via the `custom_exec`
+encoding with a literal, undecoded `\n` immediately before "git commit"
+in its raw JS-source `input` text — a real word character sitting where
+`MUTATION_GIT_RE`'s leading `\b` needed an actual boundary, silently
+defeating the match. Fixed by decoding the common JS-string escapes
+(`\n \t \" \\`) in `custom_exec` text before matching (never applied to
+the already-JSON-decoded `exec_command` encoding, and never applied to
+`parse_session()`'s corpus-parity counters/regexes — those remain
+byte-parity with the audit's `scan-rollouts.mjs` scanner). Independently
+re-verified NON-circularly for all 5 original pairs — reading raw
+rollout JSONL lines directly with a from-scratch regex/de-escape
+re-implementation, never calling `rollout_parser.py`/`score_e3.py`: 4 of
+5 windows do contain a `git commit` only visible after de-escaping;
+`cx-sdd-small-spinout` rep7's window contains none, in either the raw or
+de-escaped text — confirming it as the one TRUE finding, not a residual
+miss. See `task-10-report.md` for the full per-rep evidence.
 
-Output: `out/e3-mixed-cx-compaction-dev-cx-compaction-spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-rep1-8.json`.
+Across the whole 23-rep corpus, the fix also recovers exactly +12
+previously-dropped test-command occurrences (484→496, summed per-run) and
++19 previously-dropped mutation events (579→598, summed per-run) that
+didn't happen to change any rep's flagged/unflagged verdict.
+
+Output (regenerated post-fix, same filename):
+`out/e3-mixed-cx-compaction-dev-cx-compaction-spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-rep1-8.json`.
 
 ## FULL baseline: `cx-finishing` (3 reps, dev arm, lane B)
 
@@ -169,6 +234,13 @@ changed" from "reran the identical check for no reason."
 
 Cost: $1.66 ($1.22 coding + $0.43 gauntlet) — rep1 $0.51, rep2 $0.46,
 rep3 $0.69. Output: `out/e3-cx-finishing-dev-rep1-3.json`.
+
+**Re-checked after the fix round 1 de-escape fix:** all three reps'
+`n_test_occurrences`, `n_mutation_events`, flagged counts, and
+`run_max_repeat` are byte-for-byte unchanged (the output JSON is
+identical) — this scenario's mutation event in every rep came through
+the `exec_command` (already JSON-decoded) encoding, never `custom_exec`,
+so the bug never applied here.
 
 ## Waiver probe: `cx-finishing-waiver` (2 reps, dev arm, lane B)
 
@@ -231,18 +303,29 @@ honestly rather than silently working around them mid-task.
 Cost: $1.19 ($0.83 coding + $0.36 gauntlet) — rep1 $0.61, rep2 $0.58.
 Output: `out/e3-cx-finishing-waiver-dev-rep1-2.json`.
 
-## Combined verdict
+**Re-checked after the fix round 1 de-escape fix:** both reps' numbers
+(including `waiver.found`/`waiver.n_violations`) are unchanged.
+
+## Combined verdict (fix round 1; invalidation probe pending)
 
 - **Baseline duplicate-gate (cx-finishing):** inconclusive-by-zero (0/3),
   a registered real alternative outcome — every rerun was legitimately
-  merge-triggered, not wasted verification.
+  merge-triggered, not wasted verification. Re-verified unaffected by
+  the fix round 1 de-escape fix.
 - **Waiver-violation probe (cx-finishing-waiver):** not confirmed (0/2),
   a registered real alternative outcome — the waiver was functionally
   respected via scoped re-verification, not blind identical rerun.
+  Re-verified unaffected by the fix round 1 de-escape fix.
 - **Corpus validation (07-29):** CONFIRMED — `run_max_repeat=9` exactly,
   plus 2 independently, manually-verified genuine duplicate-gate pairs
-  elsewhere in that tree.
-- **MINE-for-free (23 existing reps):** 5/23 already show >=1 genuine
-  duplicate-gate pair — the scorer does discriminate on real (if not
-  purpose-built) data, even though this task's own two purpose-built
-  probes came back negative.
+  elsewhere in that tree. Re-verified unaffected by the fix round 1
+  de-escape fix (same 2 pairs, +1 incidental mutation event elsewhere).
+- **MINE-for-free (23 existing reps): CORRECTED to 1/23** (was 5/23 —
+  a real scorer bug, fixed and independently re-verified non-circularly;
+  see "Fix round 1" above and `task-10-report.md`) — the scorer does
+  still discriminate on real (if not purpose-built) data, just far more
+  rarely than first reported, even though this task's own two
+  purpose-built probes came back negative.
+- **Invalidation probe (Step 4):** not yet run as of this revision — see
+  the next revision of this file / `task-10-report.md`'s "Invalidation
+  probe" section for the design and result.

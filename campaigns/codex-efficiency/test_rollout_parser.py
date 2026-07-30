@@ -214,6 +214,22 @@ GIT_LOG_EXEC = L("2026-07-29T11:00:06.000Z", "response_item", {
     "type": "function_call", "id": "fc_m7", "name": "exec_command",
     "arguments": json.dumps({"cmd": "git log --oneline -5"}), "call_id": "call_m7"})
 
+# --- deescape_custom_exec() fixtures (E3, Task 10, fix round 1). Real bug:
+# custom_tool_call/"exec" `input` is raw JS source, taken whole -- NOT
+# JSON-decoded like the exec_command encoding's `arguments` (which goes
+# through json.loads() upstream). A literal two-character `\n` escape
+# left over from a JS string literal in that source sits as a real
+# backslash followed by a literal "n" character, not an actual newline --
+# so "...\\necho done\\ngit commit -m 'wip'" (Python repr) has a literal
+# "n" immediately before "git", defeating any \b-anchored regex expecting
+# a real word boundary there. GIT_COMMIT_ESCAPED_CUSTOM_EXEC reproduces
+# this exact case: the Python string built here literally contains
+# backslash+n (two chars, via the raw "\\n" in this source) right before
+# "git commit".
+GIT_COMMIT_ESCAPED_CUSTOM_EXEC = L("2026-07-29T11:00:07.000Z", "response_item", {
+    "type": "custom_tool_call", "id": "fc_m8", "name": "exec",
+    "input": "echo start\\ngit commit -m 'wip'\\necho done", "call_id": "call_m8"})
+
 # --- skill_reads()/compaction_events() fixtures (E6, Task 9). skill_reads()
 # must extract the literal SKILL.md path token (not just a boolean match)
 # so a caller can tell WHICH skill was read before vs after a compaction.
@@ -479,6 +495,53 @@ class TestMutationEvents(unittest.TestCase):
     def test_empty_file_returns_empty_list(self):
         p = write_fixture([NOT_A_SPAWN])
         self.assertEqual(rp.mutation_events(p), [])
+
+    def test_custom_exec_literal_backslash_n_before_git_is_still_detected(self):
+        # Fix round 1 (real bug, reviewer-verified against the MINE-tier
+        # battery corpus): a custom_exec command's raw JS-source input can
+        # carry an undecoded literal "\n" (two chars: backslash, n) right
+        # before "git commit" -- the word char "n" sitting directly
+        # before "git" defeats MUTATION_GIT_RE's leading \b, so the
+        # mutation was silently dropped before this fix.
+        p = write_fixture([GIT_COMMIT_ESCAPED_CUSTOM_EXEC])
+        self.assertEqual(rp.mutation_events(p), ["2026-07-29T11:00:07.000Z"])
+
+class TestDeescapeCustomExec(unittest.TestCase):
+    """deescape_custom_exec() (E3, Task 10, fix round 1): decodes the
+    common JS string-literal escapes (\\n \\t \\" \\\\) that a
+    custom_exec command's raw, un-JSON-parsed `input` text can carry
+    literally -- and ONLY for encoding=="custom_exec". The
+    "exec_command" encoding is already JSON-decoded upstream by
+    json.loads() (exec_commands()), so re-applying this there would
+    double-unescape/corrupt already-correct text; this is an
+    absolute-truth fix scoped to mutation_events()/score_e3.py's own
+    matching, never applied to parse_session()'s corpus-parity counters
+    (skill_reads_compat/strict, spawn_calls, wait_calls, test_commands),
+    which must stay byte-parity with the audit's scan-rollouts.mjs."""
+
+    def test_decodes_n_t_quote_backslash_for_custom_exec(self):
+        # raw, as Python repr, is 'a\\nb\\tc\\"d\\\\e' -- four literal
+        # two-char escape sequences: \n \t \" \\, each exactly the
+        # reviewer's named set.
+        raw = "a\\nb\\tc\\\"d\\\\e"
+        self.assertEqual(rp.deescape_custom_exec(raw, "custom_exec"),
+                         "a\nb\tc\"d\\e")
+
+    def test_leaves_exec_command_encoding_unchanged(self):
+        # Already JSON-decoded upstream -- must NOT be touched here.
+        raw = "a\\nb"  # literal backslash-n, as it would appear if (hypothetically) present
+        self.assertEqual(rp.deescape_custom_exec(raw, "exec_command"), raw)
+
+    def test_leaves_other_escape_sequences_untouched(self):
+        # Only \n \t \" \\ are in scope (the reviewer's explicit list) --
+        # an unrelated escape like \d (a regex metacharacter some command
+        # might legitimately contain) must pass through unchanged.
+        raw = "grep '\\d+' file.txt"
+        self.assertEqual(rp.deescape_custom_exec(raw, "custom_exec"), raw)
+
+    def test_noop_on_text_with_no_escapes(self):
+        raw = "git checkout -b feature/x"
+        self.assertEqual(rp.deescape_custom_exec(raw, "custom_exec"), raw)
 
 class TestSkillReadsAndCompactionEvents(unittest.TestCase):
     """skill_reads()/compaction_events() (E6, Task 9): per-event (not

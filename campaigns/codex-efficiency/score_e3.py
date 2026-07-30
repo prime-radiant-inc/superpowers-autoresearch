@@ -90,12 +90,20 @@ def _normalize_cmd(cmd):
 def test_command_events(path):
     """Every exec command in PATH matching TEST_INVOCATION_RE, as a dict
     with `timestamp`/`call_id`/`cmd_norm`. Both exec_commands() encodings
-    are covered (exec_commands() already abstracts them)."""
+    are covered (exec_commands() already abstracts them). Matches (and
+    normalizes) against `rollout_parser.deescape_custom_exec()`'s
+    DE-ESCAPED text (fix round 1, Task 10) -- a custom_exec command's raw
+    JS-source input can carry a literal, undecoded "\\n"/"\\t"/etc. that
+    defeats TEST_INVOCATION_RE's leading \\b; see that function's
+    docstring for why this is safe (a no-op for "exec_command", already
+    JSON-decoded) and necessary (real occurrences were silently dropped
+    without it)."""
     out = []
     for ec in rp.exec_commands(path):
-        if TEST_INVOCATION_RE.search(ec.cmd):
+        cmd = rp.deescape_custom_exec(ec.cmd, ec.encoding)
+        if TEST_INVOCATION_RE.search(cmd):
             out.append({"timestamp": ec.timestamp, "call_id": ec.call_id,
-                        "cmd_norm": _normalize_cmd(ec.cmd)})
+                        "cmd_norm": _normalize_cmd(cmd)})
     return out
 
 

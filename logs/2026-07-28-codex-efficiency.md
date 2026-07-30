@@ -3342,3 +3342,101 @@ Commits: `c78149e` (mutation_events, TDD), `dfda964` (score_e3.py, TDD),
 `3107ab4` (scenarios+fixtures), `c77333e` (07-29 validation + MINE-tier
 log entry), `b5c1249` (MINE-tier output), `c880fd7` (pre-registration),
 `37af55e` (baseline battery), `8e9beac` (waiver battery).
+
+### 2026-07-30 — CORRECTION to the "E3 scorer built + validated..." and "E3 RESULT" entries above: custom_exec de-escape bug, MINE-tier "5/23" corrected to "1/23" (Task 10 fix round 1, controller entry)
+
+Filed against the "E3 scorer built + validated against 07-29 corpus
+ground truth + free re-score..." entry and the "E3 RESULT" entry above
+(both 2026-07-30, this same date). Per this log's own append-only rule,
+neither is edited; this is a correction appended after them.
+
+**Root cause (real bug, reviewer-verified against the MINE-tier battery
+corpus, not a data artifact):** `rollout_parser.MUTATION_GIT_RE` and
+`score_e3.TEST_INVOCATION_RE` both match against exec command text via
+a leading `\b`-anchored regex. `exec_commands()`'s `custom_tool_call`
+"exec" encoding keeps its `input` as raw JS source, taken WHOLE (unlike
+the "exec_command" encoding, whose `arguments` JSON string is already
+decoded by `json.loads()` upstream) — so a literal, undecoded two-
+character `\n` escape left over from a JS string literal in that raw
+source sits as a real backslash followed by a literal "n" character,
+never an actual newline. A literal "n" is a WORD character: it defeats
+both regexes' leading `\b`, which requires a genuine word boundary,
+silently dropping the match. This affected BOTH the duplicate-gate
+mutation detection AND the test-command classification wherever a
+`custom_exec` command carried this pattern.
+
+**Fix (absolute-truth fix, deliberately narrow scope):**
+`rollout_parser.deescape_custom_exec(cmd, encoding)` decodes the common
+JS-string escapes (`\n \t \" \\`) ONLY when `encoding == "custom_exec"`
+— the "exec_command" encoding (already JSON-decoded) is returned
+unchanged, so a command that legitimately contains a literal
+backslash-n sequence after JSON decoding is never touched. Applied at
+exactly the two call sites affected: `mutation_events()` and
+`score_e3.test_command_events()`. **Deliberately NEVER applied to
+`parse_session()`'s corpus-parity counters** (`skill_reads_compat/
+strict`, `spawn_calls`, `wait_calls`, `test_commands`) or their regexes
+(`SKILL_READ_RE`, `MEMORY_READ_RE`, `WAIT_RE`, `SPAWN_RE`, `TEST_RE`,
+`STRICT_SKILL_READ_RE`) — those must stay BYTE-PARITY with the audit's
+`scan-rollouts.mjs` scanner (the `validate_corpus.py`/Task 4 gate every
+later scorer trusts), which operates on the same raw, un-escaped JS
+text; de-escaping them would break an already-validated parity contract,
+not fix a bug. No `parse_session()` counter was touched, so Task 4's
+parity gate is unaffected by construction (code inspection: the diff
+touches only lines defining/calling `mutation_events()` and
+`deescape_custom_exec()`, nothing in `parse_session()` or its
+regexes) — Task 4's own validation was not re-run, since nothing it
+covers changed.
+
+**Re-verification, done NON-circularly (reading raw rollout JSONL lines
+directly with a from-scratch regex/de-escape re-implementation, never
+calling `rollout_parser.py`/`score_e3.py` — the scorer under test cannot
+grade its own fix):**
+
+- **07-29 corpus: UNCHANGED.** `run_max_repeat=9` exactly, and the same
+  2 flagged duplicate-gate pairs (identical rollout, identical
+  timestamps) — re-run via the same reused-`audit0729_adapter.py`-
+  discovery validation script. `n_mutation_events` picked up exactly +1
+  elsewhere in the tree (101→102), in a session that doesn't touch
+  `run_max_repeat` or either flagged pair. This reproduction was not an
+  artifact of the bug.
+- **MINE-tier (23 existing reps): CORRECTED from 5/23 to 1/23.** Of the
+  original 5 flagged reps (`cx-sdd-small-dev` rep2, `cx-sdd-small-
+  spinout` rep2/rep7, `cx-sdd-small-v611` rep3, `cx-compaction-spinout`
+  rep2), 4 (all but `spinout` rep7) are now correctly unflagged: each
+  had a REAL `git commit`, issued via `custom_exec` with a literal
+  undecoded `\n` immediately before "git commit", inside the flagged
+  pair's window — confirmed independently for all 5 original pairs by
+  reading the raw rollout lines directly and re-implementing the regex/
+  de-escape logic from scratch in a throwaway script, not via
+  `events_between()` (which would be circular — the same code being
+  fixed grading itself). `cx-sdd-small-spinout` rep7's window contains
+  no git mutation in either the raw or de-escaped text, in either of its
+  two custom_exec calls — confirmed as the one TRUE finding, not a
+  residual miss. Corpus-wide, the fix also recovers exactly +12
+  previously-dropped test-command occurrences (484→496, summed per run)
+  and +19 previously-dropped mutation events (579→598, summed per run)
+  that didn't happen to flip any other rep's flagged/unflagged verdict.
+  `out/e3-report.md`'s "MINE-for-free" section is corrected in place
+  (its own established convention, per the "E6 correction" precedent
+  above) with the full per-rep table and root-cause detail; this entry
+  is the permanent append-only record that the original claim was
+  "5/23" and why it changed.
+- **Both fresh batteries (`cx-finishing` 3 reps, `cx-finishing-waiver` 2
+  reps): UNCHANGED**, byte-for-byte identical output JSON — every
+  mutation event in both scenarios came through the already-decoded
+  `exec_command` encoding, never `custom_exec`, so the bug never applied
+  there. The E3 RESULT entry above's verdicts for both batteries stand
+  as originally reported.
+
+**Verification:** full non-`E5` test suite green throughout (178/178
+after the fix, before the separately-committed invalidation-probe
+addition) — `test_rollout_parser.py`, `test_score_e3.py`, plus every
+other existing scorer's test file, confirming zero regression outside
+this task's own two files. Grepped every new sentence in this entry,
+`out/e3-report.md`, and the fix commit message against the standing
+sensitive-string patterns before committing — zero hits.
+
+**Fix commit:** "fix(codex-efficiency): de-escape custom_exec commands
+— corrects E3 MINE counts". Fix report appended to `task-10-report.md`,
+"Fix round 1" section (full per-rep raw-line evidence, methodology, and
+the parity-contract-vs-absolute-truth field disposition).

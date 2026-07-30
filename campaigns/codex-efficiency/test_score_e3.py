@@ -28,6 +28,15 @@ def exec_cmd(ts, call_id, cmd):
         "arguments": json.dumps({"cmd": cmd}), "call_id": call_id})
 
 
+def custom_exec_cmd(ts, call_id, raw_input):
+    """custom_tool_call/"exec" encoding -- `input` is taken WHOLE, never
+    JSON-decoded (see rollout_parser.exec_commands()'s docstring), unlike
+    exec_cmd() above's "exec_command" encoding."""
+    return _rec(ts, "response_item", {
+        "type": "custom_tool_call", "id": call_id, "name": "exec",
+        "input": raw_input, "call_id": call_id})
+
+
 def patch_apply(ts, call_id, success=True):
     return _rec(ts, "event_msg", {
         "type": "patch_apply_end", "call_id": call_id, "turn_id": "t1",
@@ -103,6 +112,41 @@ class TestTestCommandEvents(unittest.TestCase):
             p = pathlib.Path(tmp) / "r.jsonl"
             p.write_text(exec_cmd("2026-07-30T05:00:00.000Z", "c1", "ls tests/") + "\n")
             self.assertEqual(se.test_command_events(p), [])
+
+    def test_custom_exec_literal_backslash_n_before_test_invocation_is_still_detected(self):
+        # Fix round 1 (real bug, reviewer-verified against the MINE-tier
+        # battery corpus): a custom_exec command's raw JS-source input
+        # can carry a literal, undecoded "\n" (backslash + n, two chars)
+        # right before "python3 -m unittest ..." -- the "n" defeats
+        # TEST_INVOCATION_RE's leading \b, silently dropping the
+        # occurrence before this fix.
+        raw = "echo start\\n" + FULL_SUITE  # literal backslash-n before FULL_SUITE
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "r.jsonl"
+            p.write_text(custom_exec_cmd("2026-07-30T05:00:00.000Z", "c1", raw) + "\n")
+            events = se.test_command_events(p)
+        self.assertEqual(len(events), 1)
+        # cmd_norm reflects the DE-ESCAPED whole-command text (the
+        # literal 2-char "\n" became a real newline, which whitespace-
+        # normalization then collapses to a single space) -- proving the
+        # match came from genuinely decoded text, not a fluke.
+        self.assertEqual(events[0]["cmd_norm"], "echo start " + se._normalize_cmd(FULL_SUITE))
+
+    def test_exec_command_encoding_with_literal_backslash_n_is_unaffected(self):
+        # Sanity check: the "exec_command" encoding is already
+        # JSON-decoded upstream, so a command that happens to legitimately
+        # contain a literal backslash-n substring (not a real newline)
+        # after JSON decoding must NOT be touched by the de-escape fix --
+        # it stays exactly as exec_commands() already returns it, and
+        # TEST_INVOCATION_RE's own \b still requires a genuine boundary.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "r.jsonl"
+            p.write_text(exec_cmd("2026-07-30T05:00:00.000Z", "c1", "echo start\\n" + FULL_SUITE) + "\n")
+            events = se.test_command_events(p)
+        # "echo start\nFULL_SUITE" (literal 2-char \n, exec_command
+        # encoding, never de-escaped) still defeats the leading \b --
+        # correctly still excluded, exactly like before this fix.
+        self.assertEqual(events, [])
 
 
 class TestMutationTimeline(unittest.TestCase):

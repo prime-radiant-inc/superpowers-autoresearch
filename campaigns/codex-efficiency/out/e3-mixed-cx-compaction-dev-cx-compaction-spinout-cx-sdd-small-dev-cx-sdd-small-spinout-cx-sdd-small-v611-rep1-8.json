@@ -68,7 +68,7 @@
       "label": "cx-sdd-small-dev-rep2",
       "rollout_count": 10,
       "n_test_occurrences": 17,
-      "n_mutation_events": 25,
+      "n_mutation_events": 26,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd2",
@@ -106,13 +106,13 @@
             "timestamp": "2026-07-28T20:42:34.427Z",
             "rollout": "rollout-2026-07-28T20-40-31-019faa75-254b-7f83-8b3d-13875ceb5397.jsonl"
           },
-          "mutations_between": 0,
-          "is_duplicate_gate": true
+          "mutations_between": 1,
+          "is_duplicate_gate": false
         }
       ],
       "n_duplicate_gate_pairs": 3,
-      "n_flagged_duplicate_gate_pairs": 1,
-      "has_duplicate_gate": true,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
       "per_session_repeat": {
         "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl": {
           "max_repeat": 1,
@@ -162,7 +162,7 @@
     {
       "label": "cx-sdd-small-dev-rep3",
       "rollout_count": 10,
-      "n_test_occurrences": 18,
+      "n_test_occurrences": 19,
       "n_mutation_events": 26,
       "duplicate_gate_pairs": [
         {
@@ -224,8 +224,8 @@
       "per_session_repeat": {
         "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 3,
-          "n_test_occurrences": 3
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
         },
         "rollout-2026-07-28T20-54-55-019faa82-54a9-7601-b04f-c2e79cc43e8e.jsonl": {
           "max_repeat": 2,
@@ -270,8 +270,8 @@
     {
       "label": "cx-sdd-small-dev-rep4",
       "rollout_count": 10,
-      "n_test_occurrences": 19,
-      "n_mutation_events": 25,
+      "n_test_occurrences": 20,
+      "n_mutation_events": 26,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd6",
@@ -339,8 +339,8 @@
         },
         "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 1,
-          "n_test_occurrences": 1
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
         }
       },
       "run_max_repeat": 2,
@@ -365,8 +365,8 @@
     {
       "label": "cx-sdd-small-dev-rep5",
       "rollout_count": 8,
-      "n_test_occurrences": 15,
-      "n_mutation_events": 19,
+      "n_test_occurrences": 18,
+      "n_mutation_events": 20,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd6",
@@ -401,8 +401,8 @@
       "per_session_repeat": {
         "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 1,
-          "n_test_occurrences": 1
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
         },
         "rollout-2026-07-29T05-03-23-019fac41-8687-74f0-ab5e-cd091b42b8dd.jsonl": {
           "max_repeat": 1,
@@ -613,7 +613,7 @@
       "label": "cx-sdd-small-spinout-rep2",
       "rollout_count": 10,
       "n_test_occurrences": 19,
-      "n_mutation_events": 21,
+      "n_mutation_events": 24,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd7",
@@ -638,13 +638,13 @@
             "timestamp": "2026-07-29T03:47:02.688Z",
             "rollout": "rollout-2026-07-29T03-45-51-019fabfa-8cfd-7911-85a9-058f1b86a2af.jsonl"
           },
-          "mutations_between": 0,
-          "is_duplicate_gate": true
+          "mutations_between": 1,
+          "is_duplicate_gate": false
         }
       ],
       "n_duplicate_gate_pairs": 2,
-      "n_flagged_duplicate_gate_pairs": 1,
-      "has_duplicate_gate": true,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
       "per_session_repeat": {
         "rollout-2026-07-29T03-40-08-019fabf5-50b6-7e01-81ab-4b3af2de30af.jsonl": {
           "max_repeat": 1,
@@ -694,8 +694,8 @@
     {
       "label": "cx-sdd-small-spinout-rep3",
       "rollout_count": 10,
-      "n_test_occurrences": 15,
-      "n_mutation_events": 26,
+      "n_test_occurrences": 16,
+      "n_mutation_events": 27,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd2",
@@ -769,8 +769,8 @@
       "per_session_repeat": {
         "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 1,
-          "n_test_occurrences": 1
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
         },
         "rollout-2026-07-29T03-57-40-019fac05-5dd8-7583-bc47-1b0a7b10bdb3.jsonl": {
           "max_repeat": 2,
@@ -892,7 +892,7 @@
       "label": "cx-sdd-small-spinout-rep5",
       "rollout_count": 9,
       "n_test_occurrences": 18,
-      "n_mutation_events": 28,
+      "n_mutation_events": 30,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd2",
@@ -930,7 +930,7 @@
             "timestamp": "2026-07-29T05:44:26.030Z",
             "rollout": "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl"
           },
-          "mutations_between": 10,
+          "mutations_between": 11,
           "is_duplicate_gate": false
         },
         {
@@ -1089,7 +1089,7 @@
       "label": "cx-sdd-small-spinout-rep7",
       "rollout_count": 10,
       "n_test_occurrences": 22,
-      "n_mutation_events": 26,
+      "n_mutation_events": 28,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd2",
@@ -1196,8 +1196,8 @@
     {
       "label": "cx-sdd-small-spinout-rep8",
       "rollout_count": 10,
-      "n_test_occurrences": 25,
-      "n_mutation_events": 24,
+      "n_test_occurrences": 26,
+      "n_mutation_events": 26,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd3",
@@ -1245,8 +1245,8 @@
       "per_session_repeat": {
         "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 4,
-          "n_test_occurrences": 4
+          "n_distinct_commands": 5,
+          "n_test_occurrences": 5
         },
         "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl": {
           "max_repeat": 2,
@@ -1556,7 +1556,7 @@
       "label": "cx-sdd-small-v611-rep1",
       "rollout_count": 8,
       "n_test_occurrences": 23,
-      "n_mutation_events": 21,
+      "n_mutation_events": 22,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd10",
@@ -1618,7 +1618,7 @@
     {
       "label": "cx-sdd-small-v611-rep2",
       "rollout_count": 10,
-      "n_test_occurrences": 26,
+      "n_test_occurrences": 28,
       "n_mutation_events": 36,
       "duplicate_gate_pairs": [
         {
@@ -1654,6 +1654,11 @@
           "n_distinct_commands": 5,
           "n_test_occurrences": 6
         },
+        "rollout-2026-07-29T18-59-42-019faf3f-33c0-7f40-af94-2962c144f8d2.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 2,
+          "n_test_occurrences": 2
+        },
         "rollout-2026-07-29T19-02-26-019faf41-b2b7-7132-8d3a-a5fc3c8b7e6e.jsonl": {
           "max_repeat": 1,
           "n_distinct_commands": 3,
@@ -1667,6 +1672,7 @@
       },
       "run_max_repeat": 2,
       "repeat_distribution": [
+        1,
         1,
         1,
         1,
@@ -1687,8 +1693,8 @@
     {
       "label": "cx-sdd-small-v611-rep3",
       "rollout_count": 8,
-      "n_test_occurrences": 17,
-      "n_mutation_events": 20,
+      "n_test_occurrences": 19,
+      "n_mutation_events": 22,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd8",
@@ -1713,18 +1719,18 @@
             "timestamp": "2026-07-29T19:22:37.056Z",
             "rollout": "rollout-2026-07-29T19-21-18-019faf52-f8c4-7420-b3e4-2b13bae555c6.jsonl"
           },
-          "mutations_between": 0,
-          "is_duplicate_gate": true
+          "mutations_between": 1,
+          "is_duplicate_gate": false
         }
       ],
       "n_duplicate_gate_pairs": 2,
-      "n_flagged_duplicate_gate_pairs": 1,
-      "has_duplicate_gate": true,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
       "per_session_repeat": {
         "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 2,
-          "n_test_occurrences": 2
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
         },
         "rollout-2026-07-29T19-15-37-019faf4d-c4b2-7780-94d8-70704f31b9e8.jsonl": {
           "max_repeat": 1,
@@ -1763,8 +1769,8 @@
     {
       "label": "cx-compaction-spinout-rep1",
       "rollout_count": 9,
-      "n_test_occurrences": 28,
-      "n_mutation_events": 28,
+      "n_test_occurrences": 29,
+      "n_mutation_events": 29,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd13",
@@ -1801,8 +1807,8 @@
         },
         "rollout-2026-07-30T06-37-21-019fb1bd-e9f2-7501-bd4d-e3c9e052c445.jsonl": {
           "max_repeat": 1,
-          "n_distinct_commands": 3,
-          "n_test_occurrences": 3
+          "n_distinct_commands": 4,
+          "n_test_occurrences": 4
         },
         "rollout-2026-07-30T06-42-15-019fb1c2-6857-7611-9dc8-9871ad62b24f.jsonl": {
           "max_repeat": 1,
@@ -1839,7 +1845,7 @@
       "label": "cx-compaction-spinout-rep2",
       "rollout_count": 10,
       "n_test_occurrences": 27,
-      "n_mutation_events": 27,
+      "n_mutation_events": 28,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd10",
@@ -1864,8 +1870,8 @@
             "timestamp": "2026-07-30T06:33:41.890Z",
             "rollout": "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl"
           },
-          "mutations_between": 0,
-          "is_duplicate_gate": true
+          "mutations_between": 1,
+          "is_duplicate_gate": false
         },
         {
           "cmd_id": "cmd19",
@@ -1882,8 +1888,8 @@
         }
       ],
       "n_duplicate_gate_pairs": 3,
-      "n_flagged_duplicate_gate_pairs": 1,
-      "has_duplicate_gate": true,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
       "per_session_repeat": {
         "rollout-2026-07-30T06-23-25-019fb1b1-29ce-7640-8841-aa69e3dc9948.jsonl": {
           "max_repeat": 1,
@@ -1934,7 +1940,7 @@
       "label": "cx-compaction-spinout-rep3",
       "rollout_count": 9,
       "n_test_occurrences": 21,
-      "n_mutation_events": 26,
+      "n_mutation_events": 27,
       "duplicate_gate_pairs": [
         {
           "cmd_id": "cmd5",

@@ -414,6 +414,51 @@ def patch_applies(path) -> list[PatchApply]:
 # apply_patch.
 MUTATION_GIT_RE = re.compile(r"\bgit (commit|merge|rebase|reset|checkout)\b")
 
+# --- deescape_custom_exec() (E3, Task 10, fix round 1): a real bug found
+# via reviewer-verified re-inspection of the MINE-tier battery corpus.
+# custom_tool_call/"exec"'s `input` is raw JS source, taken WHOLE by
+# exec_commands() (see that function's own docstring) -- unlike the
+# "exec_command" encoding, whose `arguments` JSON string already goes
+# through json.loads() upstream and comes out fully decoded. A literal
+# two-character `\n` escape left over from a JS string literal in that
+# raw source (e.g. a multi-line shell script embedded as a JS string)
+# therefore stays a real backslash followed by a literal "n" character,
+# never an actual newline -- so a command shaped like (Python repr)
+# "echo start\\ngit commit -m 'wip'" has a literal "n" sitting directly
+# before "git", and a literal "n" is a WORD character: it defeats
+# MUTATION_GIT_RE's (and score_e3.TEST_INVOCATION_RE's) leading \b, which
+# requires an actual word boundary immediately before the match. This
+# silently dropped real mutations (and real test-command occurrences)
+# from custom_exec-encoded commands wherever this pattern occurred.
+#
+# THIS IS AN ABSOLUTE-TRUTH FIX, deliberately scoped to ONLY the two
+# call sites that need the true, human-readable command text
+# (mutation_events() below and score_e3.py's TEST_INVOCATION_RE
+# matching) -- it is NEVER applied to parse_session()'s corpus-parity
+# counters (skill_reads_compat/strict, spawn_calls, wait_calls,
+# test_commands) or their regexes (SKILL_READ_RE, MEMORY_READ_RE,
+# WAIT_RE, SPAWN_RE, TEST_RE, STRICT_SKILL_READ_RE), whose contract is
+# BYTE-PARITY with the audit's scan-rollouts.mjs scanner (validated by
+# validate_corpus.py, Task 4) -- that scanner operates on the same raw,
+# un-escaped JS text this function decodes, so de-escaping those paths
+# would break an already-validated parity contract, not fix a bug.
+_JS_ESCAPE_RE = re.compile(r'\\(n|t|"|\\)')
+_JS_ESCAPE_MAP = {"n": "\n", "t": "\t", '"': '"', "\\": "\\"}
+
+
+def deescape_custom_exec(cmd: str, encoding: str) -> str:
+    """Decodes the common JS string-literal escapes (\\n \\t \\" \\\\ --
+    the reviewer's named set, not a full JS-string-literal parse) in CMD
+    when ENCODING == "custom_exec". Any other encoding value (in
+    practice, "exec_command") returns CMD unchanged -- that text is
+    already JSON-decoded upstream by exec_commands(), so re-applying
+    this here would double-unescape/corrupt already-correct content
+    (e.g. a command that legitimately contains a literal backslash-n
+    two-character sequence after JSON decoding)."""
+    if encoding != "custom_exec":
+        return cmd
+    return _JS_ESCAPE_RE.sub(lambda m: _JS_ESCAPE_MAP[m.group(1)], cmd)
+
 
 def mutation_events(path) -> list[str]:
     """Sorted timestamps of every successful patch apply or git-mutating
@@ -421,9 +466,12 @@ def mutation_events(path) -> list[str]:
     (ISO8601 strings, which sort lexicographically in chronological
     order) -- NOT simply concatenated in file order, since a caller
     merging mutation_events() across multiple sessions needs a single
-    chronologically-ordered timeline."""
+    chronologically-ordered timeline. Matches MUTATION_GIT_RE against
+    the DE-ESCAPED command text (deescape_custom_exec(), fix round 1) --
+    see that function's docstring for why this is safe and necessary."""
     events = [pa.timestamp for pa in patch_applies(path) if pa.success]
-    events += [ec.timestamp for ec in exec_commands(path) if MUTATION_GIT_RE.search(ec.cmd)]
+    events += [ec.timestamp for ec in exec_commands(path)
+               if MUTATION_GIT_RE.search(deescape_custom_exec(ec.cmd, ec.encoding))]
     return sorted(events)
 
 # --- skill_reads() / compaction_events() (E6, Task 9): per-EVENT (not
