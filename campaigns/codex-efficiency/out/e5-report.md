@@ -1,6 +1,6 @@
 # E5 review-scope / seeded-defect recall scorer (Task 12)
 
-**Status: fixture + scenario + scorer built and validated (TDD, 38
+**Status: fixture + scenario + scorer built and validated (TDD, 39
 tests); MINE-tier free scan complete; FULL baseline (`cx-scope-review`,
 dev arm, 3 reps) complete.** This is a working document (not
 append-only — see the hypothesis log's dated entries for the
@@ -51,7 +51,7 @@ append-only history and the pre-registered predictions).
   Agent` assertion, since dispatch behavior is exactly what this
   experiment measures, the same E2/E4 scenario-authoring lesson already
   in the ledger).
-- `score_e5.py` (TDD tests-first, 38 tests in `test_score_e5.py`): six
+- `score_e5.py` (TDD tests-first, 39 tests in `test_score_e5.py`): six
   measures per run —
   1. **Recall matrix**: each defect's rubric keywords searched across
      every session's `task_complete.last_agent_message` and
@@ -282,9 +282,10 @@ opposite directions, at least at this review-thoroughness level.
 | Measure | Prediction | Result | Verdict |
 |---|---|---|---|
 | Same-scope duplicate review | >=1/3 reps | 0/3 | **MISSED** (contradicts the MINE-tier-informed prior; see discrimination-gate discussion above for why) |
-| Serial-remediation cycles | >=1/3 reps | 3/3 reps (1, 1, 2 cycles) | **CONFIRMED**, exceeds prediction |
+| Serial-remediation cycles | >=1/3 reps | 2/3 reps (rep1=0, rep2=1, rep3=2 cycles) | **CONFIRMED** (2/3 reps clear the >=1-rep bar) |
 | Wave-boundary violation | exploratory, no gate | 0/3 | Consistent with fully sequential (never concurrent) dispatch: independently confirmed no two sessions in any rep ever overlap in wall-clock time, so there was never a window for one session to mutate the tree while another's re-review was active |
-| D4 fix-review scope | exploratory, no gate | rep1: `repair_scoped`; rep2/rep3: `full_branch_rescope` | 2/3 reps re-verified the WHOLE branch (a bare `pytest`/whole-suite rerun with no specific file target) rather than just the repair's own diff after the mid-session report -- independently spot-checked for rep3 (highest cycle count): its dispatched `final_batch_review` session ran `python -m pytest -p no:cacheprovider -q` (no file target) twice after the repair-request timestamp, exactly the "full_branch_rescope" signature, cross-verified directly against the raw `custom_tool_call`/`exec` records (not through `score_e3`/`score_e5`) |
+| D4 fix-review scope | exploratory, no gate | rep1: `repair_scoped` (SUSPECT, see caveat below); rep2/rep3: `full_branch_rescope` | At least 2/3 reps re-verified the WHOLE branch (a bare `pytest`/whole-suite rerun with no specific file target) rather than just the repair's own diff after the mid-session report -- independently spot-checked for rep3 (highest cycle count): its dispatched `final_batch_review` session ran `python -m pytest -p no:cacheprovider -q` (no file target) twice after the repair-request timestamp, exactly the "full_branch_rescope" signature, cross-verified directly against the raw `custom_tool_call`/`exec` records (not through `score_e3`/`score_e5`) |
+| Criterion-less gate findings (Amendment 3, previously undisclosed as cut -- implemented in fix round 1) | no numeric prior registered | 0/13 blocking (Critical/Important) findings across the 3 reps' first review passes lack a violated-criterion/reachable-path | See full manual classification below -- no withdrawn-restore-finding-archetype instance observed in this battery |
 
 **Serial-remediation cycle count independently spot-checked (rep3, the
 highest count):** raw-scanned both the root and the dispatched
@@ -293,6 +294,103 @@ directly for `TEST_INVOCATION_RE`-matching commands after the repair
 timestamp -- 1 in the root, 2 in the child, 3 total, `3 - 1 = 2` cycles,
 exactly matching `score_e5.py`'s own count, computed independently
 without importing `score_e3`/`score_e5`.
+
+**Amendment 3's fourth measure -- criterion-less gate findings (fix
+round 1; previously implemented nowhere, and not disclosed as cut --
+now implemented minimally per the "manual classification with quoted
+evidence" option, not automated: n is small, 13 blocking findings total,
+and this is exactly the judgment-shaped measure Amendment 3's own
+framing says is hard to automate).** Method: read every Critical/
+Important finding from each rep's FIRST full review pass (the pass
+that actually gates merge-readiness; re-review/confirmation passes are
+excluded from this count since they aren't gate findings, they're
+verifications of an already-gated finding) and classify each as
+CRITERION-NAMED (explicitly ties to a violated written contract --
+`docs/DESIGN.md`'s thread-safety contract, `docs/BATCH.md`'s documented
+default, `docs/DEV_SETUP.md`'s own TODO note, or a named failing test)
+and/or REACHABLE-PATH-NAMED (gives a concrete, reproducible input ->
+output example or a cited test-run result), vs. the archetype this
+measure is built to catch: a finding that names neither -- a vague or
+hypothetical concern with no way to confirm it's real (the 07-29
+session's withdrawn-restore-finding archetype).
+
+- **rep1** (`code_review`, 5 Important findings, 0 Critical): (1)
+  `peek_batch` lock violation -- "directly contradicting `docs/
+  DESIGN.md` and `docs/BATCH.md`... can produce a torn preview or
+  `RuntimeError`" -- CRITERION-NAMED. (2) `DEFAULT_BATCH_SIZE` wrong --
+  "Verification against an archive of `2f57a07`: **1 failed, 9
+  passed**; failure is `tests/test_batch.py:25`" -- CRITERION-NAMED +
+  REACHABLE. (3) `msgpack` undeclared -- "A clean `pip install -e .`
+  installs a package whose codec immediately raises
+  `ModuleNotFoundError`. `docs/DEV_SETUP.md:7-12` explicitly identifies
+  this as a pre-merge TODO" -- CRITERION-NAMED + REACHABLE. (4)
+  `drain_batch` drops `None` -- "For `["before", None, "after"]`,
+  `drain_batch(q, 5)` returns `["before"]`, permanently drops `None`" --
+  REACHABLE (a genuinely new bug, not a stated-contract violation, but
+  a concrete repro). (5) codec round-trip failure -- "`decode_batch(
+  encode_batch([{1: "value"}]))` raises `ValueError`" -- REACHABLE.
+- **rep2** (`branch_review`, 1 Critical + 3 Important): peek_batch
+  (Critical) -- "directly violates the core contract in `docs/
+  DESIGN.md`... `RuntimeError`" -- CRITERION-NAMED. `DEFAULT_BATCH_SIZE`
+  -- "A direct runtime assertion reproduces this failure" --
+  CRITERION-NAMED + REACHABLE. `msgpack` -- "reproduced with system
+  Python: `ModuleNotFoundError`... `docs/DEV_SETUP.md` itself marks
+  this as a pre-merge TODO" -- CRITERION-NAMED + REACHABLE. `None`-drop
+  -- "Given `[None, "after"]`, draining consumes and silently drops
+  `None`" -- REACHABLE.
+- **rep3** (`code_review`, 0 Critical + 4 Important): `DEFAULT_BATCH_SIZE`
+  -- "The committed test fails; a pinned smoke test returned `[0]`
+  instead of five items" -- CRITERION-NAMED + REACHABLE. `peek_batch`
+  -- "directly violating `docs/DESIGN.md:5-16`" -- CRITERION-NAMED.
+  `msgpack` -- "A clean environment raises `ModuleNotFoundError`;
+  `docs/DEV_SETUP.md:7-13` explicitly marks this as a pre-merge TODO" --
+  CRITERION-NAMED + REACHABLE. `None`-drop -- "For `[None, "x"]`,
+  `drain_batch(..., 2)` silently removes `None`, returns `[]`, and
+  leaves `"x"`" -- REACHABLE.
+
+**Result: 0/13 blocking findings, across all 3 reps, lack BOTH a named
+criterion violation and a reachable failure path.** Every finding was
+either tied to an explicit written contract this fixture deliberately
+established (`docs/DESIGN.md`/`docs/BATCH.md`/`docs/DEV_SETUP.md`) or
+came with a concrete, reproducible example -- no instance of the
+withdrawn-restore-finding archetype (a claim raised then walked back,
+or asserted with no way to check it) appeared in this battery. Reported
+honestly as a small-n, single-battery descriptive result, not a general
+claim that this pathology doesn't exist -- the 07-29 session where the
+archetype was originally observed was a multi-hour, heavily-loaded real
+work session, a very different regime from this scenario's single
+review pass over a small, deliberately-seeded fixture (the same
+"different regime" caveat this campaign's E3 pre-registration already
+drew for its own magnitude priors).
+
+**WHOLE_SUITE_TEST_RE compound-exec caveat (fix round 1; a real
+miscalculation found while re-verifying the finding above, not a
+theoretical risk).** `score_e5.fix_review_scope()`'s classifier checks
+whether `.py` appears ANYWHERE in a post-repair test command's full
+text to decide `repair_scoped` vs `full_branch_rescope` -- it does not
+parse compound/chained shell commands. rep1's sole post-repair
+test-command match is exactly such a compound command (independently
+re-read from the raw rollout, not through `score_e3`/`score_e5`):
+
+```
+... sed -n '1,80p' tests/test_batch.py; test -x /tmp/mtqueue-final-AuGRzC/bin/python && /tmp/mtqueue-final-AuGRzC/bin/python -m pytest -q tests/test_batch.py::test_drain_batch_default_pulls_documented_batch_size && /tmp/mtqueue-final-AuGRzC/bin/python -m pytest -q
+```
+
+This ONE exec call chains a file-scoped `pytest -q tests/test_batch.py
+::test_drain_batch_default_pulls_documented_batch_size` with a
+SUBSEQUENT bare `pytest -q` (no file target) via `&&` -- a genuine
+whole-suite rerun. Because the overall command string also contains
+`.py` (from the file-scoped invocation and an earlier `sed` read),
+`fix_review_scope()`'s naive whole-string check classifies the entire
+command as file-scoped and reports rep1 as `repair_scoped` -- but the
+raw command actually ALSO reruns the whole suite. Correcting for this:
+**all 3 reps, not 2/3, show whole-suite reruns after the mid-session
+report** -- rep1's `repair_scoped` label in the table above is marked
+SUSPECT and should be read as "at least full_branch_rescope," not
+"scoped," pending a proper shell-command parser (out of scope for this
+fix round -- flagged, not fixed, matching this report's own standing
+practice of disclosing scorer limitations rather than quietly
+patching around them post hoc).
 
 **E2-informed alternative (iv), registered outcome vs. actual:** the
 registered alternative predicted reviewers might SUBSTITUTE a real,

@@ -3683,3 +3683,92 @@ external corpus content, so quoting them is the same "our own scenario
 output" exception this campaign's privacy rules already carve out
 (score_e3.py's module docstring; the Drew/07-29-corpus handling
 elsewhere in this log).
+
+### 2026-07-30 — CORRECTION to the "E5 RESULT" entry above: serial-remediation tally mistranscribed as (1,1,2)/3-of-3, actually (0,1,2)/2-of-3; Amendment 3's fourth measure implemented; a real WHOLE_SUITE_TEST_RE compound-exec miscalculation found (Task 12 fix round 1, controller entry)
+
+Filed against the "E5 RESULT" entry above (2026-07-30, this same date).
+Per this log's own append-only rule, that entry is left unedited; this
+is a correction appended after it, not a rewrite.
+
+**1. Serial-remediation tally was mistranscribed in prose (report,
+task-report, and the RESULT entry above), not in the underlying data.**
+`out/e5-cx-scope-review-dev-rep1-3.json` (already committed, `031937f`)
+and the raw rollouts always had the correct per-rep values —
+`rep1=0, rep2=1, rep3=2` — verified directly (`json.load` on the
+committed file, cross-checked against a from-scratch raw-rollout scan
+of rep1's post-repair exec records: exactly 1 post-repair
+`TEST_INVOCATION_RE` match, so `serial_remediation_cycles =
+max(0, 1-1) = 0`, matching the JSON exactly). The RESULT entry's prose
+above states "3/3 reps (1, 1, 2 cycles)" — both the rep-count and the
+rep1 value are wrong; the correct reading is **2/3 reps show >=1 cycle
+(rep1=0, rep2=1, rep3=2)**. The registered Amendment 3 prediction
+(">=1/3 reps") still holds under the corrected tally (2/3 clears the
+bar) — the qualitative CONFIRMED verdict is unchanged, only the exact
+numbers were wrong. Corrected in place (not append-only documents, per
+their own established convention) in `out/e5-report.md`'s Amendment 3
+table and narrative, and in `task-12-e5-report.md`'s one-line verdict.
+
+**2. Amendment 3's fourth E5 measure — "gate findings lacking a
+violated acceptance criterion / reachable failure path" — had been
+neither implemented nor disclosed as cut.** Implemented now via manual
+classification (the coordinator's preferred option, given small n and
+this being exactly the judgment-shaped measure Amendment 3's own
+framing says is hard to automate): every Critical/Important finding
+from each rep's FIRST review pass (13 total: 5 rep1, 4 rep2, 4 rep3),
+classified as CRITERION-NAMED (ties to a violated written contract —
+`docs/DESIGN.md`/`docs/BATCH.md`/`docs/DEV_SETUP.md`, or a named
+failing test) and/or REACHABLE-PATH-NAMED (a concrete, reproducible
+example or cited test result), full quoted evidence in
+`out/e5-report.md`. **Result: 0/13 lack both** — no instance of the
+withdrawn-restore-finding archetype in this battery, reported as a
+small-n, single-battery descriptive result (a genuinely different
+regime from the multi-hour 07-29 session where the archetype was
+originally observed), not a general claim the pathology doesn't exist.
+
+**3. A real (not theoretical) `WHOLE_SUITE_TEST_RE` compound-exec
+miscalculation, found while re-verifying finding 2 above.**
+`score_e5.fix_review_scope()`'s classifier checks for `.py` anywhere in
+a post-repair test command's full text; it does not parse compound/
+chained shell commands. rep1's sole post-repair test-command match
+(independently re-read from the raw rollout) is exactly such a
+compound: a file-scoped `pytest ... tests/test_batch.py::
+test_drain_batch_default_pulls_documented_batch_size` chained via `&&`
+with a SUBSEQUENT bare `pytest -q` (no file target) — a genuine
+whole-suite rerun the naive whole-string check misses because the
+overall command also contains `.py` elsewhere. Corrected reading: rep1's
+`repair_scoped` D4 label is SUSPECT — likely all 3 reps, not 2/3, show a
+whole-suite rerun after the mid-session report. Flagged as a limitation
+in `out/e5-report.md`, not silently patched (a proper fix needs a real
+shell-command parser, out of scope for this fix round).
+
+**4. Minor:** stale "38 tests" corrected to "39" in `out/e5-report.md`
+(two occurrences) — `test_score_e5.py` has always had 39 tests since
+the `fix_review_scope()` addition in the original implementation
+commit; only the prose was stale.
+
+**5. Housekeeping, found while re-running the test suite to verify this
+round (not a report/data-correctness issue, no committed content was
+ever affected):** a stray, untracked nested git repo (`fixtures/
+scope-review/build.sh`'s own `git init`, branch `feature`, 4 commits —
+identical to the fixture's expected shape) plus its rendered working
+tree (`tests/`, `mtqueue/`, `docs/{BATCH,DESIGN,DEV_SETUP}.md`,
+`pyproject.toml`, `README.md`) had accumulated directly inside
+`campaigns/codex-efficiency/` — an accidental side effect of an earlier
+manual fixture-validation command's cwd carrying over between separate
+tool calls, not anything `run-quorum.sh` or any committed script does.
+Confirmed via `git log --all` that none of these paths were EVER
+tracked in the real repo (no pre-existing content was overwritten,
+purely additive debris), then removed (`find ... -delete`, since none
+of it was tracked — no `git rm` needed). Full suite re-confirmed green
+(265/265) after cleanup.
+
+**Verification:** full test suite still green (265/265 — this fix round
+touched no scorer code, only report/log prose, plus the housekeeping
+above). Grepped this entry and both corrected report files against the
+standing sensitive-string patterns before committing — zero hits; this
+entry's own quoted review text is this task's OWN scenario output, same
+citability precedent as the RESULT entry above.
+
+**Commit:** "fix(codex-efficiency): E5 corrections — remediation tally
+(0,1,2), criterion-less gate-findings measure". Fix report appended to
+`task-12-e5-report.md`'s Concerns section (item 6).
