@@ -204,6 +204,59 @@ COMPACTED_MARKER_2 = L("2026-07-28T18:00:20.000Z", "event_msg", {
     "type": "context_compacted"})
 
 
+# --- final_answers()/inter_agent_messages() fixtures (E10, Task 14). Shapes
+# copied verbatim from a real battery rollout (evals/results/
+# cx-eff-cx-sdd-small-dev-rep1/.../rollout-*.jsonl): a session's own claim to
+# its caller is an `event_msg/type=="agent_message"` record (`message`,
+# `phase` -- "final_answer" for the session's actual conclusion, "commentary"
+# for in-progress narration); a message ONE agent sent ANOTHER (what a
+# controller received from a child, or vice versa) is a
+# `response_item/type=="agent_message"` record with `author`/`recipient` and
+# a `content` list of `{"type":"input_text"|"output_text","text":...}` items
+# whose concatenated text follows a fixed envelope: "Message Type:
+# X\nTask name: Y\nSender: Z\nPayload:\n<payload>".
+OWN_FINAL_ANSWER = L("2026-07-28T20:13:00.000Z", "event_msg", {
+    "type": "agent_message",
+    "message": "Merged `feat/x` into `main`. All 14 tests pass.",
+    "phase": "final_answer", "memory_citation": None})
+OWN_COMMENTARY = L("2026-07-28T20:10:00.000Z", "event_msg", {
+    "type": "agent_message", "message": "Starting task 1 now.",
+    "phase": "commentary", "memory_citation": None})
+
+CHILD_FINAL_ANSWER_SUBSTANTIVE = L("2026-07-28T19:59:59.000Z", "response_item", {
+    "type": "agent_message", "author": "/root/task1_reviewer", "recipient": "/root",
+    "content": [{"type": "input_text",
+                 "text": "Message Type: FINAL_ANSWER\nTask name: /root\n"
+                         "Sender: /root/task1_reviewer\nPayload:\nApproved. No issues."}],
+    "internal_chat_message_metadata_passthrough": {"turn_id": "t1"}})
+# The harmless real-corpus artifact this task's pre-registration flagged and
+# ruled out: a zero-payload progress ping, Message Type MESSAGE (not
+# FINAL_ANSWER) -- a null-result classifier keyed on raw text length alone
+# would misfire on this; inter_agent_messages() must expose message_type so
+# score_e10.py can filter on it correctly.
+CHILD_PROGRESS_PING_EMPTY_PAYLOAD = L("2026-07-28T19:58:50.000Z", "response_item", {
+    "type": "agent_message", "author": "/root/task2_reviewer", "recipient": "/root",
+    "content": [{"type": "input_text",
+                 "text": "Message Type: MESSAGE\nTask name: /root\n"
+                         "Sender: /root/task2_reviewer\nPayload:\n"}],
+    "internal_chat_message_metadata_passthrough": {"turn_id": "t2"}})
+# The engineered probe (a) case: a genuine FINAL_ANSWER with an empty payload.
+CHILD_FINAL_ANSWER_EMPTY_PAYLOAD = L("2026-07-28T19:59:10.000Z", "response_item", {
+    "type": "agent_message", "author": "/root/task1_implementer", "recipient": "/root",
+    "content": [{"type": "input_text",
+                 "text": "Message Type: FINAL_ANSWER\nTask name: /root\n"
+                         "Sender: /root/task1_implementer\nPayload:\n"}],
+    "internal_chat_message_metadata_passthrough": {"turn_id": "t3"}})
+INTER_AGENT_UNPARSEABLE = L("2026-07-28T19:59:20.000Z", "response_item", {
+    "type": "agent_message", "author": "/root/x", "recipient": "/root",
+    "content": [{"type": "input_text", "text": "not the expected envelope shape"}]})
+INTER_AGENT_MULTI_CONTENT_ITEMS = L("2026-07-28T19:59:30.000Z", "response_item", {
+    "type": "agent_message", "author": "/root/y", "recipient": "/root",
+    "content": [{"type": "input_text", "text": "Message Type: FINAL_ANSWER\nTask name: /root\n"
+                                                 "Sender: /root/y\nPayload:\nfirst "},
+                {"type": "input_text", "text": "second"}]})
+
+
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
     f.write("\n".join(lines) + "\n")
@@ -400,6 +453,80 @@ class TestSkillReadsAndCompactionEvents(unittest.TestCase):
     def test_compaction_events_empty_when_none(self):
         p = write_fixture([SKILL_READ_CAT, NOT_A_SPAWN])
         self.assertEqual(rp.compaction_events(p), [])
+
+class TestFinalAnswers(unittest.TestCase):
+    """final_answers() (E10, Task 14): a session's own claims to its
+    caller, in file order -- both "commentary" and "final_answer" phases."""
+
+    def test_final_answers_extracts_message_and_phase_in_order(self):
+        p = write_fixture([OWN_COMMENTARY, NOT_A_SPAWN, OWN_FINAL_ANSWER])
+        answers = rp.final_answers(p)
+        self.assertEqual(len(answers), 2)
+        self.assertEqual(answers[0].phase, "commentary")
+        self.assertEqual(answers[0].message, "Starting task 1 now.")
+        self.assertEqual(answers[1].phase, "final_answer")
+        self.assertIn("Merged", answers[1].message)
+        self.assertEqual(answers[1].timestamp, "2026-07-28T20:13:00.000Z")
+
+    def test_final_answers_empty_when_none(self):
+        p = write_fixture([NOT_A_SPAWN, CHILD_FINAL_ANSWER_SUBSTANTIVE])
+        # inter-agent response_item/agent_message must NOT be picked up here
+        # -- only the session's OWN event_msg/agent_message records.
+        self.assertEqual(rp.final_answers(p), [])
+
+
+class TestInterAgentMessages(unittest.TestCase):
+    """inter_agent_messages() (E10, Task 14): every message one agent sent
+    another, as recorded in THIS rollout's own transcript, parsed into the
+    "Message Type: X\\nTask name: Y\\nSender: Z\\nPayload:\\n<payload>"
+    envelope fields."""
+
+    def test_parses_envelope_fields(self):
+        p = write_fixture([CHILD_FINAL_ANSWER_SUBSTANTIVE])
+        msgs = rp.inter_agent_messages(p)
+        self.assertEqual(len(msgs), 1)
+        m = msgs[0]
+        self.assertEqual(m.author, "/root/task1_reviewer")
+        self.assertEqual(m.recipient, "/root")
+        self.assertEqual(m.message_type, "FINAL_ANSWER")
+        self.assertEqual(m.task_name, "/root")
+        self.assertEqual(m.sender, "/root/task1_reviewer")
+        self.assertEqual(m.payload, "Approved. No issues.")
+        self.assertEqual(m.timestamp, "2026-07-28T19:59:59.000Z")
+
+    def test_distinguishes_empty_final_answer_from_empty_progress_ping(self):
+        # The exact false-positive trap this task's pre-registration found
+        # in the real corpus: both have an empty payload, but only the
+        # FINAL_ANSWER one is a genuine null RESULT.
+        p = write_fixture([CHILD_PROGRESS_PING_EMPTY_PAYLOAD, CHILD_FINAL_ANSWER_EMPTY_PAYLOAD])
+        msgs = rp.inter_agent_messages(p)
+        self.assertEqual(len(msgs), 2)
+        ping, final = msgs
+        self.assertEqual(ping.message_type, "MESSAGE")
+        self.assertEqual(ping.payload, "")
+        self.assertEqual(final.message_type, "FINAL_ANSWER")
+        self.assertEqual(final.payload, "")
+
+    def test_unparseable_envelope_falls_back_to_raw_text(self):
+        p = write_fixture([INTER_AGENT_UNPARSEABLE])
+        m = rp.inter_agent_messages(p)[0]
+        self.assertEqual(m.message_type, "")
+        self.assertEqual(m.payload, "not the expected envelope shape")
+        self.assertEqual(m.raw_text, "not the expected envelope shape")
+
+    def test_concatenates_multiple_content_items(self):
+        p = write_fixture([INTER_AGENT_MULTI_CONTENT_ITEMS])
+        m = rp.inter_agent_messages(p)[0]
+        self.assertEqual(m.payload, "first second")
+
+    def test_excludes_own_final_answer_event_msg(self):
+        p = write_fixture([OWN_FINAL_ANSWER, NOT_A_SPAWN])
+        self.assertEqual(rp.inter_agent_messages(p), [])
+
+    def test_empty_when_none(self):
+        p = write_fixture([NOT_A_SPAWN])
+        self.assertEqual(rp.inter_agent_messages(p), [])
+
 
 if __name__ == "__main__":
     unittest.main()

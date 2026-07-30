@@ -455,3 +455,102 @@ def compaction_events(path) -> list[CompactionEvent]:
         if typ == "event_msg" and p.get("type") == "context_compacted":
             out.append(CompactionEvent(timestamp=ts, lineno=lineno))
     return out
+
+# --- final_answers() / inter_agent_messages() (E10, Task 14): lifecycle-
+# truthfulness needs the actual CLAIM text a session made, not just tool-call
+# structure. Two distinct record shapes carry it, verified directly against a
+# real battery rollout (evals/results/cx-eff-cx-sdd-small-dev-rep1/.../
+# rollout-*.jsonl):
+#
+#   - `event_msg/type=="agent_message"` -- what THIS session told its OWN
+#     caller (parent controller, or the human/gauntlet driver for a root):
+#     `{"type":"agent_message","message":"<text>","phase":"final_answer"|
+#     "commentary","memory_citation":null}`. The session's own final claim is
+#     the LAST entry with phase=="final_answer" (a session may narrate
+#     several "commentary" messages before its actual conclusion).
+#   - `response_item/type=="agent_message"` -- an INTER-agent message (what
+#     one thread sent another) as recorded in the observing thread's own
+#     transcript: `{"type":"agent_message","author":"/root/x",
+#     "recipient":"/root","content":[{"type":"input_text"|"output_text",
+#     "text":...}, ...]}`. The concatenated content text follows a fixed
+#     protocol envelope: "Message Type: X\nTask name: Y\nSender:
+#     Z\nPayload:\n<payload>". Verified pitfall (E10 pre-registration, this
+#     task): a `Message Type: MESSAGE` progress ping commonly has an EMPTY
+#     payload (harmless protocol artifact, immediately followed by a
+#     substantive `Message Type: FINAL_ANSWER` from the same sender) -- a
+#     null-result classifier must key off message_type=="FINAL_ANSWER"
+#     specifically, never raw text length alone, or it will misfire on every
+#     one of these pings. inter_agent_messages() exposes message_type so a
+#     caller can make that distinction; it does not make it itself.
+
+INTER_AGENT_ENVELOPE_RE = re.compile(
+    r"^Message Type: (?P<message_type>\S+)\nTask name: (?P<task_name>.*)\n"
+    r"Sender: (?P<sender>.*)\nPayload:\n(?P<payload>.*)", re.S)
+
+@dataclasses.dataclass
+class FinalAnswer:
+    timestamp: str
+    lineno: int
+    phase: str     # "final_answer" | "commentary" | other observed values
+    message: str
+
+
+def final_answers(path) -> list[FinalAnswer]:
+    """Every event_msg/agent_message record in THIS session's own
+    transcript, in file order -- what this session told its own caller.
+    Never picks up an inter-agent (response_item/agent_message) record --
+    see module note above for why those are a different shape entirely."""
+    out = []
+    for lineno, ts, typ, p in _iter_with_lineno(path):
+        if typ == "event_msg" and p.get("type") == "agent_message":
+            out.append(FinalAnswer(timestamp=ts, lineno=lineno,
+                                    phase=p.get("phase", ""),
+                                    message=p.get("message", "")))
+    return out
+
+
+@dataclasses.dataclass
+class InterAgentMessage:
+    timestamp: str
+    lineno: int
+    author: str
+    recipient: str
+    message_type: str  # "FINAL_ANSWER" | "MESSAGE" | "NEW_TASK" | ... | "" if unparsed
+    task_name: str
+    sender: str
+    payload: str        # text after "Payload:\n", or raw_text if unparsed
+    raw_text: str        # the full concatenated content text, unparsed
+
+
+def inter_agent_messages(path) -> list[InterAgentMessage]:
+    """Every response_item/agent_message record, in file order -- a message
+    ONE agent thread sent ANOTHER, as recorded in this rollout's own
+    transcript (e.g. the root's rollout records every message a spawned
+    child sent it). `content` items are concatenated in order (both
+    "input_text" and "output_text" carry a "text" field); the concatenated
+    text is then parsed against the "Message Type: X\\nTask name:
+    Y\\nSender: Z\\nPayload:\\n<payload>" envelope. A record whose text does
+    not match that envelope still comes back with message_type=="" and
+    payload==raw_text (never dropped -- see module note above)."""
+    out = []
+    for lineno, ts, typ, p in _iter_with_lineno(path):
+        if typ != "response_item" or p.get("type") != "agent_message":
+            continue
+        content = p.get("content") or []
+        raw_text = "".join(
+            c.get("text", "") for c in content if isinstance(c, dict))
+        m = INTER_AGENT_ENVELOPE_RE.match(raw_text)
+        if m:
+            out.append(InterAgentMessage(
+                timestamp=ts, lineno=lineno,
+                author=p.get("author", ""), recipient=p.get("recipient", ""),
+                message_type=m.group("message_type"),
+                task_name=m.group("task_name"), sender=m.group("sender"),
+                payload=m.group("payload"), raw_text=raw_text))
+        else:
+            out.append(InterAgentMessage(
+                timestamp=ts, lineno=lineno,
+                author=p.get("author", ""), recipient=p.get("recipient", ""),
+                message_type="", task_name="", sender="",
+                payload=raw_text, raw_text=raw_text))
+    return out
