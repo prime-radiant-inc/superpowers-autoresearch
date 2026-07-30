@@ -83,10 +83,27 @@ def classify_role_by_task_name(task_name):
     return "reviewer" if TASK_NAME_REVIEW_RE.search(task_name) else "implementer"
 
 
-# Task-family grouping for same-task duplicate-review detection. Strips
-# trailing role suffixes (repeatedly -- "final_fix_reviewer" carries two:
-# "_reviewer" then "_fix") to recover the task-level family. See module
-# docstring for the real observed task_name set this is built against.
+# Task-family grouping for same-task duplicate-review detection.
+#
+# PRIMARY rule: a leading "task<N>" (or "task_<N>") / "final" prefix, which
+# is this campaign's own SDD fixture's stable task-identifying token
+# regardless of how the ROLE portion after it is worded. Deliberately
+# broader than any fixed role-word list: a real dev-battery run
+# (cx-eff-cx-compaction-dev-rep1) named the controller's own duplicate
+# review of task1 "task1_controller_review" -- a wording the original
+# implementer/reviewer/fixer suffix alternation (below) didn't cover,
+# which caused a real duplicate-review match to go undetected until this
+# was caught by manual verification against the real rollout (never
+# trust a rubric without eyeballing the match, per the campaign's
+# standing discipline).
+_TASK_FAMILY_PREFIX_RE = re.compile(r"^task_?(\d+)(?:_|$)|^(final)(?:_|$)", re.I)
+
+# FALLBACK rule (only reached when the task<N>/final prefix rule above
+# doesn't match): strips trailing role suffixes (repeatedly --
+# "final_fix_reviewer" would need two passes: "_reviewer" then "_fix" --
+# though in practice "final_..." now always matches the primary rule
+# first). Kept for names that don't follow this campaign's task<N>/final
+# convention at all.
 _ROLE_SUFFIX_RE = re.compile(r"_(implementer|rereviewer|reviewer|fixer|fix)$", re.I)
 
 
@@ -95,6 +112,9 @@ def task_family(task_name):
     missing/omitted task_name (root spawns have no assigning parent)."""
     if task_name in (None, rp.OMIT):
         return None
+    m = _TASK_FAMILY_PREFIX_RE.match(task_name)
+    if m:
+        return f"task{m.group(1)}" if m.group(1) else "final"
     fam = task_name
     while True:
         new = _ROLE_SUFFIX_RE.sub("", fam)

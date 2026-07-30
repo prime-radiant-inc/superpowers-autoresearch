@@ -238,6 +238,30 @@ class TestTaskFamily(unittest.TestCase):
         self.assertEqual(se.task_family("final_rereviewer"), "final")
         self.assertEqual(se.task_family("final_reviewer"), "final")
 
+    def test_task_n_prefix_matches_regardless_of_role_wording(self):
+        """Real dev-battery discovery (cx-eff-cx-compaction-dev-rep1): the
+        controller's OWN duplicate review of task1 was named
+        "task1_controller_review" -- a suffix the original
+        implementer/reviewer/fixer alternation didn't cover, causing a
+        real duplicate-review match to go undetected until this was
+        caught by manual verification against the real rollout. The
+        task{N}-prefix rule below is intentionally broader than any fixed
+        role-word list."""
+        self.assertEqual(se.task_family("task1_controller_review"), "task1")
+        self.assertEqual(se.task_family("task2_final_branch_review"), "task2")
+        self.assertEqual(se.task_family("task_nn_owner"), "task12")
+
+    def test_final_prefix_matches_regardless_of_role_wording(self):
+        self.assertEqual(se.task_family("final_branch_reviewer"), "final")
+        self.assertEqual(se.task_family("final_fix_implementer"), "final")
+        self.assertEqual(se.task_family("final_fix_rereviewer"), "final")
+
+    def test_fallback_suffix_stripping_for_non_task_final_names(self):
+        """Names that don't start with task<N>/final still go through the
+        original suffix-stripping fallback."""
+        self.assertEqual(se.task_family("widget_implementer"), "widget")
+        self.assertEqual(se.task_family("widget_reviewer"), "widget")
+
     def test_omitted_or_none_task_name_returns_none(self):
         self.assertIsNone(se.task_family(None))
         import rollout_parser as rp
