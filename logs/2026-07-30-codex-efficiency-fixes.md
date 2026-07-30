@@ -1000,3 +1000,128 @@ plus a clean backstop PASS. Net: 1 of 3 treatments (T1) is an
 unqualified win; T2 is a mechanism-level win with an honestly-reported
 new side effect; T5's FAIL was contingent on T1's prior failure and
 resolves along with it.**
+
+### 2026-07-30 — T4 LAYER 2 PRE-REGISTRATION: Codex ceremony battery on the fix arm (Task 9)
+
+Layer 1 (MICRO, previous entry) PASSed every pre-registered C-approval
+cell, clearing this heavier battery to spend per that entry's hard rule.
+This is layer 2: the real Codex-agent ceremony census
+(`cx-ceremony-{spike,bounded,arch}`) against the fix arm, using
+`score_e4.py` (built and validated in the original campaign — see
+`logs/2026-07-28-codex-efficiency.md`'s E4 entries) rather than the
+Anthropic-API micro.
+
+**Arm SHA (verified this task, NOT refreshed):** `git -C /tmp/sp-arm-fix
+log --oneline -1` → `3da65fb` — matches the `codex-efficiency-fixes`
+branch tip in the working worktree and the SHA already graded by Task
+8b's shared SDD battery round 2 (T1 PASS / T2 mechanism-PASS-but-
+completion-FAIL / T5 inconclusive-by-zero-plus-backstop-PASS). This
+battery adds no new commits on top — it is measuring the same graded
+tip against a different scenario family (ceremony, not SDD).
+
+**`score_e4.py` arm-hardcoding check (per this task's brief, which
+flagged this as a possible repeat of the `score_e7.py` problem):**
+confirmed by reading the script — `main()` takes `RUNDIR...` positional
+arguments directly and infers `arm_scenario`/`scenario_class` from each
+RUNDIR's own parent directory name (`cx-eff-<scenario>-<arm>-repN`
+convention, via `_parent_label()`/`_scenario_key()`). No hardcoded arm
+list, no hardcoded results directory, unlike `score_e7.py`'s
+`score_battery()`. **No one-off workaround script is needed this task**
+— `score_e4.py` is invoked directly against the fix-arm RUNDIRs from
+both lanes' `results/` trees in one call, exactly as it already handles
+the dev arm's 5-arch/3-bounded/3-spike mixed corpus on disk
+(`out/e4-mixed-...json`).
+
+**Battery config:**
+- Arm: `fix` (`/tmp/sp-arm-fix` @ `3da65fb`)
+- Scenarios: `cx-ceremony-spike`, `cx-ceremony-bounded`, `cx-ceremony-arch`
+  — 3 reps each, 9 runs total. Each scenario has its own independent
+  rep counter in `run-quorum.sh`'s `results/cx-eff-<SCEN>-<ARM>-repN`
+  naming (unlike the shared-SDD battery's single shared scenario across
+  two rounds), and no `cx-eff-cx-ceremony-*-fix-*` directory exists yet
+  in either lane's `results/` (checked before this entry) — so all
+  three scenarios start fresh at rep1, no round-2-style renumbering
+  needed.
+- Lane split: lane A (`superpowers/evals`, default `EVALS_ROOT`) runs
+  `cx-ceremony-bounded` (rep1 = Step 2 smoke, then reps 2-3) and
+  `cx-ceremony-spike` (reps 1-3) — 6 reps. Lane B (`evals-lane-b`) runs
+  `cx-ceremony-arch` (reps 1-3) — 3 reps, run concurrently with lane
+  A's queue since the two lanes are independent containers; `arch`'s
+  30-minute `quorum_max_time` against `spike`/`bounded`'s 15-minute
+  budget is why arch gets its own lane rather than splitting reps
+  within a scenario across lanes.
+- Scorer: `score_e4.py`, invoked once across all 9 RUNDIRs (both lanes'
+  `results/` trees) once the battery completes. Output:
+  `out/e4-<label>-rep1-3.json` (or whatever `_out_label()` derives from
+  the mixed arm_scenario set — not forced in advance).
+- `FORCE` never set; a collision is an anomaly, not a flag to suppress.
+
+**Criteria (from this log's "Pre-registered criteria" section above,
+T4 layer 2, reproduced verbatim from the brief):**
+- **Bounded:** approval turn present (a human-approval exchange visible
+  in the root rollout before implementation starts), 0 committed
+  spec/plan docs (nothing under `docs/superpowers/specs/` or
+  `docs/superpowers/plans/` — NOT the same as `score_e4.py`'s raw
+  `docs_written_before_first_non_doc_patch` count, which flags ANY
+  `docs/`-path or `*.md` file; hand verification must filter the
+  scorer's `doc_paths_written_before_first_non_doc_patch` list down to
+  the `docs/superpowers/{specs,plans}/` subset specifically, since a
+  scenario could legitimately touch some other `.md`/`docs/` path
+  without that being ceremony), 0 writing-plans ritual (no
+  `docs/superpowers/plans/*.md` path written at all).
+- **Arch:** two-doc flow intact 3/3 — every rep writes exactly one
+  `docs/superpowers/specs/*.md` AND one `docs/superpowers/plans/*.md`
+  before its first non-doc patch (the same shape the dev-arm baseline
+  showed unconditionally; see below).
+- **Spike:** no docs, minimal ceremony (low tool-call/user-turn counts
+  before any real investigation output; the dev baseline's spike class
+  produced no non-doc patch at all in any of 3 reps — this fix-arm
+  battery must independently check whether that structural
+  unmeasurability persists or whether C-approval's spike path, which
+  explicitly says "No design doc, no spec file," changes the shape).
+- **Cross-cutting:** gauntlet task completion preserved per cell (no
+  cell regresses from the dev baseline's pass rate on session-completion
+  grounds, independent of the ceremony-shape findings above).
+
+**Dev-arm ceremony baseline — CITED, NOT RE-RUN this task** (per this
+task's explicit instruction). Full detail:
+`logs/2026-07-28-codex-efficiency.md`, "E4 RESULT" entry (Task 11,
+2026-07-29/30) and `campaigns/codex-efficiency/out/e4-report.md`:
+- Spike: all 3 dev reps show `no_non_doc_patch=True` (zero
+  `patch_apply_end` events of any kind) — the primary discrimination
+  gate (spike vs. arch tool-calls) was inconclusive-by-zero on the dev
+  arm for a structural reason (a correctly-executed spike investigates
+  via ephemeral inline shell/Python, never touching a tracked file), not
+  a scenario-design failure.
+- Bounded vs. arch: mean tool-calls-before-T 16.7 (bounded) vs. 24.0
+  (arch), a 30.4% gap — just outside the pre-registered 25% band, so
+  ceremony volume was NOT flat on the dev arm, but every single rep in
+  BOTH classes wrote exactly 2 docs before any code (design spec, then
+  plan) — the two-document ritual ran unconditionally regardless of
+  task complexity, hand-verified for bounded rep1 against raw
+  `patch_apply_end` timestamps (docs at 19:24:58/19:26:04, first
+  non-doc patch at 19:27:22.703; user_turns=4, tool_calls=13,
+  wall_clock=246s — matched the scorer's own output exactly).
+- This is exactly the pathology C-approval's shipped router text (Task
+  5's commit `5ea8821`) targets: bounded should route to "short design
+  IN CHAT... No spec file, no implementation plan document," not the
+  dev arm's unconditional two-doc ritual. This battery is the first
+  REAL-Codex-agent (not Anthropic-API-micro) test of whether the shipped
+  text actually changes that behavior, as opposed to layer 1's
+  literal-instruction-following-only micro result.
+
+**Budget estimate:** ~$40 (per the brief). Anchor point: the dev arm's
+original 3-reps/class ceremony battery (9 clean + 2 outage-tainted
+reps, lane A only, JOBS=2) cost $21.39 total for 11 runs (~$1.94/run
+average including the outage-tainted pair); 9 reps at that rate would
+be ~$17.50. Budgeting ~$40 for headroom given C-approval's shipped text
+adds a small amount of prompt content every brainstorming invocation
+re-reads (negligible per-rep but not zero), and given the smaller
+ceremony scenarios have historically been far cheaper per rep than the
+shared SDD scenario the last two batteries measured.
+
+**No run yet — this is the pre-registration.** Smoke test, full
+battery, scoring, and manual hand-verification (one rep per class
+against raw `patch_apply_end` timestamps, the same non-circular method
+used for the dev-arm bounded-rep1 citation above) follow in later log
+entries.
