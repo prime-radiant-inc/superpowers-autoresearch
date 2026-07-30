@@ -1388,3 +1388,149 @@ approval-before-implementation compliance) for a future fix iteration
 if the campaign continues past this cycle — out of scope for this
 task's own mandate, which was to measure the shipped text as-is, not
 to patch it further.
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 3 PRE-REGISTRATION: T2's bounded-wait revision, T1/T5 regression guards (Task 8c)
+
+This is round 3 of the shared SDD battery. Round 1 (this log's first
+three "SHARED SDD BATTERY" entries) FAILed T1/T2/T5 on the original
+five-treatment arm (n=6, 2 Docker-lost reps). Round 2 ("SHARED SDD
+BATTERY ROUND 2," three entries above) re-ran on the arm plus
+`c07cf7e`/`3da65fb`: T1 flipped FAIL → PASS (0/51 depth-2 spawns, 8/8
+reps), T5's real FAIL resolved to inconclusive-by-zero at depth-2 (T1
+ate its population) plus a clean depth-1 backstop PASS, and T2's core
+mechanism flipped too (65.1% → 0.0% wait-timeout rate) but the
+criterion's "no loss of task completion" clause still FAILed: 3/8 reps
+(rep12/15/16) got Gauntlet-Agent `indeterminate` verdicts and 1/51
+dispatched children never reported `task_complete`, because a single
+long (15+ minute) `wait_agent` call — exactly `3da65fb`'s recommended
+behavior — can leave the controller transcript silent for 20-38 minutes
+while a review genuinely keeps working underneath, long enough to
+exhaust the Gauntlet-Agent QA judge's own testing-time budget before it
+observes completion. Root-caused by direct rollout inspection in round
+2's anomaly entry; not a Docker crash, not a `wait_agent` timeout (all
+3 cases resolved `timed_out:false`), not a coding-agent hang.
+
+**Two fix commits landed on top of the arm since round 2, both on
+`codex-efficiency-fixes`:**
+- `43ec25f` — "bounded wait stretches with reconciliation": replaces
+  `3da65fb`'s "one long wait (fifteen minutes or more)" guidance, in
+  both `skills/subagent-driven-development/SKILL.md` §1 and
+  `skills/using-superpowers/references/codex-tools.md`, with "wait in
+  bounded stretches (five to ten minutes... `timeout_ms` 300000-600000)
+  ... after each stretch — wake or timeout — post one status line, run
+  `list_agents`, and chase any child that finished without reporting."
+  Directly targets round 2's T2 anomaly: keep the long-wait mechanism's
+  measured win (0% timeout rate, ~86% fewer calls than round 1's short
+  polls) while capping any single silence to ~10 minutes and forcing a
+  periodic reconciliation check that would have caught rep15's lost
+  child.
+- `6faceb2` — "bounded-path approval is a hard stop": a brainstorming
+  three-path-router fix (T4, not T1/T2/T5) — makes bounded-path
+  approval an explicit STOP-and-wait gate. Unrelated to this battery's
+  scenario (`cx-sdd-small` doesn't invoke brainstorming) but included
+  because it's the current arm tip; noted for completeness, not graded
+  by this task.
+
+**Arm SHA (verified this task, both on host and via mounted-file
+content check in each lane container):** `git -C /tmp/sp-arm-fix log
+--oneline -1` → `6faceb2` ("fix(brainstorming): bounded-path approval
+is a hard stop"), with `43ec25f` immediately beneath it (`git -C
+/tmp/sp-arm-fix log --oneline -3` → `6faceb2` → `43ec25f` → `2302bb9`
+(Amendment 2 plan doc) — i.e. round 2's arm (`3da65fb` tip) plus
+exactly the plan-doc commit and these two fixes, nothing else changed
+underneath it). The container mount check (`git log` doesn't resolve
+inside the container for a worktree checkout — `.git/worktrees/
+sp-arm-fix` lives on the host, outside the bind mount — so content, not
+`git log`, is the container-side check) confirmed
+`skills/subagent-driven-development/SKILL.md` line 204 reads "When you
+are genuinely idle, wait in bounded stretches (five to ten" in both
+lane containers after the up-cycle below.
+
+**Docker status (verified this task, before any spend):** the daemon
+was down at task start (`docker ps` failed to connect to the socket);
+started via `open -a Docker`, polled in-session (foreground loop, no
+monitor) until `docker ps` succeeded (~10s). Both lane containers were
+then found `Exited (255)` (stale from a prior session). Cycled per
+`scripts/evals-container`'s own commands in each lane checkout —
+`down` then `--superpowers-root /tmp/sp-arm-fix up` — both lanes came
+up clean (`status` → `exists, running` for both container names,
+`docker ps -a` shows both `Up`). No `rep17`-`rep24` directories existed
+in either lane's `results/` before this task started, and no
+`out/*rep17-24*` files existed in the campaign's `out/` dir — a clean
+rep-range slot, confirmed before any run.
+
+**Battery config:**
+- Arm: `fix` (`/tmp/sp-arm-fix` @ `6faceb2`, carrying `43ec25f` and
+  `6faceb2` on top of round 2's `3da65fb` tip)
+- Scenario: `cx-sdd-small`
+- Reps: 8 total, same lane split convention as rounds 1-2 (roughly
+  half/half) — renumbered reps 17-24 (not 9-16 or 1-8), so this
+  round's `--out-root` RUNDIRs (`results/cx-eff-cx-sdd-small-fix-
+  rep{17..24}`) and scorer output files (`out/e1-cx-sdd-small-fix-
+  rep17-24.json` etc., derived by each scorer's own
+  `_rep_range_suffix()`/equivalent from the rep number embedded in the
+  RUNDIR name) cannot collide with round 1's `rep1-8` or round 2's
+  `rep9-16` aggregates, committed or on-disk. `FORCE` is never set on
+  any scorer invocation this round; a collision is an anomaly to
+  report, not a flag to suppress. Rep17 = smoke (lane A); remaining
+  reps split lane A / lane B, `JOBS=2` per lane where used, mirroring
+  rounds 1-2's 1+3/4 pattern.
+- Scorers: `score_e6.py` (T1), a fresh one-off script reusing
+  `score_e7.py`'s tested `census_session()`/`aggregate()` functions
+  against the fix-arm RUNDIRs across both lanes (T2 aggregate
+  timeout/paired numbers — `score_e7.py` itself still hardcodes
+  `arms=("dev","spinout")`, confirmed unchanged since round 2, so it
+  still doesn't fit `fix` split across two lane checkouts; writes only
+  a new, non-colliding `out/e7-battery-fix-round3.json`, never
+  touching round 1/round 2's files or the frozen corpus (a)/(b)
+  blobs), `score_e1.py` (T5). **New this round:** a second one-off
+  script (scratch, not committed — this task's method for the new
+  silent-gap sub-criterion below) computes, per root rollout, every
+  paired `wait_agent` call's duration (`function_call_output`
+  timestamp minus `function_call` timestamp, matched by `call_id`,
+  reusing `rp.iter_records`/the same pairing logic `wait_outcomes()`
+  already implements) and reports the max such duration per session
+  and across the battery — this is the direct, rollout-timestamp-based
+  measurement of "silent gap during idle waiting" the delta brief
+  asks for, chosen because it is exactly what round 2's anomaly entry
+  already hand-measured for its 3 flagged reps (22-38 minutes) and
+  is a strict subset of "any inter-event gap" that isolates the
+  specific window `43ec25f` targets (a `wait_agent` call open with no
+  resolution yet) rather than conflating it with ordinary tool-call
+  latency elsewhere in the transcript. Cross-checked against a
+  whole-transcript "max gap between any two consecutive timestamped
+  records in the root rollout" pass as a robustness sanity check (if
+  the two numbers diverge significantly for a session, that would flag
+  silence NOT attributable to a `wait_agent` call, worth its own
+  anomaly note).
+
+**Criteria (T2 restated per the delta brief; T1/T5 verbatim from this
+log's "Pre-registered criteria" section, unchanged, graded as
+regression guards against round 2's PASS / inconclusive-by-zero):**
+- **T2 (this round's primary target):** timeout rate < 25% AND no
+  completion loss AND no silent gap over 12 minutes (720s) in any
+  controller transcript, where "silent gap" is measured as described
+  above (max paired `wait_agent` call duration per root session, from
+  raw rollout timestamps).
+- **T1 (regression guard):** 0 worker-issued depth-2 spawns AND review
+  coverage preserved. Round 2 was a clean PASS (0/51); this round
+  checks `43ec25f`/`6faceb2` didn't reopen the gap `c07cf7e` closed.
+- **T5 (regression guard, inconclusive-by-zero branch already
+  established):** every spawn at every depth carries explicit model +
+  effort. If T1 holds at 0 depth-2 spawns again, T5 remains
+  inconclusive-by-zero at depth-2 (as round 2 recorded) and is graded
+  only on the depth-1 backstop (round 2: 51/51).
+
+**Budget estimate:** ~$40 for 8 reps, same figure as rounds 1-2's
+pre-registrations. Anchored to round 2's own measured actuals ($24.89
+for 8 reps, $3.11/rep average) with headroom for the bounded-stretch
+fix's extra per-stretch overhead (a status line plus a `list_agents`
+call every 5-10 minutes during idle waits, in place of round 2's single
+long wait) — more calls than round 2 but each individually cheap, and
+still far fewer than round 1's short-poll baseline (~25 `wait_agent`
+calls/rep).
+
+**No run yet — this is the pre-registration.** Docker cycle and arm
+verification above were preparation, not the smoke rep. Smoke test,
+full battery, scoring, manual inspection, and verdicts (each verdict
+stating its round 2 → round 3 delta) follow in later log entries.
