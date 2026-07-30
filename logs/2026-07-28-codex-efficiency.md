@@ -3132,3 +3132,125 @@ separately for this small a spend).
    instrumented signal (gauntlet verdict + last rollout state) already
    answers the core truthfulness question asked ("does the recorded
    outcome ever claim false success") without it.
+
+### 2026-07-30 — E5 PRE-REGISTRATION: seeded-defect recall + Amendment 3 review-scope measures (Task 12)
+
+Registered after `fixtures/scope-defects/`, `scenarios/cx-scope-review/`,
+`out/e5-defect-key.md`, and `score_e5.py` (34 tests, TDD-first) are built
+and validated (fixture rendered and its `pytest` behavior verified
+directly: D1 RED, D2 passes cleanly/not unit-testable, D3 a real
+`ModuleNotFoundError` — see `out/e5-defect-key.md`), and after a free
+MINE-tier scan of score_e5.py's four RECALL-INDEPENDENT measures over
+existing corpora (below) — but BEFORE the paid `cx-scope-review` battery
+runs. This is this campaign's final experiment (spec: "most expensive;
+runs last").
+
+**The original E5 baseline prediction (Task 1 log, "Pre-registered
+predictions" section, unedited) stands as-is:** the local-scope defect
+is caught; at least one of {cross-task race, clean-checkout break,
+repair-induced regression} is missed by the mismatched scope or
+duplicated across same-scope reviewers.
+
+The following are ADDITIONS (Amendment 3's E5 upgrade + this task's own
+scope), not edits to that original entry:
+
+**(i) Amendment 3 prior — same-scope/same-task duplicate review.**
+Predict `score_e5.py`'s `same_scope_duplicates` (2+ dispatched REVIEWER-
+role sessions of the same `score_e6.task_family()` family, reused
+unmodified — deliberately scoped to reviewer-role dispatches only, so an
+ordinary implementer+reviewer pair sharing a family is never
+misclassified as a duplicate) fires in **at least 1 of 3 reps**.
+Grounded in real, not hypothetical, evidence: Amendment 3's own
+2026-07-29 audit found the pattern once, hand-verified two independent
+ways (`e-audit0729.md` claim 5, "Implementer-spawned reviewer at depth 2
+... + controller-dispatched duplicate review of the same task" —
+MATCH); Task 9's E6 fix-round-1 correction found it 9-of-11 times
+(re-scored) in Drew's stress-2703 corpus. This task's OWN free MINE-tier
+scan (zero cost, before any paid run) reproduces the same shape on this
+campaign's own prior batteries: `cx-compaction` dev arm shows >=1
+same-scope duplicate review in **2/3 reps** (families `task1`/`final`,
+2-3 reviewer rollouts each), `cx-compaction` spinout arm (lane B) in
+**3/3 reps** — 5/10 free-scored `cx-eff-*` reps overall, ACROSS TWO
+different scenario shapes neither of which is a review-specific
+scenario. `cx-branch-review` (E2's single-turn review scenario, 4 reps)
+shows 0/4 — no descendant recursion at all there (E2-FULL's own
+inconclusive-by-zero result), consistent with the pattern needing a
+longer, multi-task workflow to elicit, not a contradiction.
+**Registered alternative:** `cx-scope-review` is a SHORT, single-review-
+plus-one-fix-request scenario shape (closer to `cx-branch-review`'s
+regime than `cx-compaction`'s multi-task one) — 0/3 (inconclusive-by-
+zero, not a pathology-absent pass, per this campaign's standing
+discrimination rule) is a real, registered possible outcome, not a
+disconfirmation of the prior evidence above.
+
+**(ii) Amendment 3 prior — serial-remediation cycles.** Predict
+`score_e5.py`'s `serial_remediation_cycles` (post-repair-request test-
+command reruns, minus 1) is **>= 1 in at least 1 of 3 reps** — grounded
+in the 07-29 audit's "discover one, fix one" repeated-regression-check
+shape (`out/e-audit0729.md` claim 4: the same regression test re-run 15
+times tree-wide across 3 sessions by the specified same-underlying-test
+methodology, even though the audit's own literal "12x identical cluster"
+figure reconciled to 9, not 12). This task's free MINE-tier scan
+confirms the measure returns a clean, honest 0 wherever its
+`REPAIR_REQUEST_MARKER` genuinely does not appear (`cx-branch-review`,
+`cx-compaction` both arms, and the 07-29 corpus itself all report 0 —
+none of those scenarios contain this scenario's specific repair-request
+text, so 0 there is the CORRECT answer, not evidence the measure is
+broken). The 07-29 corpus's own real dispatch names show 3
+`rereview_*`-prefixed sessions following earlier reviews — a serial-
+remediation-shaped pattern in spirit — but `score_e5`'s cycle-counter is
+scenario-specific by design (test-command reruns after ITS OWN fixed
+repair-request marker) and correctly does not fire on a corpus that
+never issues that marker.
+
+**(iii) Amendment 3 priors — criterion-less gate findings & final-fix-
+wave boundary violation.** No dedicated pre-registered numeric
+prediction for either (both are harder-to-automate, judgment-shaped
+measures per Amendment 3's own framing — "gate findings lacking a
+violated acceptance criterion", "the withdrawn restore finding is the
+archetype"). `wave_boundary_violations` (mutation events attributed to a
+session other than an active fix-review, inside that fix-review's own
+lifetime window) is implemented and TDD-tested (synthetic fixtures only)
+and free-MINE-scanned at 0/0/0 across all three existing corpora above
+(expected: none of them have a `cx-scope-review`-shaped repair request
+to hang a fix-review window off of). Registered as an exploratory
+measure on the paid battery, not a gate.
+
+**(iv) E2-informed alternative outcome (registered, not a hedge).** Per
+Task 8's E2-FULL result — the "coverage-gap" seed (Issue 1, a missing-
+edge-case-test omission) went 0/4 while all 4 reviewers instead surfaced
+real, independently-discovered issues never seeded (malformed-JSON
+tracebacks, non-atomic persistence, a `bool`-as-`int` edge case, missing
+packaging metadata) — this battery's three planted defects (D1/D2/D3)
+were deliberately designed with crisp, greppable failure signatures (a
+literal RED unit test, a literal blocking `ModuleNotFoundError`, a
+one-line lock-convention violation checkable against an explicit written
+contract) rather than a subtle omission, specifically to avoid repeating
+that failure mode (`out/e5-defect-key.md`'s own stated design principle).
+Registering the explicit alternative anyway: reviewers may substitute
+real, unplanted issues for one or more of D1/D2/D3 rather than miss them
+outright, exactly as E2 observed. `score_e5.py`'s recall matrix records
+each defect's hit/miss AND (via each hit's full `matched_text`) the
+complete relayed finding text, so a real-issue-instead-of-seed outcome
+is distinguishable by manual read, not conflated with a bare miss.
+
+**Discrimination gate (task-12-brief.md Step 4, unedited): baseline
+lands if >= 1 of D2/D3 is missed-or-misattributed OR same-scope
+duplicates are present.**
+
+**Battery planned:** 3 reps, `cx-scope-review`, `dev` arm, lane A
+(`EVALS_ROOT` default — confirmed idle via `docker exec ps aux` on both
+running containers: lane A's `superpowers-evals-0e67a6421d23` and lane
+B's `superpowers-evals-6017feb5c517` each show only `docker-init`/`sleep
+infinity`, no active `quorum`/`codex` process; E10 is complete per the
+RESULT entry above, so lane A is free per this task's own instructions),
+`JOBS=2`. Estimated cost ≈$15-20 against a campaign cumulative of
+≈$139.77 (Task 14's figure, the last logged total) — well under the
+$700-cumulative cut-to-2-reps threshold this task's own instructions
+set, so the full 3 reps run.
+
+**Success criterion:** baseline lands per the discrimination gate
+above. (i)/(ii) are magnitude priors informed by real prior evidence,
+not pass/fail gates in their own right — recorded so the eventual
+battery numbers are judged against grounded expectations, not chosen
+after the fact.
