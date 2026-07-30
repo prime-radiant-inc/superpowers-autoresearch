@@ -1,0 +1,442 @@
+{
+  "label": "cx-compaction-spinout-rep1-3",
+  "runs": [
+    {
+      "label": "cx-compaction-spinout-rep1",
+      "root_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+      "total_sessions": 9,
+      "max_depth": 2,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-30T06:29:31.841Z",
+        "n_commits_after": 3
+      },
+      "same_scope_duplicates": [
+        {
+          "family": "task1",
+          "rollouts": [
+            "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl",
+            "rollout-2026-07-30T06-30-03-019fb1b7-3afe-7c12-abf1-87d10dcc273e.jsonl"
+          ]
+        }
+      ],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 7,
+          "task_complete": 3,
+          "wait_calls": 33,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 1,
+          "task_complete": 1,
+          "wait_calls": 2,
+          "task_name": "task1_implementer",
+          "dispatch_timestamp": "2026-07-30T06:24:01.569Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-30-03-019fb1b7-3afe-7c12-abf1-87d10dcc273e.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task1_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:30:03.250Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-31-25-019fb1b8-7c47-7aa2-8fa1-2ed266fae63e.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task2_implementer",
+          "dispatch_timestamp": "2026-07-30T06:31:25.498Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-35-51-019fb1bc-8a47-73e1-922d-c3211d77bbec.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task2_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:35:51.224Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-37-21-019fb1bd-e9f2-7501-bd4d-e3c9e052c445.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_implementer",
+          "dispatch_timestamp": "2026-07-30T06:37:21.252Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-40-39-019fb1c0-ef2d-7541-969b-f4fcf0b40be7.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:40:39.198Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-42-15-019fb1c2-6857-7611-9dc8-9871ad62b24f.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-42-019fb1af-977a-7ea0-9317-27e6ebe2db2c.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_branch_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:42:15.749Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-25-55-019fb1b3-7302-7730-81a0-cb15894dab78.jsonl",
+          "depth": 2,
+          "parent_rollout": "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 0,
+          "wait_calls": 0,
+          "task_name": "task1_review",
+          "dispatch_timestamp": "2026-07-30T06:25:55.448Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep1/cx-compaction-codex-codex_sub-linux-20260730T062123Z-b918",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 1
+    },
+    {
+      "label": "cx-compaction-spinout-rep2",
+      "root_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+      "total_sessions": 10,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-30T06:26:13.102Z",
+        "n_commits_after": 3
+      },
+      "same_scope_duplicates": [
+        {
+          "family": "final",
+          "rollouts": [
+            "rollout-2026-07-30T06-36-55-019fb1bd-86ba-7e03-81f0-f7adb04fc0d5.jsonl",
+            "rollout-2026-07-30T06-41-13-019fb1c1-7513-7262-a520-a43defe63cfa.jsonl"
+          ]
+        }
+      ],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 9,
+          "task_complete": 2,
+          "wait_calls": 32,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-23-25-019fb1b1-29ce-7640-8841-aa69e3dc9948.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task1_implementer",
+          "dispatch_timestamp": "2026-07-30T06:23:25.633Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-27-12-019fb1b4-a1a1-7133-ac67-39a398021972.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task1_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:27:12.920Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-28-19-019fb1b5-a4fc-7f52-8366-1ee1cf797e37.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task2_implementer",
+          "dispatch_timestamp": "2026-07-30T06:28:19.316Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-30-52-019fb1b7-fa9b-71d1-b762-7c3e7fcf3402.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task2_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:30:52.289Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-31-49-019fb1b8-db5e-77a2-8885-dbb6a7591766.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_implementer",
+          "dispatch_timestamp": "2026-07-30T06:31:49.841Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-35-33-019fb1bc-4586-78b0-860a-42c0fd81dca9.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:35:33.622Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-36-55-019fb1bd-86ba-7e03-81f0-f7adb04fc0d5.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:36:55.851Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-38-05-019fb1be-96b7-7671-847d-5338f9a93173.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_fixer",
+          "dispatch_timestamp": "2026-07-30T06:38:05.476Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-41-13-019fb1c1-7513-7262-a520-a43defe63cfa.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-21-41-019fb1af-92fc-7991-8e55-19680bd540d3.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_fix_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:41:13.475Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep2/cx-compaction-codex-codex_sub-linux-20260730T062123Z-569b",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 2
+    },
+    {
+      "label": "cx-compaction-spinout-rep3",
+      "root_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+      "total_sessions": 9,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": [
+          {
+            "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl",
+            "timestamp": "2026-07-30T06:56:33.165Z",
+            "pass": "task_review",
+            "matched_text": "Implemented Task 2 and committed it.\n\n- Commit: `8a5afe492e904400e5bbb990fd4cd3bfd6d30217 feat: add string utilities CLI`\n- TDD evidence:\n  - RED: missing `strutils.cli` produced expected `ModuleNotFoundError`.\n  - GREEN: 3 successful-dispatch tests passed.\n  - RED: validation tests failed with fallback-count and missing-length `TypeError`.\n  - Final regression: `python -m unittest discover -s tests -v` \u2014 14/14 passed.\n- Scope review: commit contains only `strutils/cli.py` and `tests/test_cli.py`; cached diff had no whitespace errors.\n- Python was available as `python`; no fallback required.\n- Concerns: none in Task 2 scope.\n\nReport: [.superpowers/sdd/plan/task-2-report.md](/workspace/evals/results/cx-eff-cx-compaction-spinout-rep3/cx-compaction-codex-codex_sub-linux-20260730T064834Z-6a11/coding-agent-workdir/.worktrees/string-utils-cli/.superpowers/sdd/plan/task-2-report.md)"
+          },
+          {
+            "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl",
+            "timestamp": "2026-07-30T06:56:33.126Z",
+            "pass": "task_review",
+            "matched_text": "Implemented Task 2 and committed it.\n\n- Commit: `8a5afe492e904400e5bbb990fd4cd3bfd6d30217 feat: add string utilities CLI`\n- TDD evidence:\n  - RED: missing `strutils.cli` produced expected `ModuleNotFoundError`.\n  - GREEN: 3 successful-dispatch tests passed.\n  - RED: validation tests failed with fallback-count and missing-length `TypeError`.\n  - Final regression: `python -m unittest discover -s tests -v` \u2014 14/14 passed.\n- Scope review: commit contains only `strutils/cli.py` and `tests/test_cli.py`; cached diff had no whitespace errors.\n- Python was available as `python`; no fallback required.\n- Concerns: none in Task 2 scope.\n\nReport: [.superpowers/sdd/plan/task-2-report.md](/workspace/evals/results/cx-eff-cx-compaction-spinout-rep3/cx-compaction-codex-codex_sub-linux-20260730T064834Z-6a11/coding-agent-workdir/.worktrees/string-utils-cli/.superpowers/sdd/plan/task-2-report.md)"
+          }
+        ]
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": [
+          "task_review"
+        ]
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-30T06:52:35.765Z",
+        "n_commits_after": 3
+      },
+      "same_scope_duplicates": [
+        {
+          "family": "final",
+          "rollouts": [
+            "rollout-2026-07-30T07-01-39-019fb1d4-2823-7b70-9082-bdbcb818a6c3.jsonl",
+            "rollout-2026-07-30T07-05-07-019fb1d7-581f-7920-a3b4-7800f5fce6f8.jsonl"
+          ]
+        }
+      ],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 8,
+          "task_complete": 2,
+          "wait_calls": 15,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-50-36-019fb1ca-0d79-7310-a093-4b3e049fb532.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task1_implementer",
+          "dispatch_timestamp": "2026-07-30T06:50:36.782Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-53-01-019fb1cc-43df-7c30-91e5-1a6b31119ef4.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task1_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:53:01.776Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-54-11-019fb1cd-54f4-7aa3-9404-4a80a687b101.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 2,
+          "wait_calls": 0,
+          "task_name": "task2_implementer",
+          "dispatch_timestamp": "2026-07-30T06:54:11.692Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-56-53-019fb1cf-cca8-7062-9e9c-ace2c1a77268.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task2_reviewer",
+          "dispatch_timestamp": "2026-07-30T06:56:53.400Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T06-57-44-019fb1d0-9507-7563-9c2e-46470dcff904.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_implementer",
+          "dispatch_timestamp": "2026-07-30T06:57:44.697Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-00-22-019fb1d2-fc5b-7642-bb13-fea03b74e02c.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "task3_reviewer",
+          "dispatch_timestamp": "2026-07-30T07:00:22.224Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-01-39-019fb1d4-2823-7b70-9082-bdbcb818a6c3.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_reviewer",
+          "dispatch_timestamp": "2026-07-30T07:01:38.966Z"
+        },
+        {
+          "rollout": "rollout-2026-07-30T07-05-07-019fb1d7-581f-7920-a3b4-7800f5fce6f8.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-30T06-48-54-019fb1c8-7f76-7191-a3e3-3739ff97d437.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_fix_reviewer",
+          "dispatch_timestamp": "2026-07-30T07:05:07.857Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-compaction-spinout-rep3/cx-compaction-codex-codex_sub-linux-20260730T064834Z-6a11",
+      "arm_scenario": "cx-compaction-spinout",
+      "rep": 3
+    }
+  ]
+}
