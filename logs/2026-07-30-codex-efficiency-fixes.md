@@ -727,3 +727,276 @@ add a small amount of prompt text every dispatched role/turn re-reads
 verification, not the smoke rep. Smoke test, full battery, scoring,
 manual inspection, and verdicts (each verdict stating its round 1 →
 round 2 delta) follow in later log entries.
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 2: smoke PASS, all 8 reps complete (no Docker loss); ANOMALY — Gauntlet-Agent testing-budget exhaustion on 3/8 reps (Task 8b)
+
+**Smoke test (rep9, lane A): PASS.** Gauntlet verdict `status: pass`.
+8 rollout files (1 root + 7 children: `task{1,2,3}_{implementer,reviewer}`
++ `final_reviewer`). Manual inspection of the raw root rollout JSONL:
+all 7 `spawn_agent` calls issued by the ROOT session only (every
+non-root file has 0 `spawn_agent` calls) — zero worker-issued depth-2
+spawns, all 7 carry explicit `model`+`reasoning_effort`
+(`gpt-5.6-terra` x6 at low/medium, `gpt-5.6-sol`/`xhigh` for
+`final_reviewer`), `fork_turns:"none"` throughout. **Root's
+`wait_agent` calls (n=7, manually paired against
+`function_call_output`): every single one used `timeout_ms:900000`
+(the fix's recommended 15-minute long wait) and 0/7 timed out** — a
+complete behavioral reversal from round 1's smoke rep (26 calls,
+escalating 1000→30000ms, 72.0% timeout rate). No infra anomaly.
+Proceeded to Step 3.
+
+**Step 3 battery launch:** rep9 smoke on lane A, then `EVALS_ROOT=<lane
+A> JOBS=2 bash run-quorum.sh fix cx-sdd-small 3 10` (reps 10-12) and
+`EVALS_ROOT=<lane B> JOBS=2 bash run-quorum.sh fix cx-sdd-small 4 13`
+(reps 13-16), launched concurrently via disowned background processes,
+polled in-session with repeated foreground `kill -0`/`sleep 30` loops
+(never a detached monitor). **All 8 pre-registered reps completed —
+zero reps lost to Docker this round** (`docker ps -a` checked
+repeatedly through the run: both lane containers stayed `Up` the
+entire ~80-minute battery, no `Exited` transition, no daemon
+disconnect). Every rep produced a complete `verdict.json` +
+`trajectory.json` + `coding-agent-token-usage.json` (`partial: false`
+on all 8, confirmed by reading each rep's own `verdict.json.economics`
+directly) — a clean, fully-measured n=8, unlike round 1's Docker-crash
+shortfall.
+
+**ANOMALY — 3/8 reps (rep12, rep15, rep16) got Gauntlet-Agent
+`indeterminate`/`investigate` verdicts, NOT because of Docker, a
+wait_agent timeout, or a coding-agent hang, but because a genuinely
+long single wait exhausted the Gauntlet-Agent's own testing-time
+budget before real (slow but legitimate) work finished.** Root-caused
+by direct inspection of all 3 reps' raw root rollouts (`function_call`/
+`function_call_output` pairs, manually parsed, not via a scorer):
+
+- **rep12:** `task1_implementer` dispatched 20:40:51Z, its `wait_agent`
+  (`timeout_ms:3600000`) resolves cleanly 96s later. `task1_reviewer`
+  dispatched 20:42:55Z; its `wait_agent` (`timeout_ms:3600000`) is
+  issued 20:42:58Z and does not resolve until **21:13:46Z — 30m48s of
+  total silence in the transcript** — `{"message":"Wait completed.",
+  "timed_out":false}` (the review genuinely took that long; the
+  timeout itself was never hit). The reviewer's `FINAL_ANSWER` surfaces
+  a real, legitimate finding (a plan-sequencing conflict: Task 1's
+  `pyproject.toml` references `README.md`, which Task 3 doesn't create
+  until later) and root asks the Gauntlet-Agent a genuine clarifying
+  question. Root's own turn ends cleanly with a `task_complete` event
+  at 21:13:56Z — **this is not a stall or a crash; the coding session
+  reached a normal, well-formed stopping point** (a question awaiting
+  a human/Gauntlet-Agent reply). `phase.json` shows `"phase":"checks"`
+  at 21:14:13Z — i.e. quorum's overall run budget expired essentially
+  simultaneously and moved the pipeline to post-checks before any
+  reply could arrive. Gauntlet-Agent's own verdict summary confirms the
+  mechanism independently: "the session went idle for over 22 minutes
+  ... and I ran out of my allotted testing time budget while waiting."
+  1 commit only (Task 1's core utilities); Task 2/3 never dispatched.
+- **rep15:** same shape. `task2_reviewer` dispatched 20:46:03Z; its
+  `wait_agent` (`timeout_ms:900000`) issued at 20:46:03Z, resolves
+  `timed_out:false` at 21:08:35Z (~22m32s silent) — again well past
+  its own nominal 15-minute `timeout_ms`, confirming `wait_agent`'s
+  `timeout_ms` is not a hard ceiling on this platform; it waits for
+  real completion or its ceiling, whichever is later observed, not a
+  strict cutoff. `task3_implementer` is then dispatched 21:14:06Z and
+  its own `wait_agent` call (21:14:08Z) is issued but **never paired
+  with an output before the run was cut off** — this is the one
+  genuinely lost unit of work this round (see T5/T2 numbers below). 2
+  commits (Task 1, Task 2); Task 3 implementer mid-flight, uncommitted,
+  when cut off.
+- **rep16:** same shape again. `task2_implementer` dispatched
+  20:42:30Z; its `wait_agent` (`timeout_ms:900000`) resolves
+  `timed_out:false` at 21:20:06Z (~37m34s silent) — the single longest
+  silent span across the round. Its report ("# Task 2 Report") prints
+  cleanly right after; the run is cut off before `task2_reviewer` could
+  even be dispatched. 2 commits (Task 1, Task 2); Task 2 review
+  never started.
+
+**Mechanism, stated plainly:** the T2 fix (commit `3da65fb`) works
+exactly as intended at the `wait_agent` level — see the T2 verdict
+below, 0% timeout rate, a complete elimination of round 1's pathology.
+But converting dozens of short, visible polls into one long, silent
+wait means the Gauntlet-Agent (a separate LLM watching a live terminal
+to grade the run) now sees extended stretches — in these 3 cases,
+22-38 minutes — of **zero new transcript content** while a review or
+implementation genuinely keeps working underneath. Gauntlet-Agent's
+own testing-time budget (not configured or controlled by this task) is
+finite; when a review or implementation step legitimately takes
+20-40 minutes, the silence alone can consume that whole budget, and
+Gauntlet-Agent reasonably (from its own vantage point, per its
+`investigate` reasoning field in all 3 cases) cannot distinguish
+"working silently for a long time, per instructions" from "stalled."
+This was invisible under round 1's short-poll behavior specifically
+*because* short polls kept refreshing the visible transcript every
+10-30s regardless of how long the underlying review actually took.
+
+**Not a Docker anomaly, not covered by this task's Docker-crash STOP
+instruction** — the daemon and both containers stayed healthy and
+running for the entire battery; this is confirmed by direct, repeated
+`docker ps -a` checks during the run. Per this log's standing rule
+(record honestly, do not smooth over), this is reported as a real,
+fix-caused, second-order side effect discovered during the battery
+itself, not a pre-existing pathology and not an artifact of the
+scoring tooling — the battery was allowed to run to completion (all 8
+reps finished; nothing was stopped mid-flight) because the anomaly is
+about Gauntlet-Agent's grading, not about infrastructure integrity.
+
+**Cost (8 completed reps, from each rep's own `verdict.json`
+`economics.total_est_cost_usd`, all `partial: false`):** rep9 $3.55,
+rep10 $4.61, rep11 $4.17, rep12 $1.16, rep13 $3.82, rep14 $3.85, rep15
+$2.01, rep16 $1.72 — **$24.89 total, all 8 measured directly**, well
+under the ~$40 pre-registered budget (the 3 cut-short reps are cheaper,
+not more expensive, since less coding-agent work happened before the
+cutoff).
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 2: T1/T2/T5 verdicts on n=8, round 1 → round 2 deltas (Task 8b)
+
+Scored all 8 reps (9-16) with `score_e6.py` (T1), a fresh one-off
+script reusing `score_e7.py`'s tested `census_session()`/`aggregate()`
+functions against the fix-arm RUNDIRs across both lanes (T2 —
+`score_e7.py` still hardcodes `arms=("dev","spinout")`, confirmed
+unchanged since round 1, so it still doesn't fit `fix` split across two
+lane checkouts; the one-off script, `/private/tmp/.../scratchpad/
+round2/score_e7_fix_battery_round2.py`, not committed — scratch, not a
+campaign artifact — writes only a new `out/e7-battery-fix-round2.json`,
+untouched otherwise), and `score_e1.py` (T5). Outputs:
+`out/e6-cx-sdd-small-fix-rep9-16.json`,
+`out/e7-battery-fix-round2.json`, `out/e1-cx-sdd-small-fix-rep9-16.json`
+— none collide with round 1's `rep1-8`-suffixed files or the frozen
+corpus (a)/(b) blobs; `FORCE` was never set.
+
+**Manual inspection (non-circular — raw rollout JSONL, not scorer
+helpers), beyond the brief's 2-run minimum:**
+- **Depth-2 spawn census (T1) — exhaustive, not sampled:** `grep -c
+  '"name":"spawn_agent"'` against every one of the 59 rollout files
+  across all 8 reps (`find .../home/.codex/sessions -name '*.jsonl'`
+  per rep, root vs non-root). Every non-root file in every rep: 0
+  `spawn_agent` calls. Root-only spawn totals per rep: 7/8/9/2/9/8/5/3
+  (reps 9-16) = **51, matching `score_e1`'s total spawn count exactly**
+  and `score_e6`'s `depth-2 spawns by spawner role: {}` (empty dict —
+  zero, across all 8 reps, not just the reps that finished cleanly).
+- **Review coverage (T1):** independently re-read every root session's
+  raw `spawn_agent` argument dump (task_name/model/reasoning_effort).
+  The 4 fully-completed reps (10, 11, 13, 14) each show
+  `task{1,2,3}_{implementer,reviewer}` (one reviewer per task, no
+  duplicates) + `final_reviewer` + a fix-cycle reviewer
+  (`final_fix_reviewer`, 2 reps also dispatch `final_fix_implementer`)
+  — normal SDD defect-fix-wave flow, entirely root-issued. The 3
+  cut-short reps (12, 15, 16) each show exactly one reviewer per task
+  actually reached (rep12: task1 impl+rev only; rep15: task1 impl+rev,
+  task2 impl+rev, task3 impl-only — reviewer never dispatched, cut off
+  first; rep16: task1 impl+rev, task2 impl-only) — **no duplicate
+  reviews anywhere, and no task that reached review got more or fewer
+  than exactly one reviewer.**
+- **Wait-timeout classification (T2):** independently re-parsed 4 full
+  sessions' raw `wait_agent`/`function_call_output` pairs (rep9: 7
+  calls; rep12: 2 calls; rep15: 5 calls; rep16: 3 calls — 17 of the
+  corpus's 55 total calls, more than double the brief's 2-run minimum)
+  with fresh `json.loads`/call_id pairing, not `rollout_parser`. Every
+  count and `timed_out` value matches `out/e7-battery-fix-round2.json`'s
+  per-session numbers exactly, including the single excluded
+  (unpaired) call — confirmed to be rep15's cut-off `task3_implementer`
+  wait via direct JSON inspection of the scorer's own `sessions[]`
+  array (`n_wait_agent_calls:5 n_paired:4 n_excluded:1 n_timed_out:0`,
+  path matches rep15's root rollout).
+- **Explicit-model claims (T5):** the raw per-rep spawn dumps used for
+  the review-coverage check above double as independent T5
+  verification — all 51 spawns across all 8 reps carry non-null
+  `model` and `reasoning_effort` keys directly in the raw `arguments`
+  JSON (not scorer inference), matching `score_e1`'s 51/51 (100%)
+  `explicit_model` exactly.
+- **Advisory config backstop:** checked rep9's container
+  `home/.codex/config.toml` — no `[agents]`/`default_subagent_*` keys,
+  same as round 1. Still unprovisioned in this eval environment;
+  untested by this battery, as before.
+
+**Aggregate numbers (8 reps, from the three JSON blobs):**
+- T1: **0 worker-issued depth-2 spawns across 8 reps** (0/8 reps
+  affected), 0 same-task duplicate-review families.
+- T2: **55 wait_agent calls, 54 paired, 1 excluded (rep15's cut-off
+  call), 0 timed out — 0.0% timeout rate (paired and all-calls).**
+  Gauntlet verdict: **5/8 pass (62.5%), 3/8 indeterminate (37.5%)** —
+  rep12/15/16, per the anomaly entry above. `score_e1`'s aggregate
+  shows **50/51 (98.0%) resolved child rollouts with `task_complete`
+  present** — the 1 miss is rep15's cut-off `task3_implementer` (raw
+  rollout confirms it started work but the file ends before any
+  `task_complete` event).
+- T5: **51/51 spawns (100.0%) carry explicit model; 0 model_omitted.**
+  All 51/51 are root-issued (depth-1) — T1 eliminated depth-2 entirely
+  this round, so there is no depth-2 population left to grade.
+  `fork_turns:"none"` on all 51/51 spawns (isolation unaffected).
+
+**Verdicts against the pre-registered criteria, each with its round 1
+→ round 2 delta:**
+
+- **T1 (0 worker-issued depth-2 spawns AND review coverage preserved):
+  PASS. Delta: FAIL → PASS.** Round 1: 2 depth-2 spawns in 1/6 reps
+  (16.7%), both from a controller-dispatched reviewer role that the
+  original no-subagents contract never reached. Round 2: 0 depth-2
+  spawns in 0/8 reps (0.0%) — an exhaustive, full-corpus grep across
+  all 59 rollout files, not a sample. Review coverage preserved
+  cleanly on both rounds (6/6 round 1, 8/8 round 2 for every task that
+  reached the review stage). Commit `c07cf7e` (reviewer no-subagents
+  contract, extended to `code-reviewer.md`/`re-review-prompt.md`/
+  `task-reviewer-prompt.md`) directly targeted this gap and closed it
+  completely at n=8, with zero new depth-2 leaks appearing from any
+  other role.
+- **T2 (timeout rate < 25% with no loss of task completion): FAIL on
+  the strict conjunction, but a categorically different and far
+  smaller miss than round 1. Delta: FAIL (dominant-metric miss) → FAIL
+  (secondary-clause miss only).** The timeout-rate clause is now a
+  clean, dramatic PASS: 0.0% vs round 1's 65.1% — commit `3da65fb`
+  (controller wait discipline) eliminated the original pathology
+  entirely; total wait_agent call volume also dropped from ~25/rep
+  (150 calls / 6 reps, round 1) to ~6.9/rep (55 calls / 8 reps, round
+  2). The "no loss of task completion" clause, however, is not cleanly
+  met this round: round 1 was 100%/100% on both operationalizations
+  this log uses (6/6 gauntlet pass, 50/50 child `task_complete`);
+  round 2 is 62.5% gauntlet pass (5/8) and 98.0% child `task_complete`
+  (50/51). Per the anomaly entry above, this is not the same failure
+  mode as round 1 (no hangs, no wait_agent timeouts, no Docker loss,
+  no coding-agent bug) — it is a newly surfaced, directly-traced
+  interaction between the fix's own recommended long-wait behavior and
+  the Gauntlet-Agent's fixed testing-time budget. Recorded as FAIL
+  because the pre-registered criterion is an explicit conjunction and
+  1/51 dispatched children genuinely never reported completion (not
+  zero, as the criterion requires) — but flagged clearly that this
+  FAIL reflects the fix working exactly as designed on the metric it
+  targeted, at the cost of an unanticipated harness-visibility
+  trade-off, not a regression in the underlying coding-agent behavior.
+- **T5 (every spawn at every depth carries explicit model + effort):
+  the pre-registered zero-depth-2 caveat now applies (it did not in
+  round 1). Delta: FAIL (real depth-2 miss found and graded) →
+  INCONCLUSIVE-BY-ZERO at depth-2 (no depth-2 population exists to
+  grade), PASS on the root-spawn-regression backstop.** T1 eliminated
+  depth-2 spawns entirely this round (0/51), so per the pre-registered
+  caveat, T5 is recorded inconclusive-by-zero at depth-2 rather than
+  graded — there is nothing left to check for model/effort omission at
+  that depth. The backstop clause (root-controller depth-1 spawns hold
+  100% explicit) passes cleanly: 51/51, matching round 1's 48/48
+  (100%) depth-1 rate — no regression at the depth that was already
+  working. The advisory config backstop
+  (`~/.codex/config.toml`'s `[agents] default_subagent_*`) remains
+  unprovisioned in this eval environment, same as round 1 — still
+  untested by any battery to date.
+
+**Ledger row:** 2026-07-30 | Shared SDD battery ROUND 2 T1/T2/T5 (fix
+arm @ `3da65fb`, cx-sdd-small, n=8 of 8 pre-registered — no Docker loss
+this round) | $24.89 (8/8 measured, `partial: false` on all) | T1 PASS,
+T2 FAIL (timeout clause PASS, completion clause FAIL — see anomaly),
+T5 inconclusive-by-zero at depth-2 / PASS on backstop.
+
+**Status: T1/T2/T5 verdicts delivered on the full pre-registered n=8 —
+no Docker loss this round (contrast round 1's n=6 shortfall). T1 fully
+flips FAIL→PASS: the reviewer-scoped no-subagents contract closed the
+exact gap round 1 found, with zero new leaks anywhere else. T2's core
+mechanism (wait_agent timeout rate) also fully flips FAIL→PASS
+(65.1%→0.0%), but the pre-registered criterion's second clause
+surfaces a new, honestly-reported side effect: 3/8 reps didn't reach a
+clean Gauntlet-Agent pass because the same long-wait behavior that
+fixed the timeout rate also produces silent stretches long enough to
+exhaust the QA harness's own testing-time budget on genuinely slow
+reviews — a harness-visibility trade-off, not a coding-agent
+regression, but real enough that the strict criterion is not met. T5's
+caveat condition flipped (T1's win removed the depth-2 population T5
+was grading), so T5 moves from a real FAIL to inconclusive-by-zero
+plus a clean backstop PASS. Net: 1 of 3 treatments (T1) is an
+unqualified win; T2 is a mechanism-level win with an honestly-reported
+new side effect; T5's FAIL was contingent on T1's prior failure and
+resolves along with it.**
