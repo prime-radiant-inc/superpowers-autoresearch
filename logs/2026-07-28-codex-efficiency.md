@@ -23,6 +23,8 @@ fact.
 | 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
 | 2026-07-29 | E1-v611 (v611, cx-sdd-small, 3 reps, lane B, JOBS=2) | $12.17 ($11.24 coding + $0.93 gauntlet) | 17.0% | 19.0% |
 | 2026-07-29/30 | E4 ceremony census (dev, cx-ceremony-{spike,bounded,arch}, 3 reps/class + 2 outage-tainted arch reps, lane A) | $21.39 ($16.85 clean/scored + $4.54 outage-tainted/excluded) | 18.0% | 55.0% |
+| 2026-07-30 | E3 baseline (dev, cx-finishing, 3 reps, lane B, JOBS=2) | $1.66 ($1.22 coding + $0.43 gauntlet) | 58.0% | 61.0% |
+| 2026-07-30 | E3 waiver probe (dev, cx-finishing-waiver, 2 reps, lane B, JOBS=2) | $1.19 ($0.83 coding + $0.36 gauntlet) | 61.0% | 63.0% |
 
 ## Pre-registered predictions
 
@@ -3254,3 +3256,89 @@ above. (i)/(ii) are magnitude priors informed by real prior evidence,
 not pass/fail gates in their own right — recorded so the eventual
 battery numbers are judged against grounded expectations, not chosen
 after the fact.
+
+### 2026-07-30 — E3 RESULT: both purpose-built probes return honest negative results; MINE-tier + 07-29 validation confirm the scorer discriminates (Task 10)
+
+Ran the pre-registered baseline (3 reps, `cx-finishing`, dev arm, lane B,
+`JOBS=2`, $1.66) and waiver probe (2 reps, `cx-finishing-waiver`, dev
+arm, lane B, `JOBS=2`, $1.19) batteries, scored with `score_e3.py`. Full
+detail, manual-verification evidence, and the exact command-bundling
+analysis behind every claim below: `campaigns/codex-efficiency/
+out/e3-report.md`.
+
+**Corpus validation (prerequisite, done before either battery ran):**
+CONFIRMED. `score_e3.py`'s per-session-repeat census reproduces
+`run_max_repeat=9` EXACTLY against the 2026-07-29 audit corpus's
+independently reconciled ground truth, plus 2 additional genuinely
+flagged duplicate-gate pairs found and manually verified elsewhere in
+that same tree (content-free `events_between()` window, zero mutations,
+confirmed three ways in this log's earlier entry).
+
+**MINE-for-free (23 existing reps, no new spend):** 5/23 already show
+≥1 genuine duplicate-gate pair across all `cx-sdd-small` arms and both
+`cx-compaction` arms — the scorer discriminates on real (if not
+purpose-built) prior battery data.
+
+**(i) Baseline duplicate-gate, `cx-finishing`: NOT confirmed (0/3, the
+registered ≥2/3-reps bar not met) — a real, registered alternative
+outcome, not a scorer defect.** Every rep reruns the full suite exactly
+once more (`run_max_repeat=2` in all 3, squarely inside the
+pre-registered modest-magnitude prior for (ii)) but always strictly
+AFTER a real git-mutating command — manually confirmed (rep1: the sole
+intervening mutation event has zero successful patch applies, i.e. it is
+the git-exec mutation, not a patch) — consistent with every rep's
+Gauntlet-Agent transcript reporting a merge of `feature` into `main`
+between the pre-merge and post-merge test runs. The scorer's
+mutation-gate correctly distinguishes "re-verified because the tree
+genuinely changed" from wasted verification; this scenario's single
+short finishing pass, with nothing left to iterate on, simply doesn't
+elicit the pathology — exactly the registered alternative outcome.
+
+**(iii) Waiver violation, `cx-finishing-waiver`: NOT confirmed (0/2,
+contradicting the primary prediction that this would replicate the
+07-29 pattern) — also a real, registered alternative outcome (iv), not a
+scorer defect, on closer inspection.** Both reps deliver the waiver
+correctly (`find_waiver_timestamp()` locates it in both) and both show
+`run_max_repeat=1` — no command, including the original full-suite
+invocation, is ever repeated byte-for-byte. Manually inspected directly
+(safe: this campaign's own synthetic fixture content, not corpus data):
+in both reps the agent hit the known-red placeholder, received the
+waiver, then switched to a NARROWER test invocation explicitly excluding
+the known-red module for its remaining verification, and ran that same
+scoped target a second time bundled with the merge itself — but the two
+scoped occurrences are never byte-identical after whitespace
+normalization in either rep, because each bundles the test command with
+DIFFERENT surrounding git-diagnostic commands (a pre-merge status/
+ancestor check vs. the merge itself). This is a genuine result, not a
+detection gap papered over: the agent never blindly reran the identical
+failing command after being told to ignore it — the specific 07-29
+pathology — and its two re-checks occurred in materially different,
+individually-justified contexts. Registered alternative outcome (iv)'s
+interpretation applies: an explicit, freshly-delivered waiver for one
+named failure, with no competing signals in a short session, may be a
+materially different condition from the 07-29 session's implicit,
+long-history waiver.
+
+**Methodological caveat (flagged, not fixed in this task):** the strict
+"identical normalized full command" match — unchanged from the
+already-validated 07-29 reconciliation methodology — would also miss a
+future case where an agent reran the SAME effective check bundled with
+DIFFERENT surrounding diagnostics each time. `out/e3-report.md` proposes
+the same two-metric split that resolved the "148" reconciliation
+(exact-match count alongside a substring-occurrence count) as a future
+refinement; not implemented here, since manual inspection confirms it
+would not have changed either battery's verdict.
+
+**Privacy:** every committed output (`out/e3-*.json`, `out/e3-report.md`,
+this entry) carries only anonymized `cmd_id` labels, counts, and
+timestamps for the 07-29 corpus census; the `cx-finishing`/
+`cx-finishing-waiver` command text discussed above is this campaign's
+own synthetic fixture content (the same convention as task_name/spawn-arg
+citations elsewhere in this log), never corpus content. Grepped every
+new sentence in this entry, `out/e3-report.md`, and both commit messages
+against the standing sensitive-string patterns before committing.
+
+Commits: `c78149e` (mutation_events, TDD), `dfda964` (score_e3.py, TDD),
+`3107ab4` (scenarios+fixtures), `c77333e` (07-29 validation + MINE-tier
+log entry), `b5c1249` (MINE-tier output), `c880fd7` (pre-registration),
+`37af55e` (baseline battery), `8e9beac` (waiver battery).
