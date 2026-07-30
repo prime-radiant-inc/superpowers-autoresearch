@@ -561,3 +561,126 @@ In-container: `codex exec --help` and Codex config docs (`codex config --help` /
 - Known deviations from spec text: none material. Spec's "MICRO for E2" is a codex-exec micro (Task 7) not an Anthropic-API micro — matches spec intent (observe real spawn behavior).
 - Type consistency: `Spawn`, `ExecCmd`, `SessionMetrics`, `child_links` signatures used identically across Tasks 2–12.
 - Open risk carried: `quorum run` scenario-path visibility inside the container (Task 5 Step 3 carries the rsync fallback); compaction forcing (Task 9 Step 1 is explicitly exploratory with fallback).
+
+---
+
+## Amendment 1 (2026-07-28, post-Task-6, Jesse-approved)
+
+Three scope changes, each grounded in evidence that arrived mid-campaign:
+
+### Task 6b: Container Codex CLI upgrade + E1 axis-A re-test
+
+The eval container pins `@openai/codex@0.144.4`; the field (audit corpus, Drew's
+runs) is on 0.146, and the spinout branch's `model`/`reasoning_effort` spawn
+params require ≥0.145. Every remaining Codex battery must run on the field
+version. Steps: bump the version in `evals/container/Dockerfile` (local change
+in the evals checkout; do not push), `scripts/evals-container build` + re-up,
+verify `session_meta.cli_version` ≥0.145 in a fresh run, then re-run E1: 2
+baseline reps on dev (does fork_turns stay 100% "none" at 0.146? — CLI version
+is now a registered confound for the Task 6 baseline result) + 4 treatment reps
+on spinout scored on axis A. Budget ≈ $32.
+
+### Tasks E7–E9: Drew-derived MINE-tier scorers (no new run spend)
+
+- **E7 wait-polling**: parser gains wait-call outcome pairing (call → its
+  function_call_output; timeout detection from output text); scorer reports
+  poll counts, timeout rate, inter-poll interval. Pre-registered priors from
+  Drew: 78% timeout rate on the stress run's 805 polls; audit: 788/1058 on one
+  root.
+- **E8 close_agent hygiene**: per-controller census of spawned vs closed
+  children (close_agent calls; also followup/interrupt). Priors: Drew sol
+  0/86 closed; codex-5.5 18/18.
+- **E9 workspace leaks**: scorer over run workdir git history — any
+  `.superpowers/sdd/` path ever committed (git log --all --diff-filter=A),
+  plus workspace-in-diff at review packages. Priors: 3 leak runs in Drew's
+  fractals set.
+
+Each scores three corpora: Drew's (external), the audit corpus, our battery
+runs. Validation follows the standing rules (manual inspection before verdicts).
+
+### Task: Drew-corpus cross-validation and evidence ingestion
+
+Run rollout_parser + E1/E2 scorers over Drew's Codex rollouts
+(`/Users/jesse/git/superpowers/_tmp/drew-sdd-head-to-head-2026-07-27`,
+external, never committed); reconcile against his script-emitted metrics;
+register his treatment-arm evidence (103/103 dispatch tuples at 0.146,
+reviewer no-recursion 0/53, compaction hook 18/18 with compliant-controller
+caveat) in the hypothesis log as external evidence with provenance.
+
+Ordering: 6b first (container down for rebuild blocks all quorum work), then
+Drew cross-validation, then E7–E9, then resume the original sequence at Task 7
+(E2 micro).
+
+## Amendment 2 (2026-07-29, Jesse-approved)
+
+### Task E1-v611: fresh-session pathology reproduction against v6.1.1
+
+Third arm `/tmp/sp-arm-v611` (tag v6.1.1) isolates the skill version at fixed
+CLI 0.146: add a `v611` mapping to run-quorum.sh, pre-register (full-history
+forks / omitted models at v6.1.1 ⇒ pathology was skill-version-dependent and
+v6.2.0 fixed it; clean ⇒ long-history theory strengthens), 3 reps of
+cx-sdd-small, score with score_e1.py, three-arm comparison table. Runs after
+Task 8's battery (container contention).
+
+### Task E10: lifecycle-truthfulness probe suite
+
+The audit's second P0 (completion/retry truthfulness) had no experiment in the
+original scoping — a gap. Probes, each a scenario child engineered to fail:
+(a) empty final output; (b) killed mid-run from outside the container; (c)
+tool budget exhausted without a conclusion. Scored per run: does the
+controller record explicit failure (vs empty success), retry at most once with
+stable inputs, and reconcile open children before its own completion (reuses
+E8's lifecycle census). Quota-forcing has no clean mechanism — documented as a
+probe gap, not simulated. Pre-register from audit Finding 7's observed
+failures. Position: after E6, before E3. Budget ≈ $20–30.
+
+## Amendment 3 (2026-07-29, Jesse-provided session audit)
+
+Jesse supplied a deep audit of a 2026-07-29 session tree (root
+019faf59… + 13 descendants, ~4h8m, plugin-agent-model-fallback work). It
+independently replicates several campaign findings in a FRESH session and
+sharpens three experiments. Root rollouts live under
+~/.codex/sessions/2026/07/29/ (read-only, private-content rules apply).
+
+### Task: MINE the 2026-07-29 session tree (new, no run spend)
+
+Score the root + descendants with every existing scorer (parser census,
+score_e2 subtree census, score_e7 waits, score_e8 lifecycle) and reconcile
+against the audit's claims BEFORE trusting them: 193 root wait_agent calls
+(mostly 30s polls), 24 list_agents, 148 textual go-test invocations with a
+12x-repeated identical regression cluster, an implementer-spawned reviewer
+(Task 1) followed by a controller-dispatched duplicate review, 9 reviewer
+agents for 4 implementers. Pre-register those numbers as predictions; verify
+per rollout; aggregates only in committed output (out/e-audit0729.md).
+
+### Experiment upgrades
+
+- **E3 (evidence receipts):** the duplicate-gate pathology now has FRESH-
+  session confirmation (148 test invocations, same targeted regression 12x,
+  root rerunning implementer checks, final reviewer rerunning bundles 3x,
+  waived-baseline rerun after explicit user waiver). E3's discrimination
+  odds are strong; add two census measures to its scorer: identical-command
+  repeat count per session (not just cross-session pairs) and
+  waiver-violation detection (rerun of a user-waived known-red command with
+  no intervening mutation). The audit's "verification lease" proposal is the
+  treatment candidate; record in the log.
+- **E2→E6 (recursion signature sharpened):** the fresh-session recursion
+  shape is IMPLEMENTER-spawned reviewers at depth 2 — 4th occurrence now.
+  E6's scorer must report depth-2 spawns by role (implementer vs reviewer)
+  and same-task duplicate reviews (worker-review followed by controller
+  review of the same task).
+- **E5 (review scope):** replicated pathologies to encode in the rubric:
+  same-task duplicate review; discover-one-fix-one serial remediation
+  (count remediation cycles per task); gate findings lacking a violated
+  acceptance criterion / reachable failure path (the withdrawn restore
+  finding is the archetype); final-fix-wave boundary violation (mutation
+  under an active re-review).
+
+### Fix-cycle candidates registered (not campaign work)
+
+The audit's six skill patches (verification leases; SDD worker-review
+prohibition + event-driven waiting + remediation cap + frozen re-review SHA;
+writing-plans invariant matrices; criterion-backed blocking findings;
+systematic-debugging occurrence fingerprint; finishing-a-development-branch
+worktree detection + waiver honor) plus its pressure-test scenario list go
+to the fix cycle, gradeable by E3/E5/E6/E7 scorers.

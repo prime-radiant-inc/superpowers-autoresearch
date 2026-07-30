@@ -1,0 +1,130 @@
+{
+  "reports": [
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep1/cx-sdd-small-codex-codex_sub-linux-20260728T195835Z-c0bf/coding-agent-workdir",
+      "label": "dev-rep1",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep2/cx-sdd-small-codex-codex_sub-linux-20260728T203056Z-de3b/coding-agent-workdir",
+      "label": "dev-rep2",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep3/cx-sdd-small-codex-codex_sub-linux-20260728T205321Z-dad9/coding-agent-workdir",
+      "label": "dev-rep3",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep4/cx-sdd-small-codex-codex_sub-linux-20260728T211212Z-fd5e/coding-agent-workdir",
+      "label": "dev-rep4",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T050129Z-4e24/coding-agent-workdir",
+      "label": "dev-rep5",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T051838Z-1912/coding-agent-workdir",
+      "label": "dev-rep6",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T031843Z-7b72/coding-agent-workdir",
+      "label": "spinout-rep1",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T033825Z-d4dc/coding-agent-workdir",
+      "label": "spinout-rep2",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T035556Z-637b/coding-agent-workdir",
+      "label": "spinout-rep3",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep4/cx-sdd-small-codex-codex_sub-linux-20260729T041642Z-1878/coding-agent-workdir",
+      "label": "spinout-rep4",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T053429Z-3ac1/coding-agent-workdir",
+      "label": "spinout-rep5",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T055537Z-e62f/coding-agent-workdir",
+      "label": "spinout-rep6",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep7/cx-sdd-small-codex-codex_sub-linux-20260729T061915Z-19d1/coding-agent-workdir",
+      "label": "spinout-rep7",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    },
+    {
+      "repo_dir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep8/cx-sdd-small-codex-codex_sub-linux-20260729T064125Z-f70d/coding-agent-workdir",
+      "label": "spinout-rep8",
+      "ever_added_count": 0,
+      "reachable_added_count": 0,
+      "head_count": 0,
+      "leaked": [],
+      "review_packages": []
+    }
+  ]
+}

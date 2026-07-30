@@ -1,0 +1,228 @@
+{
+  "label": "cx-branch-review-dev-rep1-4",
+  "runs": [
+    {
+      "label": "cx-branch-review-dev-rep1",
+      "root_rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+      "total_sessions": 2,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-29T09:52:47.908Z",
+        "n_commits_after": 0
+      },
+      "same_scope_duplicates": [],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 3,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-29T09-51-34-019fad49-5f2e-7413-85f1-a27af2d34b3a.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "branch_reviewer",
+          "dispatch_timestamp": "2026-07-29T09:51:34.693Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep1/cx-branch-review-codex-codex_sub-linux-20260729T095026Z-a829",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 1
+    },
+    {
+      "label": "cx-branch-review-dev-rep2",
+      "root_rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+      "total_sessions": 2,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-29T09:57:05.015Z",
+        "n_commits_after": 0
+      },
+      "same_scope_duplicates": [],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 2,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-29T09-55-38-019fad4d-180b-78e1-80f6-6230fe22b505.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_branch_review",
+          "dispatch_timestamp": "2026-07-29T09:55:38.627Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep2/cx-branch-review-codex-codex_sub-linux-20260729T095435Z-5ce7",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 2
+    },
+    {
+      "label": "cx-branch-review-dev-rep3",
+      "root_rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+      "total_sessions": 2,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": [
+          {
+            "rollout": "rollout-2026-07-29T10-00-43-019fad51-c001-7d60-ab1a-65ac894beb74.jsonl",
+            "timestamp": "2026-07-29T10:02:05.893Z",
+            "pass": "review",
+            "matched_text": "## Findings\n\n1. **Important \u2014 empty `peek()` violates the documented API contract**  \n   [taskqueue/queue.py:65](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/queue.py:65)\n\n   `peek()` indexes `self._heap[0]`, so an empty queue raises `IndexError`. Both its docstring and `docs/DESIGN.md` promise `None`. This can break callers relying on the documented non-throwing probe.\n\n   Fix: return `None` when the heap is empty and add an empty-queue test.\n\n2. **Important \u2014 malformed storage is not handled robustly**  \n   [taskqueue/cli.py:16](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:16), [taskqueue/cli.py:77](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:77)\n\n   Invalid JSON, malformed records, invalid persisted values, encoding errors, and read failures escape as raw tracebacks. I reproduced this with `{bad`. This fails the explicit robust-storage requirement and gives users no controlled diagnostic.\n\n   Fix: validate the top-level list and every exact two-field record; catch decoding, schema, validation, and filesystem errors; print a concise error and return nonzero without rewriting the store. Add malformed JSON and malformed-schema CLI tests.\n\n3. **Important \u2014 persistence writes are not crash-safe**  \n   [taskqueue/cli.py:22](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:22)\n\n   Directly overwriting the only store file can leave it truncated or partially written if the process or filesystem fails. The next invocation then cannot recover the queue.\n\n   Fix: write to a temporary file in the same directory, flush/fsync as appropriate, and atomically replace the store with `os.replace`; clean up the temporary file after failure.\n\n## Strengths\n\n- Clear heap-plus-sequence design.\n- FIFO ordering among equal priorities survives separate CLI invocations; manually verified.\n- Validators correctly reject booleans as priorities.\n- Happy-path commands and documentation align.\n- Tests cover primary ordering, validation, batch, and CLI flows.\n\nI could not run the pytest suite because pytest is not installed in the environment (`No module named pytest`). Manual CLI FIFO and malformed-store checks were run.\n\n**Ready to merge? No \u2014 merge after the three Important fixes and tests.**"
+          },
+          {
+            "rollout": "rollout-2026-07-29T10-00-43-019fad51-c001-7d60-ab1a-65ac894beb74.jsonl",
+            "timestamp": "2026-07-29T10:02:05.863Z",
+            "pass": "review",
+            "matched_text": "## Findings\n\n1. **Important \u2014 empty `peek()` violates the documented API contract**  \n   [taskqueue/queue.py:65](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/queue.py:65)\n\n   `peek()` indexes `self._heap[0]`, so an empty queue raises `IndexError`. Both its docstring and `docs/DESIGN.md` promise `None`. This can break callers relying on the documented non-throwing probe.\n\n   Fix: return `None` when the heap is empty and add an empty-queue test.\n\n2. **Important \u2014 malformed storage is not handled robustly**  \n   [taskqueue/cli.py:16](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:16), [taskqueue/cli.py:77](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:77)\n\n   Invalid JSON, malformed records, invalid persisted values, encoding errors, and read failures escape as raw tracebacks. I reproduced this with `{bad`. This fails the explicit robust-storage requirement and gives users no controlled diagnostic.\n\n   Fix: validate the top-level list and every exact two-field record; catch decoding, schema, validation, and filesystem errors; print a concise error and return nonzero without rewriting the store. Add malformed JSON and malformed-schema CLI tests.\n\n3. **Important \u2014 persistence writes are not crash-safe**  \n   [taskqueue/cli.py:22](/workspace/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd/coding-agent-workdir/taskqueue/cli.py:22)\n\n   Directly overwriting the only store file can leave it truncated or partially written if the process or filesystem fails. The next invocation then cannot recover the queue.\n\n   Fix: write to a temporary file in the same directory, flush/fsync as appropriate, and atomically replace the store with `os.replace`; clean up the temporary file after failure.\n\n## Strengths\n\n- Clear heap-plus-sequence design.\n- FIFO ordering among equal priorities survives separate CLI invocations; manually verified.\n- Validators correctly reject booleans as priorities.\n- Happy-path commands and documentation align.\n- Tests cover primary ordering, validation, batch, and CLI flows.\n\nI could not run the pytest suite because pytest is not installed in the environment (`No module named pytest`). Manual CLI FIFO and malformed-store checks were run.\n\n**Ready to merge? No \u2014 merge after the three Important fixes and tests.**"
+          }
+        ]
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": [
+          "review"
+        ]
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-29T10:02:05.460Z",
+        "n_commits_after": 0
+      },
+      "same_scope_duplicates": [],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 3,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-29T10-00-43-019fad51-c001-7d60-ab1a-65ac894beb74.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_code_review",
+          "dispatch_timestamp": "2026-07-29T10:00:43.766Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 3
+    },
+    {
+      "label": "cx-branch-review-dev-rep4",
+      "root_rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+      "total_sessions": 2,
+      "max_depth": 1,
+      "repair_request_timestamp": null,
+      "recall_matrix": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "recall_summary": {
+        "D1": [],
+        "D2": [],
+        "D3": []
+      },
+      "scope_accretion": {
+        "first_completion_timestamp": "2026-07-29T10:06:41.739Z",
+        "n_commits_after": 0
+      },
+      "same_scope_duplicates": [],
+      "serial_remediation_cycles": 0,
+      "fix_review_scope": "no_repair_request",
+      "wave_boundary_violations": [],
+      "nodes": [
+        {
+          "rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+          "depth": 0,
+          "parent_rollout": null,
+          "is_root": true,
+          "spawn_count": 1,
+          "task_complete": 2,
+          "wait_calls": 2,
+          "task_name": null,
+          "dispatch_timestamp": null
+        },
+        {
+          "rollout": "rollout-2026-07-29T10-04-59-019fad55-a6ae-7420-bf41-097bb056e761.jsonl",
+          "depth": 1,
+          "parent_rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+          "is_root": false,
+          "spawn_count": 0,
+          "task_complete": 1,
+          "wait_calls": 0,
+          "task_name": "final_code_review",
+          "dispatch_timestamp": "2026-07-29T10:04:59.428Z"
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep4/cx-branch-review-codex-codex_sub-linux-20260729T100350Z-3012",
+      "arm_scenario": "cx-branch-review-dev",
+      "rep": 4
+    }
+  ]
+}

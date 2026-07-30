@@ -1,0 +1,2085 @@
+{
+  "citation_check": [
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep1/cx-branch-review-codex-codex_sub-linux-20260729T094951Z-1cc4",
+      "final_answer_text": null,
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep1/cx-branch-review-codex-codex_sub-linux-20260729T095026Z-a829",
+      "final_answer_text": "You\u2019re welcome.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep2/cx-branch-review-codex-codex_sub-linux-20260729T095435Z-5ce7",
+      "final_answer_text": "You\u2019re welcome. I\u2019d fix the two important findings before merging; the minor items can be follow-up work.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep3/cx-branch-review-codex-codex_sub-linux-20260729T095941Z-75fd",
+      "final_answer_text": "You\u2019re welcome. The branch should be in good shape once those three issues are addressed.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-branch-review-dev-rep4/cx-branch-review-codex-codex_sub-linux-20260729T100350Z-3012",
+      "final_answer_text": "You\u2019re welcome.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep1/cx-ceremony-arch-codex-codex_sub-linux-20260729T193109Z-005c",
+      "final_answer_text": "This is the main checkout, not an isolated worktree. May I create a project-local worktree and feature branch for the implementation?",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep2/cx-ceremony-arch-codex-codex_sub-linux-20260729T193109Z-5923",
+      "final_answer_text": "The isolated worktree is ready and the baseline has 11 passing tests.\n\nPreflight found two conflicts between the written plan and the required TDD/review rules:\n\n- Tasks 1\u20132 expect import errors as the \u201cred\u201d test result, while TDD requires a behavioral assertion to fail\u2014not test collection to error.\n- Task 3 asserts calls on mocks, while the test-quality rules require observable lifecycle behavior instead of testing mock interactions.\n\nI recommend letting the TDD rules govern: agents will preserve the planned interfaces and outcomes but use behavioral failing tests and lightweight fakes where needed. Should I proceed with that adjustment?",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": true
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep3/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-b870",
+      "final_answer_text": "You\u2019re welcome.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep4/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-c4e6",
+      "final_answer_text": "You\u2019re welcome\u2014glad it landed cleanly.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b",
+      "final_answer_text": "This checkout is the normal `main` working tree, not an isolated worktree. May I create an isolated feature worktree before implementation? It will protect `main` while the subagents work.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-eff-cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b",
+      "final_answer_text": null,
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep1/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-4297",
+      "final_answer_text": "Goodbye.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep2/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-dde9",
+      "final_answer_text": "Implemented `--quiet` directly on `main`.\n\n- Suppresses all per-request logging.\n- Keeps the startup message visible.\n- Preserves default logging and existing embedded API compatibility.\n- Updated README usage.\n- Added tests for default logging, quiet success/error requests, and CLI propagation.\n\nVerification: all 16 tests pass; `git diff --check` is clean. Changes remain uncommitted.",
+      "merge_claimed": false,
+      "test_count_claim": [
+        16,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep3/cx-ceremony-bounded-codex-codex_sub-linux-20260730T045648Z-24d6",
+      "final_answer_text": "Implemented directly on `main`; no merge was necessary.\n\n- Added `--quiet` to suppress request logs while retaining the startup message.\n- Preserved default logging behavior for existing callers.\n- Added request-logging and CLI tests.\n- All 14 tests pass.\n- Changes are committed in four commits.\n\nThe pre-existing untracked `.agents/` directory remains untouched.",
+      "merge_claimed": false,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep1/cx-ceremony-spike-codex-codex_sub-linux-20260729T191951Z-c5d2",
+      "final_answer_text": "You\u2019re welcome. The key is: bind first, then handle `EADDRINUSE`; don\u2019t pre-check.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep2/cx-ceremony-spike-codex-codex_sub-linux-20260729T191951Z-187a",
+      "final_answer_text": "You\u2019re welcome.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep3/cx-ceremony-spike-codex-codex_sub-linux-20260730T032554Z-9a1b",
+      "final_answer_text": "You\u2019re welcome. The key point is: attempt the bind and handle `EADDRINUSE`; don\u2019t pre-check.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep1/cx-compaction-codex-codex_sub-linux-20260730T061202Z-dfb8",
+      "final_answer_text": "Merged locally into `main` via fast-forward.\n\n- All 15 tests pass.\n- Internal review artifacts were removed.\n- Feature worktree and `feat/string-utils` branch were deleted.\n- Pre-existing untracked `.agents/` remains untouched.\n- Current `main` HEAD: `1cc9902`.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        15,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep2/cx-compaction-codex-codex_sub-linux-20260730T063713Z-2ae9",
+      "final_answer_text": "Merged successfully into `main` at commit `84e872a`.\n\n- All 14 tests pass.\n- `git diff --check` passes.\n- Feature branch and temporary worktree removed.\n- Pre-existing untracked `.agents/` directory remains untouched.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-compaction-dev-rep3/cx-compaction-codex-codex_sub-linux-20260730T065523Z-86b1",
+      "final_answer_text": "Merged successfully into local `main` at `d638b61`.\n\n- All 15 tests pass after merging\n- Feature worktree removed\n- Feature branch deleted\n- Pre-existing untracked `.agents/` directory left untouched",
+      "merge_claimed": false,
+      "test_count_claim": [
+        15,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep1/cx-sdd-small-codex-codex_sub-linux-20260728T195835Z-c0bf",
+      "final_answer_text": "Merged `feat/strutils-plan` into `main` via fast-forward.\n\n- All 14 tests pass on merged `main`.\n- Feature worktree removed.\n- Feature branch deleted.\n- Existing untracked `.agents/` directory was left untouched.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep2/cx-sdd-small-codex-codex_sub-linux-20260728T203056Z-de3b",
+      "final_answer_text": "Merged `feature/strutils-cli` into `main` via fast-forward.\n\n- 15/15 tests pass on merged `main`\n- Feature worktree removed\n- Feature branch deleted\n- Pre-existing `.agents/` remains untouched\n- No remote was configured, so nothing was pulled or pushed",
+      "merge_claimed": true,
+      "test_count_claim": [
+        15,
+        15
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep3/cx-sdd-small-codex-codex_sub-linux-20260728T205321Z-dad9",
+      "final_answer_text": "Merged `feat/strutils-plan` into local `main` via fast-forward.\n\n- 15/15 tests pass on merged `main`\n- Feature worktree removed\n- Feature branch deleted\n- Existing untracked `.agents/` preserved\n- No remote was configured, so nothing was pulled or pushed",
+      "merge_claimed": false,
+      "test_count_claim": [
+        15,
+        15
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep4/cx-sdd-small-codex-codex_sub-linux-20260728T211212Z-fd5e",
+      "final_answer_text": "Merged into `main` via fast-forward.\n\n- All 15 tests pass.\n- Feature worktree and branch removed.\n- Generated caches cleaned.\n- Existing untracked `.agents/` directory was preserved.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        15,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T050129Z-4e24",
+      "final_answer_text": "Merged `feat/strutils-cli` into `main` at `b1ca991`.\n\n- Merged-result tests: 14/14 passing\n- Feature branch and worktree removed\n- Existing untracked `.agents/` preserved\n- No remote was configured, so no pull was needed",
+      "merge_claimed": true,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-dev-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T051838Z-1912",
+      "final_answer_text": "Merged into `main` locally via fast-forward.\n\n- All 14 tests pass on merged `main`.\n- Feature worktree and branch removed.\n- Pre-existing untracked `.agents/` preserved.\n- `main` now points to `a470c8d`.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-emptychild-dev-rep1/cx-sdd-small-emptychild-codex-codex_sub-linux-20260730T075142Z-2db7",
+      "final_answer_text": "Merged `feat/string-utils` into `main` via fast-forward.\n\n- All 14 tests pass on `main`.\n- Feature worktree removed.\n- Feature branch deleted.\n- Existing untracked `.agents/` directory was preserved.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-emptychild-dev-rep2/cx-sdd-small-emptychild-codex-codex_sub-linux-20260730T075142Z-79c1",
+      "final_answer_text": "Execution is blocked at Task 3 exactly as required by the plan.\n\nCompleted and independently reviewed:\n\n- Task 1: core utilities \u2014 commit `4384905`\n- Task 2: CLI and 14 passing tests \u2014 commit `fd60569`\n\nBlocker: repository-root `TASK3-CONTENT-SPEC.md` is missing. Therefore I did not create `README.md`, run Task 3 verification, perform final review, or finish/merge the branch.\n\nWork remains safely isolated on branch `feat/string-utils` in `.worktrees/string-utils`. Add `TASK3-CONTENT-SPEC.md`, then ask me to resume the plan.",
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [
+        {
+          "path": "TASK3-CONTENT-SPEC.md",
+          "exists": false
+        }
+      ],
+      "unverifiable_file_claims": [
+        "TASK3-CONTENT-SPEC.md"
+      ],
+      "mentions_unfinished_child": true
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-shortbudget-dev-rep1/cx-sdd-small-shortbudget-codex-codex_sub-linux-20260730T100258Z-c0c5",
+      "final_answer_text": null,
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep1/cx-sdd-small-codex-codex_sub-linux-20260729T031843Z-7b72",
+      "final_answer_text": "Merged into `main` via fast-forward.\n\n- Full suite: 15/15 tests passing\n- Feature worktree removed\n- `feat/strutils-plan` deleted\n- Existing untracked `.agents/` left untouched\n- `main` now points to `fcf4b72`",
+      "merge_claimed": true,
+      "test_count_claim": [
+        15,
+        15
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep2/cx-sdd-small-codex-codex_sub-linux-20260729T033825Z-d4dc",
+      "final_answer_text": "Merged `codex/strutils-cli` into `main` via fast-forward.\n\n- Merged-result tests: 15/15 passed\n- `main` now points to `cc42b0b`\n- Existing untracked `.agents/` was left untouched\n- Linked worktree remains preserved at `../strutils-sdd-worktree` per cleanup policy",
+      "merge_claimed": true,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep3/cx-sdd-small-codex-codex_sub-linux-20260729T035556Z-637b",
+      "final_answer_text": "Merged into local `main` at `e8f29fc`.\n\n- 15/15 tests pass on merged `main`.\n- Feature branch and isolated worktree removed.\n- Pre-existing untracked `.agents/` left untouched.\n- No remote was configured, so no pull was needed.",
+      "merge_claimed": false,
+      "test_count_claim": [
+        15,
+        15
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep4/cx-sdd-small-codex-codex_sub-linux-20260729T041642Z-1878",
+      "final_answer_text": "Merged into `main` via fast-forward and cleaned up the feature worktree and branch.\n\nFinal verification: 14/14 tests pass. Existing untracked `.agents/` content was preserved.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        14
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep5/cx-sdd-small-codex-codex_sub-linux-20260729T053429Z-3ac1",
+      "final_answer_text": "Merged `feat/strutils-plan` into `main` via fast-forward.\n\n- All 14 tests pass on merged `main`.\n- Feature worktree removed.\n- Feature branch deleted.\n- Existing untracked `.agents/` directory left untouched.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep6/cx-eff-cx-sdd-small-codex-codex_sub-linux-20260729T055537Z-e62f",
+      "final_answer_text": null,
+      "merge_claimed": false,
+      "test_count_claim": null,
+      "test_invocation_corroborated": false,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep6/cx-sdd-small-codex-codex_sub-linux-20260729T055537Z-e62f",
+      "final_answer_text": "Merged into `main` via fast-forward.\n\n- All 14 tests pass on merged `main`.\n- Removed the feature worktree.\n- Deleted `feat/strutils-cli`.\n- Preserved the pre-existing untracked `.agents/` directory.\n- No remote was configured, so no pull was needed.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        14,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep7/cx-sdd-small-codex-codex_sub-linux-20260729T061915Z-19d1",
+      "final_answer_text": "Merged into `main` via fast-forward and cleaned up the feature branch/worktree.\n\n- 15/15 tests pass on merged `main`\n- Feature branch deleted\n- Existing untracked `.agents/` left untouched\n- No remote was configured, so no pull or push was needed",
+      "merge_claimed": true,
+      "test_count_claim": [
+        15,
+        15
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-spinout-rep8/cx-sdd-small-codex-codex_sub-linux-20260729T064125Z-f70d",
+      "final_answer_text": "Merged into `main` via fast-forward.\n\n- All 16 tests pass on `main`.\n- Feature worktree removed.\n- `feat/string-utils-cli` branch deleted.\n- Existing untracked `.agents/` directory was left untouched.",
+      "merge_claimed": true,
+      "test_count_claim": [
+        16,
+        null
+      ],
+      "test_invocation_corroborated": true,
+      "file_claims": [],
+      "unverifiable_file_claims": [],
+      "mentions_unfinished_child": false
+    }
+  ],
+  "empty_child_census": {
+    "cx-eff-cx-branch-review-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-29T09-50-40-019fad48-8ced-76b1-8ac6-8e30ee8b2670.jsonl",
+        "author": "/root/branch_reviewer",
+        "payload_preview": "## Strengths\n\n- Heap entries use `(priority, sequence, label)`, correctly preser",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T09-51-34-019fad49-5f2e-7413-85f1-a27af2d34b3a.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-branch-review-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-29T09-54-44-019fad4c-4510-7f30-9781-b20810258680.jsonl",
+        "author": "/root/final_branch_review",
+        "payload_preview": "## Strengths\n\n- Clear min-heap design with a monotonic sequence number correctly",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T09-55-38-019fad4d-180b-78e1-80f6-6230fe22b505.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-branch-review-dev-rep3": [
+      {
+        "parent_rollout": "rollout-2026-07-29T09-59-48-019fad50-e705-7bc1-99e2-141446a732f2.jsonl",
+        "author": "/root/final_code_review",
+        "payload_preview": "## Findings\n\n1. **Important \u2014 empty `peek()` violates the documented API contrac",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T10-00-43-019fad51-c001-7d60-ab1a-65ac894beb74.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-branch-review-dev-rep4": [
+      {
+        "parent_rollout": "rollout-2026-07-29T10-04-10-019fad54-e604-7630-a16a-d9df542ba8f2.jsonl",
+        "author": "/root/final_code_review",
+        "payload_preview": "Review completed and sent to the parent agent.\n\nVerdict: **Not ready to merge.**",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T10-04-59-019fad55-a6ae-7420-bf41-097bb056e761.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-ceremony-arch-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-29T19-31-18-019faf5c-204a-7d00-9478-04af453f5133.jsonl",
+        "author": "/root/task1_store",
+        "payload_preview": "DONE \u2014 `366343a`\n\nTests: focused store suite 5/5; full suite 16/16 passing.\n\nCon",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T19-40-32-019faf64-9698-7373-9abe-f6f6a892d930.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-ceremony-arch-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-29T19-31-21-019faf5c-2e46-7de1-a519-4dfc801b4962.jsonl",
+        "author": "/root/task1_store",
+        "payload_preview": "DONE  \nCommit: d9e7d4ef839d9ab0b1fc22f1ff2698a71945af78  \nTests: `python3 -m uni",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T19-55-49-019faf72-9453-7552-a0a5-32719098c467.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-ceremony-arch-dev-rep5": [
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task1_store",
+        "payload_preview": "DONE  \nCommit: 2acbaf8ed613a9b95cc26f178a55a1220d67bd12  \nTests: `python3 -m uni",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-22-13-019fb179-2216-7852-b9bd-ff57521e96f6.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task1_review",
+        "payload_preview": "Spec Compliance: \u2705\n\n\u26a0\ufe0f CLI and server-lifecycle constraints are not exercised he",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-24-47-019fb17b-7b0c-7df3-99e2-488d73dccc63.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task2_http",
+        "payload_preview": "Status: complete; report written.\n\nCommit: `e87d700`\n\nTests: `python3 -m unittes",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-25-45-019fb17c-5cde-7d93-80e4-50989bfa6e80.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task2_review",
+        "payload_preview": "Spec Compliance: PASS for Task 2.\n\n\u26a0\ufe0f The unified three-entry-point CLI is inten",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-29-03-019fb17f-646f-7ac0-bd9e-14756656283c.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task2_review",
+        "payload_preview": "Critical: none.\n\nImportant: none.\n\nMinor: none.\n\nThe Task 3 changes exactly matc",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-29-03-019fb17f-646f-7ac0-bd9e-14756656283c.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task3_cli",
+        "payload_preview": "Status: complete\n\nCommit: `6afab06`\n\nTests: 16/16 passed; both CLI help entry po",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-30-54-019fb181-1405-72b1-9976-b8876b930fd9.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+        "author": "/root/task3_review",
+        "payload_preview": "## Spec Compliance Verdict: Pass\n\n\u26a0\ufe0f `notes-service` is not yet installable beca",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T05-33-57-019fb183-de98-7cf2-a5e0-52bb3adc05a1.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-compaction-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `4ad3ee2 feat: add core string utilities`  \nTests: `pytho",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-14-17-019fb1a8-cdb7-7a32-b2dc-2d8b34bf483b.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task1_controller_review",
+        "payload_preview": "Spec compliance: core utilities meet the stated behavior, but package installabi",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-17-51-019fb1ac-0f60-7191-963e-eba846f63276.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Task 2 implemented and committed.\n\n- Commit: `4f46f57bfa88a5fdf459e44c95362bc0e4",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl",
+        "child_patch_applies": 8,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Removed the generated `__pycache__` directories only. `git status --short` is cl",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-19-05-019fb1ad-32fa-7621-a93f-5bb8546b122c.jsonl",
+        "child_patch_applies": 8,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec compliance: CLEAN. All three commands dispatch correctly; success/error str",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-23-16-019fb1b1-050d-7bb1-ba74-f3c9484ed6fa.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Task 3 completed and committed.\n\n- Commit: `552c73401e10b5c26b0ccf9d19676ecaaadd",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-24-04-019fb1b1-c1db-71f3-bc9f-73e6d1dafd55.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec compliance: CLEAN\n\n- `README.md` precisely supplies the required package de",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-26-11-019fb1b3-b15f-70a1-852a-70ead1a9b990.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/final_branch_reviewer",
+        "payload_preview": "## Strengths\n\n- Clean separation between pure core functions and CLI concerns.\n-",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-27-12-019fb1b4-a1b0-7773-908f-adf28db3d643.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "Implemented and committed the requested CLI validation.\n\n- Added negative-length",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-29-18-019fb1b6-8b81-72d0-89ac-16e72e5aca61.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl",
+        "author": "/root/final_fix_rereviewer",
+        "payload_preview": "Finding Verdicts\n\n- ADDRESSED \u2014 Negative `--length` is rejected before `truncate",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-31-58-019fb1b8-fdd6-76b0-bbf0-2a954810ccab.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-14-17-019fb1a8-cdb7-7a32-b2dc-2d8b34bf483b.jsonl",
+        "author": "/root/task1_implementer/task1_reviewer",
+        "payload_preview": "Review complete: PASS \u2014 no Critical, Important, or Minor findings. All nine test",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-15-39-019fb1aa-0c5f-7b23-aae3-537c12daa503.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-compaction-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE\n\nCommits: `8b5cafd feat: add core string utilities`\n\nTest summary: ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-39-24-019fb1bf-c991-7fb0-84b3-d49d8afbc6a7.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "- Spec verdict: \u2705. Diff matches the required API and behavior; the report docume",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-42-14-019fb1c2-61e8-75c3-b5d1-6c6959d723f4.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Implemented and committed Task 2.\n\n- Commit: `2a3cf619dd26d3c05b259df31b6e9d1286",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-43-05-019fb1c3-29d5-7c62-8f5b-01e223ed2c66.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec verdict: \u274c\n\n- `strutils/cli.py:13` exposes `count`, not required `word-coun",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-45-44-019fb1c5-97a0-73e0-93fd-0e481fcb27a4.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec verdict: \u2705\n\n- `strutils/cli.py:7-30` provides the required `main(argv) -> i",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-45-44-019fb1c5-97a0-73e0-93fd-0e481fcb27a4.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Task 3 completed and committed.\n\n- Commit: `84e872a1ebab4dde7e3949c1e46721cb4e85",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-46-54-019fb1c6-a7da-7f63-9dc0-0b8d6e1a8b48.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "- Spec verdict: \u2705 README satisfies all Task 3 requirements: purpose [README.md:3",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-49-26-019fb1c8-facf-7503-af96-304ce4d35c9b.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Implementation matches `plan.md` line-for-line across APIs, CLI",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-50-16-019fb1c9-c019-7cd1-b4fd-bc300ae9bcd4.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-compaction-dev-rep3": [
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommits: ec1534d feat: add core string utilities  \n",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-56-57-019fb1cf-db35-7093-aa50-2a507b9c585b.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance: **Pass.** All required files, public exports, Python \u22653.10 meta",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T06-59-37-019fb1d2-4efa-7840-81a0-408f5bd916ac.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Implemented and committed Task 2.\n\n- Commit: `5fd6bae feat: add string utilities",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-00-48-019fb1d3-64b7-7f33-afd1-e39c6b7d59cf.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "VERDICT: PASS\n\nScope `ec1534d..5fd6bae` satisfies Task 2. `strutils/cli.py` impl",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-03-04-019fb1d5-768a-7ad2-96f4-6d5386242e63.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Implemented and committed Task 3.\n\n- Commit: `8ad2108 docs: add string utilities",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-04-01-019fb1d6-564c-7411-80e7-d3e87b6c6e66.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "VERDICT: PASS\n\n- Critical: none\n- Important: none\n- Minor: none\n\nEvidence: `READ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-07-41-019fb1d9-afe8-7a73-b05d-d297b7e2a4db.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/final_code_reviewer",
+        "payload_preview": "### Strengths\n\n- Plan and spec are implemented cleanly: standard-library core ut",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-08-42-019fb1da-9cab-7d22-abfc-67fff55604fd.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/final_review_fixer",
+        "payload_preview": "Fixed and committed the negative-length CLI handling.\n\n- CLI now returns 1 and w",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-10-04-019fb1db-dd30-7be2-ad0f-a77b7290641d.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl",
+        "author": "/root/final_reviewer_after_fix",
+        "payload_preview": "Review delivered to the parent agent.\n\nAssessment: **Ready to merge \u2014 Yes.** No ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-13-08-019fb1de-acf9-7ef1-9ce1-84963f483af9.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T06-56-57-019fb1cf-db35-7093-aa50-2a507b9c585b.jsonl",
+        "author": "/root/task1_implementer/task1_review",
+        "payload_preview": "no findings",
+        "is_null_result": true,
+        "child_rollout": "rollout-2026-07-30T06-58-09-019fb1d0-f6e1-7431-b812-d141284df0bb.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": false
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-04-01-019fb1d6-564c-7411-80e7-d3e87b6c6e66.jsonl",
+        "author": "/root/task3_implementer/task3_review",
+        "payload_preview": "Review complete: no issues found; README precisely meets the task brief and is r",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-05-39-019fb1d7-d57f-7911-8e0c-d06851d9a2b0.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE_WITH_CONCERNS  \nCommits: `109fd4f2a84d5d4d2554424dbde88da7ba96556a`",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T19-59-59-019faa50-082b-7553-b557-56244de76599.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance: \u2705 Compliant\n\n\u26a0\ufe0f `python3` was used only because the environment",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-02-03-019faa51-eb4a-7f22-ba5f-fdaa31c9e608.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete  \nCommit: `fc6c8ea542f40a0c9f632b110836770d8a14c445`  \nTests: 1",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-02-49-019faa52-a1e8-7cd2-abcb-c7645af22029.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nStrengths:\n\n- Exact CLI interface and command dispatch.\n- Exa",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-05-24-019faa54-fc61-7103-981c-872f8fd1c2d1.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete  \nCommit: `1cae3f6107b3b70b68f55ec968ac7e2a1fd969d4`  \nVerifica",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-06-29-019faa55-fc93-74e2-991e-2424c3921b7d.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nTask quality: Approved.\n\nNo Critical, Important, or Minor iss",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-08-37-019faa57-eda2-7a72-96d9-56ac16438825.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T19-58-44-019faa4e-e470-7b21-89ac-93ef35c4e72f.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Implementation matches the plan\u2019s architecture: pure transforma",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-09-28-019faa58-b821-7cd0-9c6b-365bf4a7beea.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `22a81cb feat: add core string utilities`  \nTests: 9/9 fo",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-33-11-019faa6e-6da6-7db2-bc4a-540e6401d398.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n\n- \u2705 Spec compliant. The package metadata, public exports, u",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-35-49-019faa70-d5f6-7380-9f21-812ceb7fec2d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete  \nCommit: `1d2ade6 feat: add string utilities CLI`  \nTests: 14 ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-36-55-019faa71-d673-7592-8498-ab386ca31ef2.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n\nVerdict: Compliant.\n\n- `main(argv: list[str] | None = None)",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-39-24-019faa74-1f1b-7170-9efa-f198a0816496.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: PASS  \nCommit: `d1e9a343e3542b6c89ced5e0e6f1a02e92b07216 docs: add strin",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-40-31-019faa75-254b-7f83-8b3d-13875ceb5397.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "### Spec Compliance\n\n- Purpose and Python 3.10+ support are documented at [READM",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-43-55-019faa78-3ee8-7293-a082-f78c832d1a79.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "## Strengths\n\n- Implementation aligns closely with the plan: pure transformation",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-45-03-019faa79-4b75-76f3-82ab-8ff1e0c31f9d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/final_fixer",
+        "payload_preview": "Status DONE\n\nCommit: `7643d689fbaca56cf6a62c5bff5deb926ad58367 fix: reject negat",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-46-05-019faa7a-3de4-72a1-8063-a6bbdd194a19.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl",
+        "author": "/root/final_rereviewer",
+        "payload_preview": "Finding: **ADDRESSED**\n\nEvidence:\n\n- `strutils/cli.py:22-24` rejects negative tr",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-48-20-019faa7c-4b20-7093-adea-a1257c4a7bfb.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep3": [
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommits: `2b9d9cb4e3b3a32986aa3c4656d443a0e80c7241`  \nTest summar",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-54-55-019faa82-54a9-7601-b04f-c2e79cc43e8e.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance\n\n\u2705 The diff fully matches Task 1 and its binding constraints.\n\nS",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-56-49-019faa84-0f50-79d2-a178-37a2099d549b.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete  \nCommits: `5d0fff1 feat: add string utilities CLI`  \nTest summ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T20-57-37-019faa84-cc8d-7171-b2f7-08a1cde54613.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nThe diff matches Task 2\u2019s brief exactly:\n\n- `strutils/cli.py`",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-00-14-019faa87-3168-7191-8043-5212d5aae9bc.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete  \nCommits: `fca6b81`  \nVerification: Both full runs passed 14/1",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-01-05-019faa87-f993-7762-9360-5b8294f20825.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nNo critical, important, or minor findings. README content, co",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-03-03-019faa89-c624-7833-bb81-896cdf8eb40d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Clean separation between pure core functions and CLI concerns.\n",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-04-02-019faa8a-a9c1-7c31-b7a8-abbde46abc83.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/final_fix",
+        "payload_preview": "Status: Complete  \nCommit: `d62cd91`  \nTests: Focused regression and full 15-tes",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-05-44-019faa8c-386d-73c1-b44c-10b95e104465.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "### Finding Verdicts \u2014 ADDRESSED \u2014 `strutils/cli.py:22`\n\n### New Breakage in the",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-07-43-019faa8e-0aec-70f0-a7ba-1015d04e3df9.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep4": [
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE_WITH_CONCERNS  \nCommits: `a1fe76f feat: add core string utilities` ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-13-34-019faa93-6478-7b60-a963-c8eac86e20b6.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nAll requested files, interfaces, behaviors, tests, and constr",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-15-39-019faa95-4de0-7590-80aa-12e5a97dd8e9.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete  \nCommits: `420bd56 feat: add string utilities CLI`  \nTests: 14",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-16-19-019faa95-e977-7330-b339-6daf62b3c5c2.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\n\u26a0\ufe0f None.\n\nStrengths\n\n- `main` exposes the required optional `",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-18-18-019faa97-bc82-7db1-8ff0-25f8989335ac.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete  \nCommits: `0df36bf docs: add string utilities usage guide`  \nT",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-18-58-019faa98-579b-7003-80af-4fc44ae6f1b1.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance\n\n\u2705 All binding constraints are satisfied.\n\n- Purpose and Python ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-20-50-019faa9a-0cbb-7703-a4fc-1ad120d01c25.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "Strengths\n\n- Full plan alignment: package layout, Python 3.10 floor, standard-li",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-21-39-019faa9a-cae9-71d2-818e-85bd1c757794.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/final_fix",
+        "payload_preview": "Status DONE\n\nCommit: 38ed41287ab40d3ca633e4fe8a9f78c3ab099ede \u2014 fix: handle nega",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-22-21-019faa9b-6f68-7713-93e9-2478dd8e8f7d.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-28T21-12-23-019faa92-4fc3-74e0-be0c-17048640525d.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "Finding Verdicts\n\n- ADDRESSED \u2014 `strutils/cli.py:22`; negative truncate lengths ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-28T21-24-18-019faa9d-39e8-7992-a10d-fd60ce5e3eb5.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep5": [
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE  \nCommit: `cfa72f1 feat: add core string utilities`  \nTests: `python3 -m un",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-03-23-019fac41-8687-74f0-ab5e-cd091b42b8dd.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance: \u2705 \u26a0\ufe0f The implementation matches the specified behaviors and fil",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-06-12-019fac44-1d69-7cf3-b013-c7db1ece2c8f.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "status: complete  \ncommits: 27d1ada feat: add string utilities CLI  \ntests: `pyt",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-07-03-019fac44-e2d8-78d1-8568-c81c7c8367b9.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance verdict: \u2705\n\nStrengths\n\n- Implements all three command dispatch p",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-09-16-019fac46-e9a8-7a33-bcea-d839b5e759bf.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "status: complete  \ncommit: `b1ca991 docs: add string utilities usage guide`  \nve",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-10-00-019fac47-94dc-7510-adca-3d31e633b7d1.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "\u2705 Spec Compliance verdict: Approved \u26a0\ufe0f Reported verification used `python3` beca",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-12-35-019fac49-f206-7f82-8b36-6ed0a0010760.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Implementation matches the plan exactly: pure core functions, t",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-13-35-019fac4a-dd1f-7d72-a4a9-ebc04e1ba022.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-dev-rep6": [
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommits: `68173c3 feat: add core string utilities` ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-20-15-019fac50-f8b7-76a3-9860-e8b0e734247e.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance verdict: Pass. Cannot independently verify the historical RED/GR",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-22-42-019fac53-36cc-77b2-a936-5ebb2eeb0287.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "status: complete  \ncommits: `fb1a1e3 feat: add string utilities CLI`  \ntests: `p",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-23-27-019fac53-e737-7532-acf0-dbfb8bab769c.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "## Spec Compliance: Approved\n\nAll task requirements are implemented. `main(argv:",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-25-32-019fac55-cf4b-7313-8318-4918b4d8aef9.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "status: complete  \ncommits: `a470c8d docs: add string utilities usage guide`  \nt",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-26-19-019fac56-8495-70e2-ae8c-d20f19b61b89.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance verdict: **Pass**. README exactly satisfies the required purpose",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-28-48-019fac58-cacd-7ec3-a9d7-ab716d031b6d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Clean separation between pure core functions and CLI parsing/di",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-29-45-019fac59-abfc-7542-8312-87cb7c72f809.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-emptychild-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommits: 8f626fa26cec9ebd616b10765384f675de9c95de  ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-54-07-019fb204-34a5-7d11-8ce9-7573314bf886.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE_WITH_CONCERNS  \ncommit: 8f626fa26cec9ebd616b10765384f675de9c95de  \n",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-54-07-019fb204-34a5-7d11-8ce9-7573314bf886.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance (\u2705 with \u26a0\ufe0f)\n\n\u2705 Required package metadata, exports, core util",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-00-019fb206-d861-7df3-bc6b-9a46ffce2c10.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "status: completed\n\ncommits: `8ef99cb45c471d159b196ae9ff32d99f6abebac3 feat: add ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-52-019fb207-a318-77a0-801b-a4a4774113ca.jsonl",
+        "child_patch_applies": 7,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance \u2705 \u26a0\ufe0f\n\nAll required command dispatch, output, return codes, a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-00-52-019fb20a-5f3d-7ba2-bc4b-c92cb7ed516e.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: DONE\n\nCommits: `b58bb9082cf4e97dd3d4eb9cb1dd2a16db627134` (`docs: add st",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-03-49-019fb20d-14c3-75b3-8015-d838ba8d0bf8.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Task quality: Approved.\n\n### Spec Compliance\n\nREADME fulfills the approved conte",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-06-22-019fb20f-6b09-7890-a8fb-0b87564493d1.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-10-019fb202-6b01-7383-832f-8ce8be9cf309.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Core functions match the specification, including Unicode-aware",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-07-08-019fb210-1f3a-7bb3-a927-0150ec606156.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-emptychild-dev-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `4384905 feat: add core string utilities`  \nTests: `pytho",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-53-35-019fb203-b583-7721-abba-745dd9960476.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommit: `4384905 feat: add core string utilities`  \nTests: Previo",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-53-35-019fb203-b583-7721-abba-745dd9960476.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported RE",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-56-11-019fb206-163c-7a53-9f69-764600c0feeb.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: complete  \nCommits created: `fd60569 feat: add string utilities CLI`  \nT",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-57-10-019fb206-fc73-7a41-94d2-d304185ce47d.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported TD",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T07-59-24-019fb209-07b7-7351-a3f1-d30aace21955.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-30T07-52-16-019fb202-8169-71d1-ac03-b0c6c14bcb2f.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: BLOCKED  \nCommits created: none  \nTest summary: not run (required specif",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T08-00-14-019fb209-cce6-7701-9aed-fda2c75057d1.jsonl",
+        "child_patch_applies": 1,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-shortbudget-dev-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-30T10-03-06-019fb27a-4af2-7cc2-ae5a-29ea9d7bfdfc.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE_WITH_CONCERNS  \nCommit: `7ded0ae feat: add core string utilities`  \nTests: ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-30T10-04-36-019fb27b-a99f-70e3-943f-c40dec85af29.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep1": [
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommits: 158eda1793afd25afbde88804858a3d26625e069  \nTests: Focuse",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-20-39-019fabe3-7897-7202-97fe-c218642ffe3d.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "## Spec Compliance\n\n\u2705 Fully compliant.\n\n- Python 3.10+ is declared in `pyproject",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-22-47-019fabe5-6e82-76d0-9cd2-5cedcf95e4b3.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete\nCommits: `779075e feat: add string utilities CLI`\nTests: `pytho",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-23-39-019fabe6-39c0-7f42-a74e-ebc3118c77fc.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance \u2705\n\nThe diff fully matches the Task 2 brief and binding constrain",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-26-31-019fabe8-d6bb-75e0-b464-c5bbd5e4f263.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete\nCommits: `4ab9d5b` \u2014 `docs: add string utilities usage guide`\nV",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-27-28-019fabe9-b5e7-7450-8734-d96aff1ab0c9.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance\n\n\u2705 README.md exactly matches the requested documentation: purpos",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-29-57-019fabeb-fcae-7402-83a6-992f609dae45.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "Strengths\n\n- Clean separation between pure transformations and CLI concerns.\n- C",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-30-46-019fabec-bb7b-7df2-95f2-8747767495ab.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "Status: Complete\nCommit: `fcf4b72` \u2014 `fix: reject negative truncate lengths in C",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-32-25-019fabee-3dcb-7031-9c4e-b262c661591b.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "Finding Verdicts\n\n- ADDRESSED \u2014 [`strutils/cli.py:22`](.../.worktrees/strutils/s",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-34-29-019fabf0-21dd-7a83-b447-bae0a4a9b6e9.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep2": [
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE_WITH_CONCERNS  \nCommit: `663b45888e655666605e7f77cf3e634e29165518`  \nTests:",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-40-08-019fabf5-50b6-7e01-81ab-4b3af2de30af.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance: \u2705 Compliant  \n\u26a0\ufe0f The exact `python` command was unavailable; th",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-42-11-019fabf7-31b6-73a1-9b78-c3abb9dfc107.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "DONE  \n635706be62356e40643cb77ca43f5100cb882ee7  \nTests: 14/14 passed with `pyth",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-43-05-019fabf8-03f1-7693-b436-24ff4fbc7768.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance: \u2705  \nTask quality: Approved\n\nStrengths:\n\n- Exact CLI interface a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-45-10-019fabf9-e9ee-7601-a5b2-2ec396957856.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "DONE  \nbe5b1e3a2443235ef223dbc27a63b3138e0c9b70  \nVerification: 14/14 tests pass",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-45-51-019fabfa-8cfd-7911-85a9-058f1b86a2af.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Spec Compliance: \u2705\n\nTask quality: Approved\n\nStrengths:\n\n- README clearly states ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-48-08-019fabfc-a2fe-7e11-9efe-39cc988670d3.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "## Strengths\n\n- Implementation matches the plan\u2019s architecture: pure transformat",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-48-59-019fabfd-6859-76b1-b746-c0d163ecc9f6.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/final_fix",
+        "payload_preview": "DONE cc42b0b06ef5937d70f616b4330156d146953026 \u2014 15/15 tests passed. Concerns: no",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-49-50-019fabfe-32fb-7482-9ffb-a4b7d5b53f77.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-38-33-019fabf3-dc8a-7b11-b8f0-7e84aa10a5b7.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "ADDRESSED.\n\n- Guard: `strutils/cli.py:22-24`\n- Regression test: `tests/test_cli.",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-51-49-019fac00-0151-7f30-8807-1538c88c7805.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep3": [
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: Complete\nCommits: c154b6022671d0684dd1064df172899b9a929c8b\nTests: 9/9 fo",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T03-57-40-019fac05-5dd8-7583-bc47-1b0a7b10bdb3.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Task quality verdict: PASS\n\n## Spec Compliance\n\n- Package skeleton matches the b",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-00-04-019fac07-8e71-7802-84ad-a9e14a49b90a.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete\nCommit: `35dae37 feat: add string utilities CLI`\nTests: `python",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-00-53-019fac08-4f86-7b72-bced-02160f075f8e.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Verdict: PASS\n\nSpec Compliance: PASS  \nTask quality: PASS\n\nStrengths:\n\n- `struti",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-03-24-019fac0a-9cfe-7582-bcd8-43699ec91d6e.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete  \nCommit: `7db20d7a6ae5d9102871679c3bcd79d1e9b2f17e` \u2014 `docs: a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-04-20-019fac0b-773f-7750-8cf1-9c91689d3444.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "Verdict: PASS\n\nSpec Compliance: PASS  \nTask Quality: PASS\n\nStrengths:\n\n- README ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-07-11-019fac0e-1264-7252-b3e8-280263576aa1.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "## Strengths\n\n- The branch matches the plan closely across all eight deliverable",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-08-13-019fac0f-0733-7e70-999e-56c195331b6b.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "Status: Complete; clean worktree  \nCommit: `de22fc57d1fea3e8faea64d111eb1b7da2fe",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-09-20-019fac10-0a95-71c3-9dbd-0587749b108f.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "## Finding Verdicts\n\n- **ADDRESSED** \u2014 [strutils/cli.py:22](/workspace/evals/res",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-11-38-019fac12-2836-7571-8262-b44f8383d3ee.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "Amended SHA: `e8f29fc7b175402a14a15ec8f6af62e4f8f79069`\n\nVerification:\n\n- `pytho",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-09-20-019fac10-0a95-71c3-9dbd-0587749b108f.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep4": [
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "status: DONE\ncommits: d778639\ntests: `python3 -m unittest tests.test_core -v` \u2014 ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-18-03-019fac18-057b-7971-b12a-83141719c020.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "## Spec Compliance\n\nFully compliant. All five requested files match the task bri",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-19-53-019fac19-b3ff-73a2-ae65-cf8c6e6e1ff2.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: Complete  \nCommits: `f4f90ba feat: add string utilities CLI`  \nTests: `p",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-20-44-019fac1a-7980-7341-8557-2c62bdf8c348.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "## Spec Compliance\n\nCompliant. `main()` implements the required CLI shape and di",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-23-06-019fac1c-a6ba-75b0-b076-b1af9169f63d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: Complete\nCommits: `ecff484 docs: add string utilities usage guide`\nVerif",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-24-04-019fac1d-891b-70c3-bbbb-329006ad6127.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "## Spec Compliance\n\nPASS.\n\n## Strengths\n\n- README fully covers purpose, Python 3",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-26-28-019fac1f-bbd8-7150-a8b4-fc64b0dd722a.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "Strengths\n\n- Implementation aligns closely with the plan: pure core functions, t",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T04-27-25-019fac20-9a94-7cc1-b4e6-fdbd7e166252.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep5": [
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE  \n53b5c66 feat: add core string utilities  \nTests: `python3 -m unittest tes",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-36-03-019fac5f-6e06-7323-a321-bc238323a91d.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "Spec Compliance: \u2705\n\nStrengths:\n- `slugify` exactly lowercases, collapses non-alp",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-38-25-019fac61-9985-73e1-9f24-0b131238eb01.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: complete\n\nCommit: `448ed002c69b2ac2ef1e19ec87036e49fcb5bf6e feat: add st",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl",
+        "child_patch_applies": 6,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "Spec Compliance: \u2705\n\n- CLI contract, exit codes, exact specified stderr messages,",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-42-58-019fac65-c492-7d63-b705-46edbaf7730e.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: complete\n\nCommit: `9bbe948b27629a3ef225c699b451938232204da8` \u2014 docs: add",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-44-01-019fac66-baff-7d30-a713-84d6f786de28.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "## Spec Compliance\n\n\u2705 README meets purpose, Python 3.10+, install, and all three",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-47-49-019fac6a-35cb-7200-bf7d-f4e71540bcc2.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "## Strengths\n\n- `strutils/core.py:4` implements all three required pure function",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-49-11-019fac6b-763d-7493-8a63-9e877028ec80.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-39-20-019fac62-72d7-7111-a09d-41647cbf5e1d.jsonl",
+        "author": "/root/task2_implementer/cli_review",
+        "payload_preview": "Strengths\n\n- Matches the task brief: `main(argv)` dispatches `slugify`, `truncat",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-41-20-019fac64-47bd-7253-accf-32c5b8a39858.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep6": [
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE  \nCommits: `28359ab feat: add core string utilities`  \nTest summary",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T05-57-32-019fac73-1ae8-7be1-a481-81a73fa11a7f.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n\n- \u2705 Core utility behavior and public API comply with the br",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-00-21-019fac75-b070-7ac0-9f7c-eb39465f8b7f.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: complete\n\nCommit: `735d732 feat: add string utilities CLI`\n\nTests: `pyth",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-02-53-019fac77-fecc-7460-9ccf-65892ba23ee9.jsonl",
+        "child_patch_applies": 6,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n\n- \u2705 Spec compliant: command dispatch, output, exit codes, a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-07-19-019fac7c-0e7a-7342-907f-edbacd06e31d.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: complete\n\nCommit: `3022f3a docs: add string utilities usage guide`\n\nVeri",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-08-23-019fac7d-093f-7440-8ffa-d4d5ccb716ea.jsonl",
+        "child_patch_applies": 4,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "### Spec Compliance\n\n- \u2705 Spec compliant: README states purpose and Python 3.10+ ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-13-28-019fac81-b302-7233-a3ca-d116601062bd.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Clean separation between pure transformations and CLI concerns ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-14-30-019fac82-a28c-7492-a182-74dd10ae3a9c.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep7": [
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "Status: DONE\n\nCommits: `f1572fc feat: add core string utilities`\n\nTests: `python",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-22-23-019fac89-db5b-77e0-99d0-1da179d01ef5.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n\n\u2705 **Verdict: Compliant.** The diff matches the task brief a",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-24-54-019fac8c-27ad-7100-b5ba-be2b3e697286.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "Status: complete\n\nCommits: `f0b3ba1 feat: add string utilities CLI`\n\nTests: `pyt",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-25-55-019fac8d-18bc-7cf1-a995-7a8fde886933.jsonl",
+        "child_patch_applies": 5,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n\n\u2705 Approved \u2014 the diff meets Task 2\u2019s required CLI behavior.",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-28-54-019fac8f-d1c4-7df1-990b-c9623de83b62.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "Status: complete  \nCommit: `92a7fb7 docs: add string utilities usage guide`  \nVe",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-29-54-019fac90-babf-77c1-b9e4-a3e61bf88233.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "### Spec Compliance\n\n\u2705 README provides the package purpose, Python 3.10+ require",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-32-29-019fac93-1876-76a1-847c-feb6d278d788.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Clear separation between pure utilities and CLI dispatch; publi",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-33-21-019fac93-e5cb-7aa1-b53e-82e0c1d447c8.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "Status DONE  \nCommit cde1aa3 fix(cli): reject negative truncate lengths  \nTests ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-34-37-019fac95-0cfd-7440-a342-eb8ce1b028a5.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "### Finding Verdicts\n- negative truncate length traceback \u2014 ADDRESSED with `stru",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-36-59-019fac97-3a71-7810-9752-10e56a15745f.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl",
+        "author": "/root/final_fix_implementer",
+        "payload_preview": "3930a67891948e7a52391379a3c2777301befe8f\n\n```text\n## feat/string-utils-cli\n```",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-34-37-019fac95-0cfd-7440-a342-eb8ce1b028a5.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      }
+    ],
+    "cx-eff-cx-sdd-small-spinout-rep8": [
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task1_implementer",
+        "payload_preview": "DONE_WITH_CONCERNS  \ncommits: 5bcceb936c362516f0e2d903bc931f746ac29234  \ntests: ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl",
+        "child_patch_applies": 3,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task1_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: the require",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-46-34-019fac9f-ff1b-7590-aa18-7ad834273c2e.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "DONE  \ncommits: fab71acbe558d651a81726cfbe021d454db5b817  \ntests: `python3 -m un",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl",
+        "child_patch_applies": 8,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task2_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported TD",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-49-53-019faca3-0910-7a03-8eab-6acb0ece818f.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task3_implementer",
+        "payload_preview": "status: DONE  \ncommits: 552240f2b4017886123af84a703399565f291a2d  \ntest summary:",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-50-49-019faca3-e3b8-7c70-8dfb-051c7e475fc4.jsonl",
+        "child_patch_applies": 2,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task3_reviewer",
+        "payload_preview": "### Spec Compliance\n- \u2705 Spec compliant\n- \u26a0\ufe0f Cannot verify from diff: reported te",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-53-00-019faca5-e185-74e3-99d2-1def57485cac.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/final_reviewer",
+        "payload_preview": "### Strengths\n\n- Plan and architecture are followed: pure transformations are is",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-54-09-019faca6-f1ec-7f71-804e-bf41ef4a4640.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/task2_implementer",
+        "payload_preview": "DONE  \ncommits: c2f409d79391b1d6afba7a8bb807551a40529078  \ntests: 2 focused and ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-47-26-019faca0-c907-7031-9e95-6a5a380d1483.jsonl",
+        "child_patch_applies": 8,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl",
+        "author": "/root/final_fix_reviewer",
+        "payload_preview": "### Finding Verdicts\n- **1** \u2014 ADDRESSED, `strutils/cli.py:21` rejects negative ",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-57-12-019faca9-baf1-7991-8405-2795af735f85.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      },
+      {
+        "parent_rollout": "rollout-2026-07-29T06-43-26-019fac9d-2023-7a60-aa07-d35dc338f244.jsonl",
+        "author": "/root/task1_implementer/task1_reviewer",
+        "payload_preview": "Important: `pyproject.toml:9` references a missing `README.md`, so standard pack",
+        "is_null_result": false,
+        "child_rollout": "rollout-2026-07-29T06-44-35-019fac9e-2ec7-7123-9dba-d81b458d4219.jsonl",
+        "child_patch_applies": 0,
+        "parent_flags_as_unfinished": null
+      }
+    ]
+  }
+}

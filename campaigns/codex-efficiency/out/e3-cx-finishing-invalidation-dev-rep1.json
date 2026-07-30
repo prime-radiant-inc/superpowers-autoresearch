@@ -1,0 +1,37 @@
+{
+  "label": "cx-finishing-invalidation-dev-rep1",
+  "runs": [
+    {
+      "label": "cx-finishing-invalidation-dev-rep1",
+      "rollout_count": 1,
+      "n_test_occurrences": 6,
+      "n_mutation_events": 4,
+      "duplicate_gate_pairs": [],
+      "n_duplicate_gate_pairs": 0,
+      "n_flagged_duplicate_gate_pairs": 0,
+      "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
+      "per_session_repeat": {
+        "rollout-2026-07-30T11-33-10-019fb2cc-c00c-7e60-9bfb-ae2c7faab983.jsonl": {
+          "max_repeat": 1,
+          "n_distinct_commands": 6,
+          "n_test_occurrences": 6
+        }
+      },
+      "run_max_repeat": 1,
+      "repeat_distribution": [
+        1
+      ],
+      "waiver": {
+        "marker_configured": false,
+        "found": false,
+        "timestamp": null,
+        "violations": [],
+        "n_violations": 0
+      },
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-finishing-invalidation-dev-rep1/cx-finishing-invalidation-codex-codex_sub-linux-20260730T113251Z-a82f",
+      "arm_scenario": "cx-finishing-invalidation-dev",
+      "rep": 1
+    }
+  ]
+}
