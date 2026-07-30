@@ -1,0 +1,15 @@
+{
+  "schema_version": "ATIF-v1.7",
+  "agent": {"name": "synthetic", "version": "0.0.0"},
+  "steps": [
+    {"step_id": 1, "source": "user", "message": "Update the readme and fix the bug."},
+    {"step_id": 2, "source": "agent", "tool_calls": [
+      {"tool_call_id": "1", "function_name": "Write",
+       "arguments": {"file_path": "README.md", "content": "# proj"}}
+    ]},
+    {"step_id": 3, "source": "agent", "tool_calls": [
+      {"tool_call_id": "2", "function_name": "Write",
+       "arguments": {"file_path": "src/app.py", "content": "print('hi')\n"}}
+    ]}
+  ]
+}

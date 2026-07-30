@@ -1,0 +1,23 @@
+{
+  "schema_version": "ATIF-v1.7",
+  "agent": {"name": "synthetic", "version": "0.0.0"},
+  "steps": [
+    {"step_id": 1, "source": "user", "message": "Please design and build the thing."},
+    {"step_id": 2, "source": "agent", "tool_calls": [
+      {"tool_call_id": "1", "function_name": "Read",
+       "arguments": {"file_path": "/workspace/superpowers/skills/writing-plans/SKILL.md"}}
+    ]},
+    {"step_id": 3, "source": "agent", "tool_calls": [
+      {"tool_call_id": "2", "function_name": "Write",
+       "arguments": {"file_path": "docs/superpowers/specs/x-design.md", "content": "# design"}}
+    ]},
+    {"step_id": 4, "source": "agent", "tool_calls": [
+      {"tool_call_id": "3", "function_name": "Write",
+       "arguments": {"file_path": "docs/superpowers/plans/x.md", "content": "# plan"}}
+    ]},
+    {"step_id": 5, "source": "agent", "tool_calls": [
+      {"tool_call_id": "4", "function_name": "Write",
+       "arguments": {"file_path": "src/app.py", "content": "print('hi')\n"}}
+    ]}
+  ]
+}
