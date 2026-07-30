@@ -395,3 +395,63 @@ def patch_applies(path) -> list[PatchApply]:
                 success=bool(p.get("success", False)),
                 paths=paths))
     return out
+
+# --- skill_reads() / compaction_events() (E6, Task 9): per-EVENT (not
+# aggregate-count) extraction, so a caller can partition a session's own
+# timeline at a compaction boundary and compare WHICH skill paths were read
+# before vs after -- parse_session()'s skill_reads_strict/compactions
+# fields are bare running counters and can't answer that question.
+# skill_reads() reuses the exact same STRICT_SKILL_READ_RE/EXEC_LIKE gate
+# parse_session() uses for skill_reads_strict (kept in sync deliberately:
+# these two must always agree on WHICH commands count as a strict read,
+# only skill_reads() additionally captures the path). compaction_events()
+# reads the same event_msg/context_compacted marker parse_session() counts.
+
+# Captures the whitespace/quote-delimited path token ending in "SKILL.md"
+# out of an already STRICT_SKILL_READ_RE-matched command string.
+SKILL_PATH_RE = re.compile(r"([^\s'\"]*SKILL\.md)")
+
+@dataclasses.dataclass
+class SkillRead:
+    timestamp: str
+    lineno: int
+    skill_path: str
+    cmd_encoding: str  # the matched tool name: "exec_command" | "exec"
+
+def skill_reads(path) -> list[SkillRead]:
+    """Every STRICT-shaped SKILL.md read, in file order, with the literal
+    path argument extracted (never apply_patch input -- EXEC_LIKE excludes
+    it, same as parse_session's skill_reads_strict -- and never anything
+    beyond the path substring itself)."""
+    out = []
+    for lineno, ts, typ, p in _iter_with_lineno(path):
+        if typ != "response_item":
+            continue
+        ptype = p.get("type")
+        name = p.get("name")
+        if (ptype, name) not in EXEC_LIKE:
+            continue
+        input_text = _tool_input(p)
+        if not STRICT_SKILL_READ_RE.search(input_text):
+            continue
+        m = SKILL_PATH_RE.search(input_text)
+        skill_path = m.group(1) if m else input_text.strip()
+        out.append(SkillRead(timestamp=ts, lineno=lineno,
+                              skill_path=skill_path, cmd_encoding=name))
+    return out
+
+@dataclasses.dataclass
+class CompactionEvent:
+    timestamp: str
+    lineno: int
+
+def compaction_events(path) -> list[CompactionEvent]:
+    """Every event_msg/context_compacted MARKER, in file order (the same
+    signal parse_session()'s compactions counter uses -- a compaction also
+    emits a bare `compacted` record; only the marker is counted here too,
+    for the same one-compaction-one-count reason)."""
+    out = []
+    for lineno, ts, typ, p in _iter_with_lineno(path):
+        if typ == "event_msg" and p.get("type") == "context_compacted":
+            out.append(CompactionEvent(timestamp=ts, lineno=lineno))
+    return out

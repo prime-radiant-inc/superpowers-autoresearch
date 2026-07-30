@@ -186,6 +186,24 @@ PATCH_APPLY_NO_CHANGES_KEY = L("2026-07-29T10:00:10.000Z", "event_msg", {
     "type": "patch_apply_end", "call_id": "exec-p3", "turn_id": "turn-1",
     "success": True})
 
+# --- skill_reads()/compaction_events() fixtures (E6, Task 9). skill_reads()
+# must extract the literal SKILL.md path token (not just a boolean match)
+# so a caller can tell WHICH skill was read before vs after a compaction.
+SKILL_READ_CAT = L("2026-07-28T18:00:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_40", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "cat skills/subagent-driven-development/SKILL.md"}),
+    "call_id": "call_skill_1"})
+SKILL_READ_CUSTOM_EXEC_2 = L("2026-07-28T18:00:05.000Z", "response_item", {
+    "type": "custom_tool_call", "id": "fc_41", "name": "exec",
+    "input": "sed -n '1,50p' skills/writing-plans/SKILL.md",
+    "call_id": "call_skill_2"})
+NON_SKILL_READ = L("2026-07-28T18:00:10.000Z", "response_item", {
+    "type": "function_call", "id": "fc_42", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "ls skills/"}), "call_id": "call_ls_1"})
+COMPACTED_MARKER_2 = L("2026-07-28T18:00:20.000Z", "event_msg", {
+    "type": "context_compacted"})
+
+
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
     f.write("\n".join(lines) + "\n")
@@ -339,6 +357,49 @@ class TestPatchApplies(unittest.TestCase):
     def test_patch_applies_empty_file(self):
         p = write_fixture([NOT_A_SPAWN])
         self.assertEqual(rp.patch_applies(p), [])
+
+class TestSkillReadsAndCompactionEvents(unittest.TestCase):
+    """skill_reads()/compaction_events() (E6, Task 9): per-event (not
+    aggregate-count) extraction so a caller can partition a session's
+    timeline at a compaction boundary and compare WHICH skill paths were
+    read before vs after."""
+
+    def test_skill_reads_extracts_path_both_encodings_excludes_non_strict(self):
+        p = write_fixture([SKILL_READ_CAT, CUSTOM_EXEC_SKILL_READ,
+                           SKILL_READ_CUSTOM_EXEC_2, APPLY_PATCH_MENTIONS_SKILL,
+                           NON_SKILL_READ])
+        reads = rp.skill_reads(p)
+        # APPLY_PATCH_MENTIONS_SKILL (not exec-like) and NON_SKILL_READ (no
+        # SKILL.md match) must both be excluded -- exactly the 3 genuine reads.
+        self.assertEqual(len(reads), 3)
+        self.assertEqual(reads[0].skill_path, "skills/subagent-driven-development/SKILL.md")
+        self.assertEqual(reads[0].cmd_encoding, "exec_command")
+        self.assertEqual(reads[1].skill_path, "/root/.claude/skills/x/SKILL.md")
+        self.assertEqual(reads[1].cmd_encoding, "exec")
+        self.assertEqual(reads[2].skill_path, "skills/writing-plans/SKILL.md")
+
+    def test_skill_reads_preserves_file_order_with_lineno_and_timestamp(self):
+        p = write_fixture([SKILL_READ_CAT, NON_SKILL_READ, SKILL_READ_CUSTOM_EXEC_2])
+        reads = rp.skill_reads(p)
+        self.assertEqual([r.lineno for r in reads], [0, 2])
+        self.assertEqual([r.timestamp for r in reads],
+                         ["2026-07-28T18:00:00.000Z", "2026-07-28T18:00:05.000Z"])
+
+    def test_skill_reads_empty_when_none(self):
+        p = write_fixture([NON_SKILL_READ, NOT_A_SPAWN])
+        self.assertEqual(rp.skill_reads(p), [])
+
+    def test_compaction_events_marker_only_not_bare_compacted(self):
+        p = write_fixture([COMPACTED, COMPACTED_MARKER, COMPACTED_MARKER_2])
+        events = rp.compaction_events(p)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0].timestamp, "2026-07-28T17:01:16.000Z")
+        self.assertEqual(events[0].lineno, 1)
+        self.assertEqual(events[1].lineno, 2)
+
+    def test_compaction_events_empty_when_none(self):
+        p = write_fixture([SKILL_READ_CAT, NOT_A_SPAWN])
+        self.assertEqual(rp.compaction_events(p), [])
 
 if __name__ == "__main__":
     unittest.main()
