@@ -127,9 +127,9 @@ PYEOF
     START_EPOCH=$(date +%s)
     while true; do
       ROLLOUTS=()
-    while IFS= read -r line; do
-      ROLLOUTS+=("$line")
-    done < <(find_rollouts "$RUNDIR")
+      while IFS= read -r line; do
+        ROLLOUTS+=("$line")
+      done < <(find_rollouts "$RUNDIR")
       if [[ ${#ROLLOUTS[@]} -ge 2 ]]; then
         echo "LIVE: child rollout detected: $(basename "${ROLLOUTS[1]}")" >&2
         break
@@ -145,33 +145,53 @@ PYEOF
     echo "LIVE: settling ${SETTLE_S}s before kill..." >&2
     sleep "$SETTLE_S"
 
-    echo "LIVE: process listing in $CONTAINER before kill:" >&2
-    PS_BEFORE=$(docker exec "$CONTAINER" ps aux 2>&1 || true)
-    echo "$PS_BEFORE" >&2
-
-    # Root codex process: the one whose command line matches `codex` and is
-    # NOT itself a grep/ps/shell wrapper. See the architecture note above --
-    # there is exactly one such process regardless of spawned-child count.
-    ROOT_PID=$(echo "$PS_BEFORE" | grep -E '[c]odex( |$)' | grep -v 'ps aux' | awk '{print $2}' | head -1)
-    if [[ -z "$ROOT_PID" ]]; then
-      echo "LIVE: could not identify a codex process in $CONTAINER -- aborting without killing anything." >&2
+    # Isolate THIS run's codex process(es), safe under concurrent JOBS>1
+    # runs sharing one container: the container runs one gauntlet+tmux+bash+
+    # codex process family per rep, all attached to the SAME pty -- so walk
+    # gauntlet's own tmux wrapper (whose `-c` cwd argument uniquely contains
+    # RUNDIR's basename) down to its pty, then find every process on that
+    # exact pty whose command matches the real `bin/codex` executable
+    # (anchored -- "bin/codex" followed by a space or end of line, so
+    # `codex-code-mode-host` under the same vendor dir is never matched;
+    # verified live against a real concurrent 2-rep run before this script
+    # was trusted, see the E10 pre-registration entry). Both the node
+    # wrapper AND the real Rust binary match and are BOTH killed --
+    # verified live that killing only the child leaves the wrapper an
+    # orphan that does not itself die.
+    TARGET_BASENAME=$(basename "$RUNDIR")
+    TMUX_PID=$(docker exec "$CONTAINER" ps -eo pid,args | grep "tmux -L" | grep -F "$TARGET_BASENAME" | awk '{print $1}' | head -1)
+    if [[ -z "$TMUX_PID" ]]; then
+      echo "LIVE: could not find this run's tmux session in $CONTAINER -- aborting without killing anything." >&2
+      exit 1
+    fi
+    BASH_PID=$(docker exec "$CONTAINER" ps -eo pid,ppid,tty | awk -v p="$TMUX_PID" '$2==p {print $1}' | head -1)
+    TTY=$(docker exec "$CONTAINER" ps -eo pid,tty | awk -v p="$BASH_PID" '$1==p {print $2}' | head -1)
+    if [[ -z "$TTY" ]]; then
+      echo "LIVE: could not resolve this run's pty in $CONTAINER -- aborting without killing anything." >&2
+      exit 1
+    fi
+    CODEX_PIDS=$(docker exec "$CONTAINER" ps -eo pid,tty,args | awk -v t="$TTY" '$2==t' | grep -E "bin/codex( |$)" | awk '{print $1}')
+    if [[ -z "$CODEX_PIDS" ]]; then
+      echo "LIVE: could not identify a codex process on pty $TTY in $CONTAINER -- aborting without killing anything." >&2
       exit 1
     fi
     KILL_EPOCH=$(date +%s)
-    echo "LIVE: killing PID $ROOT_PID in $CONTAINER at epoch $KILL_EPOCH" >&2
-    docker exec "$CONTAINER" kill -9 "$ROOT_PID" || true
+    echo "LIVE: killing PID(s) $(echo "$CODEX_PIDS" | tr '\n' ' ') (pty $TTY) in $CONTAINER at epoch $KILL_EPOCH" >&2
+    for pid in $CODEX_PIDS; do
+      docker exec "$CONTAINER" kill -9 "$pid" || true
+    done
 
     ROLLOUTS_AT_KILL=()
     while IFS= read -r line; do
       ROLLOUTS_AT_KILL+=("$line")
     done < <(find_rollouts "$RUNDIR")
     SUMMARY="$RUNDIR/probe-kill-summary.json"
-    python3 - "$SUMMARY" "$ROOT_PID" "$KILL_EPOCH" "${ROLLOUTS_AT_KILL[@]}" <<'PYEOF'
+    python3 - "$SUMMARY" "$KILL_EPOCH" "$CODEX_PIDS" "${ROLLOUTS_AT_KILL[@]}" <<'PYEOF'
 import json, os, sys
-out_path, root_pid, kill_epoch = sys.argv[1], sys.argv[2], sys.argv[3]
+out_path, kill_epoch, codex_pids = sys.argv[1], sys.argv[2], sys.argv[3]
 rollouts = sys.argv[4:]
 summary = {
-    "killed_pid": root_pid,
+    "killed_pids": codex_pids.split(),
     "kill_epoch": int(kill_epoch),
     "rollout_files_at_kill": [
         {"path": os.path.basename(p), "bytes": os.path.getsize(p)} for p in rollouts
