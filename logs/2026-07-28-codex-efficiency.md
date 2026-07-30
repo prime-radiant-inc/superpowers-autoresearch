@@ -26,6 +26,7 @@ fact.
 | 2026-07-30 | E3 baseline (dev, cx-finishing, 3 reps, lane B, JOBS=2) | $1.66 ($1.22 coding + $0.43 gauntlet; sums to $1.65 — $0.01 is independent per-rep rounding, not an arithmetic error) | 58.0% | 61.0% |
 | 2026-07-30 | E3 waiver probe (dev, cx-finishing-waiver, 2 reps, lane B, JOBS=2) | $1.19 ($0.83 coding + $0.36 gauntlet) | 61.0% | 63.0% |
 | 2026-07-30 | E3 invalidation probe (dev, cx-finishing-invalidation, 1 rep, lane B) | $0.84 ($0.67 coding + $0.17 gauntlet) | 63.0% | 64.0% |
+| 2026-07-30 | E5 FULL baseline (dev, cx-scope-review, 3 reps, lane A) | $9.28 ($8.59 coding + $0.69 gauntlet, per-rep: $3.51/$2.07/$3.70) + ≈$0.4-0.7 wasted from a mid-battery infrastructure mistake (own container-teardown/duplicate-relaunch, caught and killed same-turn — see "E5 RESULT" entry) | not read (no live `codex_sub` CLI session queried during this battery) | not read |
 
 ## Pre-registered predictions
 
