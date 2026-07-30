@@ -2772,3 +2772,81 @@ message to a file and grepping it, not just visual inspection).
 **Fix commit:** "fix(codex-efficiency): E6 correction prose de-leaked;
 sweep disposition completed". Fix report appended to
 `task-9-report.md`, "Fix round 2" section.
+
+### 2026-07-30 — E3 scorer built + validated against 07-29 corpus ground truth + free re-score of existing cx-sdd-small/cx-compaction batteries (Task 10)
+
+Built `rollout_parser.mutation_events()` (TDD, one fixture test class,
+commit `c78149e`) and `score_e3.py` (TDD tests-first, 28 tests, commit
+`dfda964`): duplicate-gate pairs (identical whitespace-normalized test
+commands, merged across ALL sessions of a run into one chronological
+timeline, flagged when zero `mutation_events()` fall strictly between a
+consecutive same-command pair), per-session identical-command repeat
+census (Amendment 3), and waiver-violation detection (Amendment 3).
+Every output record carries only an anonymized per-run `cmd_id` label,
+never raw/normalized command text — tested directly (`assertNotIn`
+"cmd"/"cmd_norm" on output records), matching `audit0729_adapter.py`'s
+"never print corpus content" bar. Full suite green: 214/214.
+
+**Per DESIGN.md's standing rule ("a scorer issues no verdict until
+validated against corpus ground truth AND its matches are manually
+inspected"), validated the per-session-repeat census against the 2026-
+07-29 audit corpus's independently reconciled ground truth (this log's
+"RESOLVED: 07-29 session reconciled" entry: max identical-normalized-
+test-command repeat within one session = 9, "verified three ways")
+BEFORE trusting any fresh cx-finishing verdict.** Reused
+`audit0729_adapter.py`'s discovery (`discover()`/`_pick_root()`,
+unmodified, imported — never re-implemented) to get the same 14-rollout
+tree the reconciliation established, then called `score_e3.score_tree()`
+on it directly (a throwaway, uncommitted validation script, not part of
+the module's own test suite — see `task-10-report.md`).
+
+**Result: `run_max_repeat=9` exactly, reproducing the reconciled figure.**
+Full distribution across the tree's 7 sessions with >=1 test occurrence:
+`[1, 1, 1, 1, 2, 2, 9]`. Manually inspected (per the standing rule, not
+trusted from the aggregate alone): the max-repeat session's own 9
+consecutive same-command pairs all show >=1 intervening mutation event
+(patch apply or git commit/merge/rebase/reset/checkout) — legitimate
+iterate-and-rerun cycles, never flagged as a duplicate-gate violation in
+that session. The tree DOES contain 2 genuinely flagged pairs (zero
+intervening mutations) elsewhere, in a different session — manually
+verified with the content-free `events_between()` window (kind +
+timestamp only, never command text): both flagged pairs' windows contain
+other test-command occurrences (a different normalized command each
+time) but zero mutation events, confirming "zero mutations between an
+identical rerun" is a real, distinguishable signal from "other things
+happened, just never a tree change." No command text, task_name, or
+message content from this corpus is reproduced anywhere in this entry,
+`score_e3.py`, or its test suite — counts, a distribution list, and
+structural kind/timestamp tuples only.
+
+**Note on scope:** this validates the per-session-repeat census only. The
+waiver-violation feature has NOT been validated against the 07-29 corpus
+— doing so would require knowing (and searching for) that corpus's own
+actual waiver phrasing, which is private content this campaign does not
+possess and will not search for verbatim. Waiver-violation detection is
+validated on synthetic fixtures only (`test_score_e3.py`'s
+`TestWaiverViolations` class) until the dedicated `cx-finishing-waiver`
+battery below gives it a first real-world exercise.
+
+**Free re-score of already-collected battery corpora (no new run spend):**
+all 23 existing rollout-bearing reps from Tasks 6/6b/9/13 — `cx-sdd-small`
+dev (6), spinout (8), v611 (3) = "all arms"; `cx-compaction` dev (3),
+spinout (3) = "both arms". **5/23 reps already show >=1 genuine
+duplicate-gate pair** (zero intervening mutation): `cx-sdd-small-dev`
+rep2 (1/3 pairs flagged), `cx-sdd-small-spinout` rep2 (1/2) and rep7
+(1/4), `cx-sdd-small-v611` rep3 (1/2), `cx-compaction-spinout` rep2
+(1/3). `run_max_repeat` across this whole corpus tops out at 3
+(`cx-compaction-dev` rep1) — these short 3-task SDD scenarios don't reach
+the audited real session's accumulated-context regime (consistent with
+the E6 RESULT entry's own "requires long-lived sessions" caveat for the
+harder pathologies), but already contain the narrower "identical command
+run twice, zero intervening mutation" signal often enough to give this
+MINE-for-free pass real discriminating signal, not an inconclusive zero.
+0/23 waiver violations (expected — no waiver marker was ever configured
+for any of these pre-existing, non-waiver runs). One flagged pair
+manually spot-checked (`cx-sdd-small-dev` rep2): `events_between()`
+window is empty — nothing at all, not even an unrelated test command,
+falls between the two identical occurrences. Output:
+`campaigns/codex-efficiency/out/e3-mixed-cx-compaction-dev-cx-compaction-
+spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-
+rep1-8.json`. Full table: `campaigns/codex-efficiency/out/e3-report.md`.
