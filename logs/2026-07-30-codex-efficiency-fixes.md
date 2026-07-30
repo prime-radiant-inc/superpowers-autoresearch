@@ -258,3 +258,85 @@ reconstructible after the fact. Same limitation noted for this same
 script in the original campaign log's budget ledger (`logs/
 2026-07-28-codex-efficiency.md` row: "E4 ceremony MICRO... unmeasured —
 API cost not captured").
+
+### 2026-07-30 — SHARED SDD BATTERY PRE-REGISTRATION: T1/T2/T5 on the fix arm (Task 8)
+
+**Arm SHA (refreshed this task):** `git -C /tmp/sp-arm-fix checkout
+--detach codex-efficiency-fixes` -> `5ea882124a6c50751fc53b3b2578b7f1c67abca4`
+— matches the `codex-efficiency-fixes` branch tip in the working worktree
+(`superpowers/.worktrees/codex-efficiency-fixes`), i.e. Task 7's
+brainstorming-router commit is included. This is the same SHA already
+recorded at the top of this log ("Arm: `/tmp/sp-arm-fix`").
+
+**Runner change (committed with this entry):** `run-quorum.sh` only
+wired `ARM: dev | spinout | v611`. Added a `fix -> /tmp/sp-arm-fix` case
+(and updated the usage/comment text) — the arm directory already existed
+at the correct SHA (confirmed above); only the script's ARM dispatch was
+missing.
+
+**Battery config:**
+- Arm: `fix` (`/tmp/sp-arm-fix` @ `5ea8821`)
+- Scenario: `cx-sdd-small`
+- Reps: 8 total — 1-rep smoke test first (Step 2), then 7 more split
+  across lanes: reps 2-4 on lane A (`EVALS_ROOT=superpowers/evals`),
+  reps 5-8 on lane B (`EVALS_ROOT=evals-lane-b`), `JOBS=2` on the
+  multi-rep lane B batch (lane A's batch is 3 reps, run either
+  sequentially or JOBS=2 depending on what's cheapest to babysit — not
+  gated either way, this doesn't change what gets measured).
+- Scorers: `score_e6.py` (T1 — depth-2 spawns by spawner role,
+  same-task duplicate-review families), `score_e7.py` (T2 — wait_agent
+  timeout census; only corpus (c), our own battery runs, is new spend —
+  corpora (a)/(b) are the existing external/audit corpora, not re-run),
+  `score_e1.py` (T5 — per-spawn fork_turns/model/reasoning_effort
+  tuples at every depth).
+- Rep-range output filenames per each scorer's own convention (e.g.
+  `e1-cx-sdd-small-fix-rep1-8`); `FORCE` is never set — a collision is
+  treated as an anomaly, not worked around.
+
+**Criteria (verbatim from this log's "Pre-registered criteria" section
+above):**
+- **T1:** 0 worker-issued depth-2 spawns AND review coverage preserved
+  (every task still gets exactly one controller-dispatched task review).
+- **T2:** timeout rate < 25% with no loss of task completion.
+- **T5:** every spawn at every depth carries explicit model + effort.
+  Caveat: if T1 eliminates depth-2 spawns entirely, T5 grades as
+  root-spawn regression (hold 100%) plus doc correctness and is recorded
+  inconclusive-by-zero at depth-2.
+
+**Dev baselines (cited from `logs/2026-07-28-codex-efficiency.md`, NOT
+re-run this task):**
+- **T1 reference point:** the campaign's depth-2/worker-issued-review
+  pathology is real and reproduced 9 times across 4 corpora (E6
+  correction entry, 2026-07-30), but on `cx-sdd-small` specifically the
+  `dev` arm shows **0/0 depth-2 spawns across 6 reps** (E6's free
+  re-score table) and the CLI-0.146 re-test's 2-rep dev sample also
+  shows zero depth-2 forking — the pathology on THIS scenario/arm
+  combination is comparatively rare even unfixed, which is exactly why
+  the pre-registered criterion is an absolute bar (0 depth-2 spawns AND
+  review coverage preserved) rather than a relative dev-vs-fix
+  comparison, and exactly why T1 landing at 0/0 here is a plausible
+  outcome that doesn't by itself prove the fix (see the T5
+  inconclusive-by-zero caveat, which exists for this reason).
+- **T2 reference point:** dev arm `cx-eff-cx-sdd-small-dev-rep*` timeout
+  rate 67.1%/69.3% (E7 RESULT entry, 2026-07-29) — well above the <25%
+  bar, confirming the pathology is present pre-fix on this exact
+  scenario/arm.
+- **T5 reference point:** at CLI 0.146.0, dev root-controller spawns on
+  `cx-sdd-small` are already 100% explicit-model (14/14, E1 RE-TEST
+  entry) — the CLI unlock plus `dev`'s pre-existing generic
+  "always specify the model" instruction already covers root spawns.
+  The model-omission pathology T5's fix targets is specifically at
+  depth-2 (worker-issued spawns), which is the same population T1 is
+  trying to eliminate — hence the two treatments' criteria interact,
+  and why a T1 win can leave T5 without anything to grade at depth-2.
+
+**Budget estimate:** ~$40 for 8 reps of `cx-sdd-small` (dev's own
+6-rep + 2-rep CLI-0.146 baseline batteries on this scenario cost
+$20.59 + $7.27 = $27.86 for 8 reps combined in the old campaign: ~$3.5/
+rep -> ~$28 for 8 reps at that rate; budgeting ~$40 for headroom given
+the fix arm's changes may add turns, e.g. event-driven waiting changing
+session shape).
+
+**No run yet — this is the pre-registration.** Smoke test, full
+battery, scoring, manual inspection, and verdicts follow in later log
+entries.

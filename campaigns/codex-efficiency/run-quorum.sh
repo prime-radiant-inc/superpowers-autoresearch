@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611)
+# usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611 | fix)
 #
 # Runs one codex-efficiency-campaign scenario through the evals-container
 # quorum wrapper, REPS times, writing each rep to
@@ -24,8 +24,13 @@
 # ARM selects which superpowers checkout is mounted into the container as
 # SUPERPOWERS_ROOT: 'dev' -> /tmp/sp-arm-dev (origin/dev), 'spinout' ->
 # /tmp/sp-arm-spinout (origin/codex-spinout-fixes), 'v611' ->
-# /tmp/sp-arm-v611 (tag v6.1.1) — see task-5-brief Step 4 for how those
-# worktrees are created. Arm selection is a container re-up (down, then up
+# /tmp/sp-arm-v611 (tag v6.1.1), 'fix' -> /tmp/sp-arm-fix
+# (codex-efficiency-fixes) — see task-5-brief Step 4 for how the dev/
+# spinout/v611 worktrees are created; sp-arm-fix is the codex-efficiency
+# fix cycle's own detached worktree (refreshed via `git -C /tmp/sp-arm-fix
+# checkout --detach codex-efficiency-fixes` before each battery, per
+# logs/2026-07-30-codex-efficiency-fixes.md). Arm selection is a container
+# re-up (down, then up
 # --superpowers-root <arm>), the same pattern as
 # harnesses/quorum-container-variants.sh.
 #
@@ -42,8 +47,8 @@ EVALS=${EVALS_ROOT:-/Users/jesse/git/superpowers/superpowers/evals}
 CAMP=/Users/jesse/git/superpowers/superpowers-autoresearch/campaigns/codex-efficiency
 JOBS=${JOBS:-1}
 
-ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611)"}
-SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611)"}
+ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611 | fix)"}
+SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611 | fix)"}
 REPS=${3:-1}
 REP_START=${4:-1}
 
@@ -51,8 +56,9 @@ case "$ARM" in
   dev)     SP_ROOT=/tmp/sp-arm-dev ;;
   spinout) SP_ROOT=/tmp/sp-arm-spinout ;;
   v611)    SP_ROOT=/tmp/sp-arm-v611 ;;
+  fix)     SP_ROOT=/tmp/sp-arm-fix ;;
   *)
-    echo "run-quorum.sh: unknown ARM '$ARM' (want: dev | spinout | v611)" >&2
+    echo "run-quorum.sh: unknown ARM '$ARM' (want: dev | spinout | v611 | fix)" >&2
     exit 1
     ;;
 esac
