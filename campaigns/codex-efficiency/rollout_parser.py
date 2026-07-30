@@ -362,3 +362,36 @@ def lifecycle_calls(path) -> list[LifecycleCall]:
                 timestamp=ts,
                 args_task_name=str(args.get("task_name", OMIT))))
     return out
+
+# --- patch_applies() (E4, Task 11): structured per-event extraction of
+# patch_apply_end records -- paths changed plus success/timestamp -- that
+# parse_session()'s SessionMetrics.patch_applies (a bare running COUNTER)
+# can't provide. Shape verified directly against a real rollout
+# (evals/results/cx-eff-cx-sdd-small-dev-rep5/.../rollout-*.jsonl): a
+# `patch_apply_end` event_msg carries `success` (bool) and `changes` (a
+# dict keyed by absolute file path, each value describing the change --
+# add/update/delete -- which this function never reads, only the dict's
+# keys). Some payloads (e.g. a synthetic/older-shape record) may omit
+# `changes` entirely, or carry an empty dict on a failed apply -- both
+# treated as "no paths", not an error.
+@dataclasses.dataclass
+class PatchApply:
+    call_id: str
+    timestamp: str
+    success: bool
+    paths: list[str]  # sorted, the changed dict's keys
+
+
+def patch_applies(path) -> list[PatchApply]:
+    """Every patch_apply_end event, in file order."""
+    out = []
+    for ts, typ, p in iter_records(path):
+        if typ == "event_msg" and p.get("type") == "patch_apply_end":
+            changes = p.get("changes")
+            paths = sorted(changes.keys()) if isinstance(changes, dict) else []
+            out.append(PatchApply(
+                call_id=p.get("call_id", OMIT),
+                timestamp=ts,
+                success=bool(p.get("success", False)),
+                paths=paths))
+    return out

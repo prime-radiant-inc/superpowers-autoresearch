@@ -22,6 +22,7 @@ fact.
 | 2026-07-29 | E1 re-test @ CLI 0.146.0, treatment (spinout, cx-sdd-small, rep5-8, axis A) | $17.74 ($16.42 coding + $1.31 gauntlet) | 4.0% | 7.0% |
 | 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
 | 2026-07-29 | E1-v611 (v611, cx-sdd-small, 3 reps, lane B, JOBS=2) | $12.17 ($11.24 coding + $0.93 gauntlet) | 17.0% | 19.0% |
+| 2026-07-29/30 | E4 ceremony census (dev, cx-ceremony-{spike,bounded,arch}, 3 reps/class + 2 outage-tainted arch reps, lane A) | $21.39 ($16.85 clean/scored + $4.54 outage-tainted/excluded) | 18.0% | 55.0% |
 
 ## Pre-registered predictions
 
@@ -2052,3 +2053,121 @@ commits (see `task-15-report.md`). No corpus content (task_names,
 commands, message text, file paths) committed anywhere — verified by
 grep across every changed file before commit. Existing + new suites:
 77 tests, all green.
+
+### 2026-07-29/30 — E4 RESULT: proportional-ceremony census — inconclusive-by-zero on spike for a structural reason, partial pathology on bounded-vs-arch (Task 11)
+
+Ran the pre-registered battery (3 reps/class, `cx-ceremony-{spike,bounded,
+arch}`, dev arm, lane A, JOBS=2), scored with `score_e4.py`, plus
+`ceremony-path-micro.py` (Anthropic API, `claude-opus-4-8`, REPS=5, 45
+calls). Full detail, tables, and manual-inspection evidence:
+`campaigns/codex-efficiency/out/e4-report.md`.
+
+**Outage triage (mid-battery Anthropic incident, confirmed with hard
+evidence, not inferred from verdict text alone):** every rep's
+Gauntlet-Agent `run.jsonl` was checked directly for `run_error` events.
+Two of the original nine runs (arch rep1/rep2) show a genuine API error —
+`500 {"type":"error","error":{"type":"api_error","message":"Internal
+server error"}}` and `529 {"type":"error","error":{"type":
+"overloaded_error","message":"Overloaded"}}` respectively — coinciding
+with blank Gauntlet summary/reasoning in both. Excluded from scoring, real
+spend ($4.54) still recorded in the ledger. Every other rep (7 of the
+original 9, plus 2 fresh replacements = 9 total scored) shows zero
+`run_error` events regardless of its quorum verdict label.
+
+**A second, unrelated bug found and fixed mid-battery, root-caused via
+the evals check-DSL source, not guessed:** the first 8 runs came back
+`final: fail`/`indeterminate` despite 6 having `gauntlet.status: pass`
+with full reasoning. `checks.sh`'s `post()` included `check-transcript
+tool-called Agent` (copy-pasted from `cx-sdd-small`/`cx-branch-review`),
+which only passes if the session calls `spawn_agent` (`src/normalize/
+openclaw.ts` maps `spawn_agent -> "Agent"`; `src/composer.ts` forces
+`final=fail` on any failing post-check regardless of gauntlet status).
+None of E4's three scenarios' acceptance criteria require subagent
+dispatch. **Scenario-authoring design rule for the campaign closeout: a
+scenario's deterministic post-checks must not assert a behavioral choice
+the experiment itself measures** — requiring dispatch here would have
+biased the ceremony census toward inflated dispatch rates. Fixed (dropped
+the check from all three `checks.sh`, kept only the rollout `file-exists`
+check), verified working (`spike rep3` under the fixed checks: `final:
+pass`) — did not require re-running the 6 already-clean pre-fix reps,
+since `score_e4.py` reads rollouts directly and was never affected by the
+quorum verdict label either way.
+
+**Primary discrimination gate (spike-class mean tool-calls-before-T
+within 25% of arch-class): inconclusive-by-zero, but not for either
+reason the pre-registration named as a live possibility (hard-gate not
+binding, or scenario too weak).** All 3 spike reps show
+`no_non_doc_patch=True` — independently confirmed, zero `patch_apply_end`
+events of any kind in any of the 3 spike rollouts. A correctly-executed
+"find out, quick and dirty" spike investigates via ephemeral inline
+shell/Python (verified directly: spike rep2's port-bind reproduction is a
+`python3 - <<'PY' ... PY` heredoc inside an `exec_command` call, never
+touching a tracked file) — there is no tracked-file code change for
+"ceremony before code" to anchor on. **A third explanation, not
+registered in advance: the metric itself is undefined, not zero, for a
+task class whose correct behavior never produces a tracked-file change**
+— arguably the most proportional possible outcome, but one the primary
+gate can't discriminate on.
+
+**Secondary comparison (bounded vs. arch, where T exists in every rep):
+mean tool-calls-before-T 16.7 (bounded) vs. 24.0 (arch), a 30.4%
+difference — just outside the 25% band, so ceremony volume is not flat.**
+But the planning-artifact SHAPE is identical: every rep in both classes
+writes exactly 2 docs before any code (design spec, then plan — the
+brainstorming→writing-plans sequence), hand-verified for bounded rep1
+against raw `patch_apply_end` timestamps (docs at 19:24:58/19:26:04, first
+non-doc patch `tests/test_server.py` at 19:27:22.703; user_turns=4,
+tool_calls=13, wall_clock=246s — all four fields matched the scorer
+exactly by independent hand recount). So: ceremony *volume* scales
+moderately with task complexity (partial refutation of "identical
+regardless of complexity"), but the two-document ritual template runs
+unconditionally every time (partial confirmation) — a genuinely mixed
+result, not collapsed into either a clean pass or fail.
+
+**Edge case found and reported, not silently absorbed:** all 3 arch
+reps' first non-doc patch is a `.gitignore` addition (worktree setup),
+40-90s before the first real implementation file — correctly classified
+non-doc under the registered doc-vs-not rule, but not service code.
+Small enough (tens of seconds against multi-hundred-second totals) not to
+change the qualitative finding; flagged for anyone reusing the
+classification rule, not adjusted post-hoc after seeing it.
+
+**Micro result: Z-null and the drafted B-three-path both differentiate
+path choice perfectly and identically across all 3 task classes (5/5
+every cell, SPIKE/BOUNDED/FULL as expected). A-current (the verbatim
+current brainstorming hard-gate text) is the only variant that fails to
+differentiate — it pushes the bounded task to FULL ceremony 5/5 times,
+identical to arch.** This corroborates Finding 4's concern in miniature:
+the hard-gate's absolute wording ("regardless of perceived simplicity")
+measurably erases a distinction the model draws on its own when given no
+guidance at all. Treatment-phrasing pre-work only, per the task brief; no
+skill edits land in this campaign. All 45 answer files independently
+verified as exactly one word each (`SPIKE`/`BOUNDED`/`FULL`), zero
+unparseable.
+
+**Cost:** $21.39 total this battery ($16.85 across the 9 clean/scored
+reps + $4.54 across the 2 outage-tainted/excluded arch reps). Sub
+`used_percent` 18.0% → 55.0%. Ledger row above. Campaign running total:
+**$104.45**, well under the $250 checkpoint — full 3-reps/class battery
+proceeded, no fallback to 2 reps/class needed.
+
+**Scorer build:** `rollout_parser.patch_applies()` (TDD, 5 new tests,
+additive — `parse_session().patch_applies` stays a bare counter) +
+`score_e4.py` (TDD, 19 tests, existing suites unaffected —
+`test_rollout_parser.py` 15/15, `test_score_e1.py` 6/6, `test_score_e2.py`
+9/9, `test_score_e9.py` 7/7). Written before its own test file in this
+task (a real process deviation from strict TDD ordering, corrected for
+partially via two deliberate mutation checks post hoc — `is_doc_path`
+forced to always-False and root-only user-turn counting widened to
+tree-wide — both caught by the existing test suite exactly as designed,
+giving genuine (if retroactive) confidence the tests exercise real
+logic, not vacuous assertions).
+
+**Verdict: DONE, mixed result, honestly reported in both directions.**
+E4's baseline question (is ceremony proportional to task complexity) does
+not resolve to a single clean answer: spike is structurally
+unmeasurable by this metric, bounded-vs-arch shows partial scaling with
+an invariant ritual template, and the micro isolates the current
+hard-gate text specifically (not task-shape or session-shape) as the
+lever erasing the bounded/spike distinction the model otherwise draws on
+its own.

@@ -166,6 +166,26 @@ LIST_AGENTS_CALL = L("2026-07-28T17:08:25.000Z", "response_item", {
     "arguments": "{}",
     "call_id": "call_list_1"})
 
+# --- patch_applies() fixtures (E4, Task 11). Shape copied verbatim from a
+# real rollout (evals/results/cx-eff-cx-sdd-small-dev-rep5/.../rollout-*.jsonl,
+# see rollout_parser.py's patch_applies() docstring): a `patch_apply_end`
+# event_msg carries `success` (bool) and `changes` (a dict keyed by absolute
+# path, each value describing the change -- add/update/delete -- which
+# patch_applies() never reads, only the keys).
+PATCH_APPLY_SUCCESS_TWO_PATHS = L("2026-07-29T10:00:00.000Z", "event_msg", {
+    "type": "patch_apply_end", "call_id": "exec-p1", "turn_id": "turn-1",
+    "success": True,
+    "changes": {
+        "/work/repo/docs/USAGE.md": {"type": "add", "content": "# usage"},
+        "/work/repo/README.md": {"type": "update", "unified_diff": "@@ -0,0 +1 @@\n+x\n"},
+    }})
+PATCH_APPLY_FAILURE_EMPTY_CHANGES = L("2026-07-29T10:00:05.000Z", "event_msg", {
+    "type": "patch_apply_end", "call_id": "exec-p2", "turn_id": "turn-1",
+    "success": False, "changes": {}})
+PATCH_APPLY_NO_CHANGES_KEY = L("2026-07-29T10:00:10.000Z", "event_msg", {
+    "type": "patch_apply_end", "call_id": "exec-p3", "turn_id": "turn-1",
+    "success": True})
+
 def write_fixture(lines):
     f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
     f.write("\n".join(lines) + "\n")
@@ -284,6 +304,41 @@ class TestLifecycleCalls(unittest.TestCase):
     def test_lifecycle_calls_excludes_spawn_and_wait(self):
         p = write_fixture([SPAWN_FULL, WAIT_CALL, NOT_A_SPAWN])
         self.assertEqual(rp.lifecycle_calls(p), [])
+
+class TestPatchApplies(unittest.TestCase):
+    def test_patch_applies_extracts_sorted_paths_and_success(self):
+        p = write_fixture([PATCH_APPLY_SUCCESS_TWO_PATHS])
+        applies = rp.patch_applies(p)
+        self.assertEqual(len(applies), 1)
+        a = applies[0]
+        self.assertEqual(a.call_id, "exec-p1")
+        self.assertEqual(a.timestamp, "2026-07-29T10:00:00.000Z")
+        self.assertTrue(a.success)
+        self.assertEqual(a.paths, ["/work/repo/README.md", "/work/repo/docs/USAGE.md"])
+
+    def test_patch_applies_failure_with_empty_changes(self):
+        p = write_fixture([PATCH_APPLY_FAILURE_EMPTY_CHANGES])
+        a = rp.patch_applies(p)[0]
+        self.assertFalse(a.success)
+        self.assertEqual(a.paths, [])
+
+    def test_patch_applies_missing_changes_key(self):
+        p = write_fixture([PATCH_APPLY_NO_CHANGES_KEY])
+        a = rp.patch_applies(p)[0]
+        self.assertTrue(a.success)
+        self.assertEqual(a.paths, [])
+
+    def test_patch_applies_multiple_events_in_file_order(self):
+        p = write_fixture([
+            PATCH_APPLY_SUCCESS_TWO_PATHS, PATCH_APPLY_FAILURE_EMPTY_CHANGES,
+            NOT_A_SPAWN, PATCH_APPLY_NO_CHANGES_KEY,
+        ])
+        applies = rp.patch_applies(p)
+        self.assertEqual([a.call_id for a in applies], ["exec-p1", "exec-p2", "exec-p3"])
+
+    def test_patch_applies_empty_file(self):
+        p = write_fixture([NOT_A_SPAWN])
+        self.assertEqual(rp.patch_applies(p), [])
 
 if __name__ == "__main__":
     unittest.main()

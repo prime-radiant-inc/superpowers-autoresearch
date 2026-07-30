@@ -1,0 +1,230 @@
+{
+  "label": "mixed-cx-ceremony-arch-dev-cx-ceremony-bounded-dev-cx-ceremony-spike-dev-rep1-5",
+  "class_summaries": {
+    "spike": {
+      "n": 3,
+      "n_no_non_doc_patch": 3,
+      "mean_user_turns": null,
+      "mean_docs_written": 0.0,
+      "mean_tool_calls": null,
+      "mean_wall_clock_seconds": null
+    },
+    "bounded": {
+      "n": 3,
+      "n_no_non_doc_patch": 0,
+      "mean_user_turns": 5.0,
+      "mean_docs_written": 2.0,
+      "mean_tool_calls": 16.666666666666668,
+      "mean_wall_clock_seconds": 280.5876666666667
+    },
+    "arch": {
+      "n": 3,
+      "n_no_non_doc_patch": 0,
+      "mean_user_turns": 6.333333333333333,
+      "mean_docs_written": 2.0,
+      "mean_tool_calls": 24.0,
+      "mean_wall_clock_seconds": 557.4879999999999
+    }
+  },
+  "discrimination_gate": {
+    "verdict": "inconclusive-by-zero (no comparable tool-call mean on one or both classes)",
+    "ratio": null,
+    "within_25pct": null,
+    "spike_mean_tool_calls": null,
+    "arch_mean_tool_calls": 24.0
+  },
+  "runs": [
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep1/cx-ceremony-spike-codex-codex_sub-linux-20260729T191951Z-c5d2",
+      "arm_scenario": "cx-ceremony-spike-dev",
+      "rep": 1,
+      "scenario_class": "spike",
+      "root_rollout": "rollout-2026-07-29T19-20-09-019faf51-ecca-76d1-b9bc-8395a5c6aa00.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": true,
+      "first_non_doc_patch_timestamp": null,
+      "first_non_doc_patch_paths": null,
+      "user_turns_before_first_non_doc_patch": null,
+      "docs_written_before_first_non_doc_patch": 0,
+      "doc_paths_written_before_first_non_doc_patch": [],
+      "tool_calls_before_first_non_doc_patch": null,
+      "wall_clock_seconds_to_first_non_doc_patch": null
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep2/cx-ceremony-spike-codex-codex_sub-linux-20260729T191951Z-187a",
+      "arm_scenario": "cx-ceremony-spike-dev",
+      "rep": 2,
+      "scenario_class": "spike",
+      "root_rollout": "rollout-2026-07-29T19-19-58-019faf51-c063-79d1-95de-449cdaa826f2.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": true,
+      "first_non_doc_patch_timestamp": null,
+      "first_non_doc_patch_paths": null,
+      "user_turns_before_first_non_doc_patch": null,
+      "docs_written_before_first_non_doc_patch": 0,
+      "doc_paths_written_before_first_non_doc_patch": [],
+      "tool_calls_before_first_non_doc_patch": null,
+      "wall_clock_seconds_to_first_non_doc_patch": null
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-spike-dev-rep3/cx-ceremony-spike-codex-codex_sub-linux-20260730T032554Z-9a1b",
+      "arm_scenario": "cx-ceremony-spike-dev",
+      "rep": 3,
+      "scenario_class": "spike",
+      "root_rollout": "rollout-2026-07-30T03-26-13-019fb10e-edf9-7302-98e1-b64025220585.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": true,
+      "first_non_doc_patch_timestamp": null,
+      "first_non_doc_patch_paths": null,
+      "user_turns_before_first_non_doc_patch": null,
+      "docs_written_before_first_non_doc_patch": 0,
+      "doc_paths_written_before_first_non_doc_patch": [],
+      "tool_calls_before_first_non_doc_patch": null,
+      "wall_clock_seconds_to_first_non_doc_patch": null
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep1/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-4297",
+      "arm_scenario": "cx-ceremony-bounded-dev",
+      "rep": 1,
+      "scenario_class": "bounded",
+      "root_rollout": "rollout-2026-07-29T19-23-09-019faf54-ac79-7660-9a1e-a1996be3a4af.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-29T19:27:22.703Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep1/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-4297/coding-agent-workdir/tests/test_server.py"
+      ],
+      "user_turns_before_first_non_doc_patch": 4,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep1/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-4297/coding-agent-workdir/docs/superpowers/plans/2026-07-29-quiet-request-logging.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep1/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-4297/coding-agent-workdir/docs/superpowers/specs/2026-07-29-quiet-request-logging-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 13,
+      "wall_clock_seconds_to_first_non_doc_patch": 246.139
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep2/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-dde9",
+      "arm_scenario": "cx-ceremony-bounded-dev",
+      "rep": 2,
+      "scenario_class": "bounded",
+      "root_rollout": "rollout-2026-07-29T19-23-22-019faf54-de36-7c21-b519-c191bb5a2745.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-29T19:28:19.509Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep2/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-dde9/coding-agent-workdir/tests/test_server.py"
+      ],
+      "user_turns_before_first_non_doc_patch": 5,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep2/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-dde9/coding-agent-workdir/docs/superpowers/plans/2026-07-29-quiet-request-logging.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep2/cx-ceremony-bounded-codex-codex_sub-linux-20260729T192300Z-dde9/coding-agent-workdir/docs/superpowers/specs/2026-07-29-quiet-request-logging-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 19,
+      "wall_clock_seconds_to_first_non_doc_patch": 284.36
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-bounded-dev-rep3/cx-ceremony-bounded-codex-codex_sub-linux-20260730T045648Z-24d6",
+      "arm_scenario": "cx-ceremony-bounded-dev",
+      "rep": 3,
+      "scenario_class": "bounded",
+      "root_rollout": "rollout-2026-07-30T04-57-12-019fb162-39c2-7c63-af1f-6b408890c79e.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-30T05:02:26.457Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep3/cx-ceremony-bounded-codex-codex_sub-linux-20260730T045648Z-24d6/coding-agent-workdir/tests/test_server.py"
+      ],
+      "user_turns_before_first_non_doc_patch": 6,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep3/cx-ceremony-bounded-codex-codex_sub-linux-20260730T045648Z-24d6/coding-agent-workdir/docs/superpowers/plans/2026-07-30-quiet-request-logging.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-bounded-dev-rep3/cx-ceremony-bounded-codex-codex_sub-linux-20260730T045648Z-24d6/coding-agent-workdir/docs/superpowers/specs/2026-07-30-quiet-request-logging-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 18,
+      "wall_clock_seconds_to_first_non_doc_patch": 311.264
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep3/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-b870",
+      "arm_scenario": "cx-ceremony-arch-dev",
+      "rep": 3,
+      "scenario_class": "arch",
+      "root_rollout": "rollout-2026-07-29T23-49-53-019fb048-de2f-77b0-9951-11749460dfd3.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-29T23:57:58.715Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep3/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-b870/coding-agent-workdir/.gitignore"
+      ],
+      "user_turns_before_first_non_doc_patch": 6,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep3/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-b870/coding-agent-workdir/docs/superpowers/plans/2026-07-29-reusable-library-cli.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep3/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-b870/coding-agent-workdir/docs/superpowers/specs/2026-07-29-reusable-library-cli-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 21,
+      "wall_clock_seconds_to_first_non_doc_patch": 466.059
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep4/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-c4e6",
+      "arm_scenario": "cx-ceremony-arch-dev",
+      "rep": 4,
+      "scenario_class": "arch",
+      "root_rollout": "rollout-2026-07-29T23-49-56-019fb048-ea51-7aa0-a600-d109d7a8deac.jsonl",
+      "root_matches_task": true,
+      "tree_size": 1,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-29T23:56:16.936Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep4/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-c4e6/coding-agent-workdir/.gitignore"
+      ],
+      "user_turns_before_first_non_doc_patch": 5,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep4/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-c4e6/coding-agent-workdir/docs/superpowers/plans/2026-07-29-reusable-notes-library.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep4/cx-ceremony-arch-codex-codex_sub-linux-20260729T234944Z-c4e6/coding-agent-workdir/docs/superpowers/specs/2026-07-29-reusable-notes-library-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 21,
+      "wall_clock_seconds_to_first_non_doc_patch": 377.845
+    },
+    {
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b",
+      "arm_scenario": "cx-ceremony-arch-dev",
+      "rep": 5,
+      "scenario_class": "arch",
+      "root_rollout": "rollout-2026-07-30T05-07-41-019fb16b-d499-7e81-94e1-545e0f941191.jsonl",
+      "root_matches_task": true,
+      "tree_size": 9,
+      "orphan_rollouts": [],
+      "no_non_doc_patch": false,
+      "first_non_doc_patch_timestamp": "2026-07-30T05:21:34.786Z",
+      "first_non_doc_patch_paths": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b/coding-agent-workdir/.gitignore"
+      ],
+      "user_turns_before_first_non_doc_patch": 8,
+      "docs_written_before_first_non_doc_patch": 2,
+      "doc_paths_written_before_first_non_doc_patch": [
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b/coding-agent-workdir/docs/superpowers/plans/2026-07-30-reusable-library-cli.md",
+        "/workspace/evals/results/cx-eff-cx-ceremony-arch-dev-rep5/cx-ceremony-arch-codex-codex_sub-linux-20260730T050719Z-6d6b/coding-agent-workdir/docs/superpowers/specs/2026-07-30-reusable-library-cli-design.md"
+      ],
+      "tool_calls_before_first_non_doc_patch": 30,
+      "wall_clock_seconds_to_first_non_doc_patch": 828.56
+    }
+  ]
+}
