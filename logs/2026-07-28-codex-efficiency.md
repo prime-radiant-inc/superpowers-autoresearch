@@ -1981,3 +1981,74 @@ either machine. `remote-host-g` (a live `jesse@` macOS Tailscale device, not in
 not bypassed unilaterally; the one lead left open pending Jesse. No
 verdict changed; `out/e-audit0729.md` §1b holds the full trail. No
 run spend; no corpus content committed (there is none to commit).
+
+## 2026-07-29 — RESOLVED: 07-29 session reconciled — corpus on remote-host-a, root corrected, audit citations partly fabricated (controller entry)
+
+Jesse identified the true root directly:
+`019faee1-e140-7f52-b1f7-7ac9153e3c1b` on `remote-host-a`.
+`019faf59-3a06-7f40-87e0-c8c84a5729ae` — the ID every prior round of
+this task (and the audit's own citation) searched for — was itself one
+of the audit's own **two garbled/fabricated evidence citations** (the
+other: `...019fafa0-5442-...`); re-verified this round that neither
+string exists as a filename anywhere on `remote-host-a` (both do appear
+as incidental plain text in one already-known unrelated session, not as
+a structural citation — no new information). Full root-cause note in
+`out/e-audit0729.md` §1c.
+
+Fetched read-only via `rsync` from `remote-host-a` to a local gitignored
+scratch dir (`/Users/jesse/git/superpowers/_tmp/audit0729/`, outside any
+repo, never committed): root + `child_links()`-transitive descendants,
+verified closed (0 missing) two independent ways — rollout content and
+a live `thread_spawn_edges` DB query on `remote-host-a`, which agree
+exactly. 14 files total (1 root + 13 descendants), matching claim 7.
+
+**Reconciliation: 6 of 7 pre-registered claims MATCH exactly** against
+the real corpus (`audit0729_adapter.py` pointed at the fetched tree via
+`AUDIT0729_SESSIONS_ROOT`): 193 root waits (189/193 at ~30s, confirmed
+"mostly ~30s"); 24 root `list_agents`; 148 go-test invocations by
+literal-substring occurrence count (not command count — the two are
+different metrics and only occurrence-count reconciles), with the
+audit's own 6-bucket per-agent split reconciling exactly per real
+session (5 buckets = 1 session each; the 6th = the sum of an implementer
++ the depth-2 reviewer it spawned); the implementer-spawned-reviewer-at-
+depth-2 + controller-dispatched-duplicate-review structure, confirmed
+two independent ways; 9 reviewers vs 4 implementers (role derived from
+each session's parent-assigned task_name, generic buckets only); and the
+14-session count. **1 mismatch**: the "12x identical regression cluster"
+claim — actual max by the specified methodology (normalized-exact-string
+repeat within one session) is **9**, verified three ways (exact/session,
+exact/tree-wide, same-test-any-format/tree-wide = 15 across 3 sessions),
+none reaching 12. Likely the same root cause as the citation-integrity
+finding: an approximate/miscounted figure in the manual audit.
+
+**New finding (claim 8, not pre-registered):** the audit's own citation
+integrity is itself partly fabricated while its substance holds up
+almost exactly — a Finding-7-class (completion/citation-integrity) data
+point in its own right. A citation can be wrong without the underlying
+claim being false, which is why every number here was recomputed from
+the real rollouts, never taken from the audit's prose.
+
+**Tooling fixes this round** (real data run for the first time surfaced
+two real bugs synthetic-only testing hadn't caught): the original
+text-regex role signal returned "unclassified" for 14/14 real sessions
+(this corpus's dispatch text never literally says "implement"/"review"),
+so a new `classify_role_by_task_name()` (parent-assigned task_name,
+generic bucket only, never the task_name string itself) became the
+primary signal; its first cut reused a `\b`-bounded regex that silently
+failed to match underscore-separated task_names shaped like
+`"rereview_<x>"`/`"<x>_review"` — caught immediately by tests written
+first (TDD, against made-up task_name strings, never real ones) and
+fixed with a dedicated substring regex. Also added `go_test_occurrences`
+(substring-occurrence count) alongside the existing matching-command
+count once hand-verification showed only the former reconciles to 148.
+`test_audit0729_adapter.py` grew from 11 to 21 tests, all against
+synthetic/fictional fixtures. Campaign impact: Amendment 3's three
+experiment upgrades (E3, E2/E6, E5) now stand on independently
+tooling-confirmed footing, not manual-audit-alone. Full write-up:
+`out/e-audit0729.md` (all sections). Commits:
+`fix(codex-efficiency): audit0729 root_path covers all discovery legs`
+(already landed, round 2) plus this round's fix + reconciliation
+commits (see `task-15-report.md`). No corpus content (task_names,
+commands, message text, file paths) committed anywhere — verified by
+grep across every changed file before commit. Existing + new suites:
+77 tests, all green.

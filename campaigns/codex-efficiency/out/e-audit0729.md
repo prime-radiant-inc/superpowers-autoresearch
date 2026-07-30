@@ -6,22 +6,34 @@ of the 07-29 fallback session" entry against the actual rollout tree,
 using the trusted, unmodified `rollout_parser.py` / `score_e2.py` /
 `score_e7.py` / `score_e8.py`.
 
-**Headline result: the corpus is gone.** Root rollout
-`019faf59-3a06-7f40-87e0-c8c84a5729ae` (per the plan's Amendment 3, also
-cited in the pre-registration log entry — not audited-project content)
-and every one of its 13 descendants are absent from this machine's Codex
-storage as of the check below — and (fix round 2, §1b) absent from every
-other Codex host reachable from here too. Every pre-registered claim is
-therefore **UNVERIFIABLE**, not confirmed or refuted. Nothing here
-contradicts Jesse's manual audit; it's independent tooling simply
-arriving too late to see the same files he saw, wherever they were.
+**Headline result (round 3 — RESOLVED): the corpus was found and
+reconciled.** `019faf59-3a06-7f40-87e0-c8c84a5729ae` — the ID rounds 1-2
+of this task (and the audit's own citation) searched for — was itself
+**one of the audit's own two garbled/fabricated evidence citations**
+(§1c). The TRUE root, confirmed by Jesse, is
+`019faee1-e140-7f52-b1f7-7ac9153e3c1b`
+(`rollout-2026-07-29T10-17-46-...jsonl`) on host `remote-host-a`. Fetched
+read-only (rsync, 14 files, 1 root + 13 descendants — exact tree closure
+verified two independent ways, §1c) to a local gitignored scratch dir
+and reconciled for real. **Result: 6 of 7 pre-registered claims MATCH
+exactly; 1 (the "12x identical regression cluster" count) MISMATCHES
+(actual: 9x by the specified methodology) with a fully investigated
+cause.** Plus a new finding this round surfaced in its own right: the
+audit's own citations were partly fabricated, even though its
+underlying substance reconciles almost perfectly — see §2's row 8.
 
-Tooling: `campaigns/codex-efficiency/audit0729_adapter.py` (new, this
-task — a thin discovery/census adapter over the unmodified parser and
-scorers, same pattern as `drew_adapter.py`; `AUDIT0729_SESSIONS_ROOT` env
-override added fix round 2 so the same code can point at a corpus
-rsynced elsewhere, not just live `~/.codex`). Reads no committed output
-of its own; this `.md` is the only durable artifact.
+Tooling: `campaigns/codex-efficiency/audit0729_adapter.py` (thin
+discovery/census adapter over the unmodified parser and scorers, same
+pattern as `drew_adapter.py`; `AUDIT0729_SESSIONS_ROOT` env override,
+added fix round 2, is what pointed this round's real run at the fetched
+corpus instead of live `~/.codex`). Running against real data for the
+first time surfaced that the original text-based role signal is useless
+on this corpus and, in fixing that, a real regex-boundary bug — see §5.
+Reads no committed output of its own; this `.md` is the
+only durable artifact. Sections §1/§1b below are round 1-2's history,
+left intact (this file is not append-only, but the investigation record
+is worth keeping — it's how the citation-integrity finding was
+triangulated in the first place).
 
 ## 1. Discovery — methodology and evidence
 
@@ -208,40 +220,89 @@ storage location neither of us has considered yet). §2's reconciliation
 table below is therefore still built on §1/§1b's absence-of-evidence,
 not on fetched data — no verdict was upgraded from UNVERIFIABLE.
 
+## 1c. Corpus fetch + citation-integrity finding (round 3)
+
+**How the corpus was actually found.** Jesse identified the true root
+directly: `019faee1-e140-7f52-b1f7-7ac9153e3c1b`
+(`rollout-2026-07-29T10-17-46-...jsonl` on `remote-host-a`). Cross-
+checked against this file's own historical record above: that exact
+filename WAS present in §1b's own `remote-host-a` file listing (the
+12:15-13:49 burst it already documented) — it had simply never been
+searched for by its correct ID.
+
+**Why the old ID never matched anything (§1/§1b, rounds 1-2, in full):**
+`019faf59-3a06-7f40-87e0-c8c84a5729ae` — cited in Amendment 3, in the
+original task's dispatch text, and therefore in every search this task
+performed through round 2 — does not exist as a rollout filename
+ANYWHERE searched: not on this machine, not on `remote-host-a`
+(narrow-window, full-tree, and content search), not on `remote-host-b`,
+not as a DB edge on either host. Re-verified fresh this round, alongside
+the audit's SECOND citation, `...T13-49-55-019fafa0-5442-...`: neither
+string exists as a filename anywhere in `remote-host-a`'s
+`~/.codex/sessions/` tree (`ls | grep` per string: zero matches; content
+`grep -rl` across the same tree: zero filename matches, though both
+strings DO appear as plain text inside one already-known unrelated
+session's conversational content — the same incidental hit rounds 1-2
+already reported for the first string, not new evidence, not a
+structural citation). **Both of the audit's own supporting citations are
+garbled/fabricated filenames.** This is now its own reconciliation
+finding — row 8 below.
+
+**Fetch (read-only rsync from `remote-host-a`, nothing modified
+remote):**
+1. `rsync remote-host-a:~/.codex/sessions/2026/07/29/rollout-...019faee1-e140-....jsonl` → `/Users/jesse/git/superpowers/_tmp/audit0729/sessions/2026/07/29/` (gitignored scratch dir outside any repo, preserving the `YYYY/MM/DD/` layout `AUDIT0729_SESSIONS_ROOT` expects).
+2. Ran `rollout_parser.child_links()` on the fetched root locally: 12 direct children (all `fork_turns="none"`, `model="(omitted)"`).
+3. `rsync`'d all 12 by UUID glob from `remote-host-a`'s same date dir — all 12 present there, none missing.
+4. Ran `child_links()` transitively on the 12 newly-fetched files: found exactly 1 further (depth-2) descendant not yet on disk; fetched it too.
+5. Re-ran the transitive closure check: **0 missing** — 14 local files (1 root + 13 descendants) fully account for every child_links() reference anywhere in the tree. Matches the audit's "13 descendants" exactly (claim 7).
+6. **Independent DB cross-check** (`ssh remote-host-a "sqlite3 'file:~/.codex/state_5.sqlite?mode=ro' \"select child_thread_id,status from thread_spawn_edges where parent_thread_id='<id>'\""`), run for the root AND all 13 descendants: the root's 12 DB-recorded children match `child_links()`'s 12 exactly (same 12 thread IDs, both status `open`); exactly one of the 12 (the "catalog" implementer) has 1 DB-recorded child of its own (the depth-2 reviewer), matching `child_links()` exactly; none of the other 11 direct children, and not the depth-2 descendant itself, have any further DB-recorded children. Two independent methods (rollout content, live DB) agree exactly on the full tree shape.
+
+No corpus content (rollout files, task_names, commands, message text)
+is committed anywhere by this fetch — the scratch dir lives outside any
+git repo and nothing from it is copied into this `.md` beyond the
+aggregate counts below.
+
 ## 2. Per-claim reconciliation
 
-Every claim below carries the identical evidence: §1's five-leg local
-search AND §1b's remote search across four reachable Codex hosts came up
-empty, so there is no rollout file to compute the claim's left-hand side
-from. "Concrete rollout-line evidence" cannot be cited (there is no line
-to cite); §1/§1b's discovery logs — exact commands, hosts, paths, and
-row counts — are the evidence in their place.
+Reconciled by pointing `audit0729_adapter.py` at the fetched corpus
+(`AUDIT0729_SESSIONS_ROOT=/Users/jesse/git/superpowers/_tmp/audit0729/sessions
+python3 audit0729_adapter.py 019faee1-e140-7f52-b1f7-7ac9153e3c1b`) plus
+targeted follow-up queries (same trusted functions, called directly) for
+the per-session/per-role breakdowns the tool's own summary line doesn't
+print. Role labels are GENERIC (implementer/reviewer), derived from each
+session's PARENT-assigned `task_name` via a substring "review" test
+(`classify_role_by_task_name()`, round 3) — never the task_name string
+itself. Where a specific number is cited against one of the audit's own
+ALREADY-PUBLIC per-agent bucket labels (root/catalog/model-selector/
+direct/durable/final-reviewer — quoted in the original pre-registration
+log entry, not new disclosure here), that's for reconciliation clarity
+only; no NEW task_name, file path, package name, test name, or message
+content appears anywhere below or in the log entry this round appends.
 
-| # | Pre-registered claim | Status | Cause |
+| # | Pre-registered claim | Status | Evidence / cause |
 |---|---|---|---|
-| 1 | 193 root `wait_agent` calls, mostly ~30s polls | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
-| 2 | 24 `list_agents` calls | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
-| 3 | 148 textual go-test invocations (per-agent split: root 15 / catalog 23 / model-selector 66 / direct 9 / durable 22 / final reviewer 13) | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b). Also note: the per-agent split's bucket labels ("catalog", "model-selector", "direct", "durable") are audited-project task-name content, not generic role labels — even had the corpus been present, this report would only ever have reproduced the **total** (148) plus generic role/depth buckets, per the campaign's no-task-name-content rule. `audit0729_adapter.py`'s `census_node()` computes a total + a max-identical-repeat count per session for exactly this reason (never the per-task-name split). |
-| 4 | 12x identical regression cluster (one command repeated 12 times within a session) | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
-| 5 | Implementer-spawned reviewer at depth 2 (Task 1) + controller-dispatched duplicate review of the same task | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
-| 6 | 9 reviewer agents vs 4 implementer agents | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
-| 7 | Session count = 1 root + 13 descendants = 14 | UNVERIFIABLE | corpus absent locally and on every reachable remote host (§1, §1b) |
+| 1 | 193 root `wait_agent` calls, mostly ~30s polls | **MATCH** | Root's `wait_outcomes()`: exactly 193, all 193 paired (0 unresolved). Duration-hint distribution: 189/193 (97.9%) requested `timeout_ms=30000`; 4/193 requested `10000`. "Mostly ~30s" confirmed precisely. Timed out: 154/193 (79.8%). |
+| 2 | 24 `list_agents` calls | **MATCH** | Root's `lifecycle_calls()` filtered to `name=="list_agents"`: exactly 24. |
+| 3 | 148 textual go-test invocations (per-agent split: root 15 / catalog 23 / model-selector 66 / direct 9 / durable 22 / final reviewer 13) | **MATCH** | Tree-wide count of the literal `go test` substring across every `exec_commands()` record matching `TEST_RE` (occurrence count, not matching-command count — a single chained `cmd1 && go test A && go test B` call is 1 matched command but 2 occurrences): **exactly 148**. Per-session breakdown reconciles the published split exactly: root=15, the "model-selector" implementer=66, the "direct" implementer=9, the "durable" implementer=22, the final-reviewer session=13 — five of six buckets match one real session each, exactly. The sixth, "catalog 23", is the SUM of two real sessions: the "catalog" implementer (16) plus the depth-2 reviewer it spawned (7) — 16+7=23 exactly, and that implementer→depth-2-reviewer pair is independently the claim-5 finding below. 15+23+66+9+22+13 = 148. |
+| 4 | 12x identical regression cluster (one command repeated 12 times within a session) | **MISMATCH** | The actual max, by the task's own specified methodology (normalized `exec_commands` exact-string equality, max repeat within one session): **9**, in the "durable" implementer's session (22 go-test-matching commands, 13 distinct, top repeat 9). Verified three ways, none reaching 12: (a) exact-normalized-string, per-session — 9; (b) exact-normalized-string, tree-wide (in case of cross-session exact duplicates) — still 9, no session shares that exact string; (c) same underlying regression TEST (not exact string — allowing for flag/formatting variation across reruns), tree-wide — 15, spread across 3 different sessions (the "model-selector" implementer ×4, the "durable" implementer ×10, the final reviewer ×1) — a real, larger, cross-session duplicate-checking pattern (consistent with Amendment 3's own E3-upgrade framing: "root rerunning implementer checks, final reviewer rerunning bundles"), just not exactly 12 by any counting method tried. Given claim 8 (this audit's own citations were partly fabricated), the likeliest cause is the same one: an approximate/miscounted figure in the manual audit, not a tooling gap — no methodology variant tested lands on 12. |
+| 5 | Implementer-spawned reviewer at depth 2 (Task 1) + controller-dispatched duplicate review of the same task | **MATCH** | Structurally confirmed two independent ways (rollout `child_links()`/`extract_spawns()` content, and `remote-host-a`'s live `thread_spawn_edges` DB): the "catalog" implementer (a DIRECT root child, depth 1, and chronologically root's FIRST-dispatched child — consistent with "Task 1") itself spawned a reviewer at depth 2. Separately, root's own 12 direct spawns include a SECOND, independent reviewer dispatch for that same "catalog" task, issued directly by the controller — the "controller-dispatched duplicate review" half of the claim, confirmed by task_name-derived role + the parent-thread-id mapping. |
+| 6 | 9 reviewer agents vs 4 implementer agents | **MATCH** | `classify_role_by_task_name()` across the 13 descendants (root excluded — it has no parent to assign it a role): exactly 4 "implementer" (catalog / model-selector / direct / durable) and exactly 9 "reviewer" (catalog's depth-2 reviewer + catalog's controller-dispatched duplicate + model-selector's review + model-selector's re-review + 2 further re-reviews + direct's review + durable's review + the final review) = 13. |
+| 7 | Session count = 1 root + 13 descendants = 14 | **MATCH** | Transitive `child_links()` closure (§1c step 5) + independent DB cross-check (§1c step 6): exactly 14, 0 missing, 0 extra. |
+| 8 (new, this round) | *(not pre-registered — surfaced by the fetch itself)* Audit citation integrity | **PARTLY FABRICATED, substance intact** | The audit's own two supporting evidence citations (`...019faf59-3a06-...`, `...019fafa0-5442-...`) are garbled/fabricated filenames that exist nowhere on `remote-host-a` (§1c) — yet claims 1, 2, 3, 5, 6, 7 above all reconcile EXACTLY against the real corpus, and claim 4 is close (9 vs 12) with a well-characterized cause. A Finding-7-class (completion/citation-integrity) data point in its own right: a citation can be fabricated without the underlying claim being false — which is exactly why this task recomputed every number from the real rollouts rather than trusting the audit's citations or prose. |
 
 (The audit's qualitative findings — plan/design contradiction, withdrawn
 overly-broad finding, final-fix-wave boundary violation, waived-baseline
 rerun — are narrative, not scorer-checkable counts; they were never in
 scope for this MINE task's reconciliation table and remain exactly what
-they were: Jesse's own manual read of the session, unconfirmed and
-un-contradicted by tooling.)
+they were: Jesse's own manual read of the session, now further
+corroborated by claims 1-3/5-7's exact quantitative match — no reason
+found to doubt them, no tooling check performed against them either.)
 
 ## 3. Cross-corpus row
 
-The wait-timeout-rate and depth-2-by-role columns this task was asked to
-add cannot be populated — there is no session to compute `wait_outcomes()`
-or a role-tagged depth-2 spawn census from, even after the fix-round-2
-remote fetch attempt (§1b) — no corpus was located anywhere reachable.
-Row added as N/A, next to the existing E7 (wait census) and E2 (subtree
-census) aggregates for comparison of what a populated row looks like:
+Real numbers now, computed from the fetched tree the same way
+`score_e7.py`/`score_e2.py` compute their own corpus rows (E7's own
+`census_session()` is what `census_node()` calls — see §5):
 
 | Corpus / run | Sessions scored | wait_agent calls | Timeout rate (of paired) | max_depth | depth-2 spawns by role |
 |---|---:|---:|---:|---:|---|
@@ -250,36 +311,57 @@ census) aggregates for comparison of what a populated row looks like:
 | E7 — our battery, spinout arm (8 reps) | 75 | 201 | 60.2% | n/a | n/a |
 | E2 — cx-branch-review, dev arm (4 reps) | 2/rep | 2–3/rep | n/a (E2 doesn't compute timeout rate) | 1 (every rep) | 0/4 reps have any depth-2 spawn |
 | E1-v611 — v6.1.1 battery (3 reps) | — | — | — | — | 1 depth-2 spawn / 22 total (model-omitted) |
-| **07-29 fallback tree (this task's target)** | **0 (unresolvable)** | **N/A** | **N/A** | **N/A** | **N/A — corpus absent, see §1/§1b** |
+| **07-29 fallback tree (this task's target)** | **14** | **198** (root alone: 193) | **78.3%*** (root alone: 79.8%) | **2** | **1/1 depth-2 spawn is a reviewer (0 implementer)** — the same implementer-spawned-reviewer pair as claim 5 |
 
 \* rate/all_calls, matching `score_e7.py`'s own column (see `out/e7-report.md`).
+
+The 07-29 tree's root-alone timeout rate (79.8%) sits squarely inside
+the range every other real/near-real corpus in this campaign has shown
+(60–80%), and its depth-2 shape (a single implementer-spawned reviewer,
+zero implementer-issued depth-2 spawns) matches the pattern already
+noted 3 times elsewhere in this campaign (`out/e1-v611-report.md`,
+`out/drew-cross-validation.md`) — recursive, child-initiated spawning is
+where dispatch/recursion pathology concentrates, not the root controller
+directly. This is now a 4th occurrence of that same shape, in a real
+(not synthetic-scenario) session.
 
 ## 4. Campaign-impact reassessment
 
 Amendment 3's own "Campaign impact" paragraph (log, 2026-07-29 entry)
 treats the pre-registered numbers as fresh-session confirmation for
 three experiment upgrades (E3's duplicate-gate discrimination, E2/E6's
-recursion signature, E5's rubric). That paragraph's basis is **still
-only Jesse's original manual audit** — this MINE task could not add
-independent tooling corroboration, because the corpus it was supposed to
-corroborate against no longer exists. The experiment-upgrade decisions
-in Amendment 3 stand on external evidence alone, same footing as before
-this task ran; they are not now doubly-confirmed, and they are not
-undermined either (nothing here contradicts them — the search simply
-found no data, in either direction).
+recursion signature, E5's rubric). **That basis is now independently
+tooling-confirmed, not just Jesse's manual audit alone**: 6/7
+quantitative claims match exactly, the 7th (12x cluster) is a
+well-characterized near-miss (9x, same-test cross-session pattern still
+real at 15x), and the depth-2 implementer-spawned-reviewer +
+controller-duplicate-review structure (E2/E6's upgrade basis) is
+confirmed by two independent methods (rollout content + live DB). The
+three experiment upgrades in Amendment 3 stand on STRONGER footing than
+before this task ran.
 
-**Methodological note worth flagging for the campaign:** this is the
-first MINE task in the campaign where the source corpus evaporated
-between when it was described (same-day audit) and when it was mined
-(hours later, same day). Every other MINE task in this campaign
-(corpus validation, Drew cross-validation, E7/E8/E9) worked from a
-corpus that was already durably captured (the audit's own
-`session-manifest.json`/`metrics-all.jsonl` snapshot, or an externally
-supplied, separately-preserved package). A live `~/.codex/sessions/`
-directory is evidently not a stable audit source on this timescale —
-future MINE tasks that plan to reconcile against a *live* local rollout
-tree should copy/snapshot the relevant files immediately, not defer to
-a later task.
+**New data point for the campaign, from claim 8**: this is the first
+time in the campaign a human-authored audit's own supporting citations
+have been checked against the raw corpus and found partly fabricated
+while its substantive claims held up almost perfectly. Worth carrying
+into E10 (lifecycle/completion-truthfulness) and E5 (review scope)
+design: citation fabrication is not just a coding-agent pathology (the
+audit's own Finding 7 lineage) — it showed up here in a human's own
+manual audit of agent sessions too. Doesn't change any scorer, just
+worth the campaign's own citation practices being held to the same bar
+this task just applied to the audit.
+
+**Methodological note this round resolves:** rounds 1-2 flagged "a live
+`~/.codex/sessions/` directory is not a stable audit source" as a
+campaign risk. Round 3 shows the sharper, correct lesson: the risk
+wasn't storage volatility, it was an uncaught-until-now citation error
+in the audit itself — the real corpus had been sitting on `remote-host-a`,
+untouched and unpruned, the entire time. The volatility concern (§1's
+"this machine's own local storage churns within hours") is still real
+and separately true (this machine's OWN copy of the relevant date range
+genuinely doesn't have the file, matching rounds 1-2's local search) but
+was not, in the end, why this task's earlier rounds failed to find the
+corpus.
 
 ## 5. Existing-tooling verification
 
@@ -338,3 +420,53 @@ default unchanged) — exercised by the same subprocess test. Reran
 `audit0729_adapter.py` against the real (still-absent) target after the
 fix: unchanged `NOT_FOUND`. All 11 new tests pass; existing suites
 (56 tests) still clean.
+
+**Fix round 3 (real data ran, found two real bugs neither synthetic test
+caught):** running against the actual fetched corpus for the first time
+surfaced what rounds 1-2's synthetic-only testing couldn't:
+1. `classify_role()` (the original, text-regex role signal) returned
+   "unclassified" for **14/14** real sessions — this corpus's dispatch
+   text never literally contains "implement"/"review". Added
+   `classify_role_by_task_name()` (a session's PARENT-assigned
+   `task_name`, joined via a new `_task_name_by_thread_id()` helper) as
+   the PRIMARY signal, falling back to the old text regex only when no
+   task_name is available (e.g. the root). This is what makes claims 5
+   and 6 reconcilable at all.
+2. First cut of `classify_role_by_task_name()` reused the module's
+   existing `REVIEWER_RE = re.compile(r"\breview", re.I)` — but `\b`
+   does not break on `_`, so it silently failed to match
+   underscore-separated task_names shaped like `"rereview_<x>"` or
+   `"<x>_review"` (both boundaries are between two `\w` characters, no
+   `\b` there) — exactly the shape several of the real corpus's own
+   task_names take. Caught by
+   `test_final_reviewer_suffix_is_reviewer`/`test_rereview_prefix_is_reviewer`
+   (written first, TDD, against made-up task_name strings — see
+   `test_audit0729_adapter.py`) failing immediately. Fixed with a
+   dedicated `TASK_NAME_REVIEW_RE = re.compile(r"review", re.I)` (plain
+   substring, deliberately no `\b`) — task_name identifiers and natural-language
+   instruction text need different regexes, not one shared one.
+3. Added `go_test_occurrences` (literal `go test` substring OCCURRENCE
+   count across matched commands, vs. `n_test_execs`'s matching-command
+   COUNT) once hand-verification showed the audit's "148" only
+   reconciles under occurrence-counting, not command-counting: 91
+   distinct commands match `TEST_RE`, but those same 91 commands contain
+   148 total `go test` substring occurrences between them (some commands
+   chain more than one `go test` invocation) — confirmed by direct
+   count, not inferred.
+
+`test_audit0729_adapter.py` grew 10 new tests (21 total):
+`TestClassifyRoleByTaskName` (6, including the exact `\b`-boundary
+failure case above), `TestTaskNameByThreadId` (2),
+`TestTaskNameWinsOverConflictingText` (1 — task_name and the session's
+own instruction text are set to deliberately DISAGREE; asserts
+task_name wins, matching `census_node()`'s real precedence), and
+`TestGoTestOccurrences` (1). Reran the full pipeline against the real
+fetched corpus after all fixes: output now reads `ROOT wait_agent: 193`,
+`ROOT list_agents: 24`, `total go-test occurrences...: 148`,
+`role distribution...: {'implementer': 4, 'reviewer': 9}` — matching §2's
+table exactly. All 21 new + 56 existing tests green (77 total).
+
+No corpus content (task_name strings, commands, message text, file
+paths) appears in any test fixture — every round-3 test uses hand-built
+synthetic records with fake IDs/strings chosen to exercise the
+regex-boundary bug, not to mirror the real corpus's actual content.

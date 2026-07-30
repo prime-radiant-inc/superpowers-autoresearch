@@ -5,14 +5,38 @@ tree Jesse audited manually (Amendment 3, "MINE the 2026-07-29 session
 tree" task).
 
 Corpus (read-only, external, private, NEVER committed):
-    root rollout ~/.codex/sessions/2026/07/29/rollout-2026-07-29T11-36-36-
-    019faf59-3a06-7f40-87e0-c8c84a5729ae.jsonl + its descendant tree
-    (13 descendants per Jesse's audit -- see
+    root rollout ~/.codex/sessions/2026/07/29/rollout-2026-07-29T10-17-46-
+    019faee1-e140-7f52-b1f7-7ac9153e3c1b.jsonl on host `remote-host-a`
+    (fetched read-only via rsync to a local, gitignored scratch dir,
+    never committed) + its 13-descendant tree -- see
     logs/2026-07-28-codex-efficiency.md, "EXTERNAL EVIDENCE: Jesse's
-    audit of the 07-29 fallback session"). ROOT_ID is cited here only
+    audit of the 07-29 fallback session". ROOT_ID is cited here only
     because it already appears in the committed plan doc
     (docs/plans/2026-07-28-codex-efficiency-evals.md, Amendment 3) --
     not audited-project content.
+
+    CITATION-INTEGRITY FINDING (reconciliation round 3): the audit's OWN
+    two evidence citations -- `...T11-36-36-019faf59-3a06-...` (the
+    value every prior round of this task, including this file's own
+    former DEFAULT_ROOT_ID, searched for -- rounds 1-2's exhaustive
+    five-leg local+remote search) and `...T13-49-55-019fafa0-5442-...`
+    -- are GARBLED/FABRICATED filenames: Jesse first flagged this;
+    independently re-verified here (filename glob + content grep across
+    `remote-host-a`'s full `~/.codex/sessions/` tree, both date-scoped
+    and unscoped) that NEITHER string exists as a filename anywhere on
+    that host, while the 14 real rollouts the audited session actually
+    touched (this file's current DEFAULT_ROOT_ID plus its 13 descendants)
+    do exist there, unpruned. Both garbled strings DO appear as raw text
+    inside one unrelated session's conversational content (not a
+    structural citation) -- the same incidental hit rounds 1-2 already
+    found and reported for the first string. This is itself a Finding-7-
+    class (completion/citation-integrity) data point: the audit got the
+    SUBSTANCE of its own claims right (see the reconciliation table this
+    round produces) while getting two of its OWN supporting citations
+    wrong -- a citation can be fabricated without the underlying finding
+    being false, which is exactly why every citable number in this
+    file's output is independently recomputed from the real rollouts,
+    never taken from the audit's prose on faith.
 
 Why an adapter instead of extending score_e2.py/rollout_parser.py: same
 reasoning as drew_adapter.py -- this corpus's layout (plain
@@ -92,12 +116,41 @@ node is censused with ALREADY-TRUSTED functions only:
     claim -- genuinely new glue (no existing scorer computes this), kept
     to simple counting/grouping over an already-trusted extraction, per
     the task's "reuse via import, do NOT modify the scorers/parser"
-    instruction.
-  - classify_role(): a GENERIC role label (implementer/reviewer/
-    unclassified) from a regex keyword match against the session's first
-    instruction SHAPE (reusing score_e2._first_user_message_text() to
-    read it) -- the instruction text itself is read only in memory for
-    the regex test and is never printed, returned, or logged anywhere.
+    instruction. TWO counts are kept, because the real corpus (round 3)
+    showed they answer different questions and only one matches the
+    audit's own number: `n_test_execs` is the number of DISTINCT
+    exec_command/custom_tool_call records whose command text matches
+    TEST_RE (one shell call = one count, even if that one call chains
+    multiple `go test` invocations with `&&`); `go_test_occurrences` is
+    the total count of the literal `go test` substring across those same
+    matched commands (a chained call with two `go test`s inside it
+    counts twice). The audit's "148 textual go-test invocations" is
+    `go_test_occurrences`, exactly -- confirmed to the exact per-session
+    number for 5 of its 6 cited per-agent buckets, with the 6th
+    reconciling exactly as the SUM of an implementer session + the
+    depth-2 reviewer it spawned (see out/e-audit0729.md §2 for the full
+    per-session table -- bucket labels themselves are not reproduced
+    here, see below).
+  - classify_role_by_task_name(): a GENERIC role label
+    (implementer/reviewer/controller/unclassified) derived from the
+    task_name the session's PARENT assigned when spawning it (via
+    extract_spawns(), read once per tree and mapped thread_id ->
+    task_name in _task_name_by_thread_id() -- never returns, prints, or
+    logs the task_name string itself, only the bucket it maps to via a
+    `review` substring test). This is the PRIMARY role signal (round 3):
+    the original classify_role() -- a regex over the session's own first
+    instruction TEXT, reusing score_e2._first_user_message_text() --
+    returned "unclassified" for 14/14 real sessions (this corpus's
+    dispatch instructions don't happen to contain the literal words
+    "implement"/"review"), so it's kept only as an unused-in-practice
+    fallback for a corpus without task_name-based dispatch, not deleted.
+    The audit's own "9 reviewers vs 4 implementers" claim is exactly
+    `classify_role_by_task_name()`'s tree-wide count on the real corpus.
+
+No task_name string, first-instruction text, exec command text, or any
+other project-specific content is ever printed by this file's own
+report output (print_discovery/main) -- only counts, booleans, role
+labels, and file paths under the fetched corpus's own scratch directory.
 
 Usage: audit0729_adapter.py [ROOT_ID]
 Prints a discovery + (if found) census report to stdout. Read-only;
@@ -116,7 +169,11 @@ import score_e2 as e2
 import score_e7 as e7
 import score_e8 as e8
 
-DEFAULT_ROOT_ID = "019faf59-3a06-7f40-87e0-c8c84a5729ae"
+# Corrected (round 3) from "019faf59-3a06-7f40-87e0-c8c84a5729ae" -- one
+# of the audit's own two GARBLED/FABRICATED citations (see module
+# docstring's citation-integrity finding); that string was never a real
+# rollout anywhere on remote-host-a. Jesse confirmed the true root.
+DEFAULT_ROOT_ID = "019faee1-e140-7f52-b1f7-7ac9153e3c1b"
 # Overridable (fix round 2) so this file can be pointed at a corpus
 # rsynced elsewhere -- see module docstring. Default unchanged.
 SESSIONS_ROOT = os.environ.get("AUDIT0729_SESSIONS_ROOT") or os.path.expanduser("~/.codex/sessions")
@@ -130,6 +187,13 @@ SEARCH_DATE_DIRS = ("2026/07/28", "2026/07/29", "2026/07/30")
 
 IMPLEMENTER_RE = re.compile(r"\bimplement", re.I)
 REVIEWER_RE = re.compile(r"\breview", re.I)
+# Plain substring, no \b -- task_name identifiers are underscore_separated
+# (e.g. "rereview_widget_config", "final_output_review" -- illustrative,
+# not real task_names from any audited corpus), and \b does NOT break on
+# "_" (a \w character), so REVIEWER_RE's word-boundary form misses
+# "rereview_..." and "..._review" task_names entirely. Task names need
+# their own, deliberately looser, substring match.
+TASK_NAME_REVIEW_RE = re.compile(r"review", re.I)
 
 
 # --- discovery (all five legs real and exercised regardless of outcome) --
@@ -279,8 +343,13 @@ def _pick_root(disc):
 # --- census (only reached if discovery succeeds; reuses trusted funcs) ----
 
 def classify_role(path):
-    """GENERIC role label only -- see module docstring. Never returns or
-    logs the underlying instruction text."""
+    """Fallback role signal -- see module docstring. GENERIC label only:
+    never returns or logs the underlying instruction text. Kept for a
+    corpus without task_name-based dispatch; the real corpus (round 3)
+    returns "unclassified" for every session under this signal (its
+    dispatch text doesn't happen to contain "implement"/"review"), so
+    classify_role_by_task_name() is the signal actually used when a
+    task_name is available (see census_node/run_census)."""
     text = e2._first_user_message_text(path)
     is_review = bool(REVIEWER_RE.search(text))
     is_impl = bool(IMPLEMENTER_RE.search(text))
@@ -293,26 +362,71 @@ def classify_role(path):
     return "unclassified"
 
 
+def classify_role_by_task_name(task_name):
+    """GENERIC role label derived from the task_name a session's PARENT
+    assigned when spawning it (see _task_name_by_thread_id()). Returns
+    only a bucket label -- "reviewer" (task_name contains "review",
+    case-insensitive -- covers the campaign's own established
+    review/re-review naming convention, e.g. score_e1.py's
+    task1_implementer/task1_reviewer fixtures use the same split) or
+    "implementer" (task_name present, no "review" substring). The
+    task_name string itself is never returned, printed, or logged by
+    this function or by any caller in this file."""
+    if task_name in (None, rp.OMIT):
+        return "unclassified"
+    return "reviewer" if TASK_NAME_REVIEW_RE.search(task_name) else "implementer"
+
+
+def _task_name_by_thread_id(tree_paths):
+    """Maps each session's own thread_id (resolved from its rollout
+    filename) to the task_name its PARENT assigned when spawning it --
+    read from the parent's own extract_spawns() (call_id -> task_name)
+    joined against the parent's child_links() (call_id -> thread_id).
+    The root gets no entry (nothing spawned it). Used ONLY to derive a
+    generic role bucket via classify_role_by_task_name() -- the
+    task_name values collected here are never returned, printed, or
+    logged as-is by anything in this file."""
+    mapping = {}
+    for path in tree_paths:
+        spawns_by_call_id = {s.call_id: s.task_name for s in rp.extract_spawns(path)}
+        for call_id, thread_id in rp.child_links(path).items():
+            if call_id in spawns_by_call_id:
+                mapping[thread_id] = spawns_by_call_id[call_id]
+    return mapping
+
+
 def _normalize_cmd(cmd):
     return re.sub(r"\s+", " ", cmd).strip()
 
 
-def census_node(path):
+# JS-safe-to-reuse: literal substring, not TEST_RE (which is a `\b(?:...)\b`
+# alternation over many test runners) -- go_test_occurrences (round 3) is
+# specifically an occurrence count of THIS one substring, matching what
+# reconciles exactly to the audit's "148" figure (see module docstring).
+GO_TEST_SUBSTRING_RE = re.compile(r"go test", re.I)
+
+
+def census_node(path, task_name=None):
     """Wait/lifecycle numbers come straight from score_e7/score_e8's own
     census_session() -- imported and called unmodified, never
-    reimplemented here (fix round 1). The go-test count and the
+    reimplemented here (fix round 1). The go-test counts and the
     identical-repeat-cluster max are the only genuinely new counting/
     grouping logic in this file, built on rollout_parser.exec_commands()
-    (trusted extraction) + rollout_parser.TEST_RE (trusted regex)."""
+    (trusted extraction) + rollout_parser.TEST_RE / GO_TEST_SUBSTRING_RE
+    (regexes, not scorer logic)."""
     e7_census = e7.census_session(path)
     e8_census = e8.census_session(path)
     execs = rp.exec_commands(path)
     test_execs = [x for x in execs if rp.TEST_RE.search(x.cmd)]
     norm_counts = collections.Counter(_normalize_cmd(x.cmd) for x in test_execs)
     max_repeat = max(norm_counts.values()) if norm_counts else 0
+    go_test_occurrences = sum(len(GO_TEST_SUBSTRING_RE.findall(x.cmd)) for x in test_execs)
+    role = classify_role_by_task_name(task_name)
+    if role == "unclassified":
+        role = classify_role(path)
     return {
         "path": path,
-        "role": classify_role(path),
+        "role": role,
         "n_wait_agent": e7_census["n_wait_agent_calls"],
         "n_wait_paired": e7_census["n_paired"],
         "n_wait_timed_out": e7_census["n_timed_out"],
@@ -321,6 +435,7 @@ def census_node(path):
         "n_close_agent": e8_census["n_close_agent"],
         "closure_rate": e8_census["closure_rate"],
         "n_test_execs": len(test_execs),
+        "go_test_occurrences": go_test_occurrences,
         "max_identical_test_repeat": max_repeat,
         "spawns": rp.extract_spawns(path),
     }
@@ -334,8 +449,16 @@ def run_census(root_path, disc):
     if root_path not in tree_paths:
         tree_paths.append(root_path)
     nodes = e2.build_tree(root_path, sorted(tree_paths))
-    censused = {n["rollout"]: census_node(os.path.join(os.path.dirname(root_path), n["rollout"]))
-                for n in nodes}
+    task_names = _task_name_by_thread_id(tree_paths)
+    censused = {}
+    for n in nodes:
+        path = os.path.join(os.path.dirname(root_path), n["rollout"])
+        thread_id = None
+        for tid in task_names:
+            if tid in n["rollout"]:
+                thread_id = tid
+                break
+        censused[n["rollout"]] = census_node(path, task_name=task_names.get(thread_id))
     return nodes, censused
 
 
@@ -385,18 +508,26 @@ def main(argv):
 
     print("RESULT: FOUND -- proceeding to census.")
     nodes, censused = run_census(root_path, disc)
+    root_rollout = os.path.basename(root_path)
+    root_c = censused[root_rollout]
     print(f"tree sessions: {len(nodes)}")
     total_waits = sum(c["n_wait_agent"] for c in censused.values())
     total_timed_out = sum(c["n_wait_timed_out"] for c in censused.values())
     total_list_agents = sum(c["n_list_agents"] for c in censused.values())
     total_test_execs = sum(c["n_test_execs"] for c in censused.values())
+    total_go_test_occurrences = sum(c["go_test_occurrences"] for c in censused.values())
     max_cluster = max((c["max_identical_test_repeat"] for c in censused.values()), default=0)
-    roles = collections.Counter(c["role"] for c in censused.values())
+    roles = collections.Counter(c["role"] for c in censused.values() if c["path"] != root_path)
+    print(f"ROOT wait_agent: {root_c['n_wait_agent']} (paired: {root_c['n_wait_paired']}, "
+          f"timed out: {root_c['n_wait_timed_out']}, rate/paired: "
+          f"{root_c['wait_timeout_rate_of_paired']})")
+    print(f"ROOT list_agents: {root_c['n_list_agents']}")
     print(f"total wait_agent (tree): {total_waits} (timed out: {total_timed_out})")
     print(f"total list_agents (tree): {total_list_agents}")
-    print(f"total go-test exec_commands (tree): {total_test_execs}")
+    print(f"total go-test exec_commands, distinct-command count (tree): {total_test_execs}")
+    print(f"total go-test occurrences, literal-substring count (tree): {total_go_test_occurrences}")
     print(f"max identical-normalized-test-command repeat, any single session: {max_cluster}")
-    print(f"role distribution: {dict(roles)}")
+    print(f"role distribution (descendants only, root excluded): {dict(roles)}")
     return 0
 
 

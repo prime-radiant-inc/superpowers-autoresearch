@@ -1,22 +1,36 @@
-"""Tests for audit0729_adapter.py (Task 15 fix rounds 1-2). Synthetic
-fixtures only -- fake IDs, hand-built minimal records -- no real
-rollouts, no client content, nothing from the actual (still-unlocated)
-2026-07-29 corpus.
+"""Tests for audit0729_adapter.py (Task 15, fix rounds 1-3). Synthetic
+fixtures only -- fake IDs, hand-built minimal records, no real rollouts,
+no client content, nothing from the real (since-fetched) 2026-07-29
+corpus (which lives read-only in a gitignored scratch dir and is never
+read by this test file).
 
-Covers two fix-round-2 defects:
-  1. `_pick_root(disc)` -- an earlier draft's inline fallback chain in
-     main() only checked 3 of the 5 discovery legs and raised IndexError
-     if the root was found solely via one of the archived_sessions legs
-     added in fix round 1. Every single-leg-hit case is covered here,
-     plus the DB-only (no file) case and the priority order.
-  2. `AUDIT0729_SESSIONS_ROOT` env override -- `test_env_override_*`
-     builds a small synthetic root+child tree under a temp dir and runs
-     the adapter's own `main()` against it via subprocess with the env
-     var set, exercising the full discover -> found -> _pick_root ->
-     run_census -> census_node (score_e7/score_e8) path end to end --
-     something fix round 1 flagged as never having run against real
-     data. Still synthetic, not real data, but a genuine full-pipeline
-     smoke test rather than a stub.
+Covers:
+  1. `_pick_root(disc)` (round 2) -- an earlier draft's inline fallback
+     chain in main() only checked 3 of the 5 discovery legs and raised
+     IndexError if the root was found solely via one of the
+     archived_sessions legs added in round 1. Every single-leg-hit case
+     is covered here, plus the DB-only (no file) case and the priority
+     order.
+  2. `AUDIT0729_SESSIONS_ROOT` env override (round 2) --
+     `test_env_override_*` builds a small synthetic root+child tree
+     under a temp dir and runs the adapter's own `main()` against it via
+     subprocess with the env var set, exercising the full discover ->
+     found -> _pick_root -> run_census -> census_node (score_e7/
+     score_e8) path end to end.
+  3. `classify_role_by_task_name()` / `_task_name_by_thread_id()` (round
+     3) -- the real corpus showed the original text-regex role signal
+     (`classify_role()`) returns "unclassified" for every real session
+     (its dispatch instructions don't contain "implement"/"review"
+     literally), so task_name-derived role became the primary signal.
+     Covers the review/re-review substring match, the plain-implementer
+     case, the None/omitted case, and that it wins over a
+     DELIBERATELY CONFLICTING text signal in the full-pipeline test
+     (task_name says "review", first-instruction text says "implement").
+  4. `go_test_occurrences` (round 3) -- the audit's "148" figure counts
+     literal `go test` substring OCCURRENCES, not matching-command
+     COUNT (a single chained `cmd1 && go test A && go test B` command
+     is 1 command but 2 occurrences); a synthetic case with 2
+     occurrences in 1 command covers the distinction.
 """
 import json
 import os
@@ -188,13 +202,23 @@ class TestSessionsRootEnvOverride(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
             self.assertIn("RESULT: FOUND", result.stdout)
             self.assertIn("tree sessions: 2", result.stdout)
+            self.assertIn("ROOT wait_agent: 1", result.stdout)
+            self.assertIn("ROOT list_agents: 1", result.stdout)
             self.assertIn("total wait_agent (tree): 1", result.stdout)
             self.assertIn("total list_agents (tree): 1", result.stdout)
-            self.assertIn("total go-test exec_commands (tree): 2", result.stdout)
+            self.assertIn("total go-test exec_commands, distinct-command "
+                           "count (tree): 2", result.stdout)
+            self.assertIn("total go-test occurrences, literal-substring "
+                           "count (tree): 2", result.stdout)
             self.assertIn("max identical-normalized-test-command repeat, "
                            "any single session: 2", result.stdout)
-            self.assertIn("'implementer': 1", result.stdout)
-            self.assertIn("'reviewer': 1", result.stdout)
+            # Root is excluded from the printed role distribution (it has
+            # no parent-assigned task_name); the child's task_name
+            # ("reviewer", set in _build_synthetic_tree's spawn_agent
+            # call) drives its role via classify_role_by_task_name --
+            # the PRIMARY signal (round 3), not the fallback text regex.
+            self.assertIn("role distribution (descendants only, root "
+                           "excluded): {'reviewer': 1}", result.stdout)
 
     def test_default_root_unaffected_when_env_unset(self):
         """Sanity check the override is additive: with the env var
@@ -209,6 +233,110 @@ class TestSessionsRootEnvOverride(unittest.TestCase):
             env=env, capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), os.path.expanduser("~/.codex/sessions"))
+
+
+class TestClassifyRoleByTaskName(unittest.TestCase):
+    """Pure-function tests -- round 3's primary role signal. Task_name
+    values here are entirely made up for the test (widget/config/output
+    -- generic filler words), never real task_name strings from any
+    audited corpus."""
+
+    def test_review_substring_is_reviewer(self):
+        self.assertEqual(aa.classify_role_by_task_name("review_the_widget_config"), "reviewer")
+
+    def test_rereview_prefix_is_reviewer(self):
+        self.assertEqual(aa.classify_role_by_task_name("rereview_widget_config"), "reviewer")
+
+    def test_final_reviewer_suffix_is_reviewer(self):
+        self.assertEqual(aa.classify_role_by_task_name("final_output_review"), "reviewer")
+
+    def test_no_review_substring_is_implementer(self):
+        self.assertEqual(aa.classify_role_by_task_name("build_widget_config"), "implementer")
+
+    def test_none_is_unclassified(self):
+        self.assertEqual(aa.classify_role_by_task_name(None), "unclassified")
+
+    def test_omit_sentinel_is_unclassified(self):
+        self.assertEqual(aa.classify_role_by_task_name(aa.rp.OMIT), "unclassified")
+
+
+class TestTaskNameByThreadId(unittest.TestCase):
+    """_task_name_by_thread_id() -- joins a parent's extract_spawns()
+    (call_id -> task_name) against its own child_links() (call_id ->
+    thread_id) across every rollout in the tree."""
+
+    def test_maps_child_to_parent_assigned_task_name(self):
+        root_id, child_id = "taskname0001root", "taskname0001child"
+        with tempfile.TemporaryDirectory() as tmp:
+            sessions_root = pathlib.Path(tmp) / "sessions"
+            root_path, child_path = _build_synthetic_tree(sessions_root, root_id, child_id)
+            mapping = aa._task_name_by_thread_id([str(root_path), str(child_path)])
+            self.assertEqual(mapping, {child_id: "reviewer"})
+
+    def test_root_has_no_entry(self):
+        root_id, child_id = "taskname0002root", "taskname0002child"
+        with tempfile.TemporaryDirectory() as tmp:
+            sessions_root = pathlib.Path(tmp) / "sessions"
+            root_path, child_path = _build_synthetic_tree(sessions_root, root_id, child_id)
+            mapping = aa._task_name_by_thread_id([str(root_path), str(child_path)])
+            self.assertNotIn(root_id, mapping)
+
+
+class TestTaskNameWinsOverConflictingText(unittest.TestCase):
+    """The real corpus's own dispatch text never contains "implement"/
+    "review" literally (classify_role() alone returns "unclassified" for
+    14/14 real sessions) -- task_name must be the PRIMARY signal, not
+    just a tiebreaker. Builds a session whose task_name and first-
+    instruction text actively DISAGREE and asserts task_name wins."""
+
+    def test_task_name_overrides_conflicting_instruction_text(self):
+        root_id, child_id = "conflict0001root", "conflict0001child"
+        with tempfile.TemporaryDirectory() as tmp:
+            sessions_root = pathlib.Path(tmp) / "sessions"
+            date_dir = sessions_root / "2026" / "07" / "29"
+            date_dir.mkdir(parents=True)
+            # Task_name says reviewer; the session's OWN first-instruction
+            # text says "implement" -- deliberately conflicting signals.
+            child_lines = [
+                _rec("2026-07-29T11:00:03.000Z", "event_msg",
+                     {"type": "user_message", "message": "Please implement a fix."}),
+            ]
+            child_path = date_dir / f"rollout-2026-07-29T11-00-02-{child_id}.jsonl"
+            child_path.write_text("\n".join(child_lines) + "\n")
+
+            role_from_task_name = aa.classify_role_by_task_name("review_the_fix")
+            role_from_text_fallback = aa.classify_role(str(child_path))
+            self.assertEqual(role_from_task_name, "reviewer")
+            self.assertEqual(role_from_text_fallback, "implementer")
+            # census_node()'s actual precedence: task_name wins when present.
+            node = aa.census_node(str(child_path), task_name="review_the_fix")
+            self.assertEqual(node["role"], "reviewer")
+
+
+class TestGoTestOccurrences(unittest.TestCase):
+    """go_test_occurrences (round 3) -- literal `go test` substring
+    OCCURRENCE count, not matching-command count. The audit's "148"
+    figure only reconciles under this counting method (round 3's
+    out/e-audit0729.md documents the full derivation); a single chained
+    command with 2 occurrences is the distinguishing case."""
+
+    def test_single_command_two_occurrences(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sessions_root = pathlib.Path(tmp) / "sessions" / "2026" / "07" / "29"
+            sessions_root.mkdir(parents=True)
+            root_id = "goccur0001root"
+            lines = [
+                _rec("2026-07-29T11:00:00.000Z", "response_item", {
+                    "type": "function_call", "id": "fc1", "name": "exec_command",
+                    "arguments": json.dumps({"cmd": "go test ./a/... && go test ./b/..."}),
+                    "call_id": "call1"}),
+            ]
+            path = sessions_root / f"rollout-2026-07-29T11-00-00-{root_id}.jsonl"
+            path.write_text("\n".join(lines) + "\n")
+
+            node = aa.census_node(str(path))
+            self.assertEqual(node["n_test_execs"], 1)  # one exec_command record
+            self.assertEqual(node["go_test_occurrences"], 2)  # two "go test" substrings
 
 
 if __name__ == "__main__":
