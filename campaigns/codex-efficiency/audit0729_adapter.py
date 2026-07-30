@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Thin adapter: run rollout_parser + score_e2.build_tree (trusted,
-unmodified) over the 2026-07-29 fallback session tree Jesse audited
-manually (Amendment 3, "MINE the 2026-07-29 session tree" task).
+"""Thin adapter: run rollout_parser + score_e2.build_tree + score_e7/score_e8
+census functions (trusted, unmodified) over the 2026-07-29 fallback session
+tree Jesse audited manually (Amendment 3, "MINE the 2026-07-29 session
+tree" task).
 
 Corpus (read-only, external, private, NEVER committed):
     root rollout ~/.codex/sessions/2026/07/29/rollout-2026-07-29T11-36-36-
@@ -21,35 +22,55 @@ so discovery lives here. score_e2.build_tree() itself is layout-agnostic
 (root path + a candidate rollouts list) and is imported and called
 unmodified.
 
-Discovery has THREE independent legs, all read-only:
-  1. filename match: glob for *ROOT_ID*.jsonl under the searched date dirs.
-  2. content match: grep every candidate rollout's raw bytes for ROOT_ID
-     (catches a surviving CHILD file that still names the root as its
-     parent_thread_id even if the root's own rollout file is gone) --
-     reports only matching file paths, never matched line content.
-  3. DB match: read-only query (`file:...?mode=ro`, sqlite3 stdlib module)
-     against ~/.codex/state_5.sqlite's thread_spawn_edges for any row
-     naming ROOT_ID as parent or child.
+Discovery has FIVE independent legs, all read-only, all live in this
+file (not ad hoc shell -- fix round 1 moved every check actually
+performed during this task's investigation into reviewable code):
+  1. filename match (narrow): glob for *ROOT_ID*.jsonl under the
+     audit-date-adjacent window (SEARCH_DATE_DIRS).
+  2. content match (narrow): every rollout under that same window read
+     as raw bytes and searched for ROOT_ID (catches a surviving CHILD
+     file that still names the root as its parent_thread_id even if the
+     root's own rollout file is gone) -- reports file paths only, never
+     matched line content. Deliberately scoped to the narrow window,
+     unlike leg 3, because byte-scanning is not cheap at full-corpus
+     scale (~8k rollout files across this machine's history).
+  3. filename match (full tree): glob for *ROOT_ID*.jsonl across the
+     ENTIRE ~/.codex/sessions/**/*.jsonl tree, not just the narrow
+     window -- cheap (filesystem metadata only, no byte reads) so safe
+     to run unscoped, and this is what the investigation actually swept
+     by hand before narrowing to the audit-date window.
+  4. archived_sessions: ~/.codex/archived_sessions/ is a separate,
+     flat (no date subdirs -- verified) directory Codex moves some
+     rollouts into; both a filename glob AND a full content scan are
+     cheap here since it's small enough to scan in full (verified: 333
+     files as of this fix round, all dated 2026-02 through 2026-06 --
+     see out/e-audit0729.md §1 for why that range rules the target out
+     without needing per-file inspection).
+  5. DB match: read-only query (`file:...?mode=ro`, sqlite3 stdlib
+     module) against ~/.codex/state_5.sqlite's thread_spawn_edges for
+     any row naming ROOT_ID as parent or child.
 
-If all three legs come up empty, main() reports NOT_FOUND with the exact
-evidence (paths searched, row counts) rather than guessing or falling
-back to Jesse's numbers as if independently verified.
+If all five legs come up empty, main() reports NOT_FOUND with the exact
+evidence (paths searched, row/file counts) rather than guessing or
+falling back to Jesse's numbers as if independently verified.
 
 If the root IS found (e.g. on a future rerun, or in an environment where
 the corpus wasn't pruned), build_tree() walks the resolved tree and each
-node is censused with ALREADY-TRUSTED rollout_parser functions only
-(wait_outcomes, lifecycle_calls, exec_commands) -- no new parsing logic.
-The only new logic here is thin counting/grouping glue:
-  - per-claim reconciliation: root wait_outcomes() count + duration_hint
-    distribution; tree-wide and root-only list_agents count (lifecycle_calls,
-    name=="list_agents"); tree-wide go-test exec_commands count (via
-    rollout_parser.TEST_RE) plus, per session, the largest group of
-    EXACT-normalized-string-identical test commands (the "12x identical
-    regression cluster" claim) -- command text itself is never printed,
-    only the max group size per session and its role label;
-    depth-2 spawns bucketed by issuer role; same-task_name duplicate
-    review detection (task_name used ONLY as an opaque equality key,
-    never printed -- see classify_role()'s docstring for why).
+node is censused with ALREADY-TRUSTED functions only:
+  - score_e7.census_session() for wait_agent counts, pairing, and
+    timeout rate (imported and called unmodified -- NOT reimplemented
+    here; fix round 1 corrected an earlier draft that hand-rolled a
+    thinner wait census than E7's own, which would not have reconciled
+    the pre-registered timeout-rate claim on a rerun).
+  - score_e8.census_session() for list_agents/close_agent/lifecycle
+    counts and closure rate (imported and called unmodified, same
+    reasoning).
+  - rollout_parser.exec_commands() + rollout_parser.TEST_RE for the
+    go-test invocation count and the "12x identical regression cluster"
+    claim -- genuinely new glue (no existing scorer computes this), kept
+    to simple counting/grouping over an already-trusted extraction, per
+    the task's "reuse via import, do NOT modify the scorers/parser"
+    instruction.
   - classify_role(): a GENERIC role label (implementer/reviewer/
     unclassified) from a regex keyword match against the session's first
     instruction SHAPE (reusing score_e2._first_user_message_text() to
@@ -70,18 +91,24 @@ import collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import rollout_parser as rp
 import score_e2 as e2
+import score_e7 as e7
+import score_e8 as e8
 
 DEFAULT_ROOT_ID = "019faf59-3a06-7f40-87e0-c8c84a5729ae"
 SESSIONS_ROOT = os.path.expanduser("~/.codex/sessions")
+ARCHIVED_SESSIONS_ROOT = os.path.expanduser("~/.codex/archived_sessions")
 STATE_DB = os.path.expanduser("~/.codex/state_5.sqlite")
 # Audit date +/- 1 day, per the task brief's "same date dir or adjacent".
+# The FULL-TREE sweep (leg 3, find_by_filename_full_tree) is what actually
+# covers the rest of the corpus's history -- this narrow window is only
+# for the two legs (filename, content) worth scoping tightly.
 SEARCH_DATE_DIRS = ("2026/07/28", "2026/07/29", "2026/07/30")
 
 IMPLEMENTER_RE = re.compile(r"\bimplement", re.I)
 REVIEWER_RE = re.compile(r"\breview", re.I)
 
 
-# --- discovery (all three legs real and exercised regardless of outcome) --
+# --- discovery (all five legs real and exercised regardless of outcome) --
 
 def candidate_date_dirs():
     return [d for d in
@@ -90,6 +117,7 @@ def candidate_date_dirs():
 
 
 def find_by_filename(root_id):
+    """Leg 1: narrow-window filename match."""
     hits = []
     for d in candidate_date_dirs():
         hits.extend(glob.glob(os.path.join(d, f"*{root_id}*.jsonl")))
@@ -97,9 +125,9 @@ def find_by_filename(root_id):
 
 
 def find_by_content(root_id):
-    """Grep every rollout under the searched date dirs for ROOT_ID as raw
-    bytes. Reports matching file paths only -- never reads/prints the
-    matched line."""
+    """Leg 2: narrow-window content match. Grep every rollout under the
+    searched date dirs for ROOT_ID as raw bytes. Reports matching file
+    paths only -- never reads/prints the matched line."""
     needle = root_id.encode()
     hits = []
     scanned = 0
@@ -115,11 +143,42 @@ def find_by_content(root_id):
     return sorted(hits), scanned
 
 
+def find_by_filename_full_tree(root_id):
+    """Leg 3: full-corpus filename sweep -- every date dir this machine
+    has ever written under ~/.codex/sessions/, not just the narrow
+    window. Filename-only (no byte reads), so cheap even across the
+    full ~8k-rollout history."""
+    pattern = os.path.join(SESSIONS_ROOT, "**", f"*{root_id}*.jsonl")
+    return sorted(glob.glob(pattern, recursive=True))
+
+
+def find_in_archived_sessions(root_id):
+    """Leg 4: ~/.codex/archived_sessions/ -- a separate, flat directory
+    (verified: no date subdirs) Codex moves some rollouts into. Small
+    enough to filename-glob AND full-content-scan. Returns
+    (filename_hits, content_hits, present, file_count)."""
+    present = os.path.isdir(ARCHIVED_SESSIONS_ROOT)
+    if not present:
+        return [], [], False, 0
+    all_files = glob.glob(os.path.join(ARCHIVED_SESSIONS_ROOT, "*.jsonl"))
+    filename_hits = sorted(p for p in all_files if root_id in os.path.basename(p))
+    needle = root_id.encode()
+    content_hits = []
+    for path in all_files:
+        try:
+            with open(path, "rb") as f:
+                if needle in f.read():
+                    content_hits.append(path)
+        except OSError:
+            continue
+    return filename_hits, sorted(content_hits), True, len(all_files)
+
+
 def find_spawn_edges(root_id):
-    """Read-only query against thread_spawn_edges. Returns (rows, db_present,
-    total_edge_count) -- total_edge_count is a sanity check that the table
-    itself is populated (not silently empty/corrupt) even when ROOT_ID has
-    zero matching rows."""
+    """Leg 5: read-only query against thread_spawn_edges. Returns (rows,
+    db_present, total_edge_count) -- total_edge_count is a sanity check
+    that the table itself is populated (not silently empty/corrupt) even
+    when ROOT_ID has zero matching rows."""
     if not os.path.exists(STATE_DB):
         return [], False, None
     conn = sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True)
@@ -139,6 +198,9 @@ def find_spawn_edges(root_id):
 def discover(root_id):
     filename_hits = find_by_filename(root_id)
     content_hits, n_scanned = find_by_content(root_id)
+    full_tree_filename_hits = find_by_filename_full_tree(root_id)
+    (archived_filename_hits, archived_content_hits,
+     archived_present, archived_file_count) = find_in_archived_sessions(root_id)
     edge_rows, db_present, total_edges = find_spawn_edges(root_id)
     return {
         "root_id": root_id,
@@ -146,6 +208,11 @@ def discover(root_id):
         "filename_hits": filename_hits,
         "content_hits": content_hits,
         "n_files_content_scanned": n_scanned,
+        "full_tree_filename_hits": full_tree_filename_hits,
+        "archived_sessions_present": archived_present,
+        "archived_sessions_file_count": archived_file_count,
+        "archived_filename_hits": archived_filename_hits,
+        "archived_content_hits": archived_content_hits,
         "spawn_edge_rows": edge_rows,
         "state_db_present": db_present,
         "state_db_total_edges": total_edges,
@@ -153,7 +220,10 @@ def discover(root_id):
 
 
 def found(disc):
-    return bool(disc["filename_hits"] or disc["content_hits"] or disc["spawn_edge_rows"])
+    return bool(disc["filename_hits"] or disc["content_hits"]
+                or disc["full_tree_filename_hits"]
+                or disc["archived_filename_hits"] or disc["archived_content_hits"]
+                or disc["spawn_edge_rows"])
 
 
 # --- census (only reached if discovery succeeds; reuses trusted funcs) ----
@@ -178,18 +248,28 @@ def _normalize_cmd(cmd):
 
 
 def census_node(path):
-    waits = rp.wait_outcomes(path)
-    lifecycle = rp.lifecycle_calls(path)
+    """Wait/lifecycle numbers come straight from score_e7/score_e8's own
+    census_session() -- imported and called unmodified, never
+    reimplemented here (fix round 1). The go-test count and the
+    identical-repeat-cluster max are the only genuinely new counting/
+    grouping logic in this file, built on rollout_parser.exec_commands()
+    (trusted extraction) + rollout_parser.TEST_RE (trusted regex)."""
+    e7_census = e7.census_session(path)
+    e8_census = e8.census_session(path)
     execs = rp.exec_commands(path)
-    test_execs = [e for e in execs if rp.TEST_RE.search(e.cmd)]
-    norm_counts = collections.Counter(_normalize_cmd(e.cmd) for e in test_execs)
+    test_execs = [x for x in execs if rp.TEST_RE.search(x.cmd)]
+    norm_counts = collections.Counter(_normalize_cmd(x.cmd) for x in test_execs)
     max_repeat = max(norm_counts.values()) if norm_counts else 0
     return {
         "path": path,
         "role": classify_role(path),
-        "n_wait_agent": len(waits),
-        "wait_duration_hints": collections.Counter(w.duration_hint for w in waits),
-        "n_list_agents": sum(1 for c in lifecycle if c.name == "list_agents"),
+        "n_wait_agent": e7_census["n_wait_agent_calls"],
+        "n_wait_paired": e7_census["n_paired"],
+        "n_wait_timed_out": e7_census["n_timed_out"],
+        "wait_timeout_rate_of_paired": e7_census["timeout_rate_of_paired"],
+        "n_list_agents": e8_census["n_list_agents"],
+        "n_close_agent": e8_census["n_close_agent"],
+        "closure_rate": e8_census["closure_rate"],
         "n_test_execs": len(test_execs),
         "max_identical_test_repeat": max_repeat,
         "spawns": rp.extract_spawns(path),
@@ -197,7 +277,10 @@ def census_node(path):
 
 
 def run_census(root_path, disc):
-    tree_paths = sorted(set(disc["filename_hits"]) | set(disc["content_hits"]))
+    tree_paths = sorted(set(disc["filename_hits"]) | set(disc["content_hits"])
+                         | set(disc["full_tree_filename_hits"])
+                         | set(disc["archived_filename_hits"])
+                         | set(disc["archived_content_hits"]))
     if root_path not in tree_paths:
         tree_paths.append(root_path)
     nodes = e2.build_tree(root_path, sorted(tree_paths))
@@ -210,13 +293,20 @@ def run_census(root_path, disc):
 
 def print_discovery(disc):
     print(f"root_id searched: {disc['root_id']}")
-    print(f"date dirs searched: {disc['date_dirs_searched']}")
-    print(f"filename-match hits: {len(disc['filename_hits'])} {disc['filename_hits']}")
-    print(f"content-match hits: {len(disc['content_hits'])} "
+    print(f"date dirs searched (legs 1-2, narrow window): {disc['date_dirs_searched']}")
+    print(f"leg 1 filename-match hits: {len(disc['filename_hits'])} {disc['filename_hits']}")
+    print(f"leg 2 content-match hits: {len(disc['content_hits'])} "
           f"(scanned {disc['n_files_content_scanned']} rollout files) {disc['content_hits']}")
-    print(f"state_5.sqlite present: {disc['state_db_present']} "
+    print(f"leg 3 full-tree filename-match hits: {len(disc['full_tree_filename_hits'])} "
+          f"{disc['full_tree_filename_hits']}")
+    print(f"leg 4 archived_sessions present: {disc['archived_sessions_present']} "
+          f"({disc['archived_sessions_file_count']} files); "
+          f"filename hits: {len(disc['archived_filename_hits'])} "
+          f"{disc['archived_filename_hits']}; content hits: "
+          f"{len(disc['archived_content_hits'])} {disc['archived_content_hits']}")
+    print(f"leg 5 state_5.sqlite present: {disc['state_db_present']} "
           f"(thread_spawn_edges total rows: {disc['state_db_total_edges']})")
-    print(f"thread_spawn_edges rows naming root_id: {len(disc['spawn_edge_rows'])} "
+    print(f"leg 5 thread_spawn_edges rows naming root_id: {len(disc['spawn_edge_rows'])} "
           f"{disc['spawn_edge_rows']}")
 
 
@@ -229,22 +319,25 @@ def main(argv):
     print()
 
     if not found(disc):
-        print("RESULT: NOT_FOUND -- no rollout file, no content match, no "
-              "thread_spawn_edges row for this root_id in any of the "
-              "searched date dirs / the live state DB. See §1 evidence "
-              "above. No census performed.")
+        print("RESULT: NOT_FOUND -- no rollout file (narrow window or "
+              "full-tree sweep), no content match (narrow window or "
+              "archived_sessions), no thread_spawn_edges row for this "
+              "root_id. See legs 1-5 evidence above. No census performed.")
         return 1
 
     print("RESULT: FOUND -- proceeding to census.")
-    root_path = disc["filename_hits"][0] if disc["filename_hits"] else disc["content_hits"][0]
+    root_path = disc["filename_hits"][0] if disc["filename_hits"] else (
+        disc["full_tree_filename_hits"][0] if disc["full_tree_filename_hits"] else
+        disc["content_hits"][0])
     nodes, censused = run_census(root_path, disc)
     print(f"tree sessions: {len(nodes)}")
     total_waits = sum(c["n_wait_agent"] for c in censused.values())
+    total_timed_out = sum(c["n_wait_timed_out"] for c in censused.values())
     total_list_agents = sum(c["n_list_agents"] for c in censused.values())
     total_test_execs = sum(c["n_test_execs"] for c in censused.values())
     max_cluster = max((c["max_identical_test_repeat"] for c in censused.values()), default=0)
     roles = collections.Counter(c["role"] for c in censused.values())
-    print(f"total wait_agent (tree): {total_waits}")
+    print(f"total wait_agent (tree): {total_waits} (timed out: {total_timed_out})")
     print(f"total list_agents (tree): {total_list_agents}")
     print(f"total go-test exec_commands (tree): {total_test_execs}")
     print(f"max identical-normalized-test-command repeat, any single session: {max_cluster}")

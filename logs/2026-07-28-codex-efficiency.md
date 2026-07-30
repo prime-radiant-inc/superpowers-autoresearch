@@ -1871,3 +1871,30 @@ audit source on this timescale; future same-day MINE tasks against a
 live local rollout tree should snapshot the relevant files immediately
 rather than defer. No run spend. Existing test suites re-run clean
 (rollout_parser/e1/e2/e4/e9, 56 tests).
+
+## 2026-07-29 — CORRECTION to the "MINE: 07-29 fallback session tree" entry above (fix round 1, controller entry)
+
+Review caught two defects in the entry above. The reviewer independently
+re-verified the headline "corpus absent" finding with extra legs
+including `logs_2.sqlite`, and it stands. The two defects:
+(1) **false fact** — that entry and `out/e-audit0729.md` claimed
+`~/.codex/archived_sessions/` was "present but empty." It is not empty:
+333 rollout files, all dated 2026-02-12 through 2026-06-24 (zero from
+July), so the corpus-absent conclusion is unaffected — none of those
+333 files could be July's target regardless — but the "empty" claim
+itself was wrong and is corrected here rather than silently edited above
+(append-only log). `out/e-audit0729.md` §1 has been corrected in place
+(that file is not append-only). (2) **overclaimed reuse** —
+`audit0729_adapter.py`'s `census_node()` had reimplemented its own
+thinner wait/lifecycle census instead of actually calling
+`score_e7.census_session()`/`score_e8.census_session()`, so a future
+rerun would not have reconciled the wait-timeout-rate or
+lifecycle/closure claims despite the docstring claiming that reuse.
+Fixed: `census_node()` now calls `score_e7.census_session()` and
+`score_e8.census_session()` directly (imports only, scorers unmodified);
+the two full-tree/`archived_sessions` search legs that were originally
+only ad hoc shell commands are now codified in `discover()` (5 legs
+total). Reran `audit0729_adapter.py` post-fix: still short-circuits to
+`NOT_FOUND` cleanly (exit 1, ~0.6s, no traceback) — verdict unchanged.
+Existing suites re-run clean (56 tests, unaffected — no scorer/parser
+files touched).

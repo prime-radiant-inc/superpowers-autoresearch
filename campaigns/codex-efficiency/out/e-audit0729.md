@@ -22,40 +22,56 @@ of its own; this `.md` is the only durable artifact.
 
 ## 1. Discovery — methodology and evidence
 
-Three independent, read-only legs, all exercised for real (not
-theoretical):
+Five independent, read-only legs, all exercised for real (not
+theoretical) and all codified in `audit0729_adapter.py` — fix round 1
+moved two legs that were originally only ad hoc shell commands (the
+full-tree filename sweep and the `archived_sessions/` check) into the
+reviewable script, alongside correcting the `archived_sessions/`
+fact below (see §1's "Conclusion" and the fix-round note at the bottom
+of this file):
 
-1. **Filename match**: `glob` for `*019faf59-3a06-7f40-87e0-c8c84a5729ae*.jsonl`
+1. **Filename match (narrow)**: `glob` for `*019faf59-3a06-7f40-87e0-c8c84a5729ae*.jsonl`
    under `~/.codex/sessions/2026/07/{28,29}` (07/30 doesn't exist yet).
-2. **Content match**: every rollout file under those same two date dirs
-   read as raw bytes and searched for the root ID string (this would
-   catch a *surviving child* rollout that still names the missing root
-   as its `parent_thread_id`, even if the root's own file is gone).
+2. **Content match (narrow)**: every rollout file under those same two
+   date dirs read as raw bytes and searched for the root ID string (this
+   would catch a *surviving child* rollout that still names the missing
+   root as its `parent_thread_id`, even if the root's own file is gone).
    Reports file paths only — matched line content is never read or
-   printed.
-3. **DB match**: read-only query (`sqlite3` stdlib module,
+   printed. Deliberately scoped to the narrow window, not the full
+   ~8,000-rollout history, because byte-scanning at that scale isn't cheap.
+3. **Filename match (full tree)**: `glob` for the same pattern across
+   the ENTIRE `~/.codex/sessions/**/*.jsonl` tree (every date this
+   machine has ever recorded) — filename-only, so cheap even unscoped.
+4. **`archived_sessions/` match**: `~/.codex/archived_sessions/` is a
+   separate, flat directory (no date subdirs) Codex moves some rollouts
+   into; small enough (333 files) to both filename-glob and fully
+   content-scan.
+5. **DB match**: read-only query (`sqlite3` stdlib module,
    `file:~/.codex/state_5.sqlite?mode=ro`) against `thread_spawn_edges`
    for any row naming the root ID as `parent_thread_id` or
    `child_thread_id`.
 
-Run (`python3 audit0729_adapter.py`), 2026-07-29 ~16:55 PDT / 23:55 UTC:
+Run (`python3 audit0729_adapter.py`), 2026-07-29 ~17:12 PDT (fix-round-1 rerun):
 
 ```
 root_id searched: 019faf59-3a06-7f40-87e0-c8c84a5729ae
-date dirs searched: ['.../2026/07/28', '.../2026/07/29']
-filename-match hits: 0 []
-content-match hits: 0 (scanned 36 rollout files) []
-state_5.sqlite present: True (thread_spawn_edges total rows: 4724)
-thread_spawn_edges rows naming root_id: 0 []
+date dirs searched (legs 1-2, narrow window): ['.../2026/07/28', '.../2026/07/29']
+leg 1 filename-match hits: 0 []
+leg 2 content-match hits: 0 (scanned 36 rollout files) []
+leg 3 full-tree filename-match hits: 0 []
+leg 4 archived_sessions present: True (333 files); filename hits: 0 []; content hits: 0 []
+leg 5 state_5.sqlite present: True (thread_spawn_edges total rows: 4724)
+leg 5 thread_spawn_edges rows naming root_id: 0 []
 
 RESULT: NOT_FOUND
 ```
 
-`thread_spawn_edges` has 4,724 rows and is visibly live (it grew by one
-row between an earlier ad-hoc check and this run) — the table isn't
-empty or stale, it simply has no edge touching this root ID. 36 rollout
-files were opened and byte-scanned (12 from 07/28, 24 from 07/29) with
-zero content matches.
+`thread_spawn_edges` has 4,724 rows and is visibly live — the table
+isn't empty or stale, it simply has no edge touching this root ID. 36
+rollout files were opened and byte-scanned in the narrow window (12 from
+07/28, 24 from 07/29) with zero content matches; the full-tree filename
+sweep (leg 3, ~8k files) and the `archived_sessions/` filename+content
+scan (leg 4, 333 files) both also came up empty.
 
 **Corroborating detail — filename-timestamp timezone.** Rollout
 filenames encode LOCAL time, not UTC (verified directly: rollout
@@ -82,11 +98,17 @@ established, no log evidence either way — `~/.codex/log/` is empty):
 local Codex session storage being pruned/rotated on some schedule
 shorter than a few hours, or the session having been manually
 deleted/archived after Jesse's audit. `~/.codex/archived_sessions/` is
-present but empty; `~/.codex/.Trash` equivalent has no match either.
+**not** empty — it holds 333 rollout files — but every one of them is
+dated 2026-02-12 through 2026-06-24 (verified: filename-parsed date
+range, zero files matching `2026-07`), so none could be July's target
+session regardless; it neither confirms nor rules out "archived after
+the audit" as the mechanism, it just isn't where a July rollout would
+have landed if it were. `~/.codex/.Trash` equivalent has no match
+either.
 
 ## 2. Per-claim reconciliation
 
-Every claim below carries the identical evidence: §1's three-leg search
+Every claim below carries the identical evidence: §1's five-leg search
 came up empty, so there is no rollout file to compute the claim's
 left-hand side from. "Concrete rollout-line evidence" cannot be cited
 (there is no line to cite); §1's discovery log — exact commands, paths,
@@ -160,8 +182,26 @@ a later task.
 No changes were made to `rollout_parser.py`, `score_e1.py`, `score_e2.py`,
 `score_e7.py`, or `score_e8.py` — this task only added
 `audit0729_adapter.py` (thin discovery/glue, same shape as
-`drew_adapter.py`; no dedicated test file, matching that precedent, since
-it adds no new parsing logic — only counting/grouping glue over
-already-tested functions). Existing suites re-run clean:
-`test_rollout_parser.py` (15), `test_score_e1.py` (6), `test_score_e2.py`
-(9), `test_score_e4.py` (19), `test_score_e9.py` (7) — all OK.
+`drew_adapter.py`; no dedicated test file, matching that precedent).
+**Fix round 1 correction:** an earlier draft of `census_node()`
+reimplemented its own thinner wait/lifecycle census directly on
+`rollout_parser.wait_outcomes()`/`lifecycle_calls()` instead of actually
+calling `score_e7.py`/`score_e8.py` — meaning it would not have
+reconciled the pre-registered wait-timeout-rate or closure/lifecycle
+claims correctly on a future rerun, despite the module docstring listing
+those scorers as reused. Fixed: `census_node()` now imports and calls
+`score_e7.census_session()` and `score_e8.census_session()` directly
+(unmodified) for those fields; only the go-test count and the
+identical-repeat-cluster max remain this file's own counting/grouping
+logic, built on `rollout_parser.exec_commands()`/`TEST_RE`. Verified by
+rerunning `audit0729_adapter.py` after the fix (§1's Run block above) —
+it still short-circuits to `NOT_FOUND` cleanly (exit 1, no traceback,
+~0.6s) since the corpus is still absent; the census path itself
+(`run_census()`/`census_node()`) remains untested against real data
+because none exists here, but it now genuinely calls the scorers it
+claims to, so a future rerun against a recovered corpus would exercise
+real `score_e7`/`score_e8` logic rather than a silent reimplementation.
+Existing suites re-run clean, unaffected by this fix (no scorer/parser
+files touched): `test_rollout_parser.py` (15), `test_score_e1.py` (6),
+`test_score_e2.py` (9), `test_score_e4.py` (19), `test_score_e9.py`
+(7) — all OK.
