@@ -33,7 +33,11 @@ corpora.
 
 Usage: score_e7.py [--samples N]
 Prints a markdown report to stdout. Writes aggregates-only JSON blobs to
-campaigns/codex-efficiency/out/e7-<corpus>.json. Read-only otherwise.
+campaigns/codex-efficiency/out/e7-<corpus>.json. Refuses to overwrite any
+existing one of those blobs unless env FORCE=1 is set, and the check is
+all-or-nothing (the four blobs are one census; a partial write would mix a
+fresh run with a stale one). Read-only otherwise. Exits 0 on success, 1 on
+an existing-output collision without FORCE.
 """
 import bisect
 import datetime
@@ -408,6 +412,33 @@ def print_group_line(name, sessions):
     return agg
 
 
+def write_outputs(corpora, out_dir, force=False):
+    """Write one aggregates-only JSON blob per corpus, refusing to clobber
+    existing output unless FORCE=1. Returns (target_paths, wrote).
+
+    The check is all-or-nothing on purpose: this scorer writes four blobs
+    that are read together as one census, so a partial refusal would leave
+    out/ mixing a fresh run with a stale one -- the exact failure mode the
+    other nine scorers' single-file guards can't produce."""
+    os.makedirs(out_dir, exist_ok=True)
+    targets = [(os.path.join(out_dir, f"e7-{name}.json"), groups)
+               for name, groups in corpora]
+    existing = [p for p, _ in targets if os.path.exists(p)]
+    if existing and not force:
+        print(f"score_e7: refusing to overwrite existing output "
+              f"({', '.join(existing)}) -- set env FORCE=1 to overwrite",
+              file=sys.stderr)
+        return [p for p, _ in targets], False
+    for out_path, groups in targets:
+        blob = {name: {"aggregate": aggregate(sessions),
+                       "sessions": _strip_for_json(sessions)}
+                for name, sessions in groups.items()}
+        with open(out_path, "w") as f:
+            json.dump(blob, f, indent=2)
+        print(f"wrote {out_path}", file=sys.stderr)
+    return [p for p, _ in targets], True
+
+
 def main(argv):
     n_samples = 10
     if "--samples" in argv:
@@ -463,19 +494,15 @@ def main(argv):
               f"duration_hint={s['duration_hint']}ms  raw_output={s['raw_output']!r}")
     print()
 
-    os.makedirs(OUT_DIR, exist_ok=True)
-    for corpus_name, groups in (
+    corpora = (
         ("drew", drew_groups),
         ("audit-high-wait-root", {"high_wait_root": audit["high_wait_root"]}),
         ("audit-direct-sol", {"direct_human_sol_sample": audit["direct_human_sol_sample"]}),
         ("battery", battery),
-    ):
-        blob = {name: {"aggregate": aggregate(sessions), "sessions": _strip_for_json(sessions)}
-                for name, sessions in groups.items()}
-        out_path = os.path.join(OUT_DIR, f"e7-{corpus_name}.json")
-        with open(out_path, "w") as f:
-            json.dump(blob, f, indent=2)
-        print(f"wrote {out_path}", file=sys.stderr)
+    )
+    _, wrote = write_outputs(corpora, OUT_DIR, force=os.environ.get("FORCE") == "1")
+    if not wrote:
+        return 1
 
     return 0
 
