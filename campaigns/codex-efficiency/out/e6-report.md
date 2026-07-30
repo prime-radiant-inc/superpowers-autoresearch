@@ -198,12 +198,17 @@ compaction under real load):** see (a)/(b)/(c) above for the specific
 numbers. Summary: 25 total compactions (18 root), 1 genuine skill
 re-read, 0 spawn-hygiene degradation across 78 real post-compaction
 spawns, 1 more implementer-spawned depth-2 spawn (task_name strings from
-this corpus are not cited, per the standing never-commit rule) — though
-the task_family() heuristic (built for this
-campaign's own `task<N>`/`final` fixture convention) doesn't recognize
-this corpus's different naming scheme, so duplicate-review detection is
-correctly scoped-out here (a restriction, not a negative finding — see
-Concerns).
+this corpus are not cited, per the standing never-commit rule). **This
+depth-2 spawn's family DOES resolve under the post-fix `task_family()`**
+(re-run directly against `score_tree()` after commit `99c5ad7`, not
+assumed): the implementer's task_name matches the `task<N>` prefix rule,
+giving family `task12`, and that family also has a separate root-
+initiated review — i.e. this Drew occurrence is a genuine, confirmed
+same-task duplicate review too, not a scoped-out miss (an earlier draft
+of this report claimed the opposite, based on a stale pre-fix run that
+was never re-executed after `99c5ad7` landed; corrected here, see the
+hypothesis log's dated correction entry and `task-9-report.md`'s fix
+report for the full account).
 
 ## Discrimination gate
 
@@ -225,8 +230,10 @@ same pattern as E1's axis split:
 - Sharpened prediction (ii) (depth-2 concentrated in implementer
   spawners + same-task duplicates): **strongly confirmed**, now the most
   repeatedly-reproduced finding in the campaign (11 depth-2-by-
-  implementer occurrences across 5 corpora/sources, 8 of those also
-  matching the stricter same-task-duplicate-review pattern, 0
+  implementer occurrences across 5 corpora/sources, **9** of those also
+  matching the stricter same-task-duplicate-review pattern — corrected
+  from an earlier draft's "8", which omitted Drew's stress-2703
+  occurrence on a stale pre-fix run; see the Concerns section — 0
   counter-examples).
 - Sharpened prediction (iii) (rig-can't-reproduce alternative outcome):
   **not triggered as a clean terminal finding** — real signal exists on

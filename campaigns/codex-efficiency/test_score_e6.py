@@ -248,8 +248,8 @@ class TestTaskFamily(unittest.TestCase):
         task{N}-prefix rule below is intentionally broader than any fixed
         role-word list."""
         self.assertEqual(se.task_family("task1_controller_review"), "task1")
-        self.assertEqual(se.task_family("task2_final_branch_review"), "task2")
-        self.assertEqual(se.task_family("task_nn_owner"), "task12")
+        self.assertEqual(se.task_family("task2_full_scope_review"), "task2")
+        self.assertEqual(se.task_family("task_42_widget"), "task42")
 
     def test_final_prefix_matches_regardless_of_role_wording(self):
         self.assertEqual(se.task_family("final_branch_reviewer"), "final")

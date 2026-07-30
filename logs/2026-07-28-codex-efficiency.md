@@ -2602,3 +2602,88 @@ never real client/production data. Grepped the full output before
 committing for API-key-shaped strings, email addresses, and unexpected
 absolute-path leakage beyond the already-established `rundir` convention
 (matches E1's own committed JSON shape): zero hits on all three.
+
+### 2026-07-30 — CORRECTION to the E6 RESULT entry above: a real Drew task_name string was committed; two derived claims were wrong (Task 9 fix round 1, controller entry)
+
+Filed against the "E6 RESULT" entry above (2026-07-30). Per this log's
+own append-only rule, that entry is left unedited; this is a correction
+appended after it, not a rewrite. Three distinct issues, found by
+task-reviewer and independently confirmed here before any fix landed:
+
+**1. Privacy leak: a real Drew stress-2703 task_name string was
+committed verbatim in `test_score_e6.py` (commit `99c5ad7`).** The test
+`test_task_n_prefix_matches_regardless_of_role_wording` used, as one of
+its three synthetic-looking assertions, the exact literal string that is
+also a real task_name from Drew's corpus (the implementer session whose
+depth-2 child is discussed, uncited, elsewhere in the E6 RESULT entry
+above) — a genuine violation of this campaign's standing never-commit
+rule for stress-run task_names, introduced while writing tests for the
+`task_family()` fix and not caught by the pre-commit grep sweep that
+commit's own message claimed to have run. **Not repeated here or
+anywhere in this correction** — see `test_score_e6.py:252` in the
+history at `99c5ad7` for the exact string if needed, or the fix commit
+below for the replacement. Fixed by replacing it (and one other,
+lower-risk assertion whose synthetic string happened to embed a
+different real Drew substring, `final_branch_review`, as a fixture-
+overlap coincidence) with clearly synthetic strings exercising the same
+`task_family()` regex paths, verified via a fresh grep sweep against the
+full 84-entry real task_name set extracted directly from Drew's corpus
+(not assumed) to have zero remaining overlap. **The original string
+remains in git history at commit `99c5ad7`** (unavoidable without a
+history rewrite) — rewriting history is Jesse's call at branch-
+finishing, not something done unilaterally here; flagged for that
+decision, not resolved in this entry.
+
+**2. The "no task_name string... appears in any committed file, verified
+by grep" claim in the E6 RESULT entry above is FALSE.** The grep sweep
+that entry describes evidently did not check `test_score_e6.py` itself
+(or was run before that file's own real-string assertion was written and
+never re-run after) — the opposite of what was claimed. This correction
+entry's own fix commit includes a full re-sweep of every committed
+campaign file (not just recently-touched ones) against Drew's complete
+84-entry real task_name set, case-insensitive; results and the two
+benign false-positive collisions found (this campaign's OWN independently
+-generated task_names — `final_branch_review`/`final_branch_reviewer` —
+coincidentally string-overlapping Drew's corpus by chance, in `out/
+e2-report.md` and `out/e10-battery.json`, neither of which is Drew
+content and neither of which is touched by this fix) are in the fix
+commit's own message, not restated here.
+
+**3. `out/e6-report.md`'s claim that Drew's stress-2703 corpus's
+implementer-spawned depth-2 occurrence has its duplicate-review status
+"correctly scoped-out" (task_family() "doesn't recognize this corpus's
+naming scheme") is FALSE, post-`99c5ad7`.** That claim was based on a
+`score_tree()` run executed BEFORE the `99c5ad7` fix landed and never
+re-run afterward — a stale result, not a re-verified one. Re-running
+`score_tree()` directly against Drew's corpus with the current (post-fix)
+code, as this correction does, returns `duplicate_review_families` with
+exactly one match: the implementer's task_name resolves to family
+`task12` under the current prefix rule, and that family also has a
+separate root-initiated review — a genuine, additional confirmed
+same-task duplicate review, not a scoped-out miss. `out/e6-report.md`'s
+"8 of those also matching the stricter same-task-duplicate-review
+pattern" (and the parallel claim in the E6 RESULT entry above, "8 of
+which also match") is corrected to **9 of 11** — `out/e6-report.md` is
+directly edited to the corrected number and framing (it is a working
+document, not append-only, per its own established convention of being
+kept current); this log entry corrects the RESULT entry's copy of the
+same number by addition, per the append-only rule.
+
+**Minor: pre-registration timing framing.** The "E6 PRE-REGISTRATION
+(sharpened)" entry above states predictions were "Registered before
+`score_e6.py`'s baseline/treatment batteries run" — literally true for
+every rep except dev-rep1, whose session had already started (commit
+`16410ed`: 2026-07-29 23:18:36 -0700; dev-rep1's rollout/session start:
+2026-07-29 23:12:02 -0700, ~6.5 minutes earlier). The scientifically
+load-bearing claim — predictions registered before any VERDICT/result
+existed — holds cleanly (dev-rep1's `verdict.json` was written at
+2026-07-29 23:36:54 -0700, 18 minutes after the pre-registration commit)
+and is unaffected; the imprecise "before batteries run" framing is
+corrected here to: **registered before any verdict existed; dev-rep1's
+session had started 6 minutes prior.**
+
+**Fix commit:** see the campaign's git log for
+"fix(codex-efficiency): scrub Drew task_name from E6 tests, correct
+duplicate-review claims + pre-reg timing" — full grep-sweep methodology,
+the corrected test file, and the corrected `out/e6-report.md` are all in
+that commit. Fix report appended to `task-9-report.md`.
