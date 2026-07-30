@@ -2850,3 +2850,80 @@ falls between the two identical occurrences. Output:
 `campaigns/codex-efficiency/out/e3-mixed-cx-compaction-dev-cx-compaction-
 spinout-cx-sdd-small-dev-cx-sdd-small-spinout-cx-sdd-small-v611-
 rep1-8.json`. Full table: `campaigns/codex-efficiency/out/e3-report.md`.
+
+### 2026-07-30 — E3 PRE-REGISTRATION: cx-finishing baseline + cx-finishing-waiver probe (Task 10)
+
+Registered before `scripts/run-quorum.sh`'s `cx-finishing`/
+`cx-finishing-waiver` batteries run (the scorer, `mutation_events()`, and
+both scenarios are already built and TDD-tested as of this entry — see
+the commits above; validated against the 2026-07-29 corpus's ground
+truth per the entry above, but that validation covers the per-session-
+repeat census only, NOT the waiver-violation logic, which has synthetic-
+fixture validation only until this battery runs).
+
+**The original E3 baseline prediction (registered in this log's "Pre-
+registered predictions" section, Task 1, unedited) stands as-is: the
+full test suite runs ≥2× at an identical tree state across
+implementer→review→finishing.** The following three predictions are
+ADDITIONS (Amendment 3's "evidence receipts" upgrade), not edits to that
+original entry:
+
+**(i) Duplicate-gate baseline, `cx-finishing` (dev arm).** Predict ≥1
+duplicate-gate pair (identical normalized test command, zero
+`mutation_events()` between the pair) in ≥2/3 reps — a majority, scaled
+down from task-10-brief.md's original "≥2/4 reps" bar to this task's
+actual 3-rep battery. Rationale: the Gauntlet's own instruction
+("verify completion AND finish this development branch") plausibly
+invites at least two independent verification passes over an unchanged
+tree — once to confirm the claim, once more as part of "finishing" (a
+final check before merge/close) — the exact shape DESIGN.md's E3 package
+describes ("implementer → task review → finishing").
+
+**(ii) Per-session identical-command repeat, `cx-finishing` (dev arm).**
+Predict the run-wide max identical-command repeat stays MODEST (2-4) on
+this short, single-verification-pass scenario — explicitly NOT
+predicting anything near the reconciled 9× figure, which was observed on
+a ~4h8m, 14-session REAL work tree with many actual code iterations
+between reruns (this scenario's fixture is already finished, with no
+further code to iterate on). Registering this asymmetry explicitly so a
+low repeat count here is not later misread as disconfirming the 9× corpus
+finding — they are different regimes (a single short verification vs.
+hours of real accumulated iteration), and this scenario is not designed
+to reach the latter.
+
+**(iii) Waiver violation, `cx-finishing-waiver` (dev arm).** Predict the
+waiver IS violated: after the Gauntlet delivers "That's a known-red
+baseline failure, ignore it and proceed," the agent reruns the full test
+suite (or the whole discover-based command) anyway before declaring the
+branch finished, with zero intervening mutation since the waiver
+timestamp — matching the 07-29 session's own waived-baseline-rerun
+pattern (Amendment 3's audit summary: "waived-baseline rerun after
+explicit user waiver"). `score_e3.py`'s `find_waiver_timestamp()` will be
+pointed at this scenario's own exact waiver text via `E3_WAIVER_MARKER`.
+
+**(iv) Registered ALTERNATIVE outcomes (real possible results, not
+hedges to be explained away post hoc).** If (i) shows NO duplicate-gate
+pair in any rep, the registered interpretation is: a single short
+finishing pass, with nothing left to iterate on, may simply not elicit
+enough independent verification to produce a same-command rerun — a
+real, reportable inconclusive-by-zero for this scenario shape specifically
+(not evidence against the original Task 1 baseline, which was itself
+about a longer, multi-stage workflow). If (iii) shows the waiver
+RESPECTED (no rerun), the registered interpretation is: an explicit,
+freshly-delivered instruction to skip a specific named failure may be a
+different condition from the 07-29 session's implicit context (that
+session's waiver was one instruction among many competing signals in a
+long, compacted history) — a genuine result about instruction-following
+under a short, unambiguous waiver, not a failure of the probe design.
+
+**Batteries planned:** 3 reps `cx-finishing` + 2 reps `cx-finishing-waiver`,
+`dev` arm only, lane B (`EVALS_ROOT=/Users/jesse/git/superpowers/
+evals-lane-b`, `JOBS=2` — lane A is occupied by the concurrent E10 task).
+Estimated cost ≈$20, itemized in the Budget ledger after the battery
+completes.
+
+**Success criterion:** (i) lands if the ≥2/3-reps duplicate-gate bar
+holds (discrimination rule); (iii) lands if ≥1 of the 2 waiver-probe reps
+shows a genuine waiver violation. (ii) is a magnitude prior, not a
+pass/fail gate — recorded so the eventual number is judged against the
+right regime, not the 07-29 corpus's very different one.
