@@ -2687,3 +2687,88 @@ session had started 6 minutes prior.**
 duplicate-review claims + pre-reg timing" — full grep-sweep methodology,
 the corrected test file, and the corrected `out/e6-report.md` are all in
 that commit. Fix report appended to `task-9-report.md`.
+
+### 2026-07-30 — CORRECTION to the correction above: the fix-round-1 entry itself re-committed a second real Drew task_name, plus an overclaim (Task 9 fix round 2, controller entry)
+
+Filed against the "CORRECTION to the E6 RESULT entry above" entry
+immediately above (2026-07-30, this same date). Per this log's own
+append-only rule, that entry is left unedited; this is a further
+correction appended after it, not a rewrite.
+
+**1. The fix-round-1 entry itself cited a second real Drew task_name
+verbatim, in the same breath as claiming nothing was repeated.** That
+entry's item 1 named one leaked string only obliquely (correctly), but
+then, describing the "one other, lower-risk assertion" fixed alongside
+it, spelled out a SECOND real task_name from Drew's corpus explicitly —
+call it **L2** here: a task_name ending in a branch-review-shaped
+suffix (the exact string is in the task-reviewer's re-review transcript
+and in `test_score_e6.py`'s pre-fix history at commit `99c5ad7`; not
+repeated in this entry). L2 is real corpus content — it happens to
+ALSO appear, independently, in this campaign's own battery output (see
+the disposition table below) — but that coincidence does not make it
+safe to name explicitly in a sentence identifying it as "a real Drew
+substring." The fix-round-1 entry's own claim that nothing beyond the
+first string was "not repeated here or anywhere in this correction" is
+therefore FALSE for L2. Corrected here: L2 is not repeated in this
+entry, and every editable surface that named it explicitly has been
+fixed (see below).
+
+**2. Full disposition table (every hit from a whole-repo, not just
+`campaigns/`/`logs/`, case-insensitive sweep against Drew's complete
+84-name set, extracted directly from the corpus's own rollouts —
+10 hits in git-tracked files, plus 3 more in the fix-round-1 log entry/
+`task-9-report.md`/the `aeb77e6` commit message that are the subject of
+this correction):**
+
+| # | Location | Exact match to one of the 84? | Verdict |
+|---|---|---|---|
+| 1 | `out/e10-battery.json` (an `author` field) | yes | Task 14's own independently-generated battery data; not copied from Drew's corpus; out of this task's scope |
+| 2 | `out/e10-battery.json` (a second `author` field) | no (superstring only) | same file, harmless |
+| 3 | `out/e2-report.md` (a `task_name` table cell) | yes | Task 8's own independently-generated battery data; not copied; out of this task's scope |
+| 4-5 | `out/e6-cx-compaction-dev-rep1-3.json` (×2) | no (superstring only) | this task's own E6 dev-rep1 real dispatch |
+| 6-7 | `out/e6-cx-compaction-spinout-rep1-3.json` (×2) | no (superstring only) | this task's own E6 spinout-rep1 real dispatch |
+| 8 | `test_score_e6.py:255` | no (superstring only) | legitimate test fixture reusing our own real observed task_name (established convention) |
+| 9-10 | fix-round-1 log entry (×2 mentions) | yes | **violation** — corrected by this entry (oblique reference only, above) |
+| 11-13 | `task-9-report.md` (×3 mentions, pre-this-round) | yes | **violation** — fixed by direct edit (SDD workspace file, editable, not git-committed) |
+| 14 | `aeb77e6` commit message (×2 mentions, same string) | yes | **violation, IMMUTABLE** — see below |
+
+Items 1-8 are the campaign's own independently-generated task_names
+coincidentally string-matching (exactly, or as a superstring of) one of
+Drew's real names — not copied, no claim made about which came first
+(see the overclaim correction below). Items 9-14 are L2, cited
+explicitly where it should have been oblique; 9-13 are fixed (append-
+only correction here; direct edit of the non-git-tracked SDD report);
+14 cannot be fixed without a history rewrite.
+
+**3. `aeb77e6`'s commit message is immutable without a history rewrite —
+not rewritten here.** The branch now carries TWO history-embedded
+real-corpus strings needing Jesse's branch-finishing decision, not one:
+the original leaked string in commit `99c5ad7`'s TREE content
+(`test_score_e6.py`'s pre-fix test input), and L2 in commit `aeb77e6`'s
+own commit MESSAGE (the tree diff in that commit never re-added L2 to
+any tracked file — only the message describing the fix repeated it).
+Both flagged together for that single decision; neither rewritten
+unilaterally here.
+
+**4. Overclaim corrected: "predating any Drew-corpus work" was
+backwards, checked directly.** The fix-round-1 entry's disposition of
+the coincidental collisions claimed they predated any Drew-corpus work
+in this repo. Checked, not assumed: `drew_adapter.py` first landed at
+commit `f323192`, 2026-07-29 00:43:08 -0700 (07:43 UTC). Task 8's actual
+battery run behind `out/e2-report.md` (the rep whose real dispatch
+coincidentally matches one of Drew's names) started at
+`rollout-2026-07-29T09-54-44...` — roughly two hours AFTER the Drew
+adapter already existed, not before. The temporal claim is dropped
+entirely, not replaced with a corrected one — the load-bearing fact
+(these are independently-generated names, never copied from Drew's
+corpus) holds regardless of ordering.
+
+**Verification before this fix:** every new/edited sentence in this
+entry, in `task-9-report.md`, and the exact text of the new commit
+message were grepped against the full 84-name list before committing —
+zero exact-match hits in any of them (confirmed by writing the commit
+message to a file and grepping it, not just visual inspection).
+
+**Fix commit:** "fix(codex-efficiency): E6 correction prose de-leaked;
+sweep disposition completed". Fix report appended to
+`task-9-report.md`, "Fix round 2" section.
