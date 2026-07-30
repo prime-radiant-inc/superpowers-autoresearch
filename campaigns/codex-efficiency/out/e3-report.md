@@ -1,13 +1,14 @@
 # E3 evidence receipts / duplicate-gate scorer (Task 10)
 
-**Status: CORRECTED (fix round 1); invalidation probe pending.** Scorer
-built + validated against corpus ground truth; MINE-tier free re-score
-complete; FULL baseline (`cx-finishing`) and waiver probe
-(`cx-finishing-waiver`) batteries complete and scored. Both purpose-built
-probes came back as registered alternative outcomes (negative results),
-not the primary predictions — reported honestly below, not reframed.
-The brief's Step 4 invalidation probe (a correctness regression guard)
-has not been run yet as of this revision.
+**Status: COMPLETE, CORRECTED (fix round 1).** Scorer built + validated
+against corpus ground truth; MINE-tier free re-score complete; FULL
+baseline (`cx-finishing`), waiver probe (`cx-finishing-waiver`), and the
+brief's Step 4 invalidation probe (`cx-finishing-invalidation`)
+batteries all complete and scored. Both purpose-built probes came back
+as registered alternative outcomes (negative results), not the primary
+predictions — reported honestly below, not reframed. The invalidation
+probe PASSES on `dev`, after fixing a second real bug (a false negative
+in the guard's own first implementation) found while building it.
 
 **Fix round 1 correction (this revision):** a real bug in both
 `rollout_parser.MUTATION_GIT_RE`'s and `score_e3.TEST_INVOCATION_RE`'s
@@ -306,7 +307,60 @@ Output: `out/e3-cx-finishing-waiver-dev-rep1-2.json`.
 **Re-checked after the fix round 1 de-escape fix:** both reps' numbers
 (including `waiver.found`/`waiver.n_violations`) are unchanged.
 
-## Combined verdict (fix round 1; invalidation probe pending)
+## Invalidation probe (Step 4, run once on `dev`)
+
+**Design** (per task-10-brief.md Step 4): same `cx-finishing` fixture
+(`fixtures/finishing-invalidation/`, one seeded unambiguous typo in the
+docs commit's README — "charcters" for "characters") and initial
+Gauntlet message, but once the agent reports its first verification, the
+Gauntlet adds: "Please also fix this typo in README, then finish." This
+is a real, scenario-appropriate mutation; the scorer's invalidation
+guard checks that the suite genuinely reruns afterward — the
+CORRECTNESS regression guard any future duplicate-gate treatment must
+keep passing (a fix that stops wasteful reruns must never also stop
+this kind).
+
+**A real bug was found and fixed WHILE building this guard, before
+trusting its first result** (same discipline as the de-escape fix
+above): the first implementation defined
+`invalidation_guard_passed` as "does `duplicate_gate_pairs` contain a
+pair with a real intervening mutation" (reusing the exact-match
+machinery). Scored against the actual probe run, it returned **False**
+— contradicting both the pre-registered "dev should PASS" expectation
+and the Gauntlet's own `pass` verdict. Investigation (reading the raw
+command sequence directly) showed why: this dev-arm session batches its
+exec calls (`Promise.all([...])`), and bundles its test invocation with
+a DIFFERENT set of surrounding git-diagnostic commands on every single
+occurrence (6 test-command occurrences across the session, `run_max_
+repeat=1` — literally no two are byte-identical). The exact-match
+design could never recognize a rerun here, regardless of whether one
+happened. **Fixed** by redefining the guard as "does at least one
+test-command occurrence (any command) follow at least one mutation
+event" — dropping the exact-match requirement entirely, since this
+guard's actual question ("did SOME re-verification happen after a real
+change") never needed byte-identical commands the way the duplicate-gate
+check legitimately does. TDD: rewrote the test class (5 tests, including
+a direct reproduction of the real bundling-defeats-exact-match shape).
+Re-scored: **`invalidation_guard_passed=True`.**
+
+**Non-circular re-verification** (independent raw-JSONL reading + a
+from-scratch regex re-implementation in a throwaway script, no
+`rollout_parser.py`/`score_e3.py` import): 4 mutation events found,
+earliest at one timestamp; 5 test-command occurrences found (both
+`exec_command` and de-escaped `custom_exec`), of which 3 occur strictly
+after that earliest mutation. Confirms `True` is correct, not an
+artifact of either implementation.
+
+Also confirmed: `mutation_events`/`test_command_events` numbers and
+their downstream fields for the MINE-tier corpus, `cx-finishing`, and
+`cx-finishing-waiver` are BYTE-IDENTICAL before/after this second fix —
+only the new `invalidation_guard_passed` field was added to each
+output; every pre-existing number is unchanged.
+
+Cost: ~$1 (1 rep, dev arm, lane B). Output:
+`out/e3-cx-finishing-invalidation-dev-rep1.json`.
+
+## Combined verdict (fix round 1, complete)
 
 - **Baseline duplicate-gate (cx-finishing):** inconclusive-by-zero (0/3),
   a registered real alternative outcome — every rerun was legitimately
@@ -326,6 +380,8 @@ Output: `out/e3-cx-finishing-waiver-dev-rep1-2.json`.
   still discriminate on real (if not purpose-built) data, just far more
   rarely than first reported, even though this task's own two
   purpose-built probes came back negative.
-- **Invalidation probe (Step 4):** not yet run as of this revision — see
-  the next revision of this file / `task-10-report.md`'s "Invalidation
-  probe" section for the design and result.
+- **Invalidation probe (Step 4): PASS on `dev`** — a real rerun-after-
+  mutation is confirmed, independently and non-circularly, after fixing
+  a second real bug (the guard's own exact-match design produced a false
+  negative on real dev-arm command-bundling behavior) found while
+  building it.

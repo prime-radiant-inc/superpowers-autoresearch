@@ -23,8 +23,9 @@ fact.
 | 2026-07-29 | E2 FULL baseline (dev, cx-branch-review, 4 reps) | $4.01 ($3.40 coding + $0.61 gauntlet) | 8.0% | 9.0% |
 | 2026-07-29 | E1-v611 (v611, cx-sdd-small, 3 reps, lane B, JOBS=2) | $12.17 ($11.24 coding + $0.93 gauntlet) | 17.0% | 19.0% |
 | 2026-07-29/30 | E4 ceremony census (dev, cx-ceremony-{spike,bounded,arch}, 3 reps/class + 2 outage-tainted arch reps, lane A) | $21.39 ($16.85 clean/scored + $4.54 outage-tainted/excluded) | 18.0% | 55.0% |
-| 2026-07-30 | E3 baseline (dev, cx-finishing, 3 reps, lane B, JOBS=2) | $1.66 ($1.22 coding + $0.43 gauntlet) | 58.0% | 61.0% |
+| 2026-07-30 | E3 baseline (dev, cx-finishing, 3 reps, lane B, JOBS=2) | $1.66 ($1.22 coding + $0.43 gauntlet; sums to $1.65 — $0.01 is independent per-rep rounding, not an arithmetic error) | 58.0% | 61.0% |
 | 2026-07-30 | E3 waiver probe (dev, cx-finishing-waiver, 2 reps, lane B, JOBS=2) | $1.19 ($0.83 coding + $0.36 gauntlet) | 61.0% | 63.0% |
+| 2026-07-30 | E3 invalidation probe (dev, cx-finishing-invalidation, 1 rep, lane B) | $0.84 ($0.67 coding + $0.17 gauntlet) | 63.0% | 64.0% |
 
 ## Pre-registered predictions
 
@@ -3440,3 +3441,244 @@ sensitive-string patterns before committing — zero hits.
 — corrects E3 MINE counts". Fix report appended to `task-10-report.md`,
 "Fix round 1" section (full per-rep raw-line evidence, methodology, and
 the parity-contract-vs-absolute-truth field disposition).
+
+### 2026-07-30 — E3 invalidation probe (brief Step 4): implemented, run, PASSES on dev — after fixing a second real bug found while building it (Task 10 fix round 1, continued)
+
+The brief's Step 4 invalidation probe (a correctness regression guard:
+after a real mid-session edit, does the suite genuinely rerun?) had
+neither been run nor registered as deferred. Implemented and run this
+round, alongside the de-escape fix above.
+
+**Built:** `scenarios/cx-finishing-invalidation/` + `fixtures/finishing-
+invalidation/` — identical fixture to `cx-finishing` plus one seeded,
+unambiguous typo in the docs commit's README ("charcters" for
+"characters"). Same initial Gauntlet message; once the agent reports its
+first verification, the Gauntlet adds "Please also fix this typo in
+README, then finish." Ran once, `dev` arm, lane B, 1 rep (~$1).
+
+**A second real bug was found and fixed WHILE building the guard, before
+trusting its first result (same discipline as the de-escape fix
+above).** The first implementation of `invalidation_guard_passed`
+reused the exact-match `duplicate_gate_pairs` machinery ("does a
+same-command pair exist with a real intervening mutation"). Scored
+against the actual probe run, it returned **False** — contradicting
+both the pre-registered "dev should PASS" expectation and the
+Gauntlet's own `pass` verdict (confirmed: agent ran fresh verification,
+fixed the real typo, merged). Investigation (reading the raw command
+sequence directly, not through the scorer) showed why: this session
+batches its exec calls, bundling its test invocation with a DIFFERENT
+set of surrounding git-diagnostic commands on every one of 6
+occurrences — `run_max_repeat=1`, no two byte-identical. The exact-match
+design could never recognize a rerun regardless of whether one
+happened. **Fixed** by redefining the guard as "does at least one
+test-command occurrence (any command) follow at least one mutation
+event" — dropping the exact-match requirement, since this guard's
+question ("did SOME re-verification follow a real change") never needed
+byte-identical commands the way the duplicate-gate check legitimately
+does. TDD: rewrote the test class (5 tests, including a direct
+reproduction of the bundling-defeats-exact-match shape that caused the
+false negative). Re-scored: **`invalidation_guard_passed=True`.**
+
+**Non-circular re-verification** (independent raw-JSONL reading + a
+from-scratch regex re-implementation, no `rollout_parser.py`/
+`score_e3.py` import): 4 mutation events found; of 5 independently-
+detected test-command occurrences, 3 occur strictly after the earliest
+mutation. Confirms `True` is correct on both implementations' actual
+input, not an artifact of either one.
+
+**Also confirmed:** re-scoring the MINE-tier corpus (23 reps), the
+`cx-finishing` baseline (3 reps), and `cx-finishing-waiver` (2 reps)
+after this second fix shows every pre-existing field byte-identical to
+the fix-round-1 (de-escape-only) numbers reported in the entry above —
+only the new `invalidation_guard_passed` field was added to each
+output.
+
+**Result: PASS on `dev`** — the correctness regression guard baseline is
+established, as the brief predicted, once the guard itself measured the
+right thing.
+
+**Verification:** full non-`E5` test suite green (182/182) after both
+fixes. Grepped this entry, `out/e3-report.md`, `task-10-report.md`, and
+the commit message against the standing sensitive-string patterns before
+committing — zero hits.
+
+**Commit:** "campaign(codex-efficiency): E3 invalidation probe (brief
+Step 4) -- implemented, run, PASSES on dev after fixing a guard
+false-negative found while building it". Fix report appended to
+`task-10-report.md`'s "Fix round 1" section (Important item).
+
+### 2026-07-30 — E5 RESULT: all three seeded defects caught in 3/3 reps -- discrimination gate NOT MET, Amendment 3 serial-remediation CONFIRMED, same-scope-duplicate prior MISSED (Task 12)
+
+Full detail: `campaigns/codex-efficiency/out/e5-report.md`. This is this
+campaign's FINAL experiment (spec: "most expensive; runs last").
+
+**Infrastructure detour, both caught cheaply, before any of these 3 reps
+counted:** (1) the fixture directory was initially misnamed
+`fixtures/scope-defects/` instead of the `run-quorum.sh`-required
+`fixtures/scope-review/` convention every other scenario in this
+campaign follows without exception — both first-attempt reps died at
+`setup.sh failed (exit 127)` before Gauntlet or Codex ever started
+(`economics: null`, $0 each), caught immediately, fixed by renaming.
+(2) Mid-recovery, a redundant `run-quorum.sh dev cx-scope-review 3`
+re-invocation (meant to be rep-3-only, should have been `... 1 3`) tore
+the shared container down/up while the legitimate rep 3 attempt was
+running inside it, killing it, and spawned a wasteful duplicate rep1+2
+re-run alongside the already-good, already-passing rep1/rep2 results —
+caught within the same turn (before either wasteful attempt reached a
+verdict) and killed via `docker exec pkill`; the original good rep1
+(`-cbba`)/rep2 (`-8c74`) results were never touched. Estimated wasted
+spend ≈$0.4-0.7 (one exact `coding-agent-token-usage.json` at $0.21;
+the rest computed from `usage.jsonl` token counts calibrated against a
+completed rep's own $/token ratio, or estimated by rollout-size analogy
+where no summary was written before the kill). Dead/wasted dirs left in
+place, unscored, per this campaign's standing convention (e.g. Task 8's
+E2-FULL leftover indeterminate dir).
+
+**Process note (closeout material, per the coordinator's framing):**
+this is the THIRD scenario-infrastructure defect this campaign has
+caught via an early-verdict anomaly rather than up-front review — E2's
+`git-branch main` pre-check (checks a branch never checked out at
+scenario end), E4's `tool-called Agent` post-check (asserts the exact
+behavior the experiment measures), and now E5's fixture-directory
+naming mismatch (setup path). All three were caught cheap (indeterminate
+verdicts at or near $0) because the first 1-2 reps of a battery surface
+the defect before the rest run. Obvious process fix for future
+experiments: a cheap **scenario smoke-test** (`bun run quorum check
+<scenario>` plus a single $0-tier dry run of `setup.sh` against the
+actual fixture layout) before committing to a full paid battery —
+`quorum check` validates scenario shape (executable bits, checks.sh
+syntax) but not that `setup.sh` actually finds its fixture files at
+runtime, which is exactly the class of bug all three instances share.
+
+**Choreography verification (before trusting any recall number):** the
+mid-session D1-repair-request marker fired in **3/3 reps** (exceeds the
+requested ≥2/3 bar) — independently confirmed by a from-scratch script
+(imports NONE of `rollout_parser`/`score_e2`/`score_e3`/`score_e5`/
+`score_e6`, reads raw JSONL with plain `json.loads`) that locates the
+Gauntlet's own scripted marker text directly: rep1
+`2026-07-30T10:50:06.712Z`, rep2 `2026-07-30T10:46:55.496Z`, rep3
+`2026-07-30T11:03:36.990Z` — each matches `score_e5.py`'s own claim
+exactly, a genuinely independent (non-circular) cross-check.
+
+**Recall matrix: D1/D2/D3 ALL CAUGHT in 3/3 reps.** Manually verified
+NON-circularly (same from-scratch script, never calling
+`score_e5.matching_context()` or any of its own extraction functions)
+for every rep: the raw `task_complete`/`agent_message` records at the
+exact claimed timestamps genuinely contain `DEFAULT_BATCH_SIZE`/
+`peek_batch`/`msgpack`/`ModuleNotFoundError` as literal substrings,
+cross-referenced against the actual review prose. In every rep, the
+coding agent's own dispatched review sub-agent (task_name `code_review`
+rep1, `branch_review` rep2, `code_review` + `final_batch_review` rep3 —
+read directly off the raw `spawn_agent` calls, not through
+`score_e5`'s extraction) found and the agent fixed all three planted
+defects during its OWN "full review process" pass, generally BEFORE the
+Gauntlet's scripted mid-session repair request arrived — met in all 3
+reps with "already fixed, here's fresh verification" rather than a live
+discovery.
+
+**Discrimination gate (task-12-brief.md, pre-registered): "baseline
+lands if >=1 of D2/D3 is missed-or-misattributed OR same-scope
+duplicates are present." NOT MET — inconclusive-by-zero on the primary
+scope-mismatch hypothesis, the registered alternative outcome, not a
+disconfirmation reframed as a pass.** Neither leg fired: D2/D3 caught
+in every rep, and `same_scope_duplicates` is 0/3 (independently
+confirmed via each rep's real dispatched task_names and
+`score_e6.task_family()`/`classify_role_by_task_name()`: rep1's sole
+dispatch is `code_review`, rep2's is `branch_review`, rep3's two
+dispatches — `code_review` and `final_batch_review` — reduce to
+DIFFERENT families, never flagged as duplicates of each other).
+Interpretation: designing D1/D2/D3 to be maximally crisp and greppable
+(the direct lesson from Task 8's E2-FULL 0/4 coverage-gap-seed miss)
+traded away this experiment's ability to observe genuine scope-
+blindness — every defect was easy enough, and every rep's review
+thorough enough (a dispatched code-review sub-agent in all 3 reps),
+that scope mismatch never had a chance to manifest as a miss. Crisp/
+greppable seeds and observable scope-blindness pull in opposite
+directions, at least at this review-thoroughness level — a real
+tension for any future E5-style design, not a scorer defect.
+
+**Amendment 3 measures — mixed, honestly reported:**
+- **Same-scope duplicate review: predicted >=1/3 reps; actual 0/3 —
+  MISSED** (contradicts the MINE-tier-informed prior; see
+  discrimination-gate discussion above for the mechanism).
+- **Serial-remediation cycles: predicted >=1/3 reps; actual 3/3 reps
+  (1, 1, 2 cycles) — CONFIRMED**, exceeds prediction. Independently
+  spot-checked for rep3 (highest count): raw-scanned both root and the
+  dispatched `final_batch_review` child's exec records directly for
+  `TEST_INVOCATION_RE`-matching commands after the repair timestamp — 1
+  in the root, 2 in the child, 3 total, `3 - 1 = 2`, exactly matching
+  `score_e5.py`'s count, computed without importing `score_e3`/
+  `score_e5`.
+- **Wave-boundary violation: exploratory, no gate; 0/3.** Consistent
+  with fully sequential (never concurrent) dispatch — independently
+  confirmed no two sessions in any rep ever overlap in wall-clock time.
+- **D4 fix-review scope: exploratory, no gate.** rep1 `repair_scoped`;
+  rep2/rep3 `full_branch_rescope` (2/3 reps re-ran a bare, no-file-target
+  test invocation after the mid-session report rather than scoping to
+  the repair diff alone) — independently spot-checked for rep3: its
+  `final_batch_review` session ran `python -m pytest -p no:cacheprovider
+  -q` (no file target) twice post-repair, cross-verified against the
+  raw `custom_tool_call`/`exec` records directly.
+
+**E2-informed alternative (iv), registered vs. actual:** the registered
+alternative predicted reviewers might SUBSTITUTE a real, unplanted issue
+for a missed seed. What happened is a different, arguably stronger
+shape: reviewers caught every seeded defect AND ALSO surfaced genuine,
+unplanted additional issues in every rep — `drain_batch()` silently
+discarding queued `None` values (a real bug: `SharedQueue.push()` does
+accept `None`, and `batch.py`'s own implementation uses `None` as its
+empty-queue sentinel) and a MessagePack integer-map-key round-trip
+failure (`decode_batch(encode_batch([{1: "value"}]))` raises
+`ValueError` under default `strict_map_key=True`, also real and
+independently verifiable). The deliberately crisp seeding methodology
+does not suppress a thorough reviewer's ability to find real issues
+beyond the seeds — it coexists with it.
+
+**Scorer design caveat, found during manual verification (flagged, not
+silently absorbed):** the recall matrix's per-ROOT-session attribution
+undercounts when the agent's own final relayed summary paraphrases a
+fix in prose without repeating the defect's literal technical
+identifier. Confirmed for rep1: the root's own final answers ("Fixed
+all five Important findings... Direct default-size call returned
+`[0, 1, 2, 3, 4]`") are substantively about D1 but never contain the
+literal string `DEFAULT_BATCH_SIZE`, so `score_e5.py` correctly (by its
+literal-keyword design) does not count them as a root-level hit — the
+aggregate CAUGHT verdict still holds because the dispatched
+`code_review` sub-agent's own report DID use the literal identifier,
+but a single-session run with only root-paraphrased answers would
+silently under-report by this rubric's design. Not fixed here (would
+require a broader synonym/semantic rubric, reintroducing exactly the
+subtlety Task 8's lesson warns against).
+
+**Own defensive fix, prompted by the concurrent E3 fix-round-1
+correction landing in this same log while this task was in flight:**
+`score_e5._git_commit_events()` calls `rp.exec_commands()` directly with
+its own `GIT_COMMIT_RE`, the same shape of call site
+`rollout_parser.mutation_events()`/`score_e3.test_command_events()`
+needed `rp.deescape_custom_exec()` for. Added the same de-escape call
+(TDD, one new regression test — `test_score_e5.py` now 39 tests).
+Re-verified: this task's own `cx-scope-review` battery numbers were
+UNCHANGED (no affected commands in these 3 reps), but the MINE-tier
+`cx-compaction` spinout total corrected from 7 to 9 accretion commits (2
+real `git commit`s previously silently dropped by the same undecoded-
+escape pattern, now counted) — `out/e5-report.md`'s MINE-tier table
+reflects the corrected number.
+
+**Cost:** $3.5087 (rep1) + $2.0697 (rep2) + $3.7014 (rep3) = **$9.28**
+for the 3 good, scored reps (`verdict.json` `economics.total_est_cost_usd`
+each). Plus ≈$0.4-0.7 wasted from the mid-battery infrastructure
+mistake above. Total this task ≈$9.7-10.0, against a campaign
+cumulative of ≈$139.77 (Task 14's last-logged figure) + this task ≈
+**≈$149.5-150**, well under the $250/$700/$1000 checkpoints.
+
+**Verification:** full test suite green (265/265: 39 in `test_score_e5.py`
++ 226 pre-existing) throughout. Grepped this entry, `out/e5-report.md`,
+`out/e5-defect-key.md`, and the implementation commit message against
+the standing sensitive-string patterns (Drew corpus task_names, 07-29
+corpus paths/task_names) before committing — zero hits; this entry's
+own task_name citations (`code_review`, `branch_review`,
+`final_batch_review`) are this task's OWN fixture/battery output, not
+external corpus content, so quoting them is the same "our own scenario
+output" exception this campaign's privacy rules already carve out
+(score_e3.py's module docstring; the Drew/07-29-corpus handling
+elsewhere in this log).

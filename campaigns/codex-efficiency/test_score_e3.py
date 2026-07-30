@@ -381,6 +381,70 @@ class TestEventsBetween(unittest.TestCase):
                 se.events_between([p], "2026-07-30T05:00:00.000Z", "2026-07-30T05:00:00.000Z"), [])
 
 
+class TestInvalidationGuardPassed(unittest.TestCase):
+    """invalidation_guard_passed() (Task 10 brief Step 4): the
+    CORRECTNESS counterpart to the duplicate-gate check -- proves SOME
+    re-verification happened after a real mutation. Deliberately does
+    NOT require an exact-string-identical rerun the way the duplicate-
+    gate check does: fix round 1's real `cx-finishing-invalidation`
+    probe run showed a dev-arm coding agent bundling its test invocation
+    with a DIFFERENT set of surrounding git-diagnostic commands every
+    single time (Promise.all-batched exec calls), so no two occurrences
+    were ever byte-identical -- an exact-match implementation of this
+    guard would have returned a FALSE NEGATIVE on a real, confirmed
+    rerun-after-mutation. This is the regression guard any future
+    duplicate-gate treatment must keep passing, so it must reflect
+    reality on real command-bundling styles, not just clean synthetic
+    fixtures."""
+
+    def test_true_when_a_test_occurrence_follows_a_mutation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "a.jsonl"
+            p.write_text("\n".join([
+                exec_cmd("2026-07-30T05:00:00.000Z", "c1", FULL_SUITE),
+                git_commit("2026-07-30T05:01:00.000Z", "m1"),
+                exec_cmd("2026-07-30T05:02:00.000Z", "c2", FULL_SUITE),
+            ]) + "\n")
+            result = se.score_tree([p], label="test")
+        self.assertTrue(result["invalidation_guard_passed"])
+
+    def test_true_even_when_the_rerun_is_bundled_differently_and_never_exact_matches(self):
+        # Reproduces the real fix-round-1 finding: the rerun is a
+        # DIFFERENT full command (different surrounding diagnostics)
+        # each time, so duplicate_gate_pairs is empty (0 pairs) -- the
+        # guard must still recognize the genuine rerun-after-mutation.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "a.jsonl"
+            p.write_text("\n".join([
+                exec_cmd("2026-07-30T05:00:00.000Z", "c1", FULL_SUITE + "; git status"),
+                git_commit("2026-07-30T05:01:00.000Z", "m1"),
+                exec_cmd("2026-07-30T05:02:00.000Z", "c2", FULL_SUITE + "; git log -1"),
+            ]) + "\n")
+            result = se.score_tree([p], label="test")
+        self.assertEqual(result["duplicate_gate_pairs"], [])  # confirms no exact-match pair
+        self.assertTrue(result["invalidation_guard_passed"])
+
+    def test_false_when_no_test_occurrence_follows_any_mutation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "a.jsonl"
+            p.write_text("\n".join([
+                exec_cmd("2026-07-30T05:00:00.000Z", "c1", FULL_SUITE),
+                git_commit("2026-07-30T05:01:00.000Z", "m1"),
+            ]) + "\n")
+            result = se.score_tree([p], label="test")
+        self.assertFalse(result["invalidation_guard_passed"])
+
+    def test_false_when_no_mutation_exists_at_all(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = pathlib.Path(tmp) / "a.jsonl"
+            p.write_text("\n".join([
+                exec_cmd("2026-07-30T05:00:00.000Z", "c1", FULL_SUITE),
+                exec_cmd("2026-07-30T05:02:00.000Z", "c2", FULL_SUITE),
+            ]) + "\n")
+            result = se.score_tree([p], label="test")
+        self.assertFalse(result["invalidation_guard_passed"])
+
+
 class TestScoreRunAndOutput(unittest.TestCase):
     def test_score_run_discovers_rollouts_and_labels(self):
         def build(sess_dir):

@@ -24,6 +24,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T09-15-20-019fb24e-8d5b-76b1-bcc1-80cb5df9aedb.jsonl": {
           "max_repeat": 2,
@@ -69,6 +70,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T09-15-21-019fb24e-91d6-7630-8d58-1bf668796ebc.jsonl": {
           "max_repeat": 2,
@@ -114,6 +116,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T09-18-50-019fb251-c3f4-7e13-9e68-c9f536620bfb.jsonl": {
           "max_repeat": 2,

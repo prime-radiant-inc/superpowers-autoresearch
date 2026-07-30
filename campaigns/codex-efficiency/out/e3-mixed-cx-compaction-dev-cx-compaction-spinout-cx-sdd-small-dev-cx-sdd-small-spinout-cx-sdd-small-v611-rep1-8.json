@@ -24,6 +24,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-28T19-59-59-019faa50-082b-7553-b557-56244de76599.jsonl": {
           "max_repeat": 1,
@@ -113,6 +114,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-28T20-31-03-019faa6c-7ab3-7ed3-8229-17d59ba2736e.jsonl": {
           "max_repeat": 1,
@@ -221,6 +223,7 @@
       "n_duplicate_gate_pairs": 4,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-28T20-53-29-019faa81-030e-7490-9a25-01e907933505.jsonl": {
           "max_repeat": 1,
@@ -316,6 +319,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-28T21-13-34-019faa93-6478-7b60-a963-c8eac86e20b6.jsonl": {
           "max_repeat": 1,
@@ -398,6 +402,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T05-01-37-019fac3f-e813-72b3-87cc-941a72bcb0cc.jsonl": {
           "max_repeat": 1,
@@ -461,6 +466,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T05-18-56-019fac4f-c457-7b63-8799-6e5758810897.jsonl": {
           "max_repeat": 1,
@@ -563,6 +569,7 @@
       "n_duplicate_gate_pairs": 4,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T03-19-04-019fabe2-064d-7852-b8c4-f6575b63c131.jsonl": {
           "max_repeat": 1,
@@ -645,6 +652,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T03-40-08-019fabf5-50b6-7e01-81ab-4b3af2de30af.jsonl": {
           "max_repeat": 1,
@@ -766,6 +774,7 @@
       "n_duplicate_gate_pairs": 5,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T03-56-04-019fac03-e4d0-7f13-9042-dea303df366c.jsonl": {
           "max_repeat": 1,
@@ -848,6 +857,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T04-16-51-019fac16-ec80-7973-bcd5-9ec339eaa7bd.jsonl": {
           "max_repeat": 1,
@@ -950,6 +960,7 @@
       "n_duplicate_gate_pairs": 4,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T05-34-37-019fac5e-1f27-7ef3-aff1-fd99c622e8e5.jsonl": {
           "max_repeat": 1,
@@ -1045,6 +1056,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T05-55-46-019fac71-7cab-76a1-ac55-25f577503ef9.jsonl": {
           "max_repeat": 1,
@@ -1147,6 +1159,7 @@
       "n_duplicate_gate_pairs": 4,
       "n_flagged_duplicate_gate_pairs": 1,
       "has_duplicate_gate": true,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T06-19-36-019fac87-4ea5-7133-9c54-7b2a6d761b65.jsonl": {
           "max_repeat": 1,
@@ -1242,6 +1255,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T06-41-40-019fac9b-80d7-73c3-b23f-581733ee0104.jsonl": {
           "max_repeat": 1,
@@ -1337,6 +1351,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-12-22-019fb1a7-09e8-7372-84b2-646513168d0a.jsonl": {
           "max_repeat": 1,
@@ -1425,6 +1440,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-37-23-019fb1bd-f28b-7c42-9f58-8f3b84ee22d4.jsonl": {
           "max_repeat": 1,
@@ -1488,6 +1504,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-55-41-019fb1ce-b51e-75f1-a575-45008f402ef8.jsonl": {
           "max_repeat": 1,
@@ -1575,6 +1592,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T18-51-15-019faf37-7652-7733-bf2b-008c4b9f06e2.jsonl": {
           "max_repeat": 1,
@@ -1638,6 +1656,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T18-51-26-019faf37-9f9a-7223-bc23-c0121646e8a1.jsonl": {
           "max_repeat": 1,
@@ -1726,6 +1745,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-29T19-13-30-019faf4b-d69e-7523-9121-968994e6a4f4.jsonl": {
           "max_repeat": 1,
@@ -1789,6 +1809,7 @@
       "n_duplicate_gate_pairs": 1,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-24-01-019fb1b1-b62d-7333-8123-1641d789b794.jsonl": {
           "max_repeat": 1,
@@ -1890,6 +1911,7 @@
       "n_duplicate_gate_pairs": 3,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-23-25-019fb1b1-29ce-7640-8841-aa69e3dc9948.jsonl": {
           "max_repeat": 1,
@@ -1972,6 +1994,7 @@
       "n_duplicate_gate_pairs": 2,
       "n_flagged_duplicate_gate_pairs": 0,
       "has_duplicate_gate": false,
+      "invalidation_guard_passed": true,
       "per_session_repeat": {
         "rollout-2026-07-30T06-50-36-019fb1ca-0d79-7310-a093-4b3e049fb532.jsonl": {
           "max_repeat": 1,

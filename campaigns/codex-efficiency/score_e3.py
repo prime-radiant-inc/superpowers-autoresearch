@@ -271,6 +271,31 @@ def events_between(rollouts, start_ts, end_ts):
     return events
 
 
+def _invalidation_guard_passed(occurrences, mutations) -> bool:
+    """The Task 10 brief's Step 4 invalidation probe: the CORRECTNESS
+    counterpart to the duplicate-gate check. True if at least one
+    test-command OCCURRENCE (any command -- not necessarily identical to
+    an earlier one) happens strictly after at least one mutation event --
+    proof that SOME re-verification followed a real tree change.
+
+    Deliberately does NOT require an exact-string-identical rerun the
+    way `_duplicate_gate_pairs()` does (that check's purpose is
+    different: flagging a WASTEFUL identical repeat). Fix round 1's real
+    `cx-finishing-invalidation` probe run found a dev-arm coding agent
+    bundling its test invocation with a DIFFERENT set of surrounding
+    git-diagnostic commands every time (batched exec calls) -- an
+    exact-match implementation of this guard returned a FALSE NEGATIVE
+    on a confirmed real rerun-after-mutation there. This is the
+    regression guard any FUTURE duplicate-gate treatment (e.g. a
+    verification-lease mechanism) must keep passing, so it has to
+    reflect real command-bundling variability, not just clean synthetic
+    fixtures."""
+    if not mutations or not occurrences:
+        return False
+    first_mutation = min(mutations)
+    return any(occ["timestamp"] > first_mutation for occ in occurrences)
+
+
 def score_tree(rollouts, label=None, waiver_marker=None):
     """Core, reusable scoring pass over an already-discovered rollouts
     list (no root/tree-walk needed -- E3's duplicate-gate question spans
@@ -302,6 +327,7 @@ def score_tree(rollouts, label=None, waiver_marker=None):
         "n_duplicate_gate_pairs": len(duplicate_gate_pairs),
         "n_flagged_duplicate_gate_pairs": len(flagged),
         "has_duplicate_gate": len(flagged) > 0,
+        "invalidation_guard_passed": _invalidation_guard_passed(occurrences, mutations),
         "per_session_repeat": per_session_repeat,
         "run_max_repeat": run_max_repeat,
         "repeat_distribution": repeat_distribution,
@@ -352,7 +378,8 @@ def print_run_report(run):
           f"mutation_events={run['n_mutation_events']}")
     print()
     print(f"**duplicate-gate pairs: {run['n_flagged_duplicate_gate_pairs']}/{run['n_duplicate_gate_pairs']} "
-          f"flagged (zero intervening mutation)**")
+          f"flagged (zero intervening mutation)**  "
+          f"invalidation_guard_passed={run['invalidation_guard_passed']}")
     for pr in run["duplicate_gate_pairs"]:
         mark = "FLAGGED" if pr["is_duplicate_gate"] else "ok"
         print(f"    [{mark}] {pr['cmd_id']}: {pr['first']['rollout']}@{pr['first']['timestamp']} "
