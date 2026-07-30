@@ -9,7 +9,15 @@ scope decisions. Read the spec for anything not reproduced below.
 
 **Budget:** $1000 total, tracked in `logs/2026-07-28-codex-efficiency.md`.
 
-## The six experiment packages
+## Experiment packages
+
+The campaign ran **ten** experiments, not six. E1-E6 below are the spec's
+original packages, copied verbatim. E7-E10 were added mid-campaign by
+Jesse-approved amendment and are specified in "Amendments (E7-E10 and
+scope changes)" further down — read that section too before treating this
+file's E1-E6 list as the campaign's scope.
+
+### The spec's original six
 
 Copied verbatim from the spec (`docs/2026-07-28-codex-efficiency-eval-campaign-design.md`,
 "The six experiment packages"). Each package: pathology signature → scorer
@@ -93,6 +101,85 @@ metrics → distilled scenario → tier plan → pre-registered success criterio
   in the later fix cycle.
 - **Infra risk:** deterministically forcing compaction in drill is the one
   rig unknown.
+
+## Amendments (E7-E10 and scope changes)
+
+Three amendments were approved mid-campaign, each grounded in evidence
+that arrived after the spec was written. Full text and rationale:
+`docs/plans/2026-07-28-codex-efficiency-evals.md`, "Amendment 1/2/3";
+every pre-registration and verdict is in
+`logs/2026-07-28-codex-efficiency.md`. Campaign closeout, with all ten
+verdicts in one table: `reports/2026-07-codex-efficiency-campaign.md`.
+
+**Amendment 1 (post-Task-6):** container Codex CLI upgraded 0.144.4 →
+field 0.146 and E1's axis A re-tested (the pinned container version was a
+confound for E1's baseline); Drew-corpus cross-validation ingested as
+external evidence; and three new MINE-tier scorers over already-paid-for
+corpora — no new run spend:
+
+### E7. Wait-polling waste (audit Finding 7, MINE only)
+
+- **Scorer:** `score_e7.py` + `rollout_parser.wait_outcomes()` — pairs every
+  `wait_agent` call to its `function_call_output` by `call_id`, classifies
+  `timed_out`, reports poll counts, timeout rate, inter-poll cadence, and a
+  cache-read rebill estimate. Writes `out/e7-{drew,audit-high-wait-root,
+  audit-direct-sol,battery}.json` (FORCE=1 to overwrite; all-or-nothing).
+- **Corpora:** Drew's (external), the audit corpus, our own batteries.
+- **Report:** `out/e7-report.md`.
+
+### E8. close_agent lifecycle hygiene (audit Finding 7, MINE only)
+
+- **Scorer:** `score_e8.py` + `rollout_parser.lifecycle_calls()` —
+  per-controller spawned-vs-closed census, plus interrupt/followup/resume/
+  list_agents counts. **Privacy constraint discovered while building it:**
+  a `close_agent` output can carry an entire child's final report, so the
+  parser never reads `function_call_output` for these tools.
+- **Report:** `out/e8-report.md`.
+
+### E9. Workspace leaks (MINE only)
+
+- **Scorer:** `score_e9.py` — reads **git history of run workdirs**, not
+  rollout JSONL (the only scorer that does): was any `.superpowers/` path
+  ever added, is it in HEAD, was it added on a HEAD-reachable commit; plus
+  a review-package (`review*.diff`) surface added in fix round 1.
+- **Report:** `out/e9-report.md`.
+
+**Amendment 2:** the E1-v611 third arm (`v6.1.1` at fixed CLI 0.146, to
+separate skill-version dependence from CLI-version dependence —
+`out/e1-v611-report.md`), plus:
+
+### E10. Lifecycle truthfulness (audit Finding 7's P0 gap)
+
+- **Probes:** (a) empty-output child (`cx-sdd-small-emptychild`), (b) child
+  killed from outside the container (`probe-kill-child.sh --live`), (c)
+  tool/time-budget exhaustion (`cx-sdd-small-shortbudget`), (d)
+  citation-integrity census over our own corpus (`score_e10.py`).
+- **Scorer:** `score_e10.py` (+ `rollout_parser` claim primitives). Writes
+  `out/e10-battery.json`.
+- **Where the verdict lives — deliberate convention break:** E10 has **no
+  `out/e10-report.md`**. Its verdict is the hypothesis-log "E10 RESULT"
+  entry plus `out/e10-battery.json`, because probes (b) and (c) are
+  single-instance driver-script case studies whose evidence is quoted
+  transcript, not a census table — a report file would have been a copy of
+  the log entry. Every other experiment has an `out/e*-report.md`; this one
+  is the exception, and the closeout report carries its verdict in the
+  same table as the other nine.
+
+**Amendment 3 (Jesse-supplied 2026-07-29 session audit):** a real
+fresh-session tree (root + 13 descendants, ~4h) independently replicated
+several campaign findings and sharpened three experiments — E3 gained
+identical-command-repeat and waiver-violation measures, E6 gained
+depth-2-spawn-by-role and same-task-duplicate-review measures, E5 gained
+four rubric measures. Reconciled BEFORE being trusted (6/7 claims exact,
+2 of the audit's own evidence citations fabricated):
+`out/e-audit0729.md`, `audit0729_adapter.py`.
+
+**Terminology note carried by the amendments.** "Depth-2 spawns by role"
+means SPAWNER role in `score_e6.py`/`out/e6-report.md` and CHILD role in
+`out/e-audit0729.md`'s cross-corpus table; "duplicate review" means
+same-**task**-worker-depth-2 in E6 and same-**scope** in E5. Both pairs
+are defined at their point of use in those files. Don't compare the
+numbers across reports without checking which sense is meant.
 
 ## Recon facts
 
