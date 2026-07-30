@@ -2171,3 +2171,93 @@ an invariant ritual template, and the micro isolates the current
 hard-gate text specifically (not task-shape or session-shape) as the
 lever erasing the bounded/spike distinction the model otherwise draws on
 its own.
+
+### 2026-07-30 — E6 PRE-REGISTRATION (sharpened): compaction recovery — inherited questions + Amendment 3 signature (Task 9)
+
+Registered before `score_e6.py`'s baseline/treatment batteries run (the
+scorer itself, `rollout_parser.skill_reads()`/`compaction_events()`, and
+`scenarios/cx-compaction/` are already built and TDD-tested as of this
+entry — see the commits this task lands; validated on synthetic fixtures
+only, no real-corpus numbers cited below yet). This is the campaign's
+linchpin experiment: it inherited E1's axis-B fork-isolation question
+(Task 6's adjudication: "Axis B is formally re-scoped OUT of E1 and INTO
+E6" — baseline 0/34 non-isolated spawns on a fresh short session,
+inconclusive-by-zero, because the audit's Finding-1 pathology was
+observed on long-running sessions with substantial accumulated context,
+not fresh dispatches), E2's baseline question (Task 8: "E2 FULL:
+inconclusive-by-zero — 4/4 reps root spawns exactly one reviewer child,
+zero nonroot spawns; folded into E6 per pre-registration"), and the
+depth-2 hygiene-drop lead now at 3-4 independent occurrences (E1's
+CLI-0.146 re-test: 2/2 depth-2 spawns model-omitted, 1 fork=all,
+both issued by an implementer child; Task 15's reconciled 07-29 audit:
+implementer-spawned-reviewer-at-depth-2 + controller-dispatched duplicate
+review, confirmed two independent ways against a REAL corpus).
+
+**The original E6 baseline prediction (registered in this log's "Pre-
+registered predictions" section, Task 1, unedited) stands as-is: after a
+forced compaction the controller re-reads >=1 SKILL.md it had already
+read, AND >=1 post-compaction spawn drops isolation or model
+explicitness relative to pre-compaction spawns.** The following three
+predictions are ADDITIONS (Amendment 3's "E2->E6 recursion signature
+sharpened" scope + this task's own E1/E2-inheritance reasoning), not
+edits to that original entry:
+
+**(i) Post-compaction spawn-hygiene drop, per the E1 axis-B transfer.**
+On the `dev` arm (no compaction-recovery hook — see DESIGN.md's new "E6
+compaction forcing" section for the mechanism), predict the
+post-compaction spawn-hygiene rates (`spawn_hygiene.post` in
+`score_e6.py`'s output: pct_isolated, pct_explicit_model) are WORSE than
+the pre-compaction rates (`spawn_hygiene.pre`) for the same run — i.e.
+compaction is the trigger condition axis-B needed and couldn't get from a
+short fresh session. On the `spinout` arm (has the compaction-recovery
+hook), predict pre/post hygiene stays flat (no drop) — the hook's own
+text explicitly instructs re-reading the dispatch rules after every
+compaction, so if it works as designed, post-compaction spawns on spinout
+should NOT degrade the way dev's are predicted to.
+
+**(ii) Depth-2 spawns concentrated in implementer-spawned reviewers, per
+the 4-occurrence pattern.** Predict `score_e6.py`'s
+`depth2_by_spawner_role` census shows depth-2 spawns attributed
+overwhelmingly (not necessarily exclusively) to spawners with
+`role == "implementer"`, not `"reviewer"` — matching the pattern's 4
+independent occurrences to date (E1 CLI-0.146 re-test x2, Task 15's
+reconciled 07-29 audit tree, and Drew's stress-2703 corpus's own single
+recursive spawn, per the Drew cross-validation entry above: "an
+additional child ... spawned recursively by a depth-1 implementer, not by
+root"). Predict at least one `duplicate_review_families` match (a
+worker-initiated depth-2 review of the same task family as a separate
+controller-initiated depth-1 review) in >=1 of the 3 baseline reps,
+matching Task 15's confirmed shape.
+
+**(iii) Registered ALTERNATIVE outcome (a real possible result, not a
+hedge to be explained away post hoc).** If the baseline battery shows NO
+compaction-induced degradation on either (i) or (ii) — hygiene holds flat
+across the compaction boundary AND depth-2 spawns are rare/absent
+regardless of spawner role — the pre-registered interpretation is: **the
+pathology requires interactive, long-lived DESKTOP sessions this rig
+cannot reproduce** (our forced-compaction mechanism induces a real
+compaction event structurally, via a config knob, but not the hours-long
+accumulated-context, many-real-tasks condition the audit's Finding 1 and
+Drew's stress-2703 actually occurred under). That would be a TERMINAL
+finding for the rig-battery approach to E6 specifically (not the whole
+campaign) — the follow-up path in that case is corpus MINING (more
+audit0729-style real-session reconciliation against future long sessions
+Jesse or others actually run), not more quorum batteries on
+`cx-sdd-small`-shaped short scenarios, since (per this same reasoning)
+they structurally can't reach the accumulated-context regime where the
+pathology was originally observed.
+
+**Batteries planned:** baseline 3 reps `dev` arm (lane A); treatment 3
+reps `spinout` arm (lane B, re-up to `/tmp/sp-arm-spinout`) — lanes run
+concurrently per proven infrastructure. Free re-scores (no new run spend):
+Task 6/6b's existing spinout-arm `cx-sdd-small` reps (may already contain
+incidental compactions even without the knob — checked, not assumed),
+Task 13's v6.1.1-arm reps, and Drew's stress-2703 corpus (18 real root
+compactions, the one corpus with genuine long-history compaction under
+real load — reference condition, not a discrimination-gated battery).
+
+**Success criterion:** unchanged from Task 1's original registration —
+baseline lands if BOTH clauses hold (>=1 re-read AND >=1 degraded
+post-compaction spawn). (i)-(iii) above sharpen what "degraded" and
+"pathology" mean and register the alternative outcome in advance so a
+null result is reported as a real finding, not quietly reframed.
