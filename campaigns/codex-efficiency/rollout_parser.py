@@ -396,6 +396,36 @@ def patch_applies(path) -> list[PatchApply]:
                 paths=paths))
     return out
 
+# --- mutation_events() (E3, Task 10): timestamps of everything that could
+# have changed the tree's on-disk/repo state -- a successful patch_apply_end
+# (reuses patch_applies(), filtered to success=True; a FAILED apply changed
+# nothing) plus any exec command (either encoding, reusing exec_commands())
+# matching MUTATION_GIT_RE. This is the duplicate-gate scorer's "did
+# anything happen between these two identical test runs" signal: two
+# identical normalized test commands with zero mutation_events between their
+# timestamps are running against an unchanged tree.
+#
+# Deliberately narrow to git's own state-changing subcommands (not every
+# write imaginable, e.g. `mv`/`rm`/editor saves outside apply_patch) --
+# apply_patch already covers the agent's own file edits via patch_apply_end,
+# so the git list only needs to cover mutations that happen OUTSIDE
+# apply_patch: committing, merging, rebasing, resetting, or switching
+# branches all change what's on disk without necessarily going through
+# apply_patch.
+MUTATION_GIT_RE = re.compile(r"\bgit (commit|merge|rebase|reset|checkout)\b")
+
+
+def mutation_events(path) -> list[str]:
+    """Sorted timestamps of every successful patch apply or git-mutating
+    exec command in PATH, merging both sources and sorting by timestamp
+    (ISO8601 strings, which sort lexicographically in chronological
+    order) -- NOT simply concatenated in file order, since a caller
+    merging mutation_events() across multiple sessions needs a single
+    chronologically-ordered timeline."""
+    events = [pa.timestamp for pa in patch_applies(path) if pa.success]
+    events += [ec.timestamp for ec in exec_commands(path) if MUTATION_GIT_RE.search(ec.cmd)]
+    return sorted(events)
+
 # --- skill_reads() / compaction_events() (E6, Task 9): per-EVENT (not
 # aggregate-count) extraction, so a caller can partition a session's own
 # timeline at a compaction boundary and compare WHICH skill paths were read

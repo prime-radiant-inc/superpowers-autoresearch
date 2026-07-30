@@ -186,6 +186,34 @@ PATCH_APPLY_NO_CHANGES_KEY = L("2026-07-29T10:00:10.000Z", "event_msg", {
     "type": "patch_apply_end", "call_id": "exec-p3", "turn_id": "turn-1",
     "success": True})
 
+# --- mutation_events() fixtures (E3, Task 10). A "mutation" is a
+# successful patch_apply_end OR a git command that changes repo state
+# (commit/merge/rebase/reset/checkout) -- deliberately excludes read-only
+# git commands (status/log/diff/branch) and the exec_command encoding is
+# exercised on some, custom_tool_call "exec" on others, matching the two
+# encodings exec_commands() already handles.
+GIT_COMMIT_EXEC = L("2026-07-29T11:00:00.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m1", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git commit -m 'wip'"}), "call_id": "call_m1"})
+GIT_MERGE_EXEC = L("2026-07-29T11:00:01.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m2", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git merge feature"}), "call_id": "call_m2"})
+GIT_REBASE_EXEC = L("2026-07-29T11:00:02.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m3", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git rebase main"}), "call_id": "call_m3"})
+GIT_RESET_EXEC = L("2026-07-29T11:00:03.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m4", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git reset --hard HEAD~1"}), "call_id": "call_m4"})
+GIT_CHECKOUT_CUSTOM_EXEC = L("2026-07-29T11:00:04.000Z", "response_item", {
+    "type": "custom_tool_call", "id": "fc_m5", "name": "exec",
+    "input": "git checkout -b feature/x", "call_id": "call_m5"})
+GIT_STATUS_EXEC = L("2026-07-29T11:00:05.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m6", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git status"}), "call_id": "call_m6"})
+GIT_LOG_EXEC = L("2026-07-29T11:00:06.000Z", "response_item", {
+    "type": "function_call", "id": "fc_m7", "name": "exec_command",
+    "arguments": json.dumps({"cmd": "git log --oneline -5"}), "call_id": "call_m7"})
+
 # --- skill_reads()/compaction_events() fixtures (E6, Task 9). skill_reads()
 # must extract the literal SKILL.md path token (not just a boolean match)
 # so a caller can tell WHICH skill was read before vs after a compaction.
@@ -410,6 +438,47 @@ class TestPatchApplies(unittest.TestCase):
     def test_patch_applies_empty_file(self):
         p = write_fixture([NOT_A_SPAWN])
         self.assertEqual(rp.patch_applies(p), [])
+
+class TestMutationEvents(unittest.TestCase):
+    """mutation_events() (E3, Task 10): timestamps of successful
+    patch_apply_end events plus git commands that mutate repo state
+    (commit/merge/rebase/reset/checkout) -- the duplicate-gate scorer's
+    "did anything change the tree between these two identical test runs"
+    signal."""
+
+    def test_includes_successful_patch_apply_and_excludes_failure(self):
+        p = write_fixture([PATCH_APPLY_SUCCESS_TWO_PATHS, PATCH_APPLY_FAILURE_EMPTY_CHANGES])
+        events = rp.mutation_events(p)
+        self.assertEqual(events, ["2026-07-29T10:00:00.000Z"])
+
+    def test_includes_each_mutating_git_verb_both_encodings(self):
+        p = write_fixture([GIT_COMMIT_EXEC, GIT_MERGE_EXEC, GIT_REBASE_EXEC,
+                            GIT_RESET_EXEC, GIT_CHECKOUT_CUSTOM_EXEC])
+        events = rp.mutation_events(p)
+        self.assertEqual(events, [
+            "2026-07-29T11:00:00.000Z", "2026-07-29T11:00:01.000Z",
+            "2026-07-29T11:00:02.000Z", "2026-07-29T11:00:03.000Z",
+            "2026-07-29T11:00:04.000Z"])
+
+    def test_excludes_non_mutating_git_commands(self):
+        p = write_fixture([GIT_STATUS_EXEC, GIT_LOG_EXEC])
+        self.assertEqual(rp.mutation_events(p), [])
+
+    def test_excludes_unrelated_exec_commands(self):
+        p = write_fixture([EXEC_FC])  # "pytest -k test_thing"
+        self.assertEqual(rp.mutation_events(p), [])
+
+    def test_merges_and_sorts_both_sources_by_timestamp(self):
+        # File order deliberately scrambled (git commit BEFORE the patch
+        # apply in the raw file) -- mutation_events must sort by
+        # timestamp, not just concatenate its two sources in file order.
+        p = write_fixture([GIT_COMMIT_EXEC, PATCH_APPLY_SUCCESS_TWO_PATHS, GIT_STATUS_EXEC])
+        self.assertEqual(rp.mutation_events(p),
+                         ["2026-07-29T10:00:00.000Z", "2026-07-29T11:00:00.000Z"])
+
+    def test_empty_file_returns_empty_list(self):
+        p = write_fixture([NOT_A_SPAWN])
+        self.assertEqual(rp.mutation_events(p), [])
 
 class TestSkillReadsAndCompactionEvents(unittest.TestCase):
     """skill_reads()/compaction_events() (E6, Task 9): per-event (not
