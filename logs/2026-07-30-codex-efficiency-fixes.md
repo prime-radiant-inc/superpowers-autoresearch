@@ -161,3 +161,100 @@ those heavier batteries spend any budget.
 in a separate log entry once the sweep has run and the answer files have
 been independently verified (one word each, via a command outside the
 scorer's own parser).
+
+### 2026-07-30 — T4 layer 1 MICRO RESULT: C-approval passes every pre-registered cell; Z-null/C-approval ceiling-effect caveat (Task 7)
+
+Ran the pre-registered sweep: 75 Anthropic Messages API calls, MODEL
+`claude-opus-4-8`, REPS=5, `campaigns/codex-efficiency/
+ceremony-path-micro.py`. Exit code 0, no rate-limit errors encountered,
+zero unparseable answers (no `(?N)` markers in the script's own printed
+table).
+
+**Independent verification (non-circular — outside the scorer's own
+regex, per this log's standing rule):**
+- `awk 'NF!=1' out/micro-c/*.txt` (75 files) → no output — every record
+  is exactly one field.
+- `wc -w out/micro-c/*.txt` → every individual file reports word count
+  1 (the only line not matching `1` is the `75 total` summary).
+- `od -c` on a sample file confirms raw content is the bare word only
+  (e.g. `FULL`), no trailing newline, no stray whitespace.
+- File-derived tallies cross-checked against the script's own
+  `out/micro-c/results.json` — identical. (`results.json` and the raw
+  `*.txt` answer files live under the git-ignored `out/`; not
+  committed, per this task's convention.)
+
+**Results (SPIKE/BOUNDED/FULL counts out of 5 reps):**
+
+```
+variant                    spike           bounded              arch   ambig-interface    ambig-crosscut
+--------------------------------------------------------------------------------------------------------
+Z-null                     5/0/0             0/5/0             0/0/5             0/0/5             0/0/5
+A-current                  5/0/0             0/2/3             0/0/5             0/0/5             0/0/5
+C-approval                 5/0/0             0/5/0             0/0/5             0/0/5             0/0/5
+```
+
+**Criteria check (against the pre-registration above):**
+- C-approval spike -> SPIKE >=4/5: **5/5 — PASS**
+- C-approval bounded -> BOUNDED >=4/5: **5/5 — PASS**
+- C-approval arch -> FULL 5/5: **5/5 — PASS**
+- C-approval ambig-interface -> FULL >=4/5: **5/5 — PASS**
+- C-approval ambig-crosscut -> FULL >=4/5: **5/5 — PASS**
+- A-current bounded -> FULL persists (observation, not gated): BOUNDED
+  2, FULL 3 — the pathology persists as a 3/5 plurality, weaker than a
+  unanimous signature.
+- Z-null on ambig-interface / ambig-crosscut (observation, not gated):
+  both 5/5 FULL — unguided judgment escalates BOTH adversarial briefs
+  to FULL unanimously, with zero extra guidance text present.
+
+**Verdict: PASS. Every pre-registered C-approval cell meets its
+criterion.** Per this task's hard rule, this is not a stop condition —
+T4 layer 2 (Codex ceremony battery) and layer 3 (global regression
+battery) are cleared to proceed on router-text grounds.
+
+**Caveat that travels with this PASS, not buried under it:** Z-null and
+C-approval produce **identical** tallies on every one of the 5 briefs
+(5/0/0, 0/5/0, 0/0/5, 0/0/5, 0/0/5 — both variants, all five columns).
+The router text made zero measurable difference versus no extra
+guidance at all on this battery; both hit the target classification
+100% of the time. This is not a new anomaly — it reproduces the
+original E4 micro's own finding almost exactly (`logs/
+2026-07-28-codex-efficiency.md`, "E4 RESULT" entry, Task 11: "Z-null and
+the drafted B-three-path both differentiate path choice perfectly and
+identically across all 3 task classes... A-current... is the only
+variant that fails to differentiate"). The same shape holds again here
+with the real shipped router text and two new adversarial briefs:
+Z-null/C-approval both perfect, A-current the sole outlier — though
+A-current's bounded-class drift is weaker this time (3/5 FULL here vs.
+5/5 FULL in the original run; not a clean apples-to-apples comparison
+per the taxonomy-change caveat registered above, since the SPIKE/
+BOUNDED/FULL definitions themselves changed between runs). Two live,
+non-exclusive explanations, neither resolved by this MICRO alone: (a)
+the neutralized SYSTEM template's own baked-in one-line definitions
+(present verbatim in every condition, Z-null included) are themselves
+sufficient guidance for a model this capable on task briefs this clear,
+so the router text's marginal contribution over "definitions alone" is
+untested by this battery; or (b) these five briefs are not hard enough
+to discriminate "no extra guidance" from "shipped router text," even
+though they were hard enough to discriminate A-current from the
+Z-null/C-approval ceiling on `bounded`. Per this log's standing
+discrimination rule ("inconclusive-by-zero is a stop, not a pass"), the
+zero gap between Z-null and C-approval specifically is flagged as
+inconclusive-by-zero for the narrower claim "the router TEXT (as
+opposed to the neutralized definitions alone) is what produces correct
+classification" — that narrower claim is NOT established by this
+battery. Nothing pre-registered required beating Z-null (only
+A-current's `bounded -> FULL persists` was framed as a contrast, and it
+DOES diverge from both Z-null and C-approval on `bounded` — the one
+cell where the hard-gate's absolute wording still pulls weight the
+router text and no-guidance condition don't), so the PASS verdict
+stands exactly as registered. Recommendation for the layer 2/3
+batteries: additionally track whether a bare/no-brainstorming-skill
+Codex control already classifies comparably well, so the live battery
+doesn't inherit this MICRO's blind spot unexamined.
+
+**Cost:** not reported by the script — it records no token/cost totals
+and none were read from the API response at run time, so no figure is
+reconstructible after the fact. Same limitation noted for this same
+script in the original campaign log's budget ledger (`logs/
+2026-07-28-codex-efficiency.md` row: "E4 ceremony MICRO... unmeasured —
+API cost not captured").

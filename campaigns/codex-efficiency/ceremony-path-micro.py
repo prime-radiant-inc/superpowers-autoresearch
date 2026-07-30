@@ -1,39 +1,47 @@
 #!/usr/bin/env python3
-"""E4 MICRO: does an entry-decision guidance paragraph make a model choose
-proportional ceremony (SPIKE / BOUNDED / FULL) per task class, or does it
-apply the same heavy process regardless of task shape?
+"""E4 MICRO layer 1: does the shipped brainstorming three-path router text
+make a model choose proportional ceremony (SPIKE / BOUNDED / FULL) per task
+class -- and does it hold up against adversarially ambiguous briefs the
+original campaign micro never tested?
 
-E4's registered baseline prediction (`logs/2026-07-28-codex-efficiency.md`,
-Task 1 entry, extended by the Task 11 pre-registration) is that ceremony
-census is statistically indistinguishable across spike/bounded/
-architectural task classes on live Codex sessions -- i.e. the
-`brainstorming` hard-gate's absolute wording ("This applies to EVERY
-project regardless of perceived simplicity") is applied uniformly rather
-than scaled to task complexity. This MICRO isolates the entry-decision TEXT
-from session-shape confounds (a live Codex session's own triggering
-behavior, subagent dispatch, etc.) by asking a model directly, out of band:
-given only a system-prompt paragraph and one task description, which path
-would it choose? One Anthropic Messages API call per sample; programmatic
-scoring via a forced one-word answer.
+This is the codex-efficiency-fixes Task 7 extension of the original E4
+ceremony-path MICRO (`logs/2026-07-28-codex-efficiency.md`, Task 1 entry;
+pre-registered further in `logs/2026-07-30-codex-efficiency-fixes.md`,
+T4 layer 1). It supersedes the original run in two ways:
 
-This is treatment-phrasing PRE-WORK only, per the task brief -- no skill
-edits land in this campaign. B-three-path is a router paragraph drafted for
-this task; it is not the current brainstorming skill text and is not
-proposed for adoption without further evaluation.
+1. B-three-path (a drafted router paragraph, never shipped) is replaced by
+   C-approval: the `## Three Paths` section of `skills/brainstorming/
+   SKILL.md` AS SHIPPED (Task 5's commit, `5ea8821`) -- the lead-in
+   sentence, the three bullets, and the doubt/ratchet paragraph, verbatim.
+2. The shared SYSTEM answer definitions (SPIKE/BOUNDED/FULL) are
+   neutralized to classify the ARTIFACT produced, not the approval step --
+   every path in the shipped skill text ends with human approval, so a
+   definition that ties SPIKE/BOUNDED to "no approval gate" would make
+   C-approval unscoreable by construction. Because of this taxonomy
+   change, results here are NOT comparable cell-by-cell to the original
+   campaign micro; comparisons are within this run only.
+
+Also adds two adversarial briefs the campaign never tested: ambig-interface
+and ambig-crosscut -- both surface-bounded tasks (a flag, a one-file bug
+fix) that hide a public-interface or cross-cutting dependency an
+under-classifying model would miss.
+
+This is treatment-phrasing evaluation only -- no further skill edits land
+from this script.
 
 Variants:
-- Z-null       : no guidance about entry-path/ceremony at all (negative
-                 control).
-- A-current    : the verbatim <HARD-GATE> block from
-                 `/tmp/sp-arm-dev/skills/brainstorming/SKILL.md` lines
-                 12-14 -- the literal text Finding 4 was raised against.
-- B-three-path : a drafted router paragraph distinguishing spike/bounded/
-                 architectural ceremony levels explicitly.
+- Z-null     : no guidance about entry-path/ceremony at all (negative
+               control).
+- A-current  : the verbatim <HARD-GATE> block from
+               `/tmp/sp-arm-dev/skills/brainstorming/SKILL.md` lines 12-14
+               -- the literal text Finding 4 was raised against.
+- C-approval : the shipped Three Paths block (see above), verbatim.
 
-Each of the three E4 task-class briefs (spike/bounded/arch, verbatim from
-scenarios/cx-ceremony-{spike,bounded,arch}/story.md) is put to the model
-under each variant. REPS=5 per (variant, task) cell (45 calls total),
-cached per (variant, task, rep) -- reruns fill gaps only.
+Each of the five briefs (spike/bounded/arch, verbatim from
+scenarios/cx-ceremony-{spike,bounded,arch}/story.md, plus the two
+adversarial briefs above) is put to the model under each variant.
+REPS=5 per (variant, brief) cell (3 x 5 x 5 = 75 calls total), cached per
+(variant, brief, rep) in out/micro-c/ -- reruns fill gaps only.
 """
 import json
 import os
@@ -47,12 +55,14 @@ KEY = os.environ["ANTHROPIC_API_KEY"]
 MODEL = os.environ.get("MODEL", "claude-opus-4-8")
 REPS = int(os.environ.get("REPS", "5"))
 
-OUT = pathlib.Path("/tmp/ceremony-path-micro/out")
+OUT = pathlib.Path(__file__).parent / "out" / "micro-c"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # The three E4 task-class briefs, verbatim from
 # scenarios/cx-ceremony-{spike,bounded,arch}/story.md's fixed Gauntlet
-# typed message.
+# typed message, plus two adversarial briefs added for Task 7: each reads
+# as a bounded, well-scoped change but hides an interface/cross-cutting
+# dependency that should ratchet it up to FULL.
 TASKS = {
     "spike": (
         "Can we detect whether the service's port is already in use "
@@ -67,11 +77,26 @@ TASKS = {
         "We need to split the service into a reusable library + thin CLI "
         "so another team can embed it."
     ),
+    "ambig-interface": (
+        "Add a --json flag to our export CLI command so output can be "
+        "piped to jq. The current text output of export is parsed "
+        "line-by-line by three downstream scripts in tools/ that other "
+        "teams run in their pipelines."
+    ),
+    "ambig-crosscut": (
+        "Fix the timezone bug in report_generator.py where daily rollups "
+        "are off by one day for users west of UTC. Rollup boundaries are "
+        "also computed independently in the billing exporter and the "
+        "retention job, which must stay consistent with reports."
+    ),
 }
 
 # The verbatim current brainstorming hard-gate (dev arm,
-# /tmp/sp-arm-dev/skills/brainstorming/SKILL.md lines 12-14) and a drafted
-# three-path router. Z-null carries no guidance at all.
+# /tmp/sp-arm-dev/skills/brainstorming/SKILL.md lines 12-14) and the
+# shipped `## Three Paths` section (`skills/brainstorming/SKILL.md`,
+# Task 5 commit `5ea8821`, lead-in sentence + three bullets + doubt/ratchet
+# paragraph, verbatim -- no heading, no surrounding sections). Z-null
+# carries no guidance at all.
 VARIANTS = {
     "Z-null": (
         "(No additional guidance has been given about how much process to "
@@ -86,24 +111,31 @@ VARIANTS = {
         "EVERY project regardless of perceived simplicity.\n"
         "</HARD-GATE>"
     ),
-    "B-three-path": (
-        "Relevant guidance from your skill instructions:\n\n"
-        "Before starting any work, classify the request into one of three "
-        "paths and calibrate ceremony accordingly:\n"
-        "- Spike: a feasibility question or throwaway investigation "
-        '("can we...", "is it possible...", "quick and dirty is fine") '
-        "needs no design document and no approval gate — just go find "
-        "out, as cheaply as correctness allows.\n"
-        "- Bounded: a well-scoped change to an existing, understood flow "
-        "(a new flag, a small endpoint, a one-file fix) needs at most a "
-        "couple of clarifying questions — skip the design document and "
-        "approval gate unless the user asks for one.\n"
-        "- Architectural: a change that restructures how components fit "
-        "together, adds a new subsystem, or changes a public interface "
-        "other teams depend on needs the full design-and-approval process "
-        "— present a design, write it up, and wait for explicit "
-        "approval before implementing.\n"
-        "When in doubt between two paths, use the heavier one."
+    "C-approval": (
+        "Relevant guidance from your skill instructions (verbatim, the "
+        "brainstorming skill's Three Paths section):\n\n"
+        "Before your first question, classify the request and say the "
+        "classification out loud — \"this looks bounded, so I'll present a "
+        "short design here rather than write a spec\" — so your human partner "
+        "can override it:\n\n"
+        "- **Spike** — a feasibility question (\"can we...\", \"is it "
+        "possible...\", \"quick and dirty is fine\") whose output is an answer, "
+        "not code you keep. Present the question and what you'll try in 2-3 "
+        "sentences, get a nod, then find out as cheaply as correctness "
+        "allows. No design doc, no spec file. Report findings as a "
+        "recommendation; anything you built stays labeled throwaway.\n"
+        "- **Bounded** — a well-scoped change to an existing, understood "
+        "flow: a new flag, a small endpoint, a one-file fix. Ask the "
+        "clarifying questions that matter, present a short design IN CHAT (a "
+        "few sentences to a few short paragraphs), and get approval. No spec "
+        "file, no implementation plan document.\n"
+        "- **Architectural** — new projects, new subsystems, changes that "
+        "restructure how components fit together or alter interfaces others "
+        "depend on. Follow the full process: questions, approaches, sectioned "
+        "design, written spec, then the writing-plans skill.\n\n"
+        "When in doubt between two paths, take the heavier one. The ratchet "
+        "is one-way: hidden complexity discovered mid-task upgrades the path "
+        "— stop, say so, and step up. Nothing downgrades mid-task."
     ),
 }
 
@@ -113,9 +145,9 @@ SYSTEM = """You are a coding agent working inside an existing small software pro
 
 A user is about to describe a task. Decide how much process you would apply before doing any work, and answer with EXACTLY ONE WORD on its own line, chosen from: SPIKE, BOUNDED, FULL. Output nothing else -- no explanation, no punctuation, no other words.
 
-- SPIKE means: dive in immediately with a minimal, quick investigation or throwaway prototype -- no design document, no approval step before starting.
-- BOUNDED means: make the change directly, asking at most a couple of clarifying questions if truly needed -- no design document, no approval gate.
-- FULL means: follow the complete design-and-approval process before touching any code -- present a design, write it up, and get explicit user approval before implementing anything."""
+- SPIKE means: dive straight into a minimal throwaway investigation — no design document.
+- BOUNDED means: make the change after at most brief clarification and a short in-chat design — no design document, no implementation plan.
+- FULL means: run the complete design process — written design document and implementation plan before touching code."""
 
 USER = """<task>
 {task}
@@ -183,7 +215,7 @@ def main():
     print("cell format: SPIKE/BOUNDED/FULL counts out of REPS; (?N) = N unparseable answers")
     print()
 
-    out_json = OUT.parent / "results.json"
+    out_json = OUT / "results.json"
     out_json.write_text(json.dumps(
         {f"{v}|{t}": c for (v, t), c in results.items()}, indent=2))
     print(f"wrote {out_json}", file=sys.stderr)
