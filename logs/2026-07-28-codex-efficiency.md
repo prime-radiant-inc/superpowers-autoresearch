@@ -1898,3 +1898,86 @@ total). Reran `audit0729_adapter.py` post-fix: still short-circuits to
 `NOT_FOUND` cleanly (exit 1, ~0.6s, no traceback) — verdict unchanged.
 Existing suites re-run clean (56 tests, unaffected — no scorer/parser
 files touched).
+
+## 2026-07-29 — Fix round 2 + remote fetch attempt: still UNVERIFIABLE (controller entry)
+
+Two things this round: (1) a code fix, (2) an attempted corpus fetch
+that came up empty.
+
+**Code fix (`4f45669`'s successor):** re-review found `main()`'s inline
+root-path fallback chain only checked 3 of `found()`'s 5 discovery legs
+— a rerun that located the corpus solely via a fix-round-1
+`archived_sessions` leg would raise `IndexError` in the FOUND branch.
+Fixed with a `_pick_root(disc)` helper covering every file-producing
+leg (returns `None`, not a crash, for the DB-only `thread_spawn_edges`
+case, which has no file to seed a census from). Added
+`AUDIT0729_SESSIONS_ROOT` env override (additive, default unchanged) so
+the same code can point at a corpus rsynced elsewhere. New
+`test_audit0729_adapter.py`: 9 unit tests on `_pick_root` (every single-
+leg case + priority order + DB-only + nothing-found) plus a subprocess
+full-pipeline test against a synthetic root+child tree that exercises
+`discover → found → _pick_root → run_census → census_node` (and
+therefore `score_e7.census_session`/`score_e8.census_session`) for the
+first time — closing fix round 1's "census path untested" gap, against
+synthetic data (still no real corpus to test against).
+
+**Remote fetch attempt:** Jesse's lead ("likely lives on `remote-host-b`")
+did not pan out — that host is reachable and active but has recorded no
+Codex thread since 2026-07-21, ruling it out on its own evidence, not
+an SSH failure. Cross-referencing this machine's own
+`.codex-global-state.json` surfaced `remote-host-a` as a second, better-
+evidenced candidate (a UUID one minute older than our target, tagged
+`remote-ssh-codex-managed:remote-host-a` there) — heavily active on
+2026-07-29 (129 rollout files) and our target UUID's own embedded
+timestamp (12:28:08 PDT, not the "~11:36" Amendment 3 estimated) falls
+right inside that host's session-start burst — but exhaustive filename/
+content/DB search still found no root, no descendant, and no DB edge.
+One incidental find: a single unrelated session on `remote-host-a`
+mentions the target ID as plain conversational text (not a structural
+parent/child link) — confirms the ID is real, not a typo, but supplies
+no rollout. `remote-host-c` and `remote-host-d` (also reachable) have no Codex
+session data for this range at all. `remote-host-e` and `remote-host-f` were
+unreachable (timeout / no route). `remote-host-g` (found via `tailscale status`,
+not in `~/.ssh/config`) is **BLOCKED**: `Host key verification failed`
+— did not bypass `StrictHostKeyChecking` unilaterally; this is the one
+lead left open pending Jesse's trust decision on that host's key.
+
+**Net: nothing was fetched, because nothing matching was found anywhere
+reachable.** Part 3 (real reconciliation) could not run — `out/e-audit0729.md`'s
+per-claim table stays UNVERIFIABLE, now with the local AND remote search
+evidence both cited (§1/§1b); no verdict was fabricated or upgraded
+without data. Cross-corpus row stays N/A for the same reason. Full
+evidence trail in `out/e-audit0729.md` §1b. No content leaked from any
+incidentally-encountered unrelated session (host names only; no cwd/
+message content from other projects). Existing suites clean (56 + 11
+new = 67 tests). Commits: `68cb63a` (fix), this entry (no reconciliation
+commit — nothing to reconcile with).
+
+## 2026-07-29 — CORRECTION: host is `remote-host-a`, not `remote-host-b` — still not found (controller entry)
+
+Jesse corrected the remote-host lead after the entry above was written:
+the real host is `remote-host-a`, not `remote-host-b`. `remote-host-a`
+had already been identified and searched independently (before this
+correction arrived) via a cross-reference in this machine's own
+`.codex-global-state.json`; the entry above already reported it empty.
+Given the correction, gave `remote-host-a` a second, deeper pass:
+content-searched its `logs_2.sqlite` (a separate, `thread_id`-indexed
+diagnostic-log DB, 254,662 rows) both by indexed `thread_id` (0 rows)
+and by `feedback_log_body` content match (1 row — the same already-known
+incidental mention, not new evidence); confirmed no second `~/.codex`,
+no `CODEX_HOME` override, no other user account on the host. **Still
+zero rows, zero files, zero DB edges for the actual root ID.** This
+machine's own `logs_2.sqlite` (8.8GB) was checked the identical way: 0/0.
+
+Flagging for Jesse specifically: this is *not* the "searched the wrong
+host" outcome the correction implied might explain things. `remote-host-a`
+is confirmed correct, is heavily active that day (129 rollout files),
+and the target UUID's own embedded timestamp (12:28:08 PDT, decoded from
+its UUIDv7 prefix) falls exactly inside a real gap in that host's
+session-start burst — strong circumstantial fit — yet no trace of the
+file, a DB edge, or a diagnostic-log row exists anywhere searched, on
+either machine. `remote-host-g` (a live `jesse@` macOS Tailscale device, not in
+`~/.ssh/config`) remains BLOCKED on `Host key verification failed` —
+not bypassed unilaterally; the one lead left open pending Jesse. No
+verdict changed; `out/e-audit0729.md` §1b holds the full trail. No
+run spend; no corpus content committed (there is none to commit).
