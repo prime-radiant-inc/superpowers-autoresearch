@@ -2754,3 +2754,75 @@ pre-existing Claude+spike investigation-scoping pathology (present on
 both arms, explicitly not attributed to the fix). The battery ran
 **$61-101 over its own pre-registered estimate**, driven entirely by
 Gemini's arch-scenario token cost, disclosed rather than smoothed over.
+
+### 2026-07-30 — ADDENDUM: privacy-sweep disclosure gap and a duration-figure correction on the T4 layer-3 entries (Task 11 task review)
+
+Task review recomputed every verdict number in the two T4 layer-3
+entries above (including raw-trajectory spot-checks) and found them all
+correct, but flagged two problems with the RECORD itself, not the
+results. Addressed honestly, append-only, per this log's own standing
+rule.
+
+**1. Privacy-sweep disclosure gap.** Every other task's commit entries
+in this log state the standing pre-commit privacy-sweep grep's result
+explicitly (the fixed confidentiality-keyword pattern this campaign's
+log entries use throughout, deliberately not reproduced verbatim in
+this entry's own prose -- quoting it here would make this very entry
+self-match the sweep it describes); the three T4 layer-3 commits'
+entries above never state whether that sweep ran. Checked against the
+actual command history for each commit, not memory or assumption:
+- **Commit `9303212`** (pre-registration): the sweep WAS run before this
+  commit (the standing grep against the staged diff -> no match, printed
+  "clean") -- the disclosure was simply omitted from the log entry's own
+  text at the time.
+- **Commit `163ac30`** (the score_t4_regression.py Skill-tool fix): the
+  sweep was **NOT run** before this commit. The actual sequence was
+  `git status` -> `git diff --stat` -> `git diff
+  campaigns/codex-efficiency/run-quorum.sh` (scoped review of one
+  file's diff only) -> `git add -p` -> `git commit` -- no sweep grep
+  anywhere in that sequence. Stating this plainly rather than guessing:
+  this commit was pushed to `main` (local, not pushed to origin per this
+  task's standing instruction) without the required pre-commit privacy
+  sweep having been run at all.
+- **Commit `8ab4b00`** (full battery verdicts): the sweep WAS run before
+  this commit (same grep, "clean") -- again, the disclosure was omitted
+  from the entry's own text.
+
+**Post-hoc sweep run now, per the coordinator's instruction, covering
+all three commits' actual diffs plus the committed JSON artifact (not
+just the working tree):** the standing grep was run against `git show`
+of each of the three commit SHAs, and separately against the committed
+`out/t4-layer3-dev-fix-claude-gemini-rep1-3.json` blob at `8ab4b00`.
+
+All four checks clean. Combined with the two commits where the sweep
+genuinely ran pre-commit, this means all three commits' final content is
+confirmed clean -- but `163ac30` specifically shipped without the
+required pre-commit gate having been exercised at the time, confirmed
+clean only after the fact. Recorded as a real process gap, not smoothed
+over: the standing rule is "sweep before commit," and one of three
+commits in this task did not follow it.
+
+**2. Duration-figure correction.** The T4 LAYER 3 SMOKE TEST entry above
+states the diagnostic `fix/claude/cc-ceremony-arch/rep1` run completed
+in "36m13s coding time." Re-read directly from that rep's own
+`verdict.json.economics` (not memory, not the earlier terminal output
+transcript): `gauntlet.duration_ms: 2160023` = **36m00.0s**;
+`coding_agent.duration_ms: 2113194` = **35m13.2s**. "36m13s" matches
+neither field -- it appears to be a transposition of the two correct
+values (36m from gauntlet, 13s from coding's :13 seconds remainder).
+**Correct figures: gauntlet duration 36m00s, coding-agent duration
+35m13s** (both already correctly reproduced in the per-rep economics
+block the same log entry quotes verbatim two paragraphs earlier in that
+same entry -- only the prose summary sentence had the wrong number).
+This does not affect any verdict, cost total, or criterion -- the $7.25
+cost figure quoted alongside it is correct and unaffected.
+
+**Sweep on this addendum commit itself:** the standing grep run against
+the staged diff immediately before committing this entry -- no match,
+clean.
+
+**Status: addendum recorded. No verdict, criterion, or cost figure
+changes as a result of either correction** -- this is a record-hygiene
+fix (disclosure gap + one transposed number in prose), not a
+re-scoring. `task-11-report.md` updated with the same two corrections,
+clearly marked as a review-driven addendum.
