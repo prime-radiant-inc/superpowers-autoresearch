@@ -2971,3 +2971,160 @@ single first response).
 
 **No run yet -- this is the pre-registration.** Smoke test, full
 matrix, hand-verification, and verdict follow in later log entries.
+
+### 2026-07-30 -- TRIGGERING ACCEPTANCE CHECK: codex BLOCKED (subscription credits exhausted); fixture bug found and fixed mid-battery (Task 12)
+
+**Smoke test 1 (codex rep1, lane A, default `run-quorum.sh` args): BLOCKED,
+not a scenario/rig defect.** `final: indeterminate`, Gauntlet-Agent status
+`investigate`. Both pre-checks passed (`git-repo`, `bootstrap-installed` --
+detail: "Codex Superpowers plugin enabled hook-less; native skill
+discovery", confirming the earlier reconciliation decision: no
+`symlink_superpowers` needed, the native plugin-hook path alone
+satisfies the precondition). The message was delivered and confirmed in
+the raw rollout as a `user_message` event, but codex never produced a
+real response: every turn (on the initial model and after switching
+models mid-session) immediately failed with `usage_limit_exceeded`
+("You've hit your usage limit... try again at Aug 5th, 2026 4:09 AM"),
+`rate_limits.credits: {"has_credits":false,"unlimited":false,"balance":"0"}`
+on every attempt. Root cause: the `codex_sub` credential's ChatGPT
+subscription is at zero balance -- almost certainly exhausted by this
+same campaign's earlier heavy codex usage today (Tasks 8/8b/8c ran dozens
+of codex reps). No alternate codex credential is provisioned in either
+lane: `credentials.yaml`'s other codex-eligible entry, `openai_responses`,
+needs `OPENAI_API_KEY`, absent from both lanes' `.env.container` (checked
+directly, `grep -oE '^[A-Z_]+'`). Per this task's explicit instruction
+("anomalies stop and report honestly") and the standing no-heroics rule
+(the Gauntlet-Agent itself correctly declined to route around a zero-
+credit account), **not retried.** Codex leg of this matrix is BLOCKED,
+not FAILed -- 0/3, no data, external and deterministic until the
+account's Aug 5th, 2026 reset (or an `OPENAI_API_KEY`-based credential
+is provisioned as a substitute). Cost: $0.2041935 (Gauntlet only;
+`coding_agent` economics null/unmeasured -- no billable codex API usage
+was ever recorded, consistent with the account having zero credits from
+the first call).
+
+**Smoke test 2 (claude rep1, lane A, `CODING_AGENT=claude
+CREDENTIAL=opus`): surfaced a real scenario-design bug, caught by this
+task's own hand-verification requirement before it could reach the full
+matrix.** Gauntlet-Agent `pass`; hand-reading the raw session JSONL
+(`type:assistant`, `tool_use` "Skill") confirms `superpowers:brainstorming`
+loaded before any implementation action -- but the agent's own text
+explicitly classifies the request: *"I'll classify this first: a React
+todo list is a small, well-understood build, so I'll treat it as
+**bounded**"* -- not architectural, contradicting this log's own
+pre-registered premise ("a new project is architectural under the
+router"). Investigated before trusting the result: `create_base_repo`
+(this scenario's original `setup.sh`, copied from the `superpowers-
+bootstrap` precedent) clones the SHARED `fixtures/template-repo/` --
+`src/index.js`, `src/utils.js`, `package.json`, 3 commits of git history
+-- not a blank repo. The agent's own tool calls showed it inspecting
+that pre-existing code, consistent with "well-understood build" meaning
+"an existing small project," not a genuinely new one. **Fix (committed
+with this entry):** rewrote `setup.sh` to a plain `git init -b main` +
+one `--allow-empty` commit -- no template clone, no fixture files, a
+truly blank workdir matching the story's "starting a new project"
+framing. Re-validated `bun run quorum check triggering-react-todo` in
+both lanes after the fix -- `ok` both. This makes `rep1` (both codex's
+and claude's) invalid for the pre-registered n=3 under the corrected
+scenario; claude's rep1 spend ($0.388847) is real and reported in the
+cost ledger below, but its data point is superseded, not counted toward
+the 3/3 tally.
+
+**Full matrix, corrected scenario, hand-verified from raw session logs
+(not the Gauntlet-Agent's own paraphrase) -- every rep individually
+read, not sampled:**
+
+**Claude (`CODING_AGENT=claude CREDENTIAL=opus`, lane A), reps 2/3/4 =
+the valid n=3:**
+- Every rep: a native `Skill` tool call naming `superpowers:brainstorming`
+  fires as the assistant's first tool call (turn index 12-13 of the
+  session JSONL in all three), strictly before any `Write`/`Edit`/`Bash`
+  scaffold command -- clause 1 ("brainstorming loads before any
+  implementation action") is **3/3 PASS**.
+- Every rep's own classification text, quoted verbatim: rep2 -- "a React
+  todo list is a small, well-understood build, so I'll treat it as
+  **bounded**"; rep3 -- "**Classification: bounded.** A React todo list
+  is a well-understood, small app"; rep4 -- "I'll classify this as a
+  **bounded** task -- a React todo list is a well-scoped, well-understood
+  build" (rep4 additionally shows the model explicitly NOTICING the
+  blank state -- "The directory is empty -- a fresh start" -- and still
+  classifying bounded, ruling out "didn't realize it's a new project" as
+  an explanation). Clause 2 ("heads down the architectural path") is
+  **0/3** -- unanimous and consistent, not noisy.
+
+**Gemini (`CODING_AGENT=gemini`, lane B), reps 1/2/3, all valid (run
+after the setup.sh fix, no invalid rep):**
+- Every rep: an `activate_skill {"name":"brainstorming"}` tool call fires
+  as the model's first tool call (turn index 8 of the session log in all
+  three), strictly before any file-write/scaffold call (only
+  `list_directory`/`run_shell_command "git status"`/`"ls -la"`
+  investigative calls appear alongside or after it) -- clause 1 is
+  **3/3 PASS**.
+- Every rep's own classification text, quoted verbatim: rep1 -- "This
+  looks architectural since we are starting a brand-new React
+  application from scratch"; rep2 -- "This looks **architectural**, as
+  it is a brand-new React project starting in an empty workspace"; rep3
+  -- "I have classified this request as **Architectural** because we are
+  building a brand new React application from scratch." Clause 2 is
+  **3/3 PASS** -- unanimous, and each rep's own follow-on text mirrors
+  the shipped router's Architectural bullet almost verbatim ("the full
+  architectural brainstorming process... requirements, architecture, and
+  design before writing any code").
+
+**Verdict against the pre-registered criterion ("brainstorming loads
+before any implementation action AND the session heads down the
+architectural path ... 3/3 per harness"):**
+
+- **codex: BLOCKED, 0/3, no data** -- external ChatGPT-subscription
+  credit exhaustion, not a router or rig defect; untested, not failed.
+- **claude: FAIL, 0/3** on the criterion as pre-registered (conjunctive
+  -- both clauses required). Disaggregated finding, not smoothed into a
+  single number: clause 1 (brainstorming loads before code) is 3/3 PASS
+  -- claude satisfies the ORIGINAL CLAUDE.md acceptance bar cleanly.
+  Clause 2 (architectural classification) is 0/3 -- claude consistently
+  and explicitly classifies this exact canonical prompt "bounded," on a
+  genuinely blank repo, in language that tracks the shipped router
+  text's own "well-scoped... well-understood" bounded-path wording
+  rather than its "new projects... Architectural" bullet. This is a
+  real, reproducible cross-harness divergence: the identical shipped
+  `## Three Paths` text, the identical prompt, the identical blank-repo
+  fixture, produces a stable "architectural" classification on Gemini
+  and a stable "bounded" classification on Claude. Not adjudicated here
+  which classification is "more correct" against the router's own
+  intent (the bounded path itself still gates on an explicit human
+  approval before implementation, per the router text's own "a bounded
+  task's approval is as hard a gate as an architectural one" line, and
+  the router's Anti-Pattern section names "a todo list" by name as an
+  example that must not skip approval regardless of path) -- reported as
+  a fact for the T4 PR to carry, not resolved by this task.
+- **gemini: PASS, 3/3** -- both clauses met on every rep, unanimously and
+  with near-verbatim router language.
+
+**Cost (8 runs total -- 1 codex blocked, 4 claude [1 invalid-fixture +
+3 valid], 3 gemini valid -- every figure read directly from each rep's
+own `verdict.json.economics.total_est_cost_usd`, not estimated):** codex
+rep1 $0.2041935 (partial, gauntlet-only); claude rep1 $0.388847 (invalid
+fixture, spend still real); claude rep2 $0.331514; claude rep3
+$0.301594; claude rep4 $0.423279; gemini rep1 $0.183861; gemini rep2
+$0.236958; gemini rep3 $0.198352. **Total: $2.2685985** -- well under
+the ~$10-15 pre-registered estimate, even counting the invalid-fixture
+rep and the blocked codex rep.
+
+**Status: claude and gemini legs complete and hand-verified (3/3 valid
+reps each, non-circular per this log's standing rule). Codex leg
+BLOCKED on an external subscription-credit exhaustion, not attempted
+further this task -- needs either the account's Aug 5th, 2026 reset or
+an `OPENAI_API_KEY`-based codex credential provisioned in both lanes'
+`.env.container` before it can run. This task's overall result is
+therefore INCOMPLETE against the pre-registered 3/3-per-harness matrix
+(2 of 3 harnesses done) but every completed harness's verdict is final
+and hand-verified, not provisional.** The real, load-bearing finding for
+the T4 PR: the shipped router text delivers the CLAUDE.md acceptance bar
+(brainstorming loads before any code) on every harness tested so far,
+but a stricter "must land on the architectural path" bar is
+harness-divergent -- PASS on Gemini, FAIL on Claude -- for the exact
+canonical "Let's make a react todo list" prompt on a genuinely blank
+repo.
+
+**Privacy sweep:** the standing grep run against the staged diff
+immediately before committing this entry -- no match, clean.
