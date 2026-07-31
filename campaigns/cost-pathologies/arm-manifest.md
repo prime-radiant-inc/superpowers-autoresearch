@@ -79,16 +79,30 @@ consumed-produced-later, consumed-with-no-producer, `summarize(rows)` defined
 vs `summarize(rows, fmt)` called inside one task, and both bare-name
 consumed-with-no-producer conflicts.
 
-**The five false positives on the codex-efficiency plan are one root cause,
-stated plainly.** `compactions`, `patch_applies`, and `patch_apply_end` are
-declared in Task 3's step text (a `SessionMetrics` dataclass field list),
-not in any task's `Produces:` line, so the producer side never sees them;
-`mutation_events` is the round-1 blind spot (Task 10 consumes a helper it
-implements itself). Producer recognition is confined to `Produces:` lines by
-design — widening it to all backticked names anywhere in a task's body would
-zero these out but would also silence real consumed-with-no-producer
-conflicts whenever any task merely mentions the name. That trade belongs in
-the X7 pre-registration, not in an unreviewed script change.
+**The five false positives on the codex-efficiency plan are three distinct
+mechanisms, stated plainly** (verified against the plan text, not inferred):
+
+- `compactions` and `patch_applies` (2 findings) ARE declared inside Task 3's
+  `Produces:` block — `docs/plans/2026-07-28-codex-efficiency-evals.md:210-216`
+  — as one multi-name field list in a single pair of backticks
+  (`` `lines, oversized_lines, compactions, …, patch_applies` ``), which the
+  scan's per-identifier tokenizer doesn't decompose. The producer line is read;
+  the span inside it is not. Single-name spans in the same block
+  (`exec_commands(path) -> list[ExecCmd]`, `parse_session(path)`) register
+  fine.
+- `patch_apply_end` (2 findings, Tasks 10 and 11) appears only in step text
+  and in Consumes lines, never in any task's `Produces:` block — the
+  producer-recognition scope question.
+- `mutation_events` (1 finding) is the round-1 blind spot: Task 10 consumes a
+  helper it implements itself.
+
+Producer recognition is confined to `Produces:` lines by design — widening it
+to all backticked names anywhere in a task's body would zero the second and
+third out but would also silence real consumed-with-no-producer conflicts
+whenever any task merely mentions the name. Decomposing multi-name backtick
+spans would zero the first out, at the cost of tokenizing prose that happens
+to sit between backticks. Both trades belong in the X7 pre-registration, not
+in an unreviewed script change.
 
 **Two plans parsed zero consumed interfaces**, so their zero findings on that
 axis prove nothing: the cost-pathologies plan names its inputs in prose plus
@@ -118,6 +132,25 @@ checkout-switched between reps, and parallel `JOBS` would race on it.
 Whichever route, the battery must record the arm SHA it actually mounted
 (`git -C <root> rev-parse HEAD`) and reconcile it against this manifest —
 a battery that cannot name its arm's SHA is ungraded.
+
+**Owed to the X7 pre-registration — three parser-scope questions.** Each one
+decides findings before any run happens, so each needs a stated answer and a
+fixture written to match:
+
+1. **Producer recognition.** `Produces:` lines only (today), or every
+   backticked name in a task's body? Widening zeroes the `patch_apply_end`
+   class of false positive and silences real conflicts whenever a task
+   mentions a name in passing.
+2. **Prose Consumes lines.** Two of three real plans name their inputs in
+   unbackticked prose, which parses to zero consumed interfaces. On plans
+   written that way X7-B degrades to a file-collision checker while X7-A
+   still does interface work — the fixture's writing convention decides the
+   A-vs-B comparison before it runs.
+3. **Multi-name backtick spans.** A single pair of backticks holding a
+   comma-separated field list (`` `lines, compactions, …, patch_applies` ``)
+   registers as nothing, because the tokenizer takes a span whole. Real plans
+   declare interfaces this way. Decomposing spans fixes it and starts
+   tokenizing whatever prose sits between backticks.
 
 **Shared doctrine text across X8 and X9.** X8-B now carries the full
 four-class catastrophic clause verbatim alongside X8-A, X9-A, and X9-B —
