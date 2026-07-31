@@ -1,0 +1,734 @@
+{
+  "aggregate_timeout": {
+    "n_sessions": 8,
+    "n_sessions_with_waits": 8,
+    "total_wait_agent_calls": 73,
+    "total_paired": 73,
+    "total_excluded": 0,
+    "total_timed_out": 0,
+    "timeout_rate_of_paired": 0.0,
+    "timeout_rate_of_all_calls": 0.0,
+    "n_intervals": 65,
+    "interval_p50_s": 103.428,
+    "interval_p95_s": 166.9804,
+    "cache_rebill_attributed_tokens": 10846976.0,
+    "cache_rebill_attributed_n_sessions": 8,
+    "cache_rebill_proxy_tokens": 0,
+    "cache_rebill_proxy_n_sessions": 0
+  },
+  "sessions": [
+    {
+      "path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep17/cx-sdd-small-codex-codex_sub-linux-20260730T230409Z-384e/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-04-16-019fb545-7842-7092-876c-a43af3012e57.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 9,
+      "n_paired": 9,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        125.721,
+        58.309,
+        136.104,
+        63.682,
+        182.61,
+        32.104,
+        89.127,
+        56.21
+      ],
+      "cache_rebill_tokens": 1402624.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep18/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-150a/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-32-019fb558-ee84-7e22-b52b-d3510644e531.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 7,
+      "n_paired": 7,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        160.499,
+        47.638,
+        167.294,
+        52.936,
+        122.869,
+        59.839
+      ],
+      "cache_rebill_tokens": 996352.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep19/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-1ba4/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-22-019fb558-c6fb-7763-ae2a-1964cbb9fadb.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 10,
+      "n_paired": 10,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        103.164,
+        37.069,
+        45.905,
+        136.633,
+        45.848,
+        150.488,
+        48.138,
+        125.711,
+        129.946
+      ],
+      "cache_rebill_tokens": 1525504.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep20/cx-sdd-small-codex-codex_sub-linux-20260730T234522Z-761f/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-45-31-019fb56b-3990-7cf3-afa8-12cd3805e972.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 9,
+      "n_paired": 9,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        142.243,
+        48.231,
+        120.589,
+        47.708,
+        119.017,
+        60.296,
+        95.66,
+        130.498
+      ],
+      "cache_rebill_tokens": 1307392.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep21/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-d680/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-23-019fb558-cb10-77e0-b1e4-9d33e73ab42a.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 10,
+      "n_paired": 10,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        130.689,
+        37.58,
+        55.011,
+        149.049,
+        67.333,
+        155.852,
+        56.086,
+        159.224,
+        143.062
+      ],
+      "cache_rebill_tokens": 1444608.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep22/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-2c69/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-23-019fb558-ce78-7142-9ae4-55a333e21b74.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 7,
+      "n_paired": 7,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        163.109,
+        49.278,
+        165.726,
+        60.905,
+        151.325,
+        58.078
+      ],
+      "cache_rebill_tokens": 1100544.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep23/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-6f3c/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-47-39-019fb56d-305a-7163-bc68-297aba2d1cd4.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 10,
+      "n_paired": 10,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        129.68,
+        121.348,
+        130.311,
+        37.423,
+        116.355,
+        50.749,
+        49.077,
+        151.569,
+        103.428
+      ],
+      "cache_rebill_tokens": 1512192.0,
+      "cache_rebill_method": "attributed"
+    },
+    {
+      "path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep24/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-3401/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-47-45-019fb56d-48c0-7cc0-8494-5906b76ebbda.jsonl",
+      "label": "battery-fix-round3",
+      "n_wait_agent_calls": 11,
+      "n_paired": 11,
+      "n_excluded": 0,
+      "n_timed_out": 0,
+      "timeout_rate_of_paired": 0.0,
+      "timeout_rate_of_all_calls": 0.0,
+      "inter_poll_intervals_s": [
+        132.975,
+        41.938,
+        171.241,
+        58.402,
+        130.225,
+        72.525,
+        177.06,
+        164.94,
+        43.674,
+        51.922
+      ],
+      "cache_rebill_tokens": 1557760.0,
+      "cache_rebill_method": "attributed"
+    }
+  ],
+  "silent_gap_analysis": [
+    {
+      "root_path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep17/cx-sdd-small-codex-codex_sub-linux-20260730T230409Z-384e/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-04-16-019fb545-7842-7092-876c-a43af3012e57.jsonl",
+      "n_wait_calls": 9,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 156.879,
+      "max_wait_duration_min": 2.6146499999999997,
+      "max_whole_transcript_gap_s": 156.879,
+      "max_whole_transcript_gap_min": 2.6146499999999997,
+      "wait_durations": [
+        {
+          "call_id": "call_0rwIkygD1naP2CEZyyXCpxIO",
+          "timeout_ms": 300000,
+          "duration_s": 100.277,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_ZbfxlMKMRqLFQSPquTIYl3q6",
+          "timeout_ms": 300000,
+          "duration_s": 24.813,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_S1KHXuuhcCm7UV0WPz1OtZgL",
+          "timeout_ms": 300000,
+          "duration_s": 114.276,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_uDRMJyC6k6qUzsfjet3FtsgJ",
+          "timeout_ms": 300000,
+          "duration_s": 29.187,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_juPDpDxnqimCjlgAKeOuBqa4",
+          "timeout_ms": 300000,
+          "duration_s": 156.879,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_px4ccBgXQivjIbZVIr1WNY87",
+          "timeout_ms": 300000,
+          "duration_s": 20.784,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_6SvPtxuo6LeZfanXkHT3cQRU",
+          "timeout_ms": 300000,
+          "duration_s": 69.535,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_Nl7F72KIcIeH18Q5B5ecOz4W",
+          "timeout_ms": 300000,
+          "duration_s": 23.313,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_IhP3tHqLb9kMpCGkbXXLGne1",
+          "timeout_ms": 300000,
+          "duration_s": 120.337,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep17/cx-sdd-small-codex-codex_sub-linux-20260730T230409Z-384e"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep18/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-150a/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-32-019fb558-ee84-7e22-b52b-d3510644e531.jsonl",
+      "n_wait_calls": 7,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 145.613,
+      "max_wait_duration_min": 2.4268833333333335,
+      "max_whole_transcript_gap_s": 145.613,
+      "max_whole_transcript_gap_min": 2.4268833333333335,
+      "wait_durations": [
+        {
+          "call_id": "call_nuoXc21fCJrXPTwYy2jN9ex4",
+          "timeout_ms": 600000,
+          "duration_s": 138.958,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_QeghmO56bqH75WgL2lJ3ee15",
+          "timeout_ms": 600000,
+          "duration_s": 26.069,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_PiS5zHejseSMwcpyxfnWciho",
+          "timeout_ms": 600000,
+          "duration_s": 145.613,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_qRK3V4b6UtsUNB1TpMCL2izi",
+          "timeout_ms": 600000,
+          "duration_s": 23.573,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_bvbzOX1MYIClDorAAKOUrctb",
+          "timeout_ms": 600000,
+          "duration_s": 105.021,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_PCizlC3hIopo1k44BFrzmTSn",
+          "timeout_ms": 600000,
+          "duration_s": 29.299,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_4ECcVwtSRbZ35UDhxdyw2Mbx",
+          "timeout_ms": 600000,
+          "duration_s": 100.522,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep18/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-150a"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep19/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-1ba4/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-22-019fb558-c6fb-7763-ae2a-1964cbb9fadb.jsonl",
+      "n_wait_calls": 10,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 131.858,
+      "max_wait_duration_min": 2.1976333333333335,
+      "max_whole_transcript_gap_s": 131.858,
+      "max_whole_transcript_gap_min": 2.1976333333333335,
+      "wait_durations": [
+        {
+          "call_id": "call_vYyDGzJ8V9hCn5pmexYeu85D",
+          "timeout_ms": 360000,
+          "duration_s": 83.626,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_XtqC171ALGbvrQBWUCTMz0BF",
+          "timeout_ms": 360000,
+          "duration_s": 16.894,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_IrbXdvIEjulwetiPDwN4iX6m",
+          "timeout_ms": 360000,
+          "duration_s": 16.993,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_ltrecOaSOzNEFbVKpPw0koVF",
+          "timeout_ms": 360000,
+          "duration_s": 116.737,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_LcaQY3kvi3Xotelbj7bobZMT",
+          "timeout_ms": 360000,
+          "duration_s": 16.722,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_cVeu0UJ1tFdJcBAJzlJfCrHb",
+          "timeout_ms": 360000,
+          "duration_s": 131.858,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_fHsIlw5tCbQdzFBvTg4eJbJ6",
+          "timeout_ms": 360000,
+          "duration_s": 17.201,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_3ABx6oVPf5bsxlJpemjR7cHI",
+          "timeout_ms": 360000,
+          "duration_s": 109.092,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_nGQfAY5O47p3jtPgsiIWoBIU",
+          "timeout_ms": 360000,
+          "duration_s": 103.707,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_d6WffDuBARirC3rGvG61r0V0",
+          "timeout_ms": 360000,
+          "duration_s": 10.877,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep19/cx-sdd-small-codex-codex_sub-linux-20260730T232515Z-1ba4"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep20/cx-sdd-small-codex-codex_sub-linux-20260730T234522Z-761f/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-45-31-019fb56b-3990-7cf3-afa8-12cd3805e972.jsonl",
+      "n_wait_calls": 9,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 122.06,
+      "max_wait_duration_min": 2.0343333333333335,
+      "max_whole_transcript_gap_s": 122.06,
+      "max_whole_transcript_gap_min": 2.0343333333333335,
+      "wait_durations": [
+        {
+          "call_id": "call_hgCk0Shb8o5xdFKUfVvkyuB5",
+          "timeout_ms": 300000,
+          "duration_s": 122.06,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_8Vd9aKaulblJnat6jKfpgbPf",
+          "timeout_ms": 300000,
+          "duration_s": 18.246,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_1trB5OzkXXAWACLcKhPC3H0X",
+          "timeout_ms": 300000,
+          "duration_s": 102.149,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_rLx5u5O8Gui1zImq6xEoIA0D",
+          "timeout_ms": 300000,
+          "duration_s": 17.318,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_IZPKMOC9kZeDLoudvi6GtyMF",
+          "timeout_ms": 300000,
+          "duration_s": 101.505,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_et4HHURlz6zl6mvap7mcGANV",
+          "timeout_ms": 300000,
+          "duration_s": 29.055,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_sVSfCNmGJldkzzJk5hEV93qJ",
+          "timeout_ms": 300000,
+          "duration_s": 78.173,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_qzA97gq12Vnc3NkwfWddhubv",
+          "timeout_ms": 300000,
+          "duration_s": 110.684,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_snBJ4uufCStuP3BdeyPbB4zF",
+          "timeout_ms": 300000,
+          "duration_s": 28.559,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/superpowers/evals/results/cx-eff-cx-sdd-small-fix-rep20/cx-sdd-small-codex-codex_sub-linux-20260730T234522Z-761f"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep21/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-d680/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-23-019fb558-cb10-77e0-b1e4-9d33e73ab42a.jsonl",
+      "n_wait_calls": 10,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 134.907,
+      "max_wait_duration_min": 2.24845,
+      "max_whole_transcript_gap_s": 134.907,
+      "max_whole_transcript_gap_min": 2.24845,
+      "wait_durations": [
+        {
+          "call_id": "call_QJA89SFHKi0DUhpGiIRWhdIz",
+          "timeout_ms": 300000,
+          "duration_s": 114.637,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_LvDQL0UQWG2OXocPf2e1AsFA",
+          "timeout_ms": 300000,
+          "duration_s": 17.243,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_kYYsvDNa2Jh3QZ2ExRacA8hZ",
+          "timeout_ms": 300000,
+          "duration_s": 24.702,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_QU7bUHzkYh1AuXZ9xtN2KkRc",
+          "timeout_ms": 300000,
+          "duration_s": 129.156,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_Z0uPLyeZolETCA4ECOlNunlZ",
+          "timeout_ms": 300000,
+          "duration_s": 29.718,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_HIDt8xvwbHs0QDBAYDQ1YO8k",
+          "timeout_ms": 300000,
+          "duration_s": 134.907,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_wjZ1JpgAvRUgfWUY2Bo1bHWV",
+          "timeout_ms": 300000,
+          "duration_s": 26.04,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_i0073FiJ2xxlwKmC1NgIINQd",
+          "timeout_ms": 300000,
+          "duration_s": 129.019,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_LN4YdaRuU6U4ZGen7qYBuWZN",
+          "timeout_ms": 300000,
+          "duration_s": 120.659,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_21mBjaMk463SVGOxjcV4iS4e",
+          "timeout_ms": 300000,
+          "duration_s": 14.438,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep21/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-d680"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep22/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-2c69/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-25-23-019fb558-ce78-7142-9ae4-55a333e21b74.jsonl",
+      "n_wait_calls": 7,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 234.327,
+      "max_wait_duration_min": 3.90545,
+      "max_whole_transcript_gap_s": 234.327,
+      "max_whole_transcript_gap_min": 3.90545,
+      "wait_durations": [
+        {
+          "call_id": "call_Gzlrza1sdrqYXxjgdKZ3NeaJ",
+          "timeout_ms": 300000,
+          "duration_s": 138.434,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_TuwY3gK9qXdyg8U4qdF3YusL",
+          "timeout_ms": 300000,
+          "duration_s": 22.575,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_dUUf6f1hE41sDqQpmdxrvlBa",
+          "timeout_ms": 300000,
+          "duration_s": 142.982,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_6nqPbYfZvXmb2Obicwp7Grld",
+          "timeout_ms": 300000,
+          "duration_s": 31.023,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_OKsbsDBzon1DAUbYSNd6JNks",
+          "timeout_ms": 300000,
+          "duration_s": 128.924,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_4lVlTqdeebcdTYgjyea1aWmE",
+          "timeout_ms": 300000,
+          "duration_s": 20.176,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_u47Hb51GoWx8McSdff15itAE",
+          "timeout_ms": 300000,
+          "duration_s": 234.327,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep22/cx-sdd-small-codex-codex_sub-linux-20260730T232516Z-2c69"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep23/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-6f3c/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-47-39-019fb56d-305a-7163-bc68-297aba2d1cd4.jsonl",
+      "n_wait_calls": 10,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 137.54,
+      "max_wait_duration_min": 2.292333333333333,
+      "max_whole_transcript_gap_s": 137.54,
+      "max_whole_transcript_gap_min": 2.292333333333333,
+      "wait_durations": [
+        {
+          "call_id": "call_QXfl9jQc6r7lESsI3mzj1A5x",
+          "timeout_ms": 300000,
+          "duration_s": 99.67,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_utYoBZq88DJaXvulH5FhC3vw",
+          "timeout_ms": 300000,
+          "duration_s": 18.432,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_WX2ok6WgQDswABkYixDbNrEE",
+          "timeout_ms": 300000,
+          "duration_s": 107.139,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_WnqXy6exnPXFSO1zDm3p7ydV",
+          "timeout_ms": 300000,
+          "duration_s": 18.041,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_bMCaxbHwC0TShcQLKmyDKtI0",
+          "timeout_ms": 300000,
+          "duration_s": 95.465,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_4XDYTCNBcMWr4REVTOQjSTlf",
+          "timeout_ms": 300000,
+          "duration_s": 36.946,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_YOiX1oo8qCmSYmPz78VgRmxx",
+          "timeout_ms": 120000,
+          "duration_s": 10.457,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_kTg4unNRhS4calWVQa37FFMM",
+          "timeout_ms": 300000,
+          "duration_s": 137.54,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_1rx2ljXJYoK6P9Y4gq8Tdpgb",
+          "timeout_ms": 300000,
+          "duration_s": 83.374,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_Jgon5kDCsTZ7pd8hSNAg0FQY",
+          "timeout_ms": 300000,
+          "duration_s": 15.185,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep23/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-6f3c"
+    },
+    {
+      "root_path": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep24/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-3401/home/.codex/sessions/2026/07/30/rollout-2026-07-30T23-47-45-019fb56d-48c0-7cc0-8494-5906b76ebbda.jsonl",
+      "n_wait_calls": 11,
+      "n_unresolved": 0,
+      "max_wait_duration_s": 151.813,
+      "max_wait_duration_min": 2.5302166666666666,
+      "max_whole_transcript_gap_s": 151.813,
+      "max_whole_transcript_gap_min": 2.5302166666666666,
+      "wait_durations": [
+        {
+          "call_id": "call_yPccikst5kREGrsQTZ81g8S7",
+          "timeout_ms": 300000,
+          "duration_s": 110.614,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_HlgTvLstpgddwE1IQRYzyxDt",
+          "timeout_ms": 300000,
+          "duration_s": 17.054,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_OJEQSf3SGnrvLDCzn3A7Kfdz",
+          "timeout_ms": 300000,
+          "duration_s": 148.995,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_XOIl8JJzEysznZ6UPICUFRrj",
+          "timeout_ms": 300000,
+          "duration_s": 33.137,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_5NSJa6kBTBKBLLD1CPc9zVjE",
+          "timeout_ms": 300000,
+          "duration_s": 109.88,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_vhsx6qNKM4dgMwXLfnLRaFRT",
+          "timeout_ms": 300000,
+          "duration_s": 31.803,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_NVHvLQXZjTlXlH0htbeuxq5O",
+          "timeout_ms": 300000,
+          "duration_s": 151.813,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_V5Q7C0Z2HSCVzX8DIFPYieuG",
+          "timeout_ms": 300000,
+          "duration_s": 151.33,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_2NugkpoFLfTdiVVtWYbvwTj9",
+          "timeout_ms": 300000,
+          "duration_s": 22.096,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_QQ8TXhHqToBPbWb2aKZX1s83",
+          "timeout_ms": 300000,
+          "duration_s": 31.079,
+          "timed_out": false
+        },
+        {
+          "call_id": "call_yA5xnELXvF00p69PlYkf36Ll",
+          "timeout_ms": 300000,
+          "duration_s": 37.64,
+          "timed_out": false
+        }
+      ],
+      "rundir": "/Users/jesse/git/superpowers/evals-lane-b/results/cx-eff-cx-sdd-small-fix-rep24/cx-sdd-small-codex-codex_sub-linux-20260730T234725Z-3401"
+    }
+  ]
+}

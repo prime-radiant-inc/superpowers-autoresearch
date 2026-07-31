@@ -1534,3 +1534,234 @@ calls/rep).
 verification above were preparation, not the smoke rep. Smoke test,
 full battery, scoring, manual inspection, and verdicts (each verdict
 stating its round 2 → round 3 delta) follow in later log entries.
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 3: smoke PASS, all 8 reps complete, all 8 Gauntlet-Agent PASS — round 2's anomaly does not recur (Task 8c)
+
+**Smoke test (rep17, lane A): PASS.** Gauntlet verdict `status: pass`
+($3.97). 8 rollout files (1 root + 7 children:
+`task{1,2,3}_{implementer,reviewer}` + `task3_r1_reviewer` (a
+`followup_task`-driven re-review, not a duplicate — see below) +
+`final_reviewer`). Manual inspection of the raw root rollout JSONL
+(direct `rp.extract_spawns`/`iter_records` calls, not a scorer
+helper): all 8 `spawn_agent` calls issued by the ROOT session only
+(every non-root file has 0 `spawn_agent` calls) — zero worker-issued
+depth-2 spawns; all 8 carry explicit `model`+`reasoning_effort`. Every
+one of the 9 `wait_agent` calls used `timeout_ms:300000` (the fix's
+new 5-minute stretch floor, not round 2's 15-minute-plus long wait) —
+**0/9 timed out, and the actual resolution durations ranged 20.8s-
+156.9s (max 2.61 minutes)**, far under both the old 15-minute
+recommendation and the new 12-minute gap criterion. The root used one
+`followup_task` call (to re-dispatch `task3_implementer` after a
+review finding) but 0 `list_agents` calls this rep — a real, if minor,
+compliance gap against `43ec25f`'s literal "after each stretch... run
+`list_agents`" instruction (every stretch here resolved well inside
+its own timeout via the wake event, so the controller may not have
+felt a stuck-child check was warranted) — noted below as a concern,
+not gating, since the fix's outcome-level guarantees (bounded
+duration, no completion loss) held regardless. No infra anomaly.
+Proceeded to Step 3.
+
+**Step 3 battery launch:** rep17 smoke on lane A, then `EVALS_ROOT=<lane
+A> JOBS=2 bash run-quorum.sh fix cx-sdd-small 3 18` (reps 18-20) and
+`EVALS_ROOT=<lane B> JOBS=2 bash run-quorum.sh fix cx-sdd-small 4 21`
+(reps 21-24), launched concurrently as backgrounded processes, polled
+in-session with foreground bounded-wait shell loops (`until <condition
+met>; do sleep 20; done`, capped at the tool's own 590s-600s ceiling
+per call — when a wait outlasted one call it simply continued as a
+new foreground wait, never a dedicated monitor process). **All 8
+pre-registered reps completed — zero reps lost to Docker.** `docker ps
+-a` before, during (implicitly, via the containers never producing an
+`exec` failure across ~15 `scripts/evals-container exec`-driven rep
+runs), and after the battery showed both lane containers `Up`
+continuously (~50 minutes wall-clock for the full battery, container
+uptime confirmed unbroken at the end). Every rep produced a complete
+`verdict.json` + `trajectory.json` + `coding-agent-token-usage.json`
+(`partial: false` on all 8, confirmed by reading each rep's own
+`verdict.json.economics` directly).
+
+**Gauntlet-Agent verdict: 8/8 PASS (100%) — round 2's `indeterminate`/
+`investigate` anomaly (3/8 reps) does not recur.** Every rep's
+Gauntlet-Agent summary independently confirms the same shape: plan.md
+read, per-task implementer/reviewer subagents dispatched, a
+final-whole-branch review (with a genuine fix-and-re-review wave in
+5/8 reps: rep17, 19, 20, 21, 23, 24 — 6/8 actually, see the per-rep
+task-name census in the verdicts entry below), and a clean merge to
+main with all tests passing. No crash, no clarification loop, no
+premature abandonment, no `indeterminate` in any of the 8 Gauntlet
+summaries this round.
+
+**Minor, non-gating recurrence: rep24 (lane B) left a stray
+`cx-sdd-small-fix-rep24` directory as a sibling of the real run
+directory** (`results/cx-eff-cx-sdd-small-fix-rep24/cx-sdd-small-fix-
+rep24/cx-sdd-small-codex-codex_sub-linux-*-3401/coding-agent-workdir/
+.worktrees/strutils-plan/strutils`), the same shape round 2's concern
+#3 flagged for reps 13/14 (a git-worktree path resolving oddly under
+that container instance's bind mounts) — "flagging only in case it
+recurs at higher rates in a future battery." It recurred, still at a
+low rate (1/8 this round vs 2/8 round 2), still contains no
+verdict/rollout data (confirmed via `find` — only a nested nested copy
+of the real run's `coding-agent-workdir/.worktrees` tree, no
+`verdict.json` of its own), and was excluded from scoring by
+construction (the rundir-collection script only includes directories
+containing their own `verdict.json`).
+
+**Cost (8 completed reps, from each rep's own `verdict.json`
+`economics.total_est_cost_usd`, all `partial: false`, read directly —
+not the printed report):** rep17 $3.97, rep18 $3.33, rep19 $4.10,
+rep20 $4.07, rep21 $4.64, rep22 $3.89, rep23 $4.71, rep24 $4.74 —
+**$33.47 total, all 8 measured directly**, under the ~$40
+pre-registered budget and above round 2's $24.89 (consistent with the
+pre-registration's expectation of more, individually-cheap wait calls
+replacing round 2's fewer, longer ones).
+
+### 2026-07-30 — SHARED SDD BATTERY ROUND 3: T1/T2/T5 verdicts on n=8, round 2 → round 3 deltas (Task 8c)
+
+Scored all 8 reps (17-24) with `score_e6.py` (T1), `score_e1.py` (T5),
+and a new one-off script
+(`score_e7_fix_battery_round3.py`, scratch — not committed, per the
+pre-registration) that both reuses `score_e7.py`'s tested
+`census_session()`/`aggregate()` functions for the timeout-rate
+numbers (same reason as round 2: `score_e7.py` itself still hardcodes
+`arms=("dev","spinout")`, confirmed unchanged since round 2) AND adds
+the new silent-gap measurement: for each rep's root rollout, every
+paired `wait_agent` call's duration (`function_call_output` timestamp
+minus `function_call` timestamp, matched by `call_id`) plus a
+whole-transcript max-consecutive-timestamp-gap cross-check. Outputs:
+`out/e6-cx-sdd-small-fix-rep17-24.json`, `out/e1-cx-sdd-small-fix-
+rep17-24.json`, `out/e7-battery-fix-round3.json` — none collide with
+round 1/round 2's `rep1-8`/`rep9-16` files or the frozen corpus
+(a)/(b) blobs; `FORCE` was never set.
+
+**Manual inspection (non-circular — raw rollout JSONL via direct
+`rollout_parser` calls, not scorer helpers), beyond the brief's 2-run
+minimum:**
+- **Depth-2 spawn census (T1) — exhaustive, not sampled:** `score_e6`'s
+  own full-corpus walk reports `depth-2 spawns by spawner role: {}`
+  (empty, i.e. zero) summed across all 8 reps, 0 compactions, 0
+  same-task duplicate reviews. Independently re-verified by hand for 2
+  reps (rep17 smoke — see above; rep22, chosen as the rep with the
+  single largest silent gap, see below) by iterating every non-root
+  rollout file's `extract_spawns()` result directly: 0/0 non-root
+  spawns in both, matching the aggregate exactly.
+- **Review coverage (T1):** re-read every rep's full `task_name`
+  sequence from `score_e1`'s raw per-spawn table (not just an
+  aggregate count): all 8 reps show exactly
+  `task{1,2,3}_{implementer,reviewer}` (one reviewer per task, no
+  duplicates) + `final_reviewer`, with 6/8 reps (19, 20, 21, 23, 24,
+  plus rep17's `task3_r1_reviewer` re-review) additionally dispatching
+  a normal SDD fix-and-re-review wave after `final_reviewer` flagged a
+  real issue (naming varies by controller phrasing —
+  `final_fixer`/`final_fix`/`final_fix_reviewer`/`final_rereviewer` —
+  but always exactly one fixer + one re-reviewer per wave, never a
+  duplicate of an already-reviewed task). No task anywhere got more or
+  fewer than exactly one review pass before merge.
+- **Wait-call classification (T2) — independently re-parsed 2 full
+  sessions' raw `wait_agent`/`function_call_output` pairs** (rep17: 9
+  calls; rep22: 7 calls — 16 of the corpus's 73 total calls, more than
+  double the brief's 2-run minimum) with fresh `json.loads`/`call_id`
+  pairing, not `rollout_parser.wait_outcomes()`. Every count,
+  `timed_out` value, and per-call duration matches
+  `out/e7-battery-fix-round3.json`'s per-session numbers exactly
+  (rep17 max 156.9s/2.61min; rep22 max 234.3s/3.91min — the battery's
+  overall maximum). All re-parsed calls used `timeout_ms:300000`
+  (5 minutes, the bounded stretch's floor) and all resolved
+  `timed_out:false` well inside that window, not at the ceiling.
+- **Explicit-model claims (T5):** the raw per-rep spawn dumps used for
+  the review-coverage check above double as independent T5
+  verification — all 67 spawns across all 8 reps carry non-null
+  `model` and `reasoning_effort` keys directly in the raw `arguments`
+  JSON, matching `score_e1`'s 67/67 (100%) `explicit_model` exactly.
+- **Advisory config backstop:** checked lane A's container
+  `/root/.codex/config.toml` this round (previous rounds checked a
+  rep's own container-relative copy; same file, same result) — no
+  `[agents]`/`default_subagent_*` keys. Still unprovisioned in this
+  eval environment, still untested by any battery to date.
+
+**Aggregate numbers (8 reps, from the three JSON blobs):**
+- T1: **0 worker-issued depth-2 spawns across 8 reps** (0/8 reps
+  affected), 0 same-task duplicate-review families — identical shape
+  to round 2's clean result, now on a fresh arm SHA.
+- T2: **73 wait_agent calls, 73 paired, 0 excluded, 0 timed out — 0.0%
+  timeout rate** (paired and all-calls, matching round 2's mechanism-
+  level result exactly). `score_e1`'s aggregate shows **67/67
+  (100.0%) resolved child rollouts with `task_complete` present** —
+  round 2's 1/51 loss does not recur. **New silent-gap metric: max
+  paired-wait duration across all 8 reps is 234.3s (3.91 minutes,
+  rep22) — every rep's maximum is under 4 minutes, all 8 comfortably
+  under the pre-registered 720s (12-minute) threshold** (per-rep
+  maxima: 156.9s, 145.6s, 131.9s, 122.1s, 134.9s, 234.3s, 137.5s,
+  151.8s). The whole-transcript cross-check gap matches the wait-
+  duration gap exactly in every rep (no silence attributable to
+  anything other than a `wait_agent` call was found). Gauntlet
+  verdict: **8/8 pass (100%)** — round 2's 3/8 `indeterminate` anomaly
+  does not recur.
+- T5: **67/67 spawns (100.0%) carry explicit model; 0 model_omitted.**
+  All 67/67 are root-issued (depth-1) — T1 held at 0 depth-2 spawns
+  again this round, so there is still no depth-2 population to grade.
+  `fork_turns:"none"` on all 67/67 spawns (isolation unaffected).
+
+**Verdicts against the pre-registered criteria, each with its round 2
+→ round 3 delta:**
+
+- **T2 (timeout rate < 25% AND no completion loss AND no silent gap
+  over 12 minutes): PASS — full conjunction, first clean PASS across
+  all three rounds. Delta: FAIL (completion-loss clause only) → PASS
+  (all three clauses).** Timeout-rate clause: 0.0% (unchanged from
+  round 2's clean win). Completion-loss clause: 67/67 (100%) children
+  resolved with `task_complete`, vs round 2's 50/51 (98.0%) — the one
+  lost child (rep15's cut-off `task3_implementer`) does not recur in
+  any of this round's 8 reps. Silent-gap clause (new this round): max
+  234.3s (3.91min) across all 8 reps, vs round 2's 22-38 minute
+  silences in 3/8 reps — commit `43ec25f`'s bounded 5-10 minute
+  stretches (observed here consistently issued at the 300000ms floor)
+  plus the reconciliation instruction closed the exact gap round 2's
+  anomaly identified, without reopening round 1's original short-poll
+  timeout pathology (0.0% both rounds). Gauntlet-Agent verdict
+  (8/8 pass) independently corroborates: the QA judge's own
+  testing-time budget was never at risk this round because no wait
+  stretch came close to consuming it.
+- **T1 (regression guard): PASS, unchanged. Delta: PASS → PASS.** 0/67
+  depth-2 spawns across all 8 reps (round 2: 0/51) — `43ec25f`
+  (wait-stretch wording only) and `6faceb2` (brainstorming-only,
+  doesn't touch SDD role prompts) did not reopen the gap `c07cf7e`
+  closed in round 2. Review coverage preserved cleanly across all 8
+  reps, including the 6/8 reps with a genuine fix-and-re-review wave —
+  no duplicate reviews, no task skipped.
+- **T5 (regression guard, inconclusive-by-zero branch): unchanged.
+  Delta: inconclusive-by-zero at depth-2 → inconclusive-by-zero at
+  depth-2 (same branch, re-confirmed).** T1 held at 0 depth-2 spawns
+  again, so there is still no depth-2 population to grade for
+  model/effort omission. Depth-1 backstop: 67/67 (100%) explicit,
+  matching round 2's 51/51 (100%) — no regression at the depth that
+  was already working. The advisory config backstop remains
+  unprovisioned in this eval environment, same as rounds 1-2 — still
+  untested by any battery to date.
+
+**Ledger row:** 2026-07-30 | Shared SDD battery ROUND 3 T2 bounded-wait
+revision, T1/T5 regression guards (fix arm @ `6faceb2`, cx-sdd-small,
+n=8 of 8 pre-registered — no Docker loss, no Gauntlet-Agent
+indeterminate) | $33.47 (8/8 measured, `partial: false` on all) | T1
+PASS, T2 PASS (all three clauses — first clean PASS across all three
+rounds), T5 inconclusive-by-zero at depth-2 / PASS on backstop.
+
+**Status: all three treatments resolve cleanly this round.** T2 is
+the headline: commit `43ec25f`'s bounded 5-10 minute wait stretches
+with `list_agents`/status-line reconciliation closed round 2's
+Gauntlet-Agent-testing-budget anomaly (3/8 indeterminate → 0/8) and
+its 1-child completion loss (1/51 → 0/67) without reopening round 1's
+original timeout pathology (0.0% both rounds) — the new silent-gap
+sub-criterion this round's pre-registration added specifically to
+make round 2's finding measurable comes in at a maximum of 3.91
+minutes across all 8 reps, nowhere near the 12-minute bar. T1 and T5
+hold their round 2 results unchanged, confirming `43ec25f` (SDD/codex
+wait-wording only) and `6faceb2` (brainstorming-only) did not disturb
+the no-subagents contract or spawn-hygiene mechanisms those two
+treatments measure. One minor observation carried forward as a
+concern, not a gate: the smoke rep's controller issued 0 `list_agents`
+calls despite the fix's literal "after each stretch... run
+`list_agents`" instruction — every stretch resolved via the wake event
+well inside its own timeout, so the reconciliation step went unused in
+practice this round, not because it was skipped under pressure. Net:
+3 of 3 treatments are clean wins this round, with the T2 fix's
+mechanism now validated end-to-end (timeout rate, completion, AND
+observability) across three full battery rounds.
