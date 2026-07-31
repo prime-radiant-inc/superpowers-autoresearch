@@ -2826,3 +2826,148 @@ changes as a result of either correction** -- this is a record-hygiene
 fix (disclosure gap + one transposed number in prose), not a
 re-scoring. `task-11-report.md` updated with the same two corrections,
 clearly marked as a review-driven addendum.
+
+### 2026-07-30 -- TRIGGERING ACCEPTANCE CHECK PRE-REGISTRATION: "Let's make a react todo list" on all three harnesses (Task 12)
+
+This is the T4 layer-3 battery's own deferred item, restated in the
+Pre-registered criteria and Task 11 sections above: "the triggering
+acceptance check ('Let's make a react todo list' auto-triggers
+brainstorming into the full/architectural path) on all three harnesses."
+Not run by Task 11 (that battery covered the three ceremony scenario
+classes only) -- this task runs it.
+
+**Arm SHA (verified, not refreshed per this task's explicit instruction):**
+`git -C /tmp/sp-arm-fix log --oneline -1` -> `433184c` -- matches the
+`codex-efficiency-fixes` branch tip in the working worktree exactly (both
+`git rev-parse HEAD` agree). This is the same SHA Task 11 finished on
+(`5ea8821` -> ... -> `433184c` via Tasks 15/16/17/18/19's commits,
+already the arm's tip before this task started); no refresh needed or
+performed.
+
+**Rig approach -- a probe, not a Gauntlet task.** Per this task's
+instructions, this is not scored like the ceremony batteries: no
+pass/fail criteria are baked into the scenario itself. A new campaign
+scenario, `scenarios/triggering-react-todo/`, has the Gauntlet-Agent
+send exactly the one canonical message and observe -- nothing more.
+`story.md`'s Acceptance Criteria are deliberately inert ("the exact
+message was delivered," "the response was captured"), and `checks.sh`'s
+`pre()`/`post()` are structural only (`git-repo`, `bootstrap-installed`)
+-- no `skill-called`/`skill-before-tool`/`investigated` transcript verb
+anywhere in the scenario. This is intentional: the real detection method
+(below) is independent hand-inspection of the raw session log, and
+baking the target behavior into the scenario's own automated verdict
+would make that verdict circular with the thing being measured, exactly
+the failure mode this task's rig-approach instruction calls out.
+
+**Single scenario dir, not a cx-/cc- split -- investigated and
+reconciled, disclosed here.** The established campaign convention
+(`cx-ceremony-*` vs `cc-ceremony-*`, ported in Task 11) is two scenario
+dirs differing only in `setup.sh`: the codex-only `cx-` variant chains
+`symlink_superpowers` after its init helper; the claude/gemini `cc-`
+variant (Task 11's port) drops it. Checked whether the same asymmetry
+applies here before assuming it does:
+- `symlinkSuperpowers` (`evals/src/setup-helpers/worktree.ts`) creates
+  `<workdir>/.agents/skills/superpowers -> <SUPERPOWERS_ROOT>/skills` --
+  a symlink inside the scenario's own git working tree.
+- The actual codex bootstrap mechanism this campaign relies on is
+  unrelated to that path: `evals/src/agents/codex.ts`'s
+  `installPluginHooksSubscription`/`stagePlugin` reads `SUPERPOWERS_ROOT`
+  and stages the plugin into the codex CLI's own per-run config dir at
+  provisioning time, independent of anything `setup.sh` does to the
+  workdir. `bootstrap-installed`'s codex delegate
+  (`verbCodexNativeHookConfigured`, `evals/src/check/fs-verbs.ts`) checks
+  exactly that native-hook staging, not the workdir symlink.
+- Corroborating evidence: `scenarios/superpowers-bootstrap/` (the
+  existing, `quorum_tier: sentinel` canary for this exact prompt,
+  unrelated to this campaign) has no `coding-agents:` restriction, and
+  its `setup.sh` is `create_base_repo` only -- no `symlink_superpowers`
+  -- yet it is the production scenario already relied on to prove
+  cross-harness bootstrap.
+- Every current use of `symlink_superpowers` across the whole `evals/`
+  tree (`grep -rl` over `scenarios/*/setup.sh`) is exclusively this
+  campaign's own `cx-*` scenarios -- no general-purpose or non-campaign
+  scenario uses it. No evidence found that it is load-bearing for skill
+  discovery under the current native-hook mechanism; likeliest
+  explanation is it predates that mechanism and was never removed from
+  the campaign's own `cx-*` convention once the native path shipped.
+
+Decision: use one scenario dir, `triggering-react-todo/`
+(`# coding-agents: codex,claude,gemini`), `setup.sh` = `create_base_repo`
+only, verified against all three harnesses' real behavior via the codex
+smoke rep below before trusting it for the full matrix (the same
+empirical-verification discipline this log's standing rules require,
+not taken on faith from the source reading alone). If the codex smoke
+rep shows no skill-loading signal traceable to this decision, the
+fallback is reintroducing a codex-specific `symlink_superpowers` variant
+(disclosed, per the brief's explicit two-dir-if-cleaner allowance) --
+not attempted unless the smoke rep demonstrates it is needed.
+
+**Validated (static, before any spend):** `bun run quorum check
+triggering-react-todo` in both lanes (`superpowers/evals`,
+`evals-lane-b`) -- `ok triggering-react-todo` / `ok credentials` in
+both, after fixing one authoring bug this task introduced and caught at
+this step (an unbalanced quoted `title:` frontmatter value broke YAML
+parsing, silently dropping `id`/`title`; fixed by removing the inner
+quote marks from the title string).
+
+**Matrix:** 3 reps x {codex, claude, gemini} = 9 runs, fix arm only.
+**A dev-arm control is explicitly NOT run** -- per this task's
+instructions, dev's triggering behavior is already long-established
+(the campaign's own `superpowers-bootstrap` sentinel scenario and prior
+non-campaign triggering evals cover it continuously; this task exists to
+confirm the FIX arm's brainstorming-router changes, `5ea8821` on top,
+didn't regress triggering, not to re-establish the dev baseline).
+
+**Credentials/lanes:** codex uses `run-quorum.sh`'s default
+(`CODING_AGENT` unset -> `codex`, `codex_sub` credential, no override).
+Claude uses `CODING_AGENT=claude CREDENTIAL=opus` (same reasoning as
+Task 11's battery: `claude.yaml`'s `default_credential` is
+`opus_bedrock`, needing `AWS_BEARER_TOKEN_BEDROCK`, absent from both
+lanes' `.env.container`; the `opus` credential uses the provisioned
+`ANTHROPIC_API_KEY` instead). Gemini uses `CODING_AGENT=gemini`,
+`gemini_default` unmodified (`GEMINI_API_KEY` present in both lanes).
+Lane split for wall-clock parallelism, not a scoring dependency: lane A
+runs codex + claude (6 reps), lane B runs gemini (3 reps), both against
+`ARM=fix` (container re-up to `/tmp/sp-arm-fix` happens automatically
+inside `run-quorum.sh`'s existing arm-selection step). Docker checked
+healthy before spending (`docker ps -a`: both lane containers `Up`; host
+disk 16% used / 63Gi free -- well clear of the 95%-full condition tied to
+the earlier Docker Desktop crash).
+
+**Criterion (verbatim from this log's Pre-registered criteria section
+above, T4 layer 3's own restated line):** brainstorming loads before any
+implementation action AND the session heads down the architectural path
+(a new project is architectural under the router), 3/3 reps per harness.
+
+**Detection method (hand-verification, non-circular per this log's
+standing rule):** for each of the 9 reps, read the raw session
+log/rollout (or the captured `trajectory.json`) directly -- not via any
+scorer or the scenario's own (deliberately inert) Gauntlet verdict.
+PASS for a rep requires both:
+1. A brainstorming skill load (a native `Skill` tool call naming
+   `superpowers:brainstorming`, or a normalized `Read` of the
+   brainstorming `SKILL.md`) appears before any file-write/scaffold
+   action (`Write`, `Edit`, `Bash` invoking a scaffolding tool like
+   `npx create-react-app`/`npm create vite`, etc.).
+2. Evidence of the architectural path specifically in the agent's first
+   substantive response -- a clarifying question about scope/stack/
+   requirements, or explicit design intent/framing -- not a jump
+   straight to code or file creation.
+A harness cell is PASS only if all 3 of its reps individually pass both
+conditions; the log's standing discrimination rule
+("inconclusive-by-zero is a stop, not a pass") applies if any cell comes
+back 0/3 for a reason that looks like a rig defect rather than a genuine
+miss (e.g., the coding agent never actually received the message).
+
+**Budget estimate:** ~$10-15 for 9 short reps. These are the cheapest
+class of run this campaign has priced: `quorum_max_time: 15m` (vs. 30-
+45m for the ceremony scenarios), and the story only needs the agent's
+FIRST response captured, not a completed task -- both push actual
+runtime and turn count well below the ceremony batteries' per-rep cost
+($4.72 total across all 12 `spike`-class reps in the T4 layer-3 battery,
+the closest prior analogue at ~$0.39/rep, though that battery's spike
+reps did run to a full investigation-and-answer stop rather than a
+single first response).
+
+**No run yet -- this is the pre-registration.** Smoke test, full
+matrix, hand-verification, and verdict follow in later log entries.
