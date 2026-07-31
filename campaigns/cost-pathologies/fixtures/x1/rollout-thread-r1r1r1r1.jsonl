@@ -1,0 +1,5 @@
+{"timestamp": "2026-07-31T00:01:00.000Z", "type": "event_msg", "payload": {"type": "task_started"}}
+{"timestamp": "2026-07-31T00:01:01.000Z", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 3000}, "last_token_usage": {"total_tokens": 3000}}}}
+{"timestamp": "2026-07-31T00:01:02.000Z", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 5000}, "last_token_usage": {"total_tokens": 2000}}}}
+{"timestamp": "2026-07-31T00:01:03.000Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "### Issues\n\n#### Critical (Must Fix)\n- **Off-by-one in loop bound** — file.py:10\n", "phase": "final_answer", "memory_citation": null}}
+{"timestamp": "2026-07-31T00:01:04.000Z", "type": "event_msg", "payload": {"type": "task_complete"}}

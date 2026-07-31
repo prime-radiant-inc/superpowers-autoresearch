@@ -360,3 +360,143 @@ uncommitted corpus). Results, aggregates only:
 
 Privacy sweep run on this entry before commit (standard needle set,
 filtered of the scrubbed remote-host placeholders): no match, clean.
+
+## 2026-07-31 — Task 2: MINE scorer pack (X1 chains, X4 fork-tax, X6 floor) — corpus validation
+
+Three new MINE-tier scorers, built TDD against synthetic fixtures (no
+real content), then validated read-only against real corpus exemplars
+from the "Sessions worth deep human follow-up" list in
+`_tmp/cost-pathologies-2026-07-31/local-host-report.md` (uncommitted).
+Reconciliation below is non-circular: every hand-check was written fresh
+against raw `json.loads`, never calling `rollout_parser` or the scorers'
+own helpers. Full paths and Codex task_names cited below are the same
+class of low-sensitivity SDD-taxonomy/provenance labels this campaign's
+own DESIGN.md and rollout_parser.py already cite verbatim (e.g. "Remux
+root 019f95af-...", `task1_implementer`); no finding text, file:line
+content, or other session substance is quoted anywhere below.
+
+### score_x4_forktax.py (fork_stats) — 2 exemplars, both exact
+
+| Exemplar (parent -> child) | Scorer byte_ratio | Hand byte_ratio | Scorer dup_ratio | Hand dup_ratio (independent two-pointer walk, not difflib) | Match |
+|---|---|---|---|---|---|
+| Scantastic `.../07/26/rollout-...19-38-19-019fa16f-feab.../` -> `task6_spec_review_a` child | 0.42479 | 0.42479 (`os.path.getsize`) | 0.278335 | 0.278335 | exact |
+| remux `.../07/24/rollout-...17-27-37-019f96ab.../` -> `app_ui_review` child | 0.28537 | 0.28537 | 0.131713 | 0.131713 | exact |
+
+A third pair from the same remux root (`ssh_core_review`) and all four
+`task6_spec_*` children were also spot-checked for byte sizes only (all
+exact via `os.path.getsize`). The two full dup-ratio hand-derivations
+used a from-scratch two-pointer "advance the child index by exactly one
+per matched record, allow the parent index to skip ahead" walk over
+`(type, json.dumps(payload))` keys — a different algorithm from the
+scorer's `difflib.SequenceMatcher`-based contiguous-run detection — and
+landed on the identical ratio to 6 decimal places on both, a strong
+non-circular confirmation.
+
+### score_x6_floor.py (dispatch_floor) — 2 exemplars, 6 dispatches, all exact
+
+| Exemplar | Dispatches checked | total_tokens (scorer vs hand) | useful_output_tokens (scorer vs hand) | Match |
+|---|---|---|---|---|
+| Scantastic task6 chain (4 spawns under one parent) | review_a, review_b, rerun_a, rerun_b | 9618234/9618234, 9802048/9802048, 16976755/16976755, 17467492/17467492 | 562/562, 307/307, 344/344, 685/685 | exact, all 4 |
+| remux review-fractal root (2 of its 12 spawns) | app_ui_review, ssh_core_review | 2750639/2750639, 4548068/4548068 | 830/830, 651/651 | exact, both |
+
+Hand values: `total_tokens` = the LAST `event_msg/token_count` event's
+`info.total_token_usage.total_tokens` found by a from-scratch line scan
+(never summed — see score_x6_floor.py's and score_x1_chains.py's module
+docstrings for why cumulative-per-file is the correct, non-double-
+counting reading of this corpus field, per this task's explicit
+constraint). `useful_output_tokens` = `len(final_answer_message) // 4`,
+hand-computed from the same from-scratch scan.
+
+### score_x1_chains.py (chain_stats) — 2 exemplars, real bug found and fixed
+
+**Exemplar 1 — Scantastic `task4` chain**, parent
+`.../07/26/rollout-...19-37-57-019fa16f-aac5.../` , 21 real `spawn_agent`
+calls (`task4_implementer` then 20 review-shaped dispatches named
+`review`/`rereview`/`final`/`last`/`terminal`/`quality`/`qualityfix`/
+`py313`/`noring`/`veto`, each an `_a`/`_b` pair). Hand count (fresh
+`extract_spawns`-equivalent read plus a from-scratch presence check for
+each child's `phase=="final_answer"` message): 21 spawns, 1 excluded as
+the presumed implementer, 20 candidate rounds, 3 of the 20
+(`qualityfix_b`, `veto_a`, `veto_b`) have no final-answer message. Scorer
+output: `dispatch_count=20`, `rounds=17` — **exact match** on both.
+
+**Exemplar 2 — Scantastic `task6` chain** (the same 4-dispatch chain used
+for X6 above), parent `.../19-38-19-019fa16f-feab.../`. Hand count:
+`dispatch_count=4` (no implementer entry precedes it under this prefix —
+tier-1's "don't drop the first entry if it's already review-shaped" rule
+correctly keeps all 4), `rounds=4` (all 4 have a final-answer message).
+`tokens_est`: all 4 dispatches show `fork_turns="all"` (hand-checked
+against the raw `arguments` JSON string), so the max-not-sum convention
+applies; hand max of the 4 cumulative totals above = 17467492. Scorer:
+`dispatch_count=4`, `rounds=4`, `tokens_est=17467492` — **exact match**
+on all three. `severity_trend="increasing"` and
+`novel_finding_rate_per_round=[0.0, 0.0, 0.0, 1.0]` were spot-checked by
+hand-reading (not printing) all 4 final-answer messages: the first three
+report every severity label as empty/"none", the fourth carries one
+substantive Minor-labeled item — consistent with the scorer's output.
+
+**Bug found and fixed during this reconciliation (pre-commit — not a
+post-hoc "known limitation" note).** The scorer's first design grouped
+review chains purely by `task_name` containing "review", stemmed by a
+guessed trailing round-number suffix. Reconciling against the real
+`task4` chain showed this design finds only 4 of the 20 real rounds
+(`review_a/b`, `rereview_a/b` contain "review"; `final`/`last`/
+`terminal`/`quality`/`qualityfix`/`py313`/`noring`/`veto` do not, and are
+project-specific words no keyword list could enumerate in advance).
+Redesigned to the two-tier `_chain_key()` now in the module (a
+`task<N>`-prefixed name groups by that numeric id, with the
+chronologically-first entry presumed the implementer and excluded unless
+it is itself review-shaped; anything else falls back to the original
+review-substring + stem grouping) — re-validated against both exemplars
+above with exact matches. A second, smaller gap was found in the same
+pass: `_extract_findings()`'s two calibrated formats (this repo's
+`task-reviewer-prompt.md` headings and `re-review-prompt.md` inline tags)
+matched zero findings on the real `task6` reports, which use a third,
+uncalibrated shape — a compact one-line `"Critical: none. Minor: <value>."`
+summary with no heading or bullet markup. Added `_bare_label_findings()`
+to recognize it (a `none`/`none.` value is correctly zero findings, not
+a finding to count). Both fixes are TDD'd (`test_bare_label_format_*`,
+`test_two_chains_found_implementer_excluded`, etc.) against synthetic
+fixtures, not the real corpus. Documented as an ongoing, honest
+limitation in the module docstring: `_extract_findings()` is a
+calibrated heuristic over three observed real formats, not a guarantee
+of full recall — free-form prose findings with no structural marker at
+all remain invisible to it, and a *fourth* real pattern was also found
+during this reconciliation (a repeatedly-re-tasked single reviewer via
+`NEW_TASK`/`MESSAGE` inter-agent envelopes rather than fresh
+`spawn_agent` calls per round — the `fp_task7_review` session named in
+`local-host-report.md`) that this MINE-tier scorer does not detect at
+all, since it has no fresh spawn per round to key off of. Out of scope
+for this task; flagged for whoever extends X1 next.
+
+### tokens_est / total_tokens convention (per this task's explicit constraint)
+
+Both `score_x1_chains.tokens_est` and `score_x6_floor.total_tokens` read
+a rollout's cumulative `token_count` counter (confirmed monotonically
+increasing within one file against multiple real rollouts during this
+validation) and never present it as exclusive per-turn spend. X6 scores
+one dispatch = one rollout, so "last cumulative value" is simply that
+dispatch's total cost, safe by construction. X1 scores a multi-round
+chain spanning multiple rollout files; summing each round's cumulative
+counter would double-count whenever a round inherited a prior round's
+history on fork (confirmed happening in both real exemplars above — all
+`task4`/`task6` review dispatches use `fork_turns="all"`), so
+`tokens_est` takes the MAX single-round cumulative total across the
+chain instead of the sum whenever any round shows inheritance — a
+documented, deliberately conservative floor (see score_x1_chains.py's
+module docstring for the full rationale).
+
+### Test suite
+
+`python3 -m pytest campaigns/ -q`: 341 passed before this task, 377
+passed after (36 new: 24 X1 + 6 X4 + 6 X6). The pre-existing
+codex-efficiency suite (341) is unchanged and stayed green throughout.
+
+**Privacy sweep:** the standing needle set from Task 1's report (the
+mining codenames and ticket-ID pattern), case-insensitive, run against
+this entry and the staged diff before commit, filtered of the scrubbed
+remote-host placeholders — no match, clean. Nothing from
+`_tmp/cost-pathologies-2026-07-31/` was committed; the rollout paths and
+task_names cited above point to the user's own local `~/.codex/sessions`
+tree and are the same class of citable provenance label DESIGN.md and
+rollout_parser.py already use.

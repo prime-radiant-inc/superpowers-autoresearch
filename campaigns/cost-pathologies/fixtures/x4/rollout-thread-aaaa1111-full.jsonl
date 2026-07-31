@@ -1,0 +1,7 @@
+{"timestamp": "2026-07-31T00:01:00.000Z", "type": "note", "payload": {"own": "header"}}
+{"timestamp": "2026-07-31T00:01:01.000Z", "type": "note", "payload": {"n": 0}}
+{"timestamp": "2026-07-31T00:01:02.000Z", "type": "note", "payload": {"n": 1}}
+{"timestamp": "2026-07-31T00:01:03.000Z", "type": "note", "payload": {"n": 2}}
+{"timestamp": "2026-07-31T00:01:04.000Z", "type": "note", "payload": {"new": "A"}}
+{"timestamp": "2026-07-31T00:01:05.000Z", "type": "note", "payload": {"new": "B"}}
+{"timestamp": "2026-07-31T00:01:06.000Z", "type": "note", "payload": {"new": "C"}}
