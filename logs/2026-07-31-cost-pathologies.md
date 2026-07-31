@@ -500,3 +500,165 @@ remote-host placeholders — no match, clean. Nothing from
 task_names cited above point to the user's own local `~/.codex/sessions`
 tree and are the same class of citable provenance label DESIGN.md and
 rollout_parser.py already use.
+
+## 2026-07-31 — Task 4: X1 MICRO pre-registration — reviewer-arm calibration
+
+Pre-registered BEFORE running (per the standing rule). This is the
+MICRO tier of X1's three-tier plan (MINE done in Task 2 → **MICRO,
+here** → FULL). Purpose: prune X1's review-policy arms before the FULL
+battery — at most 2 + control advance, per the design doc's X1 section.
+
+### Variants and arm SHAs
+
+All four variants review the SAME fixed diff. Each treatment arm's
+reviewer-facing text is quoted VERBATIM from its branch in
+`/Users/jesse/git/superpowers/superpowers` (never pushed/merged/PR'd —
+local experiment apparatus only) and byte-verified against the branch
+before this entry was written (`raw_X == extracted_template.txt` for
+each of D/A/C; `B_FLOOR_TEXT == git show`'d SKILL.md lines, both exact
+matches, checked programmatically, not by eye):
+
+- **D-control**: the base `task-reviewer-prompt.md` template, unmodified,
+  at `codex-efficiency-fixes` = `329b8f1` (arm-manifest.md: "Controls are
+  the unpatched base (329b8f1): X1-D...").
+- **A-criterion-backing**: D + the verbatim paragraph `cp/x1a` @
+  `1851307` inserts into the Calibration section ("A finding is Critical
+  or Important only when you can back it: name the requirement line it
+  violates ... or name a concrete failure path a caller can reach ...").
+- **B-rising-floor**: `cp/x1b` @ `151b2e1` touches only `SKILL.md` (a
+  controller-side mechanism) — `task-reviewer-prompt.md` is byte-identical
+  to the control on this branch. There is no multi-round loop to replay
+  in a single-shot MICRO, so the reviewer is told it is round 3 of the
+  fix loop (the floor's maximally-discriminating case — rounds 1-2 are
+  behaviorally identical to control) and given SKILL.md's "The floor
+  rises each round" paragraph verbatim as context. The scorer then
+  derives round-3 blocking mechanically (Critical only) from the
+  reviewer's own self-reported severities — no invented reviewer-facing
+  output field. **This is a disclosed modeling choice, not a literal
+  replay of the real dispatch** — B's mechanism is fundamentally
+  controller-side, and the MICRO can only probe whether knowing the
+  floor context changes the reviewer's calibration/behavior.
+- **C-marginal-value**: D + the verbatim "**Another round worth it:**
+  [Yes | No] — would one more fix-and-review round materially reduce the
+  risk this task carries? ..." field `cp/x1c` @ `69fd769` appends to the
+  Output Format's Assessment section.
+
+### Fixture
+
+`campaigns/cost-pathologies/fixtures/x1-fixed-diff/`: a synthetic
+182-line diff (one coherent feature, 3 source files + 1 test file: an
+order-discount + append-only-ledger service) implementing a 5-requirement
+brief (`brief.md`, REQ-1..REQ-5), with an implementer report
+(`task-report.md`) and a seeded-defect answer key (`ledger.md`, never
+shown to the reviewer) of 5 real defects at graded severity:
+
+- **D1 (Critical)**: `ledger.py`'s `_write` opens the ledger file in `"w"`
+  mode (truncating) before `json.dump` — an interrupted/failing write
+  destroys every prior transaction. Violates REQ-4 (durability). Confirmed
+  by direct repro (a simulated `json.dump` failure leaves the file empty).
+- **D2 (Critical)**: `discount.py`'s `DISCOUNT_CODES[code]` lookup is an
+  unguarded dict subscript — an unknown/expired code raises `KeyError`
+  uncaught through `process_order`/`process_batch`. Violates REQ-1.
+  Confirmed by direct repro.
+- **D3 (Important)**: the minimum-charge floor in `service.py` is checked
+  against the pre-discount subtotal, not the post-discount charged
+  amount, contradicting REQ-5's explicit text. Confirmed by direct repro
+  (a $5 subtotal with 90%-off charges $0.50 and is not rejected).
+- **D4 (Important)**: REQ-3's idempotency requirement is implemented
+  correctly but has zero test coverage — no test in the diff calls
+  `process_order` twice with the same `order_id`.
+- **D5 (Minor)**: `get_discount_percent` returns a fraction, not a
+  percent — a naming/readability issue with no correctness impact.
+
+Everything in the fixture (names, amounts, service, requirements) is
+invented for this eval; no real system or data.
+
+### Run parameters
+
+5 reps per variant (20 calls total), `claude-opus-4-8` via the Messages
+API directly (`campaigns/cost-pathologies/x1-review-micro.py`), cached
+per `(variant, rep)` under `out/x1-review-micro/answers/` (gitignored —
+raw answer files never committed). `ANTHROPIC_API_KEY` sourced from
+`/Users/jesse/git/superpowers/superpowers/evals/.env` into the process
+environment only for the run; never printed, logged, or committed.
+
+### Metrics (exact mechanical definitions — see the script's docstring
+for the same text, kept in sync)
+
+- **real_defect_recall**: of D1..D5, the fraction named ANYWHERE in the
+  reviewer's Critical/Important/Minor sections (a per-defect regex
+  signature in `ledger.md`), regardless of which bucket. Blocking status
+  does not gate recall — a defect mentioned as Minor still counts as
+  found.
+- **false_block_rate**: of the findings placed in the Critical or
+  Important buckets (the "blocking" set — defined UNIFORMLY across all
+  four arms; an arm's own mechanism changes whether a block is
+  legitimate, not what counts as a block, so the four arms are graded on
+  the same scale), the fraction that (a) match no D1..D5 signature AND
+  (b) are not "criterion-backed" — a real `REQ-N` (1-5) citation, or a
+  `file:line` reference paired with reachability language ("reach",
+  "trigger", "caller", "calling", "invoke"). **Disclosed limitation**:
+  this is a generous mechanical proxy — it credits any citation of a
+  REAL requirement number without verifying the citation actually
+  applies to that finding. Any false-block-rate difference the prune
+  decision leans on gets a manual spot-check of the flagged findings
+  before it's trusted (not blind regex trust), same as this campaign's
+  other scorer validations.
+- **false_stop_rate**: whether the arm's derived stop signal claims
+  "done" on this dirty, never-fixed diff (D1/D2 are Critical-shaped and,
+  by construction, never resolved in this single-shot design). Per arm:
+  D and A use `**Task quality:** Approved`; B uses "zero items in the
+  Critical bucket" (the round-3 floor); C uses `**Another round worth
+  it:** No`. **Deliberate reframing of the brief's "state once the
+  ledger is exhausted" phrasing**: the 20-call budget (5 reps × 4 arms)
+  cannot afford a matched clean-diff/dirty-diff pair, so this measures
+  only the harm-relevant direction — false stops, which hide real bugs —
+  not false continues, which merely cost one extra round. Since the
+  fixture's ledger is never exhausted here, the mechanically honest
+  answer is always "not done"; ANY stop signal in a rep is therefore a
+  false stop. An arm that never stops here is unfalsifiable on
+  *honest*-stop calibration by this MICRO alone — that gap is explicitly
+  NOT claimed as tested and is left to the FULL battery (which runs a
+  real multi-round loop to a real terminal state).
+
+### Prune rule (pre-registered, mechanical)
+
+An arm advances only if BOTH hold, vs. D-control's means:
+1. **Strictly better on false_block_rate** — arm's mean
+   `false_block_rate` < D's mean `false_block_rate`.
+2. **No material recall loss** — arm's mean `real_defect_recall` ≥ D's
+   mean `real_defect_recall` − 0.2 (0.2 = 1 of 5 ledger defects; "no
+   recall loss greater than 1 ledger defect" per the design doc).
+
+At most 2 arms advance (plus control, which always advances as the
+baseline for FULL). If more than 2 qualify, the two with the LARGEST
+false-block-rate improvement over control advance. Ties break toward the
+simpler mechanism, ranked by what the mechanism requires outside the
+reviewer's own single-shot judgment: **A** (purely textual calibration
+guidance, no external state) is simplest, **C** (adds one self-reported
+output field, still single-shot) is next, **B** (requires the controller
+to track and communicate a round number — genuinely multi-round
+infrastructure, unlike A/C) is least simple.
+
+If NO arm beats control on false_block_rate without the recall guard
+failing, that is a valid, honest outcome: it gets recorded as-is and the
+verdict entry says whether X1 FULL should proceed control-only pending
+further design work, rather than force-advancing an arm that didn't
+clear its own bar.
+
+### Budget estimate
+
+~$15-20 for the MICRO run (20 opus-4-8 calls; each prompt is
+~1,600-1,900 words of system instructions + ~1,900 words of inlined
+brief/report/diff, generating a structured multi-section review — actual
+cost recorded in the verdict entry's budget ledger row).
+
+**Independent verification**: `x1-review-verify.py`, a second parser
+written from scratch with a line-based state machine (no shared code or
+imports with `x1-review-micro.py`'s DOTALL-regex section extraction),
+re-derives every rep's counts from the cached answer files and flags any
+disagreement for manual reconciliation before the verdict is written.
+
+Privacy sweep run on this entry before commit (standing needle set,
+filtered of scrubbed remote-host placeholders): no match, clean — this
+entire task is a synthetic fixture with no real session content.

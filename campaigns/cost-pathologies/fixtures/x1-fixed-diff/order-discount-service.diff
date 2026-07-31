@@ -1,0 +1,206 @@
+diff --git a/src/discount.py b/src/discount.py
+new file mode 100644
+index 0000000..3f2f6dc
+--- /dev/null
++++ b/src/discount.py
+@@ -0,0 +1,40 @@
++"""Discount-code lookup and pure percentage-off calculations.
++
++Money is always decimal.Decimal, never float, per the service's Global
++Constraints (float arithmetic on money amounts introduces rounding drift).
++"""
++from decimal import ROUND_HALF_UP, Decimal
++
++# Fixed catalog: code -> percent off, 0-100 inclusive.
++DISCOUNT_CODES = {
++    "SAVE10": Decimal("10"),
++    "SAVE25": Decimal("25"),
++    "HALF": Decimal("50"),
++    "VIP90": Decimal("90"),
++}
++
++
++def get_discount_percent(code):
++    """Look up `code` in the catalog and return the discount fraction
++    (e.g. Decimal("0.15")) applied directly against the subtotal.
++
++    Raises KeyError if `code` is not in the catalog.
++    """
++    percent = DISCOUNT_CODES[code]
++    return percent / Decimal("100")
++
++
++def apply_discount(subtotal, code):
++    """Apply `code`'s discount to `subtotal` and return the charged amount.
++
++    Raises KeyError if `code` is not a known discount code -- callers are
++    responsible for catching it and reporting a clean rejection.
++    """
++    fraction = get_discount_percent(code)
++    charged = subtotal * (Decimal("1") - fraction)
++    return _round_money(charged)
++
++
++def _round_money(amount):
++    """Round a Decimal amount to 2 places (cents), half-up."""
++    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+diff --git a/src/ledger.py b/src/ledger.py
+new file mode 100644
+index 0000000..0b9fe92
+--- /dev/null
++++ b/src/ledger.py
+@@ -0,0 +1,38 @@
++"""Append-only JSON-backed transaction ledger.
++
++Durability requirement: once a transaction is recorded, a subsequent
++failure must never discard it (see brief.md's Durability requirement).
++"""
++import json
++from pathlib import Path
++
++
++class Ledger:
++    def __init__(self, path):
++        self.path = Path(path)
++        self.entries = self._load()
++
++    def _load(self):
++        if not self.path.exists():
++            return []
++        with open(self.path) as f:
++            return json.load(f)
++
++    def _write(self):
++        with open(self.path, "w") as f:
++            json.dump(self.entries, f)
++
++    def has_order(self, order_id):
++        target = str(order_id)
++        return any(str(e["order_id"]) == target for e in self.entries)
++
++    def record_transaction(self, order_id, customer_id, amount, timestamp):
++        entry = {
++            "order_id": str(order_id),
++            "customer_id": customer_id,
++            "amount": str(amount),
++            "timestamp": timestamp,
++        }
++        self.entries.append(entry)
++        self._write()
++        return entry
+diff --git a/src/service.py b/src/service.py
+new file mode 100644
+index 0000000..7cfb475
+--- /dev/null
++++ b/src/service.py
+@@ -0,0 +1,42 @@
++"""Order processing: validates, applies discounts, and records to the ledger."""
++from decimal import Decimal
++
++from discount import apply_discount
++from ledger import Ledger
++
++MIN_CHARGE = Decimal("1.00")
++
++
++def process_order(order, ledger: Ledger):
++    """Process one order dict {order_id, customer_id, subtotal, code,
++    timestamp}. Returns a receipt dict, or the original receipt if this
++    order_id was already recorded (idempotent retry).
++    """
++    order_id = order["order_id"]
++    if ledger.has_order(order_id):
++        return _existing_receipt(ledger, order_id)
++
++    subtotal = order["subtotal"]
++    if subtotal < MIN_CHARGE:
++        raise ValueError(f"subtotal {subtotal} is below the ${MIN_CHARGE} minimum")
++
++    charged = apply_discount(subtotal, order["code"])
++
++    entry = ledger.record_transaction(
++        order_id=order_id,
++        customer_id=order["customer_id"],
++        amount=charged,
++        timestamp=order["timestamp"],
++    )
++    return {"order_id": entry["order_id"], "charged": entry["amount"]}
++
++
++def _existing_receipt(ledger, order_id):
++    target = str(order_id)
++    entry = next(e for e in ledger.entries if str(e["order_id"]) == target)
++    return {"order_id": entry["order_id"], "charged": entry["amount"]}
++
++
++def process_batch(orders, ledger: Ledger):
++    """Process a list of orders in order, returning a list of receipts."""
++    return [process_order(order, ledger) for order in orders]
+diff --git a/tests/test_service.py b/tests/test_service.py
+new file mode 100644
+index 0000000..8f45ec7
+--- /dev/null
++++ b/tests/test_service.py
+@@ -0,0 +1,62 @@
++from decimal import Decimal
++
++from discount import apply_discount
++from ledger import Ledger
++from service import process_batch, process_order
++
++
++def test_apply_discount_save10():
++    assert apply_discount(Decimal("50.00"), "SAVE10") == Decimal("45.00")
++
++
++def test_process_order_happy_path(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-1",
++        "customer_id": "cust-1",
++        "subtotal": Decimal("50.00"),
++        "code": "SAVE10",
++        "timestamp": "2026-07-31T00:00:00Z",
++    }
++    receipt = process_order(order, ledger)
++    assert receipt["charged"] == "45.00"
++    assert ledger.has_order("ord-1")
++
++
++def test_process_order_rejects_below_minimum(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-2",
++        "customer_id": "cust-1",
++        "subtotal": Decimal("0.50"),
++        "code": "SAVE10",
++        "timestamp": "2026-07-31T00:00:00Z",
++    }
++    try:
++        process_order(order, ledger)
++        assert False, "expected ValueError"
++    except ValueError:
++        pass
++
++
++def test_process_batch_multiple_orders(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    orders = [
++        {
++            "order_id": "ord-3",
++            "customer_id": "cust-2",
++            "subtotal": Decimal("20.00"),
++            "code": "HALF",
++            "timestamp": "t",
++        },
++        {
++            "order_id": "ord-4",
++            "customer_id": "cust-2",
++            "subtotal": Decimal("100.00"),
++            "code": "VIP90",
++            "timestamp": "t",
++        },
++    ]
++    receipts = process_batch(orders, ledger)
++    assert receipts[0]["charged"] == "10.00"
++    assert receipts[1]["charged"] == "10.00"
