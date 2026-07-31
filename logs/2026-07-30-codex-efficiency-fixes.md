@@ -1765,3 +1765,92 @@ practice this round, not because it was skipped under pressure. Net:
 3 of 3 treatments are clean wins this round, with the T2 fix's
 mechanism now validated end-to-end (timeout rate, completion, AND
 observability) across three full battery rounds.
+
+### 2026-07-30 — CORRECTION to the round 3 battery entries above (task-reviewer audit, Task 8c)
+
+This is a correction entry, per the log's append-only rule — the two
+entries above are left as originally written; this entry states what
+in them was wrong and what the true numbers are.
+
+**1. IMPORTANT — factual overclaim on `timeout_ms` uniformity.** Both
+entries above, and `task-8c-report.md`, state or imply that all 73
+`wait_agent` calls this round used `timeout_ms:300000` ("observed here
+consistently issued at the 300000ms floor" in the T2 verdict
+paragraph; "All 73 re-observed `wait_agent` calls used
+`timeout_ms:300000`" in the report). **This is false.** The claim was
+only ever independently verified for the 2 manually-inspected reps
+(rep17: 9/9 @300000; rep22: 7/7 @300000 — both of those two
+narrower, correctly-scoped statements, at log lines "Every one of the
+9 `wait_agent` calls used `timeout_ms:300000`" (smoke entry) and "All
+re-parsed calls used `timeout_ms:300000`" (manual-inspection bullet,
+scoped explicitly to "rep17: 9 calls; rep22: 7 calls"), remain
+accurate as written) and was then wrongly generalized to the full
+8-rep/73-call corpus without re-checking the other 6 reps' committed
+data. Re-derived directly from the already-committed
+`out/e7-battery-fix-round3.json`'s `silent_gap_analysis[].
+wait_durations[].timeout_ms` field (python, `collections.Counter`,
+independent of any prior script run this task):
+
+```
+overall: {300000: 55, 600000: 7, 360000: 10, 120000: 1}  (73 total)
+rep17 {300000: 9}
+rep18 {600000: 7}
+rep19 {360000: 10}
+rep20 {300000: 9}
+rep21 {300000: 10}
+rep22 {300000: 7}
+rep23 {300000: 9, 120000: 1}
+rep24 {300000: 11}
+```
+
+So: **55/73 (75.3%) at 300000ms, rep18 used 600000ms for all 7 of its
+calls, rep19 used 360000ms for all 10 of its calls, and rep23 issued 9
+calls at 300000ms plus 1 at 120000ms — that single 120000ms call is
+BELOW `43ec25f`'s stated 300000-600000ms (5-10 minute) range, an
+undisclosed compliance deviation the rep17/rep22 spot-check could not
+have caught** (neither of the 2 manually-inspected reps happens to be
+18, 19, or 23). This is a real, previously unreported spread in how
+literally different controller sessions followed the bounded-stretch
+instruction's specific numeric range — three of eight reps didn't use
+the 300000ms value at all (rep18, rep19), and one (rep23) went under
+the floor for a single call. **The T2 verdict itself is unaffected:**
+the pre-registered silent-gap criterion is about measured wait
+*duration* (actual `function_call_output` minus `function_call`
+timestamps), not requested `timeout_ms`, and every one of those
+duration numbers in both entries above was already computed and
+reported correctly from the same file — rep23's 120000ms call actually
+resolved in 10.5s, and rep18/rep19's longer requested ceilings never
+caused their actual max durations (145.6s and 131.9s respectively) to
+exceed any other rep's. The defect is confined to the "consistently at
+the 300000ms floor" / "all 73 ... used timeout_ms:300000" narrative
+claims, not to any pass/fail determination or the underlying
+gap/timeout/completion numbers.
+
+**2. MINOR — smoke-test rollout-file/child count.** The smoke-test
+entry above says "8 rollout files (1 root + 7 children" and then goes
+on to name 8 children (`task{1,2,3}_{implementer,reviewer}` +
+`task3_r1_reviewer` + `final_reviewer` = 8). The correct count,
+confirmed by re-running the original `find .../home/.codex/sessions
+-name '*.jsonl'` listing for rep17, is **9 rollout files total: 1 root
++ 8 children.** "8 spawn_agent calls" and "all 8 carry explicit
+model+reasoning_effort" elsewhere in the same paragraph were already
+correct (8 children = 8 spawns); only the file-count arithmetic in the
+opening sentence was wrong.
+
+**3. MINOR — provenance of the 12-minute silent-gap threshold.** The
+pre-registration entry above attributes the "no silent gap over 12
+minutes" sub-criterion to "the delta brief," which is not a
+file-based, independently auditable artifact in this repo or the SDD
+task directory — it does not correspond to a committed document this
+log or a future reader could go re-open. **Actual provenance: the
+720-second (12-minute) figure was relayed verbatim in the
+coordinator's dispatch message that assigned Task 8c** (the same
+message that specified rep17-24, scorers e6/e7/e1, and the T1/T5
+regression-guard framing), not derived from any file this task read or
+computed. Recorded here so a future reader auditing this criterion's
+origin knows to ask the dispatching coordinator/task history rather
+than search the repo for a "delta brief" document.
+
+No numbers in the aggregate tables, the per-treatment verdicts, or the
+ledger row above require revision — this correction is confined to
+the three items listed.
