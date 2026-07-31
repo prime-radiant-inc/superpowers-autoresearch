@@ -1854,3 +1854,105 @@ than search the repo for a "delta brief" document.
 No numbers in the aggregate tables, the per-treatment verdicts, or the
 ledger row above require revision — this correction is confined to
 the three items listed.
+
+### 2026-07-30 — T4 LAYER 2 PRE-REGISTRATION ROUND 2: Codex ceremony battery — bounded-path approval hard stop (Task 9b)
+
+Round 1 (commits `d64cc78`/`cd59cdc` above) found bounded's doc/plan
+ritual cleanly fixed (0/3 docs, PASS) but its approval-gate compliance
+only 1/3 under a strict pre-implementation reading — 2/3 reps
+implemented before any approval turn landed, receiving the scripted
+confirmation phrase only as a post-hoc rubber stamp afterward. Commit
+`6faceb2` ("fix(brainstorming): bounded-path approval is a hard stop")
+is the fix under test this round: it rewrites the bounded path's step
+4 from "Get approval — explicit, before any implementation" to an
+explicit STOP ("Implementation starts only after your human partner
+says yes to that design — a bounded task's approval is as hard a gate
+as an architectural one"), adds a Red Flags row ("It's bounded and the
+design is obvious — I'll start while they read it" / "The gate is the
+approval, not the design's length. Present, then stop until you hear
+yes."), and rewords the numbered-steps list's step 4 accordingly.
+Commits `43ec25f` (bounded wait stretches with reconciliation) and
+`433184c` (prefer non-blocking child-result delivery over any wait)
+also landed on top since round 1 but target SDD/codex wait discipline,
+not the ceremony router text directly — this round's arch class is the
+regression guard confirming those two didn't disturb the two-doc-flow
+finding.
+
+**Arm SHA (verified this task, refreshed since round 1):** `git -C
+/tmp/sp-arm-fix log --oneline -1` → `433184c` — carries `6faceb2`
+(bounded-approval hard stop), `43ec25f` (bounded wait stretches), and
+`433184c` (non-blocking wait preference) on top of round 1's graded
+tip `3da65fb`.
+
+**Battery config:**
+- Arm: `fix` (`/tmp/sp-arm-fix` @ `433184c`)
+- Scenarios: `cx-ceremony-bounded` (3 reps), `cx-ceremony-arch` (3
+  reps), `cx-ceremony-spike` (1 smoke rep only) — 7 runs total, down
+  from round 1's 9. Spike's own router text is untouched since round 1
+  (the fix commits touch the bounded path and SDD/codex wait text, not
+  the spike path); the shared Red Flags table addition is the only
+  edit common to all three paths, so 1 smoke rep is enough to guard
+  against a regression there without re-measuring spike's already-PASS
+  round-1 finding at full n=3.
+- Rep numbering: round 1 already used rep1-3 for
+  `cx-ceremony-{bounded,spike}-fix` (lane A) and `cx-ceremony-arch-fix`
+  (lane B) — this round uses rep4-6 for bounded and arch, rep4 (single)
+  for spike, so round 2's `results/` directories never collide with
+  round 1's already-scored data.
+- Lane split: lane A (`superpowers/evals`) runs the spike smoke rep
+  (rep4) first, then bounded reps 4-6. Lane B (`evals-lane-b`) runs
+  arch reps 4-6, concurrently with lane A's queue — unchanged from
+  round 1's split.
+- Scorer: `score_e4.py`, invoked directly against the 7 new RUNDIRs
+  once the battery completes (no arm-hardcoding workaround needed,
+  confirmed again by reading `main()`'s `RUNDIR...` signature, same as
+  round 1).
+- **Harness-budget accommodation, NOT a treatment change:**
+  `cx-ceremony-arch/story.md`'s `quorum_max_time` is bumped from **30m
+  to 45m** before this round's reps run. This responds to round 1's
+  rep3 anomaly (a genuine `subagent-driven-development` SDD flow hit
+  the old 30-minute budget and got an `investigate`/`indeterminate`
+  Gauntlet-Agent verdict despite complete, non-infra rollout data) —
+  the same character of scenario-budget side effect Task 8b documented
+  and handled by NOT stopping the battery. This is a scenario-harness
+  change, edited on the HOST campaign scenarios directory
+  (`campaigns/codex-efficiency/scenarios/cx-ceremony-arch/story.md`,
+  synced into each container by `run-quorum.sh` before every run), not
+  a change to any router/skill text under test. **Old value: 30m. New
+  value: 45m.**
+
+**Criteria (round 2, per this task's dispatch — Amendment 2, Task 9b
+section):**
+- **Bounded:** 0 ceremony docs (unchanged from round 1's "0 committed
+  spec/plan docs") AND strict pre-implementation approval 3/3 —
+  **definition, stated explicitly per the dispatch's instruction:** the
+  approval turn (a Gauntlet-Agent message conveying approval, e.g.
+  "looks good, that's what I wanted") must precede the first
+  implementation patch in the raw rollout timeline. This is round 1's
+  own hand-verified method (independent `json.loads` + `patch_apply_end`
+  timestamp sort, cross-checked against the approval-message
+  timestamp), not a re-derivation — round 1's rep3 (design presented
+  21:45:34Z, approval 21:45:58Z, "Approved..." 21:46:06Z, first patch
+  21:46:29Z) is the worked example of what "precedes" means here. Round
+  1 scored 1/3 on this reading (rep1/rep2 implemented first, approval
+  arrived only afterward).
+- **Arch:** two-doc flow 3/3 (unchanged from round 1) AND gauntlet task
+  completion 3/3 (round 1 scored 2/3 — rep3's scenario-timeout anomaly,
+  the exact case the `quorum_max_time` bump above targets).
+- **Spike:** smoke rep healthy — no docs, minimal ceremony (a
+  single-rep health check, not a 3-rep statistical claim; round 1
+  already PASSed 3/3 on this unchanged router text).
+
+**Budget estimate:** ~$30 (per the dispatch). Anchor: round 1's 9-rep
+battery cost $15.23 total (bounded $2.30/3 reps, spike $1.72/3 reps,
+arch $11.21/3 reps, the last driven up by rep3's timeout). This
+round's 7 reps (3 bounded + 1 spike + 3 arch) at round 1's per-class
+rates would be roughly bounded $2.30 + spike ~$0.6 (1 rep) + arch ~$11
+(3 reps, possibly higher given the 45m budget lets a slow rep run
+longer before cutoff rather than cheaper) ≈ $14-16. Budgeting ~$30 for
+headroom against that arch uncertainty.
+
+**No run yet — this is the pre-registration.** Smoke test (the spike
+rep doubles as the smoke, per this round's instructions), full
+battery, scoring, and hand-recount (one rep per class from raw
+patch/approval timestamps, non-circular) follow in later log entries.

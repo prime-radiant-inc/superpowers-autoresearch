@@ -4,7 +4,7 @@ title: Split into a library and a thin CLI (codex efficiency campaign)
 status: ready
 tags: codex, ceremony, codex-efficiency
 quorum_tier: adhoc
-quorum_max_time: 30m
+quorum_max_time: 45m
 ---
 
 You are a software engineer maintaining a small Python HTTP JSON service
