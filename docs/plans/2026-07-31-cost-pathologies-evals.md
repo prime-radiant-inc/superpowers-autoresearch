@@ -128,3 +128,32 @@
 
 - [ ] **Step 1:** `reports/2026-08-cost-pathologies-campaign.md`: per-experiment cross-arm verdict tables (winner / honest negative / inconclusive), guard outcomes, M0's outcome folded in, total spend vs ceiling, the winning-arm treatment list for the NEXT fix cycle (with the no-unshipped-ungraded-text rule restated), and process lessons.
 - [ ] **Step 2:** Closing log entry + final ledger; sweep; commit; push autoresearch main (authorized).
+
+---
+
+## Amendment 1 (2026-07-31): Task 4b — X1 MICRO fixture v2
+
+Task 4's micro returned an honest negative that its review confirmed as
+instrument-limited: control sat at the 0% false-block floor because all
+five seeded defects were unambiguous, and the one real miscalibration
+observed (arm A escalating a self-admitted-Minor nitpick to Important)
+occurred on un-seeded borderline content — evidence that ambiguity is
+what stresses calibration.
+
+### Task 4b: re-run the micro on an ambiguity-bearing fixture
+
+Same arms (A/B/C vs control D), same reps, same metrics, same prune
+rule, NEW pre-registration. Fixture v2 keeps 2 unambiguous anchors from
+v1 (one Critical, one Important — recall floor) and adds: 2
+debatable-severity defects (real but severity arguable — e.g. a race
+reachable only under concurrent config reload; a spec deviation the
+spec itself underdetermines), 2 plausible-but-wrong bait regions
+(code that looks defective but is correct — e.g. an intentional
+fallthrough with a comment; an apparent off-by-one that the domain
+makes correct), and a deliberately under-specified spec region the
+brief declines to pin down. Ledger documents expected classification
+per arm mechanism. Metrics gain: bait-block rate (blocking findings on
+bait regions) as the primary discriminator alongside false-block; the
+pre-registered prediction is that control blocks on bait more than
+criterion-backed/marginal-value arms. Fix the usage-logging gap (record
+API usage fields per call). Budget ~$2.
