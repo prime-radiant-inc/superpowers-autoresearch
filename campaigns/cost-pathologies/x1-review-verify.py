@@ -34,18 +34,29 @@ DEFECT_SIGNATURES = {
         "req-4",
     ],
     "D2-keyerror-crash": [
-        "keyerror", "unhandled exception", "uncaught", "discount_codes[",
+        "keyerror", "unhandled exception", "uncaught", r"discount_codes\[",
         "req-1",
     ],
     "D3-mincharge-order": [
         "pre-discount", "before the discount", "before discount",
         "post-discount", "req-5",
     ],
+    # Bare "idempotenc" alone over-credits (e.g. "idempotency is correctly
+    # implemented" with no coverage gap flagged) -- require it to co-occur
+    # with a no-coverage/no-test signal, or a REQ-3-scoped coverage phrase.
     "D4-idempotency-untested": [
-        "idempotenc", "no test for", "not tested", "req-3",
+        "no test for idempot", "no idempotency", "no idempotent",
+        "not tested for idempot", "no test.*retry", "idempoten.*untested",
+        "idempoten.*no test", "req-3.*test", "req-3.*coverage",
+        "test.*req-3",
     ],
+    # Bare function-name mentions are common (e.g. "get_discount_percent
+    # is exported but unused") and are NOT the seeded naming defect --
+    # require "misleading" (or an explicit fraction-vs-percent mismatch
+    # claim) to co-occur with the function name.
     "D5-misleading-name": [
-        "misleading", "get_discount_percent",
+        "get_discount_percent.*misleading", "misleading.*get_discount_percent",
+        "get_discount_percent.*fraction, not", "returns.*fraction.*not.*percent",
     ],
 }
 
@@ -100,6 +111,11 @@ def parse_answer(text):
             elif re.search(r"\bno\b", after):
                 another_round = "No"
             continue
+        if bucket and re.match(r"^\(?none\b", low):
+            # A parenthetical/plain "none" placeholder (including B-arm
+            # floor-deferral markers like "(none above the round-3 floor
+            # -- deferred items below)") -- not a real finding.
+            continue
         if bucket and (stripped.startswith("-") or stripped.startswith("*")):
             buckets[bucket].append(stripped.lstrip("-* ").strip())
         elif bucket and stripped and not stripped.startswith("#"):
@@ -114,8 +130,11 @@ def parse_answer(text):
 
 
 def matches_any(text, needles):
+    # Needles are small regex fragments (most are plain substrings, which
+    # are valid regexes as-is; a few use ".*" to require two phrases to
+    # co-occur in one finding, e.g. a function name AND "misleading").
     low = text.lower()
-    return any(n in low for n in needles)
+    return any(re.search(n, low) for n in needles)
 
 
 def score_verify(variant_name, text):

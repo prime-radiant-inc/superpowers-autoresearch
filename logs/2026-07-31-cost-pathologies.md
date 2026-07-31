@@ -662,3 +662,158 @@ disagreement for manual reconciliation before the verdict is written.
 Privacy sweep run on this entry before commit (standing needle set,
 filtered of scrubbed remote-host placeholders): no match, clean — this
 entire task is a synthetic fixture with no real session content.
+
+## 2026-07-31 — Task 4 VERDICT: X1 MICRO — reviewer-arm calibration
+
+Ran the pre-registered battery: 20 calls (4 variants × 5 reps),
+`claude-opus-4-8`, cached under `out/x1-review-micro/` (gitignored, not
+committed). Two scorer bugs were found and fixed during manual
+reconciliation (below) — the reported table is post-fix, re-scored from
+the same cached answer files at zero additional API cost.
+
+### Results
+
+| variant | recall | false-block | false-stop | n |
+|---|---:|---:|---:|---:|
+| D-control | 76% | 0% | 0% | 5 |
+| A-criterion-backing | 76% | 4% | 0% | 5 |
+| B-rising-floor | 68% | 0% | 0% | 5 |
+| C-marginal-value | 72% | 0% | 0% | 5 |
+
+Per-defect recall (count out of 5 reps each arm found it, anywhere in
+the report):
+
+| defect | severity | D | A | B | C |
+|---|---|---:|---:|---:|---:|
+| D1 non-atomic write | Critical | 5 | 5 | 4 | 5 |
+| D2 unhandled KeyError | Critical | 5 | 5 | 5 | 5 |
+| D3 min-charge pre-discount | Important | 5 | 5 | 5 | 5 |
+| D4 idempotency untested | Important | 4 | 4 | 3 | 3 |
+| D5 misleading name | Minor | 0 | 0 | 0 | 0 |
+
+### Prune decision: NO ARM ADVANCES — control-only per the strict rule
+
+Pre-registered rule: an arm advances only if (1) strictly better than
+control on `false_block_rate` (arm's mean < control's mean) AND (2) no
+recall loss greater than 1 ledger defect (arm's mean recall ≥ control's
+− 0.2). Applied literally:
+
+- **A**: false-block 4% is worse than control's 0% (control already at
+  the floor — A's addition introduced the only illegitimate escalation
+  in the whole battery). **Fails (1).**
+- **B**: false-block 0% ties control's 0% — not *strictly* better.
+  **Fails (1)** (recall 68% vs 76% would pass the −0.2 guard on its
+  own, moot given (1) fails).
+- **C**: false-block 0% ties control's 0% — not *strictly* better.
+  **Fails (1)** (recall 72% vs 76% would also pass the guard).
+
+Per the pre-registration's explicit contingency: **this is a valid,
+honest negative outcome, not a scoring failure.** No arm is force-
+advanced. Reporting BLOCKED-equivalent status: **X1 FULL should proceed
+control-only pending further design work**, or the controller can
+decide to loosen the tie-break (0% vs 0% counted as "not worse" rather
+than "not strictly better") and admit B and C on that relaxed reading —
+that is a controller call this task does not make unilaterally.
+
+### The diagnostic finding: a ceiling-effect fixture, not calibrated arms
+
+The more useful result is *why* nothing won. D-control already scores a
+**perfect 0% false-block and 0% false-stop** on this fixture — both
+metrics are pinned at their floor before any arm's mechanism gets a
+chance to show improvement. Two seeded Critical defects (data loss,
+unhandled crash) are severe and unambiguous enough that Opus 4.8 never
+fabricated an illegitimate block against clean code, and never
+signalled "done" while they sat unfixed, **under any of the four
+prompts**. The MICRO's false-block and false-stop axes were built to
+catch premature convergence and fabricated severity — this fixture
+never gave any arm the opportunity to fail either way. A false-block
+axis with a control at the floor cannot discriminate treatment arms; it
+can only make a treatment arm look worse (which is exactly what
+happened to A). **This is a fixture-design finding for whoever designs
+X1 FULL**, not evidence the mechanisms don't work: a MICRO with more
+borderline/gray-area content (a defensible-but-debatable design choice,
+a Critical-adjacent-but-arguably-Important call) is needed to actually
+stress false-block calibration.
+
+The one real signal: **A's own text (require a citable requirement or
+concrete failure path) did not stop the model from filing an unbacked
+style nitpick as an Important finding** — manually inspected
+(`A-criterion-backing-r0.txt`): *"hand-rolled try/except/`assert False`
+instead of `pytest.raises`... Minor mechanically, but flagged because
+the current tests give false confidence..."* — the model's own words
+call it Minor, then files it under Important anyway. This is a genuine,
+if small, instance of the exact miscalibration X1-A is meant to
+prevent, caught by a human-manual read, not just the regex.
+
+B's mild recall dip (D1 4/5, D4 3/5 vs 5/5 and 4/5 for control) is
+plausibly noise at n=5 (one rep short by exactly one defect each,
+twice) — not treated as a finding, flagged for a larger FULL sample if
+B is revisited.
+
+D5 (the seeded Minor defect, a misleading function name) was **never
+recalled by any arm across all 20 reps** — a uniform floor effect on
+the fixture's own weakest-severity defect, not an arm difference.
+
+### Bugs found and fixed during manual reconciliation (pre-commit)
+
+Independent verification (`x1-review-verify.py`, a from-scratch
+line-based state machine, no shared code with the main scorer) flagged
+2 of 20 reps as mismatched against the main scorer's first-pass output.
+Manually reading both:
+
+1. **Main-scorer bug (real, fixed)**: `split_findings()`'s empty-
+   section check (`^\**none\b`) didn't match B-arm-style parenthetical
+   floor-deferral markers — `B-rising-floor-r1.txt`'s Important bucket
+   contained only `(none above the round-3 floor — deferred items
+   below)`, which the splitter treated as one real finding, inflating
+   that rep's false-block count by 1 (the null-marker matched no ledger
+   defect and cited nothing, so it scored as a false block). Fixed:
+   `re.match(r"^\(?\**\s*none\b", ...)`. This changed B's reported
+   `false_block_rate` from 5% to 0% (the number in the table above is
+   post-fix). Verified the fix does NOT swallow real findings that
+   happen to start with a similar prefix — `B-rising-floor-r2.txt` and
+   `-r4.txt` both have substantive Important-bucket items prefixed
+   `"(Deferred — below the round 3 floor.) Tests assert real
+   behavior..."`, which still parse as real findings (they don't match
+   `^\(?\**\s*none\b`, which requires "none" specifically, not
+   "Deferred").
+2. **Verifier-only bug (fixed, never affected the reported table)**:
+   the independent verifier's own D4/D5 needle lists were too loose
+   (`"get_discount_percent"` alone, `"no test for"` alone) and
+   over-credited `D-control-r3` to a false 1.0 recall against the main
+   scorer's correct 0.6. Manually read `D-control-r3.txt`: it genuinely
+   does not flag D4 (says idempotency "✅... correctly implemented,"
+   no coverage-gap finding) or D5 — the main scorer's 0.6 was right.
+   Tightened both needle lists to require co-occurrence (e.g.
+   `"no test for idempot"`, `"get_discount_percent.*misleading"`).
+
+Post-fix, `x1-review-verify.py` reports **zero mismatches** against the
+final `results.json` across all 20 reps.
+
+### Cost
+
+No token usage was logged during the run (the script discarded
+`usage` from each response — a gap for any future rerun of this
+script). Reconstructed from cached prompt/answer text: ≈82,050 input
+tokens (4,013–4,192 per call depending on variant, ×5 reps) and
+≈21,730 output tokens (measured from the 20 cached answer files,
+87,542 chars ÷ 4) at `claude-opus-4-8` pricing ($5/$25 per MTok,
+thinking never enabled — this call never set `thinking`, and Opus 4.8
+runs thinking-off by default when it's omitted, so the cached answer
+text is the full billed output with nothing hidden). **≈$0.95 total** —
+well under the $15-20 pre-registered estimate (the fixture's diff and
+brief turned out shorter in tokens than the estimate's word-count
+assumed) and far under the $580 campaign ceiling. Budget ledger row
+below.
+
+### Privacy sweep
+
+Standard needle set + `ANTHROPIC_API_KEY` pattern grep, run against
+this entry and the staged diff before commit: no match, clean. The key
+was sourced into the process environment for the run only, never
+printed, logged, or committed; raw answer files live under the
+gitignored `out/x1-review-micro/` and were not staged.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-07-31 | X1 MICRO (reviewer-arm calibration, 20 calls) | ~$0.95 | No arm strictly beat control's 0% false-block floor; BLOCKED-equivalent, X1 FULL control-only pending redesign |

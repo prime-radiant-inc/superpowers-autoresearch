@@ -449,7 +449,10 @@ def extract_sections(answer_text):
 
 
 def split_findings(block_text):
-    if not block_text or re.match(r"^\**none\b", block_text.strip(), re.I):
+    # "(none ...)" catches B-arm-style parenthetical floor-deferral markers
+    # ("(none above the round-3 floor -- deferred items below)") as well as
+    # plain "None." -- both mean the bucket is empty, not a real finding.
+    if not block_text or re.match(r"^\(?\**\s*none\b", block_text.strip(), re.I):
         return []
     bullets = re.findall(r"(?:^|\n)[-*]\s+(.+?)(?=\n[-*]\s+|\Z)", block_text, re.S)
     if bullets:
