@@ -3513,3 +3513,41 @@ never reproduced in this log).
 
 **Privacy sweep:** the standing grep run against the staged diff
 immediately before committing this entry -- no match, clean.
+
+### 2026-07-31 -- CORRECTION: the arm refresh 433184c -> 70120d5 was performed by the controller before dispatch, not "no refresh performed" (task review finding, Task 12b)
+
+The round-2 pre-registration entry above states: "`git -C
+/tmp/sp-arm-fix rev-parse HEAD` -> `70120d509e912a03a5f2808f7e4a58c8bd012719`
+-- identical to the branch tip; no refresh performed (Task 20's commit
+was already the arm's tip)." That statement is accurate about what the
+implementer session did (it verified the tip and performed no refresh
+of its own) but wrong as a claim that no refresh happened at all.
+
+`git -C /tmp/sp-arm-fix reflog --date=iso` shows:
+
+```
+70120d5 HEAD@{2026-07-31 09:01:40 -0700}: checkout: moving from 433184c431e941e2e9c7548341f2d76fe9b42167 to codex-efficiency-fixes
+433184c HEAD@{2026-07-30 17:33:03 -0700}: checkout: moving from 6faceb21c5f042cb5eae73d5010be9eaaf2f76ac to codex-efficiency-fixes
+```
+
+i.e. the arm WAS moved from `433184c` to `70120d5` via a `checkout
+--detach codex-efficiency-fixes` at 2026-07-31 09:01:40 -0700 -- six
+minutes before the round-2 pre-registration commit (`db7ca80`). Per the
+controller session's attestation (quoted verbatim as the source for
+this attribution, since the implementer session has no independent way
+to observe another session's actions): "that refresh was performed by
+the controller session (me) during Task 20's post-review bookkeeping,
+before you were dispatched -- your dispatch instruction 'arm is
+refreshed to 70120d5, verify, do not refresh' reflected it."
+
+This does not change any battery result: the arm SHA the whole round-2
+battery ran against (`70120d5`) is exactly the SHA both the
+pre-registration and every verdict entry above already report and
+verify against, and the implementer's own actions (verify-only, no
+refresh) were correctly described. Only the earlier entry's implicit
+claim that no refresh occurred AT ALL (rather than "not by this task")
+was wrong, and is corrected here rather than edited in place, per this
+log's append-only rule.
+
+**Privacy sweep:** the standing grep run against the staged diff
+immediately before committing this entry -- no match, clean.
