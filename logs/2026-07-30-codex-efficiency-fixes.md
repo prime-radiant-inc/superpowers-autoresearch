@@ -3128,3 +3128,157 @@ repo.
 
 **Privacy sweep:** the standing grep run against the staged diff
 immediately before committing this entry -- no match, clean.
+
+### 2026-07-31 -- TRIGGERING RE-RUN PRE-REGISTRATION ROUND 2: post-router-tightening (Task 20, `70120d5`) + codex api-key leg (Task 12b)
+
+**Why this round exists.** Task 12's round 1 (entries above) found claude
+triggers `superpowers:brainstorming` 3/3 but self-classifies "Let's make a
+react todo list" **bounded** 3/3 -- reading the bounded bullet's
+"existing, understood flow" as familiarity with the todo-app genre, not
+presence of code in the repo (rep4 explicitly noticed the repo was empty
+and still called it bounded). Gemini classified architectural 3/3 on the
+identical prompt/fixture. Codex never ran at all (`codex_sub` subscription
+credit exhaustion, `usage_limit_exceeded... try again at Aug 5th, 2026`).
+Jesse's ruling (plan Amendment 4): tighten the bounded bullet's wording
+(Task 20) and re-run; provision an `OPENAI_API_KEY` so codex can run.
+
+**Fix commit verified, arm verified (not refreshed, per this task's explicit
+instruction):**
+`git -C /Users/jesse/git/superpowers/superpowers/.worktrees/codex-efficiency-fixes log --oneline -1`
+-> `70120d5 fix(brainstorming): bounded means existing code in this repo,
+not a familiar app genre`. `git -C /tmp/sp-arm-fix rev-parse HEAD` ->
+`70120d509e912a03a5f2808f7e4a58c8bd012719` -- identical to the branch tip;
+no refresh performed (Task 20's commit was already the arm's tip). Skill
+text verified present: `grep -c "already here to read"
+skills/brainstorming/SKILL.md` -> 1; `grep -c "measures the repo"
+skills/brainstorming/SKILL.md` -> 1. The new bounded bullet reads: "a
+well-scoped change to code that already exists in this repo... If there is
+no existing flow to change, the task is not bounded" -- directly targets
+round 1's observed failure mode (familiarity-based bounded classification
+on a blank repo).
+
+**Scenario unchanged from round 1's post-fix version:**
+`scenarios/triggering-react-todo/` (single dir, `# coding-agents:
+codex,claude,gemini`, `setup.sh` = plain `git init` + one empty commit, no
+template-repo clone -- the fixture bug round 1 found and fixed in `991e198`).
+Not modified this round. Re-validated `bun run quorum check
+triggering-react-todo` in both lanes before spending -- `ok
+triggering-react-todo` / `ok credentials`, both.
+
+**Codex auth -- adapter DOES support API-key auth; a pre-existing,
+extensively-precedented credential already fits, so no new
+`credentials.yaml` entry was added (disclosed here as a real deviation
+from this task's own draft instruction to add one named `codex_api`).**
+Investigated before assuming a new entry was needed:
+- `src/agents/codex.ts:120-168` (`CodexAgent.provision`) branches on
+  `credential.auth`: `'subscription'` (the `codex_sub` default, copies
+  host ChatGPT auth) or `'api-key'` (writes a `config.toml`
+  `[model_providers."quorum"]` block keyed off `credential.model`,
+  `credential.base_url`, and `mapWireApi(credential.api)`, plus a
+  mode-0600 `codex-api.env` carrying the resolved key under
+  `CODEX_PROVIDER_API_KEY` -- deliberately not an `OPENAI_*` name so the
+  HOWTO's launcher `env -u OPENAI_API_KEY` scrub, which exists for the
+  subscription path, doesn't strip it). `mapWireApi` (`codex.ts:329-335`)
+  maps `openai-responses` -> `"responses"` (codex 0.141's only accepted
+  wire_api at config load) and `openai-chat` -> `"chat"`. Any other
+  `credential.auth` throws `ProvisionError`. Conclusion: api-key auth is a
+  fully supported, first-class path, not a subscription-only adapter.
+- `src/contracts/credential.ts:76` -- `CredentialSchema`'s `auth` field
+  **defaults to `'api-key'`** when unset. `credentials.yaml`'s existing
+  `openai_responses` entry (`credentials.yaml:197-203`) has no explicit
+  `auth:` line, so it resolves to `auth: api-key` --
+  `model: gpt-5.5`, `api: openai-responses`, `base_url:
+  https://api.openai.com/v1`, `api_key_env: OPENAI_API_KEY`, `harnesses:
+  [codex]` -- exactly the shape this task's instruction describes for a
+  new `codex_api` entry, already present under a different name.
+- This is not a theoretical fit: `openai_responses` is the campaign's
+  long-standing, extensively-used codex api-key credential across many
+  prior non-campaign evals batteries (`evals/docs/experiments/2026-06-24-
+  compress-bootstrap-release-test.md`, `2026-06-25-codex-no-hooks-release-
+  test.md`, `2026-06-25-dev-full-suite-5agent.md`,
+  `2026-07-06-skill-edit-campaign-1932-1935.md`,
+  `2026-07-14-codex-gpt56-sol-vs-gpt55.md`, `2026-07-15/16/17-pr1943/
+  pr1998-*.md`) -- real pass/fail/indeterminate runs recorded, not just a
+  schema that validates.
+- Decision: use `--credential openai_responses` (i.e. `CREDENTIAL=
+  openai_responses` for `run-quorum.sh`, `CODING_AGENT` left at its
+  `codex` default) rather than duplicating an identical entry under the
+  name `codex_api`. Adding a byte-for-byte duplicate entry would be pure
+  duplication with no behavioral difference, contrary to the standing
+  no-duplication rule. Flagging this substitution explicitly for whoever
+  reads this entry rather than silently reinterpreting the task
+  instruction. **No `credentials.yaml` change was made; no evals-repo
+  commit is needed for credentials this round.**
+- The one real environment gap: `OPENAI_API_KEY` was present in both
+  lanes' `.env` (host-side) but **absent from both lanes' `.env.container`**
+  -- the file `scripts/evals-container` actually mounts into the
+  container (`env_file` selection at `scripts/evals-container:206-208`
+  prefers `.env.container` over `.env` when both exist). Appended the
+  existing `OPENAI_API_KEY` line from `.env` into `.env.container` in
+  both lanes (`/Users/jesse/git/superpowers/superpowers/evals/.env.container`
+  and `/Users/jesse/git/superpowers/evals-lane-b/.env.container`) --
+  values not reproduced here or in any commit; both `.env.container`
+  files are untracked (checked: not matched by the repos' `.gitignore`,
+  which only excludes bare `.env`, but neither file is staged or
+  committed by this task -- secrets stay out of git either way). Ran
+  `bun run quorum check` again in both lanes after the append to confirm
+  no regression: `ok triggering-react-todo` / `ok credentials`, both.
+
+**Matrix (per plan Amendment 4's Task 12b section, not round 1's uniform
+3x3):** claude 3 reps + gemini 1 smoke rep + codex 3 reps = 7 runs, fix
+arm only, same containerized lanes as round 1 (lane A =
+`/Users/jesse/git/superpowers/superpowers/evals` runs codex + claude,
+lane B = `/Users/jesse/git/superpowers/evals-lane-b` runs gemini, split
+for wall-clock parallelism only). Credentials: codex `CREDENTIAL=
+openai_responses` (see above); claude `CODING_AGENT=claude
+CREDENTIAL=opus` (same reasoning as round 1 -- `claude.yaml`'s
+`default_credential` is Bedrock-only, absent from both lanes'
+`.env.container`); gemini `CODING_AGENT=gemini`, `gemini_default`
+unmodified. A codex smoke rep runs first and is hand-verified before the
+remaining 2 codex reps are spent, mirroring round 1's own discipline
+(round 1's claude smoke rep caught the template-repo fixture bug before
+it could waste the full matrix) -- this round's codex api-key path has
+never been exercised against this exact scenario before, so the same
+caution applies.
+
+**Non-collision (round 2 outputs named distinctly from round 1's, per
+this task's instruction):** round 1 left `results/cx-eff-triggering-
+react-todo-fix-rep{1,2,3,4}` in lane A (rep1 dual-occupied by both the
+blocked codex smoke rep and the invalid-fixture claude smoke rep;
+rep2-4 = claude's valid n=3) and `rep{1,2,3}` in lane B (gemini's valid
+n=3). `run-quorum.sh`'s `--out-root` does not encode `CODING_AGENT` in
+the directory name, so distinct rep numbers are the only collision
+guard. This round uses `REP_START` offsets clear of every existing
+directory: codex reps 2-4 (a fresh smoke rep at 2, since round 1's
+codex rep1 was blocked/partial and its dir already holds round 1's
+claude rep1 data too), claude reps 5-7, gemini rep 4.
+
+**Criterion (verbatim from the task instruction, matching round 1's
+structure exactly so the delta is legible): brainstorming loads before
+any implementation action AND the session heads down the architectural
+path (a new project is architectural under the router), 3/3 reps --
+claude and codex; gemini smoke stays architectural (round 1: 3/3, not
+re-litigating clause 1 which round 1 already found robust cross-harness).**
+
+**Detection method:** identical to round 1 -- hand-read each rep's raw
+session log/rollout directly (not the scenario's own deliberately inert
+Gauntlet-Agent verdict, not a scorer). PASS per rep requires (1) a
+skill-load tool call (`Skill` naming `superpowers:brainstorming` for
+claude/codex-native, `activate_skill {"name":"brainstorming"}` for
+gemini) strictly before any `Write`/`Edit`/scaffold-`Bash` action, and
+(2) the agent's own classification/framing text in its first substantive
+response showing the architectural path (explicit "architectural"
+language or scope/stack/requirements clarifying questions), not a jump to
+code.
+
+**Budget estimate:** ~$10, per this task's instruction. Round 1's 8 runs
+of this same 15-minute-ceiling, first-response-only scenario totaled
+$2.2685985; this round's 7 runs (1 fewer than round 1's 8) should land in
+the same range, plus whatever the codex api-key path's real OpenAI
+billing adds (round 1's codex spend was Gauntlet-only, $0.2041935, because
+the account had zero credits from the very first call -- no comparable
+prior data point for a *completed* codex api-key run of this exact
+scenario).
+
+**No run yet -- this is the pre-registration.** Smoke test(s), full
+matrix, hand-verification, and verdict follow in the next log entry.
