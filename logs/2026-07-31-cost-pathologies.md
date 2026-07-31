@@ -331,3 +331,32 @@ match, clean.
 
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
+
+## 2026-07-31 — M0 VERDICT: mechanical sidequest check (controller entry)
+
+The M0 check registered in the design doc has run on all three hosts
+(full report: `_tmp/cost-pathologies-2026-07-31/m0-sidequest-mechanical-check.md`,
+uncommitted corpus). Results, aggregates only:
+
+- Discretionary sidequests: 2 in ~90 checked SDD units (local 0,
+  remote-host-a 2 — both small, disciplined lint-cleanup commits
+  self-justified in their commit messages, remote-host-b 0).
+- **Verdict per the M0 clause: the SIDEQUESTS taxonomy entry closes as
+  near-zero-where-measurable.** No sidequest experiment is designed
+  from this evidence; X2 proceeds on its fixture-elicited baseline as
+  planned.
+- **The load-bearing caveat:** declared scope was RECOVERABLE for only
+  17–24% of codex work on two hosts (encrypted inter-agent dispatch
+  payloads; on-disk briefs going stale when work diverges) vs ~100% on
+  the third once sibling-worktree plan docs were searched. For most
+  codex sessions "no sidequest" is UNFALSIFIABLE, not confirmed. Two
+  large-diff judgment calls (classified legitimate-necessity) and a
+  sampled-not-exhaustive 229-dispatch sub-corpus are flagged inside the
+  report. Checked population is biased toward the miners'
+  already-interesting picks, not a random sample.
+- **Follow-up-treatment note for the closeout (not this campaign):
+  scope auditability** — machine-readable declared-scope in dispatches
+  would turn this unfalsifiable region into a measurable one.
+
+Privacy sweep run on this entry before commit (standard needle set,
+filtered of the scrubbed remote-host placeholders): no match, clean.
