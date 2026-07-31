@@ -164,6 +164,37 @@ class TestWritingPlansInvoked(unittest.TestCase):
         ])
         self.assertFalse(st.score_trajectory(t)["writing_plans_invoked"])
 
+    def test_detected_via_native_skill_tool_call(self):
+        """Claude Code and Gemini invoke a skill via a native `Skill`
+        tool call (`args.skill == "superpowers:<name>"`), not by reading
+        SKILL.md through Read/Bash the way Codex does (confirmed against
+        real T4 layer-3 battery trajectories, Task 11 smoke test).
+        Detection must find this shape too, mirroring
+        src/detect/skill.ts's isSkillInvocation pattern 1."""
+        t = traj([
+            user_step(1, "hi"),
+            {"step_id": 2, "source": "agent", "tool_calls": [
+                {"tool_call_id": "c", "function_name": "Skill",
+                 "arguments": {"name": "writing-plans",
+                                "skill": "superpowers:writing-plans"}}]},
+            write_step(3, "src/app.py"),
+        ])
+        self.assertTrue(st.score_trajectory(t)["writing_plans_invoked"])
+
+    def test_native_skill_tool_call_for_a_different_skill_not_detected(self):
+        """A Skill call for brainstorming (or any other skill) must not
+        be mistaken for a writing-plans invocation -- exact skill-id
+        match only, not a substring/prefix match."""
+        t = traj([
+            user_step(1, "hi"),
+            {"step_id": 2, "source": "agent", "tool_calls": [
+                {"tool_call_id": "c", "function_name": "Skill",
+                 "arguments": {"name": "brainstorming",
+                                "skill": "superpowers:brainstorming"}}]},
+            write_step(3, "src/app.py"),
+        ])
+        self.assertFalse(st.score_trajectory(t)["writing_plans_invoked"])
+
 
 class TestUserTurnsAndNoCodeFallback(unittest.TestCase):
     def test_counts_multiple_clarifying_turns_before_code(self):

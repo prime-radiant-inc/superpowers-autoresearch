@@ -113,12 +113,20 @@ scripts/evals-container --superpowers-root "$SP_ROOT" up
 run_rep() {
   local r=$1
   echo "===== run-quorum: $ARM $SCEN rep$r ($CODING_AGENT) ====="
-  local cred_args=()
-  [[ -n "$CREDENTIAL" ]] && cred_args=(--credential "$CREDENTIAL")
-  scripts/evals-container exec quorum run "$dest" \
-    --coding-agent "$CODING_AGENT" \
-    "${cred_args[@]}" \
-    --out-root "results/cx-eff-$SCEN-$ARM-rep$r"
+  # No bare array expansion here: the macOS system /bin/bash is 3.2,
+  # which throws "unbound variable" under `set -u` when expanding an
+  # EMPTY array with "${arr[@]}" (a bash 3.2 nounset quirk fixed in
+  # bash 4+) -- so branch on CREDENTIAL instead of building an args array.
+  if [[ -n "$CREDENTIAL" ]]; then
+    scripts/evals-container exec quorum run "$dest" \
+      --coding-agent "$CODING_AGENT" \
+      --credential "$CREDENTIAL" \
+      --out-root "results/cx-eff-$SCEN-$ARM-rep$r"
+  else
+    scripts/evals-container exec quorum run "$dest" \
+      --coding-agent "$CODING_AGENT" \
+      --out-root "results/cx-eff-$SCEN-$ARM-rep$r"
+  fi
 }
 
 rep_last=$((REP_START + REPS - 1))

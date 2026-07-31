@@ -2395,3 +2395,125 @@ harness, Step 3), full 36-run matrix, scoring, and manual hand-inspection
 of one trajectory per harness per arm (4 total, non-circular -- reading
 `trajectory.json` directly, not through the scorer) follow in later log
 entries.
+
+### 2026-07-30 — T4 LAYER 3 SMOKE TEST: both harnesses healthy; ANOMALY caught and fixed -- score_t4_regression.py never detected native Skill-tool writing-plans invocations (Task 11)
+
+**Smoke test (Step 3, fix arm, `cc-ceremony-bounded` rep1, both
+harnesses): PASS.** `claude`: `gauntlet.status: pass`, `final: pass`,
+$0.99 (opus). `gemini`: `gauntlet.status: pass`, `final: pass`, $2.08
+(model self-reports as `gemini-3.5-flash` -- `gemini_default`'s
+`credentials.yaml` entry pins no model, "Gemini CLI defaults its own
+model," so this is expected, not an anomaly). Both post-checks
+(`investigated`) passed. Hand-inspected both `trajectory.json` files
+directly (non-circular):
+- `claude`: `agent.name: "claude-code"`, 23 steps, tool census
+  `{Bash:6, Read:2, Edit:8}`. `first_code_file` is an ABSOLUTE path
+  (`/workspace/evals/.../coding-agent-workdir/tests/test_server.py`) --
+  Claude's normalizer records absolute `file_path` values, unlike
+  Codex's repo-relative paths. Verified `score_t4_regression.py`'s
+  `ceremony_doc_kind()`/`is_code_path()` are robust to this: both anchor
+  on the `(^|/)docs/superpowers/(specs|plans)/` pattern as a substring
+  match, not a strict path prefix, so absolute vs. relative paths score
+  identically. Census: 0 spec docs, 0 plan docs, `writing_plans_invoked:
+  false` -- correct for bounded.
+- `gemini`: `agent.name: "gemini"`, 29 steps, tool census
+  `{update_topic:2, Skill:4, Read:8, Bash:9, Edit:3,
+  read_background_output:1}`. Census: 0 spec docs, 0 plan docs,
+  `writing_plans_invoked: false` -- also correct for bounded.
+
+**Caveat discovered, disclosed, not gated (does not affect this
+battery's criteria, all of which are `spec_docs_written`/
+`writing_plans_invoked`-based, not `user_turns`-based):** the gemini
+trajectory's `sources` census is `{'agent': 29}` -- ZERO `source:
+"user"` steps, so `user_turns_before_first_code` is structurally 0 for
+this rep regardless of how many clarifying exchanges actually happened.
+Root-caused by reading `superpowers/evals/src/normalize/gemini.ts`
+directly: its per-message loop is `if (message['type'] !== 'gemini')
+continue` -- it only ever processes the agent's own `'gemini'`-typed
+messages from the raw session log; any `'user'`-typed message is
+silently skipped, and the `source: 'user'` fallback step it does emit
+only fires when the WHOLE trajectory has zero steps (not this rep's
+case). This is a genuine gap in quorum's own Gemini normalizer, not
+something in scope for this task's scenario/scorer files to fix -- flagged
+here so any future battery reading `user_turns_before_first_code` for a
+Gemini cell knows the field is not meaningfully comparable to Claude's or
+Codex's for that harness.
+
+**ANOMALY caught by the required hand-inspection, before the expensive
+part of the matrix ran:** neither smoke rep's agent happened to invoke
+the writing-plans skill (correct for bounded, per criterion (c)), so
+this specific gap did not surface in the smoke reps' own numbers -- it
+was caught by inspecting the RAW tool-call vocabulary each harness
+actually used, not by a wrong smoke-test number. `score_t4_regression.py`
+'s `_writing_plans_invoked()` (Task 10) only recognized two patterns:
+a `Read`-type call, or a `Bash` command string, both containing the path
+substring `skills/writing-plans`. Both patterns describe how CODEX loads
+skill content (`sed`/`cat`-ing `SKILL.md` via the shell, or reading it via
+a discrete Read call) -- but per `superpowers/evals/src/detect/skill.ts`'s
+`isSkillInvocation` (the already-tested detector behind `check-transcript
+skill-called`), Claude Code and Gemini instead invoke a NATIVE `Skill`
+tool call whose `arguments.skill` is the fully-qualified skill id (e.g.
+`"superpowers:writing-plans"`) -- confirmed directly from the gemini
+smoke rep's own raw `Skill` tool calls (`{"name": "brainstorming",
+"skill": "superpowers:brainstorming"}` and 3 others, none for
+writing-plans on this bounded rep, but the SHAPE is unambiguous). Neither
+of `score_t4_regression.py`'s two recognized patterns matches a `Skill`
+tool call at all, so **every genuine writing-plans invocation by Claude
+or Gemini via the native tool would have scored `writing_plans_invoked:
+false`** -- a false negative that would have silently failed criterion
+(b) (fix-arm arch cells, `writing_plans_invoked` 3/3) for BOTH
+cross-harness cells regardless of whether the fix arm's router text
+actually worked, making the battery's headline arch criterion
+unmeasurable as originally scored.
+
+**Fix (committed with this entry, before any further battery spend):**
+added a third pattern to `_writing_plans_invoked()` -- a native `Skill`
+tool call whose `skill` argument equals exactly `"superpowers:
+writing-plans"` -- mirroring `isSkillInvocation`'s own pattern 1 exactly
+(same argument key, same exact-match semantics, deliberately not a
+substring match so a `Skill` call for a different skill, e.g.
+`brainstorming`, is never mistaken for writing-plans). Two new unit
+tests added to `test_score_t4_regression.py` (positive: a `Skill` call
+with `skill: "superpowers:writing-plans"` detected; negative: a `Skill`
+call with `skill: "superpowers:brainstorming"` NOT detected) -- both
+pass, and the full suite (`test_score_t4_regression.py` 19 tests +
+`test_score_t4_regression_report.py` 16 tests) passes clean, 35/35.
+
+**Independent, non-circular confirmation against REAL data (not just the
+synthetic unit tests):** rather than trust the fix on synthetic fixtures
+alone, ran one additional diagnostic rep beyond the pre-registered 2-run
+smoke -- `fix` arm, `claude`, `cc-ceremony-arch`, rep1 (the scenario
+class criterion (b) actually gates). Read the RAW `.claude/projects/**/
+*.jsonl` session log directly (not through any normalizer or scorer)
+mid-run and found three native `Skill` tool_use blocks: `{"skill":
+"superpowers:brainstorming"}`, `{"skill": "superpowers:writing-plans"}`,
+`{"skill": "superpowers:subagent-driven-development"}` -- exactly the
+predicted shape, confirming the fix targets a real, live behavior, not a
+hypothetical one. Let the rep run to completion (36m13s coding time,
+$7.25, `gauntlet.status: pass`, subagent-driven-development path chosen,
+14/14 tests passing on the merged branch). Re-scored its
+`trajectory.json` with the FIXED scorer: `spec_docs_written: 1,
+plan_docs_written: 1, doc_writes_before_first_code: 2,
+writing_plans_invoked: true` -- exactly what criterion (b) requires, and
+exactly what the OLD (unfixed) scorer would have missed
+(`writing_plans_invoked: false` under the old code, since this rep's only
+writing-plans signal is the native `Skill` call). **This diagnostic rep
+is itself a legitimate, complete `fix x claude x arch` rep1 (same
+`results/cx-eff-cc-ceremony-arch-fix-rep1` RUNDIR the real matrix would
+have produced for rep1 of that cell) -- it is retained and counted as
+that cell's rep1 in the full matrix below, not discarded, so this
+diagnostic spend is not wasted budget.**
+
+**Cost so far (3 reps: 2 pre-registered smoke + 1 additional
+diagnostic):** claude bounded rep1 $0.99, gemini bounded rep1 $2.08,
+claude arch rep1 $7.25 -- **$10.32**, all three retained as real reps
+toward the 36-run matrix (fix x claude x bounded rep1, fix x gemini x
+bounded rep1, fix x claude x arch rep1 respectively).
+
+**Status: smoke test PASSED on both harnesses; one real scorer defect
+found and fixed BEFORE it could silently invalidate the arch criterion
+across the whole matrix, confirmed against live data, not merely
+inferred from a code read.** Proceeding to the remaining matrix: 33 more
+reps (dev x claude x 3 scenarios x 3 reps = 9; dev x gemini x 3 x 3 = 9;
+fix x claude x {bounded: 2 more, arch: 2 more, spike: 3} = 7; fix x
+gemini x {bounded: 2 more, arch: 3, spike: 3} = 8).
