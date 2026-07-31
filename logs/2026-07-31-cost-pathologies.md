@@ -58,7 +58,10 @@ set); (b) advisory-stall elicitation moves into X2's baseline via seeded
 fixtures, since the field corpora cannot falsify it. If both come back null
 again, the taxonomy entries close honestly and X2's contract text is graded
 purely as a guardrail (must-not-harm), not a fix. M0's own entry lands in
-this log when it completes.
+this log when it completes. Operationally for X2: "null" means the seeded
+fixture's control arm shows zero advisory-stall behavior at all — no
+BLOCKED/NEEDS_CONTEXT/human escalations and no reviewer findings on the
+advisory mismatches even before any treatment arm runs.
 
 ## Pre-registered criteria
 
@@ -131,10 +134,6 @@ produce zero BLOCKED/NEEDS_CONTEXT/human escalations and zero reviewer
 findings, spec compliance preserved, AND the genuine conflict still
 escalates (the discrimination guard — an arm that stops ALL escalation
 fails).
-
-Per the M0 note above: if the M0(b) baseline comes back null (no
-advisory-stall behavior at all in the seeded fixture's control arm), X2's
-arms are graded purely as a must-not-harm guardrail, not a fix.
 
 ### X3. Source-cited requirements
 
@@ -253,8 +252,11 @@ block; clean flows must not gain interrupts.
 ### X9. Non-blocking adjudication (new, Amendment 2)
 
 Principle, verbatim intent: subagent-driven development should never stall
-out waiting for a human unless there is a catastrophic failure. Human input
-to a running SDD session is ASYNC-ADVISORY, not blocking.
+out waiting for a human unless there is a catastrophic failure. The
+donated session's 8h48m dormant overnight wait is the anti-pattern: the
+interrupt cost ~zero tokens but a full working day of wall-clock and human
+attention. Human input to a running SDD session is ASYNC-ADVISORY, not
+blocking.
 
 Proposed catastrophic boundary (the only legitimate blocking stops):
 irreversible/destructive operations; security-sensitive actions; external
@@ -285,6 +287,45 @@ collaboration norms favor stop-and-ask in interactive work. This directive
 is scoped to autonomous SDD execution, where the human has already
 delegated the plan; the catastrophic boundary and the explicit-permission
 carve-outs (merges/pushes) preserve the norms that must survive.
+
+### 2026-07-31 — Task 1 review round 1: two in-place corrections to the criteria section
+
+Task review (round 1 of 5) approved contingent on a fix round, with two
+Important findings against the initial commit (fafae56, "docs: open the
+cost-pathologies hypothesis log"):
+
+1. The X9 "Principle, verbatim intent" quote silently dropped a sentence
+   from the design doc's Amendment-2 principle paragraph ("The donated
+   session's 8h48m dormant overnight wait is the anti-pattern: the
+   interrupt cost ~zero tokens but a full working day of wall-clock and
+   human attention."). Fixed: the sentence is restored in place.
+2. The X2 section carried an undisclosed synthesized addition ("Per the
+   M0 note above: if the M0(b) baseline comes back null...") inside a
+   section whose header claims verbatim reproduction. Fixed: that
+   sentence is removed from X2's block (now exactly as the design doc has
+   it) and its content relocated into the M0 note above, phrased as an
+   explicit operational gloss on "null" rather than left unmarked.
+
+Controller ruling relied on for these edits: since this log was pre-use
+(one commit, cited by nothing yet), the criteria section could be
+corrected in place for exactly these two findings rather than superseded
+by a new entry, PROVIDED this disclosure entry is appended. No other
+in-place changes were made.
+
+Two minors were raised in the same review and deferred to this ledger
+(no text change made for either): the M0 note is a lossy paraphrase of
+the design doc's M0 section (M0's executor should re-read the design doc
+directly rather than rely on this log's summary); the X4 "Signature:"
+line is a reword rather than a verbatim design-doc quote.
+
+**Append-only binds strictly from this commit forward.** Every commit to
+this log after this entry only ever appends; any further correction to
+already-committed text is itself a new dated entry, never an in-place
+edit.
+
+**Privacy sweep:** the standing grep run against the staged diff
+immediately before committing this entry, filtered of `remote-host` — no
+match, clean.
 
 ## Budget ledger
 
