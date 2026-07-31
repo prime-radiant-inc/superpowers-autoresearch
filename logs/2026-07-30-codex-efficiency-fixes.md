@@ -3551,3 +3551,71 @@ log's append-only rule.
 
 **Privacy sweep:** the standing grep run against the staged diff
 immediately before committing this entry -- no match, clean.
+
+### 2026-07-31 — CLOSEOUT: fix-cycle report published; final budget ledger row (Task 14)
+
+This is the fix cycle's closing entry. Full writeup:
+`reports/2026-07-codex-efficiency-fix-cycle.md` — verdict table for all
+five treatments (all PASS as of the last battery round; T5 PASS on its
+root-backstop branch, inconclusive-by-zero at depth-2 as pre-registered),
+the battery cost history with a reconciliation against this log's own
+`**Ledger row:**` entries, what was not shipped (`433184c`, held back per
+the whole-branch review's **I3** finding, Jesse ruled drop), the parked
+findings queue for the next tightening round (**I1**, **I2**, **M1-M5**,
+`433184c`'s re-word, the pre-existing Claude+spike investigation-scoping
+pathology, the T4 arch-scenario 2.4% margin), the Phase 2 queue restated
+from the design spec with what each of its 5 items still needs, the PR
+staging state (six branches pushed, zero PRs open, the docs branch's
+named-contributor/trust-judgment and machine-path redaction questions
+still open for Jesse), and five process lessons (three full battery
+rounds of honest FAIL -> fix -> PASS; the round-3 `timeout_ms`-uniformity
+narrative overclaim and its correction; the two audit-trail attribution
+corrections, Task 11's privacy-sweep-disclosure gap and Task 12b's
+arm-refresh attribution; the Task 16 wrong-checkout incident and its
+repair; and the unresolved Monitor-tool-avoidance pattern carried over
+from the prior campaign's own closeout).
+
+**Reconciliation, reproduced from the report:** summing this log's eight
+`**Ledger row:**` dollar figures (26.82+24.89+33.47+15.23+16.87+141.04+
+2.27+2.02) gives $262.61 exactly; summing the corresponding rep counts
+(6+8+8+9+7+36+8+7) gives 89. Two disclosed gaps sit inside those totals
+rather than on top of them: the T4 layer-3 row's $141.04 covers only 33
+of its 36 completed/scored reps (3 Claude-spike reps have no economics
+block, real spend, unmeasured); round 1's 2 Docker-crash reps and
+triggering round 2's 1 interrupted codex rep are excluded from both the
+rep counts and the dollar figures at the point each occurred. T4 layer
+1's MICRO (75 `claude-opus-4-8` API calls, cost never captured by the
+script) is excluded from both the run count and the total entirely. True
+total spend is therefore somewhat higher than $262.61 — none of it
+estimated, all of it disclosed.
+
+**Final budget ledger row:** 2026-07-31 | Fix-cycle total (5 treatments,
+8 battery rounds/layers, 89 reps with a measured cost) | $262.61 | vs.
+the prior eval campaign's $153.2 | combined ≈$415.81 against the shared
+$1000 budget line, ≈42% -- never near the $250 checkpoint.
+
+**Privacy sweep — this entry and the published report:** the standing
+grep (private project/client codenames, `PRI-[0-9]` ticket IDs) plus a
+targeted check for the campaign's Drew-related identifiers, both run
+against the report file and this entry's staged diff — no match, clean.
+The report uses `[name]` rather than the actual contributor name when
+describing the docs-branch redaction question (§7 of the report), the
+same substitution this log has used throughout for that same question.
+
+**Push:** before this entry, `superpowers-autoresearch` `main` was 26
+commits ahead of `origin/main`, none previously swept as a batch. Ran the
+full-history sweep this task's dispatch instruction specified —
+`git log origin/main..main --format=%H`, `git show` on each of the 26
+commits, grepped for the standard needle set
+(`paradise|magic-kingdom|flower|pallas|web1|teststrip|PRI-[0-9]`) plus
+`Drew` — one incidental match (a commit message quoting the sweep pattern
+itself, not a leak) and zero `Drew` matches across all 26 commits. Also
+checked person-name possessives, hostnames, absolute `/Users/jesse` paths
+(11 already present in the previously-pushed log, confirmed this is an
+existing, accepted pattern on this public repo, not a new class), UUIDs
+(all our own battery rollout IDs, not an external corpus's), and
+secret-shaped strings — all clean or already-accepted. No named-
+contributor trust judgment appears in any of the 26 commits (that
+sentence lives only in the superpowers repo's design-spec doc, which is
+not part of this push). Pushed `main` to `origin/main` after this entry
+committed.
