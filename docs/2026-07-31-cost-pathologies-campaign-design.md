@@ -294,3 +294,59 @@ human-interrupt count, and cost.
 The 3-restarts-in-an-hour gate-suite pattern (escalating token cost per
 restart) joins the 12× duplicate-regression baseline as X5's primary
 targets; "by design" today, which is exactly what a lease would change.
+
+---
+
+## Amendment 2 (2026-07-31): SDD never stalls on a human (Jesse directive)
+
+Principle, verbatim intent: subagent-driven development should never
+stall out waiting for a human unless there is a catastrophic failure.
+The donated session's 8h48m dormant overnight wait is the anti-pattern:
+the interrupt cost ~zero tokens but a full working day of wall-clock and
+human attention. Human input to a running SDD session is
+ASYNC-ADVISORY, not blocking.
+
+**Proposed catastrophic boundary (the only legitimate blocking stops):**
+irreversible/destructive operations; security-sensitive actions;
+external side effects under explicit-permission norms (merges, pushes to
+shared branches, publishing); and plan defects so total that every
+forward path is speculative. Everything else — plan conflicts, contract
+ambiguities, cap exceptions, spec-vs-plan tensions — gets a controller
+RULING: decide using the spec as the binding authority, record the
+ruling and its reasoning in the ledger, proceed, and surface all rulings
+prominently at session end (plus async notification where available) so
+the human can override with rework rather than being required for
+progress. Wrong-ruling rework is the accepted price; it is bounded and
+measurable, while stalls are unbounded.
+
+**Effects on the portfolio:**
+- **X9 (new): non-blocking adjudication.** Arms: (A) rule-log-proceed
+  (controller adjudicates non-catastrophic conflicts with recorded
+  rulings; end-of-session rulings report); (B) rule-log-proceed + async
+  surfacing (notification/comment at ruling time — human CAN intervene,
+  never must); (C) control (current ask-and-wait text). Fixture: the
+  donated session's conflict shapes re-seeded (sequencing conflict,
+  contract conflict, cap exception) PLUS one seeded catastrophic case
+  (e.g., a step requiring a destructive migration on shared state).
+  Criteria: zero blocking waits on the non-catastrophic seeds, the
+  catastrophic seed STILL stops (discrimination guard), rulings all
+  ledgered and surfaced, and total cost (including any wrong-ruling
+  rework) vs control.
+- **X7 reframed:** preflight conflicts found by any arm produce
+  RULINGS + ledger entries by default, not a blocking batched question;
+  the current skill text's "present as one batched question" becomes a
+  control-arm behavior. Evidence output (X7-A/B) doubles as the ruling's
+  audit trail.
+- **X8 reframed:** the anti-reuse arms surface new substantive decisions
+  as recorded rulings with async notification — never blocking re-asks.
+  The guard flips accordingly: the catastrophic class must still block;
+  clean flows must not gain interrupts.
+- **X1 wave-cap arms:** X1-E (auto-second-wave on verification-found
+  regressions, scoped, logged) is now the directive-aligned default
+  candidate; X1-F (human-exception) demotes to control.
+
+Tension noted for the record: the maintainer's global collaboration
+norms favor stop-and-ask in interactive work. This directive is scoped
+to autonomous SDD execution, where the human has already delegated the
+plan; the catastrophic boundary and the explicit-permission carve-outs
+(merges/pushes) preserve the norms that must survive.
