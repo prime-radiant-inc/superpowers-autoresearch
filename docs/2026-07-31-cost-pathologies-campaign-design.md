@@ -220,3 +220,77 @@ Estimated total ≈ $375, reserve ≈ $200 for re-runs and surprises.
 - PA persistent-session hygiene (separate track, flagged to Jesse).
 - RoboRev, token telemetry (still separate codebases).
 - Adopting Drew's stack text (his PR evals proceed independently).
+
+---
+
+## Amendment 1 (2026-07-31): Drew's donated session — verified findings
+
+A donated SDD session (verified against its rollout, analysis in the
+_tmp corpus) adds two experiments, one arm, and two baseline
+corrections:
+
+**Verified narrative, with corrections:** (1) the task-sequencing
+conflict WAS derivable from plan text, and the orchestrator declared
+"preflight conflict scan is clean" 90 seconds before the Task 1
+implementer hit it — the scan ran and missed it (or ran performatively);
+(2) the contract conflict lived ~80 lines apart in ONE brief — a clean
+compliance miss, not a capability gap; (3) the second-fix-wave approval
+was legitimate (a cross-task regression only a live full-verification
+run could find). New finding the donor didn't flag: a standing 8-hour-old
+"fix it, then proceed" approval was reused to license an unrelated
+substantive design decision without re-asking — approval-scope creep.
+
+**Cost corrections that reshape priorities:** human-approval interrupts
+cost ~zero tokens (the root thread goes fully dormant; the cost is
+wall-clock and human attention — 8h48m, 2m, 24m here). The token driver
+was the full gate suite restarting three times in under an hour (1.16M →
+2.61M → 4.37M tokens) — prime X5 baseline material. And the "extra" fix
+wave was CHEAPER than the routine first wave (3.98M vs 5.53M tokens);
+the cap's real cost is the interrupt, and shipping the regression would
+cost more than either.
+
+### X7. Preflight that produces evidence (new)
+
+Compliance failure, not capability gap → arms attack the compliance
+mechanism:
+- **X7-A evidence-bearing scan**: preflight must OUTPUT its pairwise
+  checks (per task pair: interfaces consumed/produced compared; per
+  brief: internal test-vs-code consistency) — "scan is clean" without
+  the table is non-compliant.
+- **X7-B mechanical consistency check**: a script over the plan's
+  Files:/Interfaces: blocks (delete-vs-consume collisions, identifier
+  mismatches between test and pseudocode blocks) run at sdd-workspace
+  setup; prose scan only for what the script cannot see.
+- **X7-C control**: current "scan the plan once" prose.
+Fixture: plans seeded with (a) a delete-vs-need sequencing conflict,
+(b) an intra-brief contract mismatch, (c) NO conflict (false-positive
+guard — an arm that blocks clean plans on invented conflicts fails).
+Criteria: seeded conflicts surfaced BEFORE Task 1 dispatch; clean plan
+proceeds uninterrupted.
+
+### X8. Approval scope (new, small)
+
+Pathology: standing approvals reused for new substantive decisions.
+Arms: (A) scope-bound approvals text (an approval covers the decision it
+answered; new substantive decisions re-ask — mirrors the maintainer's
+own explicit-confirmation norm); (B) approval-ledger discipline (each
+approval logged with its scope; dispatches cite the covering entry);
+(C) control. Fixture: a session shaped to tempt reuse (early broad
+"yes, fix it" + later unrelated design fork). Guard: routine mechanical
+decisions must NOT start re-asking (interrupt count on clean flows is a
+criterion, not just reuse count).
+
+### X1 addendum — the one-wave-cap arm set
+
+Round-2 evidence: wave 2 cheaper than wave 1; interrupt is the cost.
+New competing arms inside X1: (E) auto-second-wave permitted ONLY when
+full verification (not a review) finds a regression, with scope shrunk
+to the regression; (F) status quo (cap + human exception); (G) hard cap
+(route residuals to finishing gates). Graded on regression escape,
+human-interrupt count, and cost.
+
+### X5 baseline upgrade
+
+The 3-restarts-in-an-hour gate-suite pattern (escalating token cost per
+restart) joins the 12× duplicate-regression baseline as X5's primary
+targets; "by design" today, which is exactly what a lease would change.
