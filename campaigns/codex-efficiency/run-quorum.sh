@@ -21,6 +21,15 @@
 # strictly sequentially. JOBS=1 (or REPS=1) keeps the original sequential
 # loop.
 #
+# Env CODING_AGENT (default codex) selects which Coding-Agent quorum drives
+# (passed straight through as `--coding-agent`) -- added for the T4 layer-3
+# cross-harness regression battery (Task 11), which runs the same scenarios
+# against claude/gemini instead of codex. Env CREDENTIAL (unset by default)
+# adds `--credential <name>` when set, e.g. CREDENTIAL=opus to use the
+# ANTHROPIC_API_KEY-based `opus` credential instead of claude.yaml's
+# Bedrock-only default_credential (`opus_bedrock`, which needs
+# AWS_BEARER_TOKEN_BEDROCK -- not provisioned in either lane's .env.container).
+#
 # ARM selects which superpowers checkout is mounted into the container as
 # SUPERPOWERS_ROOT: 'dev' -> /tmp/sp-arm-dev (origin/dev), 'spinout' ->
 # /tmp/sp-arm-spinout (origin/codex-spinout-fixes), 'v611' ->
@@ -46,6 +55,8 @@ set -euo pipefail
 EVALS=${EVALS_ROOT:-/Users/jesse/git/superpowers/superpowers/evals}
 CAMP=/Users/jesse/git/superpowers/superpowers-autoresearch/campaigns/codex-efficiency
 JOBS=${JOBS:-1}
+CODING_AGENT=${CODING_AGENT:-codex}
+CREDENTIAL=${CREDENTIAL:-}
 
 ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611 | fix)"}
 SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: dev | spinout | v611 | fix)"}
@@ -80,6 +91,10 @@ dest="scenarios/$SCEN"
 rm -rf "$dest"
 mkdir -p "$dest"
 rsync -a --exclude=fixtures "$CAMP/scenarios/$SCEN/" "$dest/"
+# Strips a "cx-" prefix (a no-op for the cc-ceremony-* cross-harness variants,
+# which are a no-op here by construction: their fixtures/cc-ceremony-* symlinks
+# are named to match the UNSTRIPPED scenario name, so resolution still lands
+# on fixtures/ceremony without touching this line).
 fixture_dir="$CAMP/fixtures/${SCEN#cx-}"
 if [[ -d "$fixture_dir" ]]; then
   mkdir -p "$dest/fixtures"
@@ -97,9 +112,12 @@ scripts/evals-container --superpowers-root "$SP_ROOT" up
 
 run_rep() {
   local r=$1
-  echo "===== run-quorum: $ARM $SCEN rep$r ====="
+  echo "===== run-quorum: $ARM $SCEN rep$r ($CODING_AGENT) ====="
+  local cred_args=()
+  [[ -n "$CREDENTIAL" ]] && cred_args=(--credential "$CREDENTIAL")
   scripts/evals-container exec quorum run "$dest" \
-    --coding-agent codex \
+    --coding-agent "$CODING_AGENT" \
+    "${cred_args[@]}" \
     --out-root "results/cx-eff-$SCEN-$ARM-rep$r"
 }
 

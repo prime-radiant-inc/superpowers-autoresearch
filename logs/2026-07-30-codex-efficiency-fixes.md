@@ -2174,3 +2174,224 @@ top. Recommend treating the arch budget margin as a live risk, not a
 closed question, if any future round reuses this scenario without
 re-checking actual rep durations against whatever ceiling is in
 force.
+
+### 2026-07-30 — T4 LAYER 3 PRE-REGISTRATION: global regression battery on Claude Code + Gemini (Task 11)
+
+Layer 2 (immediately above) validated the fix arm's ceremony behavior on
+Codex specifically. Layer 3 asks whether the SAME router text (Task 5's
+commit `5ea8821`, unchanged since layer 1/2) produces the SAME ceremony
+shape on two other harnesses -- Claude Code and Gemini -- and whether the
+fix arm regresses gauntlet completion relative to `dev` on either. This is
+cross-harness regression evidence, not a new treatment: the router text
+under test is identical to layer 2's; only the Coding-Agent driving it
+changes.
+
+**Arm SHAs (verified this task, per this task's explicit instruction --
+NOT refreshed):**
+- `dev`: `git -C /tmp/sp-arm-dev log --oneline -1` -> `bb2a34b` (matches
+  `origin/dev` tip as supplied).
+- `fix`: `git -C /tmp/sp-arm-fix log --oneline -1` -> `433184c` (matches
+  the SHA already graded by layer 2 round 2, immediately above -- this
+  battery adds no new commits on top).
+
+**Scenario porting (Step 1, committed with this entry):** copied
+`scenarios/cx-ceremony-{spike,bounded,arch}/{story.md,setup.sh,checks.sh}`
+to new `scenarios/cc-ceremony-{spike,bounded,arch}/` directories (the
+`cx-` scenarios are left untouched -- still codex-only, still used by
+other batteries in this campaign). Changes made during the port, all
+disclosed:
+- `story.md`: `id`/`title`/`tags` updated to the `cc-` name and a
+  "cross-harness" tag; task prose, Acceptance Criteria, and (for arch)
+  the round-2-bumped `quorum_max_time: 45m` carried over VERBATIM
+  otherwise -- the arch budget bump is kept for the cc- variants too, per
+  this task's brief, and is disclosed here rather than silently inherited.
+- `setup.sh`: dropped `symlink_superpowers` from the helper chain (now
+  just `setup-helpers run init_repo_from_fixtures`). Confirmed
+  codex-only by grepping every scenario that calls this helper in the
+  evals scenario library: every one of them (`cx-ceremony-*`,
+  `cx-compaction`, `cx-branch-review`, `cx-scope-review`,
+  `cx-sdd-small*`, `codex-tool-mapping-comprehension`,
+  `codex-subagent-wait-mapping`) is `# coding-agents: codex`-gated; no
+  cross-harness scenario in the library (e.g. the
+  `coding-agents: claude,codex,gemini,kimi` family) calls it. Reading
+  `symlinkSuperpowers` (`src/setup-helpers/worktree.ts`) confirms why: it
+  symlinks `<workdir>/.agents/skills/superpowers` -> `<superpowersRoot>/
+  skills`, which is specifically how Codex's own skill-loading convention
+  (grep the workdir's `.agents/skills/`) finds the plugin -- Claude and
+  Gemini are provisioned separately, at the agent-adapter level (isolated
+  `$HOME/.claude` / `$HOME/.gemini` seeding), not through this workdir
+  symlink. Confirmed via a THIRD signal beyond "codex-only story tag" and
+  "handler reads codex-shaped path": `link_gemini_extension` is Gemini's
+  own analogous helper and no scenario in the library calls it either --
+  every cross-harness scenario relies on quorum's automatic per-agent
+  provisioning and calls neither helper.
+- `checks.sh`: `# coding-agents: codex` -> `# coding-agents: claude,gemini`
+  (Gemini needs `GEMINI_API_KEY`, present in both lanes' `.env.container`
+  -- confirmed by name only, `grep -oE '^[A-Z_]+'`, value never printed).
+  `post()`'s codex-specific `file-exists
+  "$QUORUM_RUN_DIR/home/.codex/sessions/**/rollout-*.jsonl"` check
+  (meaningless for claude/gemini, which write session logs to different
+  paths entirely -- `.claude/projects/**/*.jsonl` /
+  `.gemini/tmp/**/chats/**/*.json*` per `coding-agents/{claude,gemini}
+  .yaml`) is replaced with `check-transcript investigated`: a
+  cross-harness transcript verb (`src/check/verbs.ts` `verbInvestigated`)
+  that passes on a native `Read`/`Grep` call OR a shell `grep`/`rg` via
+  `Bash`. Confirmed cross-harness-safe by reading
+  `src/normalize/gemini.ts`'s `GEMINI_TOOL_MAP`: `read_file` -> `Read`,
+  `grep_search` -> `Grep`, so Gemini's native investigation tools
+  normalize onto the same verb Claude's native `Read`/`Grep` do. This is
+  deliberately NOT a doc-count or writing-plans assertion -- per this
+  task's brief ("post-checks must never assert the measured doc
+  behavior"), the post-check corroborates only that the agent visibly
+  engaged with the existing code before changing it (the same fact each
+  story's own Acceptance Criteria already require in prose: "visibly
+  engaged with the existing code's structure," "visibly located the
+  service's existing... code," "visibly investigated"), leaving the
+  ceremony census itself entirely to the scorer, ungated by `checks.sh`
+  and therefore incapable of biasing pass/fail toward either arm's
+  ceremony behavior.
+- `fixtures/cc-ceremony-{spike,bounded,arch}` symlinks added (-> `ceremony`,
+  identical to the pre-existing `fixtures/ceremony-{spike,bounded,arch} ->
+  ceremony` symlinks the `cx-` scenarios use) -- required because
+  `run-quorum.sh`'s fixture-resolution line strips only a literal `cx-`
+  prefix (`${SCEN#cx-}`); for a `cc-` scenario name that strip is a no-op,
+  so the symlink is named to match the UNSTRIPPED scenario name instead of
+  changing that line's stripping behavior (documented inline in
+  `run-quorum.sh` at the point of use).
+- Validated with `bun run quorum check cc-ceremony-spike cc-ceremony-bounded
+  cc-ceremony-arch` in BOTH lanes after syncing the new scenario dirs in
+  (the same rsync `run-quorum.sh` performs before every run) -- `ok` for
+  all three scenarios plus `ok credentials` in both lanes. Also ran the
+  full unscoped `bun run quorum check` in lane A (every other scenario in
+  the library) to confirm nothing else regressed -- all `ok`.
+
+**`run-quorum.sh` change (Step 1, committed with this entry, disclosed
+per the brief's explicit instruction):** the script hardcoded
+`--coding-agent codex` with no way to select another harness. Added two
+new env vars, both backward-compatible (unset = old behavior exactly):
+`CODING_AGENT` (default `codex`, passed straight through as
+`--coding-agent`) and `CREDENTIAL` (unset by default; when set, adds
+`--credential <name>`). This is the "extend the script minimally" option
+from the brief's Step 1, not the `bun run quorum run` direct-invocation
+alternative -- chosen because it preserves the script's existing
+arm-selection/container-reup/rsync/exclude machinery, which this battery
+still needs unchanged.
+
+**Credential note (why `CREDENTIAL=opus` for Claude runs):**
+`coding-agents/claude.yaml`'s `default_credential` is `opus_bedrock`
+(`api_key_env: AWS_BEARER_TOKEN_BEDROCK`, per `credentials.yaml`).
+Checked both lanes' `.env.container` (`grep -oE '^[A-Z_]+'`, names only):
+neither defines `AWS_BEARER_TOKEN_BEDROCK` -- only `ANTHROPIC_API_KEY`,
+`GEMINI_API_KEY`, `KIMI_MODEL_API_KEY`. The `opus` credential
+(`api: anthropic`, `api_key_env: ANTHROPIC_API_KEY`, same
+`claude-opus-4-8` model) is provisioned and harness-eligible
+(`harnesses: [claude]`). All Claude cells in this battery therefore run
+with `CREDENTIAL=opus` (`--credential opus`), disclosed here rather than
+silently relying on a default that would fail auth. Gemini cells use
+`gemini_default` unmodified (`GEMINI_API_KEY`, present in both lanes).
+
+**Battery matrix:** `{dev, fix}` arms x `{claude, gemini}` harnesses x
+`{cc-ceremony-spike, cc-ceremony-bounded, cc-ceremony-arch}` x 3 reps =
+**36 runs**, 12 cells of 3 reps each. Lane split: lane A
+(`superpowers/evals`, default `EVALS_ROOT`) runs all 6 Claude cells (18
+runs: dev x 3 scenarios + fix x 3 scenarios); lane B (`evals-lane-b`)
+runs all 6 Gemini cells (18 runs), concurrently with lane A. This is an
+operational choice, not a scoring dependency -- `verdict.json`'s own
+`coding_agent` field is what `score_t4_regression_report.py` (this
+task's new aggregator, see below) actually keys cells on, so a lane/agent
+mismatch would be caught, not silently misattributed; the split simply
+avoids two different harnesses fighting over one lane's container at
+once. Within each lane, cells run scenario-by-scenario grouped by arm
+(all of one arm's 3 scenarios before switching arms) to minimize
+container re-up churn -- `run-quorum.sh` always re-ups on every
+invocation regardless of whether the arm actually changed.
+
+**Scorer:** `score_t4_regression.py` (Task 10, library-only --
+`score_trajectory()`/`score_file()`, no CLI) plus a new committed
+aggregator this task adds, `score_t4_regression_report.py`: walks a list
+of `--out-root` RUNDIRs, resolves each rep's single run subdirectory,
+reads `verdict.json` (`coding_agent`, `gauntlet.status`, `final`,
+`economics.total_est_cost_usd`) and `trajectory.json` (via
+`score_t4_regression.score_file()`), groups into `(arm, coding_agent,
+scenario_class)` cells, and prints/writes the per-run and per-cell
+tables. Covered by `test_score_t4_regression_report.py` (16 synthetic-
+fixture tests, no real quorum output) -- both this new test file and the
+pre-existing `test_score_t4_regression.py` (17 tests, Task 10) pass.
+Output: `out/t4-layer3-<arms>-<agents>-rep<range>.json`; `FORCE` never
+set on the real battery's invocation (a collision is an anomaly, not a
+flag to suppress).
+
+**Doc-count reconciliation note (carried over from this task's brief, so
+verdicts below don't misapply `score_e4.py`'s convention by habit):**
+`score_t4_regression.py`'s `spec_docs_written`/`plan_docs_written` are
+WHOLE-TRAJECTORY counts (every matching write anywhere in the run, not
+gated to before the first code write); `doc_writes_before_first_code` is
+the ONE census field actually gated to before the first code write, and
+is the field this battery's criteria (b)/(c) below are checked against
+alongside the raw `spec_docs_written`/`writing_plans_invoked` fields.
+Separately, and unlike `score_e4.py` (which classifies ANY `*.md` file,
+anywhere, as a doc, and anything under a `docs/` directory as a doc):
+`score_t4_regression.py` classifies a path as a ceremony doc ONLY under
+`docs/superpowers/(specs|plans)/`, and its `is_code_path()` counts a
+NESTED (non-root) `*.md` file as CODE, not doc -- only a bare root-level
+`*.md` (e.g. `README.md`) is excluded from "code." A file such as
+`docs/api.md` (outside `docs/superpowers/`) or `src/README.md` would be
+classified differently by the two scorers. This battery uses
+`score_t4_regression.py` exclusively (per the brief and per Task 10's
+design), so this note is here to keep any cross-battery comparison to the
+layer-2 Codex results (scored by `score_e4.py`) honest about the
+classification difference, not to flag a bug in either scorer.
+
+**Criteria (verbatim from the brief / this log's T4 pre-registered-
+criteria section, layer 3):**
+- (a) **Per-cell gauntlet pass rate, fix >= dev** -- compared per
+  `(harness, scenario_class)` pair across the 3 reps each arm contributes
+  (6 pairs: claude x {spike,bounded,arch}, gemini x {spike,bounded,arch}),
+  using `verdict.json`'s `gauntlet.status == "pass"` rate, matching layer
+  2's own "gauntlet task completion" framing.
+- (b) **Fix-arm arch cells** (`fix x {claude,gemini} x arch`, 2 cells)
+  keep `spec_docs_written >= 1` (i.e. the spec-doc half of the two-doc
+  ritual is written) on every rep, AND `writing_plans_invoked` true on
+  3/3 reps in each cell.
+- (c) **Fix-arm bounded cells** (`fix x {claude,gemini} x bounded`, 2
+  cells) show `spec_docs_written == 0` on every rep, AND
+  `writing_plans_invoked` false on all 3 reps in each cell (no rep in
+  either cell shows a writing-plans skill read).
+- (d) **Dev-arm bounded cells** (`dev x {claude,gemini} x bounded`, 2
+  cells) are recorded as the baseline, not gated against a pass/fail bar
+  -- expected shape (per the dev-arm Codex baseline cited in layer 2's
+  pre-registration) is the unconditional two-doc ritual (spec + plan doc
+  before any code, `writing_plans_invoked` true), and this battery checks
+  whether that shape replicates cross-harness or diverges.
+
+**Budget estimate:** ~$40-80 per the brief, anchored on layer 2's Codex
+measurement ($16.87 for 7 ceremony reps, ~$2.41/rep average) with the
+brief's own framing that "Claude/Gemini runs are the cheap side" (no
+codex subscription-auth overhead; Claude/Gemini token pricing on these
+small ceremony scenarios has historically undercut codex's on this
+campaign's other cross-harness measurements). 36 reps at even 2x the
+Codex per-rep rate would be ~$85, at the money at the top of the
+pre-registered range; actual cost is reported from each rep's own
+`verdict.json.economics.total_est_cost_usd`, not estimated after the
+fact.
+
+**Operational risk flagged before spending:** `df -h
+/System/Volumes/Data` immediately before this entry shows **53Gi free of
+1.8Ti (98% capacity)** -- WORSE than the 103Gi-free/95%-capacity state
+that was a documented contributing factor in the SDD battery round 1
+Docker Desktop crash (Task 8, above). Per that entry's standing
+mitigation, this battery avoids repeating the JOBS=2-per-lane x 2-lanes
+(4-concurrent-agent-session) configuration that preceded the crash;
+concurrency and exact JOBS values are decided per-cell at run time based
+on each scenario class's realistic session count, disclosed in the
+result entry rather than fixed in advance here. Per this task's standing
+operational instruction, a Docker anomaly stops the battery immediately
+or upon a second unrecoverable failure -- honestly reported, not
+retried through a crashing daemon, matching the precedent both the SDD
+round-1 and this log's other batteries already established.
+
+**No run yet -- this is the pre-registration.** Smoke test (1 rep per
+harness, Step 3), full 36-run matrix, scoring, and manual hand-inspection
+of one trajectory per harness per arm (4 total, non-circular -- reading
+`trajectory.json` directly, not through the scorer) follow in later log
+entries.
