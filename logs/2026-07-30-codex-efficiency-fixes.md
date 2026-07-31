@@ -2517,3 +2517,240 @@ inferred from a code read.** Proceeding to the remaining matrix: 33 more
 reps (dev x claude x 3 scenarios x 3 reps = 9; dev x gemini x 3 x 3 = 9;
 fix x claude x {bounded: 2 more, arch: 2 more, spike: 3} = 7; fix x
 gemini x {bounded: 2 more, arch: 3, spike: 3} = 8).
+
+### 2026-07-30 — T4 LAYER 3 RESULT: full 36-run matrix complete; criteria (a)-(d) all PASS/recorded; two real ANOMALIES found and handled (run-quorum.sh silent-truncation bug; a pre-existing Claude+spike investigation-scoping pathology present on BOTH arms) (Task 11)
+
+**All 36 pre-registered reps completed and scored** (`{dev,fix} x
+{claude,gemini} x {spike,bounded,arch} x 3 reps`), via two lane driver
+scripts (claude on lane A, gemini on lane B) launched concurrently,
+plus a small backfill batch (below). `docker ps -a` checked repeatedly
+through the ~5-hour battery: both lane containers stayed `Up` for every
+segment, only re-upping on ARM switches as `run-quorum.sh` always does
+-- no Docker loss, unlike the SDD-battery round-1 crash.
+
+**ANOMALY 1 -- `run-quorum.sh` silently truncates a REPS>1 invocation on
+the FIRST measured fail/indeterminate rep, not just on an infra
+crash.** Discovered when `dev cc-ceremony-spike 3 1` (lane A, JOBS=2)
+returned cell-exit 1 and `results/cx-eff-cc-ceremony-spike-dev-rep3/`
+never appeared on disk at all -- not partially written, not attempted.
+Root cause (read from source, `src/cli/run-command.ts`
+`exitCodeFor`): `quorum run` exits **1 on a measured `fail` verdict**
+and **2 on `indeterminate`**, not only on a genuine crash. Because
+`run-quorum.sh` has `set -euo pipefail`, ANY rep in a batch (JOBS>1) or
+in the sequential loop (JOBS=1) returning nonzero aborts the WHOLE
+remaining rep range immediately -- a batch-internal `wait "$pid" ||
+failed=1` triggers the script's own `exit 1` before the next batch
+starts, and under JOBS=1 `set -e` kills the `for` loop outright. This
+had never surfaced in this campaign's prior batteries by coincidence:
+every fail/indeterminate/`investigate` verdict on record so far
+happened to land in the LAST batch of its invocation (nothing left to
+truncate). `dev cc-ceremony-spike` (rep1 indeterminate, rep2 fail --
+both in batch1 of a JOBS=2/REPS=3 split) is the first battery in this
+campaign where a mid-sequence failure actually hit the bug. Same
+mechanism separately truncated `fix cc-ceremony-spike` (rep1
+indeterminate, in batch1). **No data was lost** -- every rep that DID
+run wrote a complete `verdict.json`/`trajectory.json` before the script
+noticed the failure and exited; only the NEVER-ATTEMPTED reps are
+missing. **Fix:** documented as a known limitation directly in
+`run-quorum.sh`'s header comment (committed with this entry) rather
+than re-architected (would need redesigning both loops' failure
+handling, out of this task's scope) -- future batteries must diff the
+requested rep range against what actually landed on disk. **Handled
+operationally this task:** backfilled the exact two missing reps
+(`dev cc-ceremony-spike rep3`, `fix cc-ceremony-spike rep3`) with two
+separate `REPS=1` calls (immune to the bug by construction -- no "next
+rep" to truncate).
+
+**ANOMALY 2 -- a real, pre-existing Claude+`cc-ceremony-spike`
+investigation-scoping pathology, present on BOTH arms (not a fix-vs-dev
+regression signal).** Of Claude's 6 total spike reps (3 dev + 3 fix,
+including the 2 backfilled), only 1 (`fix` rep2) passed cleanly. The
+other 5 fail in two distinct, both hand-read directly from the
+Gauntlet-Agent's own verdict summary (not inferred):
+- **3 reps (`dev` rep1, `fix` rep1, `fix` rep3): ZERO tool calls.** The
+  agent answered the port-in-use question fluently but never opened
+  `server.py` (the Python stdlib service the story is about) --
+  instead it answered in Node.js/TypeScript/Bun terms
+  (`http.createServer`, `Bun.serve`, `EADDRINUSE`), which the
+  Gauntlet-Agent's own independent `jq`/`grep` pass against the raw
+  session JSONL confirmed contains no `tool_use` entries at all. quorum's
+  composer maps this to `final: indeterminate` (empty-capture rule,
+  `STRICT_CAPTURE_NAMES` includes `claude`) even though the
+  Gauntlet-Agent's own underlying verdict is `fail` in every case --
+  `gauntlet.status` (the field this battery's "gauntlet pass rate"
+  criterion actually grades) correctly reads `fail`, not masked by the
+  `final` field's indeterminate wrinkle.
+- **2 reps (`dev` rep2, `dev` rep3): investigated the WRONG codebase.**
+  The agent ran `grep`/`Read` against
+  `/workspace/evals/packages/dashboard/src/index.ts` -- a
+  TypeScript/Bun file belonging to the EVALS HARNESS ITSELF, visible on
+  disk as a sibling of the scenario's own mounted tree -- and built its
+  entire answer around that unrelated dashboard service, never
+  referencing `server.py` at all despite it sitting in the correct cwd
+  the whole time (confirmed present via `find` in both Gauntlet-Agent
+  transcripts).
+This is symmetric across arms (dev 0/3 gauntlet-pass, fix 1/3) and is
+therefore NOT attributable to the fix arm's router-text change -- it
+reads as a pre-existing weakness specific to (a) Claude, (b) this
+particular spike-class story ("quick and dirty is fine" plus a
+port-in-use question that pattern-matches strongly to generic
+Node.js/web-server training examples), and (c) this container's mounted
+`/workspace/evals` tree exposing the harness's own unrelated source
+alongside the scenario fixture. Gemini shows none of this (6/6 spike
+reps clean, always grounded in `server.py`). Flagged here as a
+methodological caveat for any future reuse of `cc-ceremony-spike`
+against Claude specifically -- not a T4 fix regression, and not gated
+by any pre-registered criterion (none of (a)-(d) require a spike pass
+rate above the trivial fix>=dev comparison).
+
+**Full per-cell results** (from `score_t4_regression_report.py`,
+invoked once across all 36 RUNDIRs from both lanes; output committed at
+`out/t4-layer3-dev-fix-claude-gemini-rep1-3.json`):
+
+| arm | agent | class | n | gauntlet pass | spec docs (mean) | plan docs (mean) | writing-plans invoked | cost ($) |
+|---|---|---|---:|---|---:|---:|---|---:|
+| dev | claude | arch | 3 | 3/3 | 1.00 | 1.00 | 3/3 | 23.11 |
+| dev | claude | bounded | 3 | 3/3 | 0.00 | 0.00 | 0/3 | 2.72 |
+| dev | claude | spike | 3 | 0/3 | 0.00 | 0.00 | 0/2* | 0.88 |
+| dev | gemini | arch | 3 | 3/3 | 1.00 | 1.00 | 3/3 | 40.15 |
+| dev | gemini | bounded | 3 | 3/3 | 1.00 | 1.00 | 3/3 | 8.35 |
+| dev | gemini | spike | 3 | 3/3 | 0.00 | 0.00 | 0/3 | 1.24 |
+| fix | claude | arch | 3 | 3/3 | 1.00 | 1.33 | 3/3 | 20.05 |
+| fix | claude | bounded | 3 | 3/3 | 0.00 | 0.00 | 0/3 | 3.00 |
+| fix | claude | spike | 3 | 1/3 | 0.00 | 0.00 | 0/1* | 0.48 |
+| fix | gemini | arch | 3 | 3/3 | 1.00 | 1.00 | 3/3 | 33.41 |
+| fix | gemini | bounded | 3 | 3/3 | 0.00 | 0.00 | 0/3 | 5.54 |
+| fix | gemini | spike | 3 | 3/3 | 0.00 | 0.00 | 0/3 | 2.13 |
+
+\* `writing_plans_invoked_n` is 2 (dev/claude/spike) and 1 (fix/claude/spike),
+not 3 -- the indeterminate/zero-tool-call reps produce no `trajectory.json`
+census at all (`n_scored` < `n`), so they're excluded from the census
+mean/rate denominators; `gauntlet pass` (from `verdict.json` directly,
+not the census) still counts all 3 reps correctly.
+
+`fix/claude/arch`'s plan-docs mean of 1.33 (not 1.00) is a genuine plan
+REVISION on rep2, hand-verified directly against the raw trajectory
+(one `Write` then one `Edit` to the identical
+`docs/superpowers/plans/2026-07-31-notes-service-library-cli-split.md`
+path) -- the same "plan doc written twice" shape the layer-2 Codex
+battery already documented as expected variance, not a scorer defect.
+
+**Manual, non-circular hand-inspection (reading `trajectory.json`/raw
+session JSONL directly, one rep per harness per arm, 4 total, beyond
+the smoke-test hand-inspection already logged above):**
+- `dev/claude/arch/rep1`: raw `Write`/`Edit` tool-call scan shows
+  exactly one `docs/superpowers/specs/*.md` and one
+  `docs/superpowers/plans/*.md` write, both before the first code file
+  -- matches the scorer's `spec_docs_written:1, plan_docs_written:1`
+  exactly. Also independently confirms this task's own doc-count
+  reconciliation note: `.superpowers/sdd/**/task-N-report.md` files
+  (written by the SDD subagent path this rep took) are NOT under
+  `docs/` and are correctly NOT counted as ceremony docs by
+  `score_t4_regression.py`.
+- `dev/gemini/bounded/rep1`: raw tool-call scan shows
+  `Skill(superpowers:using-superpowers)` ->
+  `Skill(superpowers:brainstorming)` -> `Write(specs/...)` ->
+  `Skill(superpowers:writing-plans)` -> `Write(plans/...)` ->
+  `Skill(superpowers:executing-plans)` -> `Edit(server.py)` x4 ->
+  `Edit(tests/test_server.py)` x2 ->
+  `Skill(superpowers:verification-before-completion)` -- the
+  unconditional two-doc ritual, fully replicated on Gemini's DEV arm
+  even for a bounded-scoped task, matching the scorer's
+  `spec_docs_written:1, writing_plans_invoked:True` exactly.
+- `fix/claude/bounded/rep1` and `fix/claude/arch/rep1`: already
+  hand-inspected in the smoke-test entry above (raw JSONL, zero docs
+  for bounded; native `Skill(superpowers:writing-plans)` call
+  confirmed live for arch).
+- `fix/gemini/bounded/rep1`: already hand-inspected in the smoke-test
+  entry above (zero docs, matches).
+
+**A genuinely surprising, disclosed-not-gated finding under criterion
+(d):** the dev-arm "unconditional two-doc ritual" baseline does NOT
+replicate identically across harnesses. Gemini's `dev` arm reproduces
+it exactly (bounded: 3/3 reps, 1 spec + 1 plan doc each, matching the
+original Codex dev-arm baseline this campaign measured in the prior
+cycle). **Claude's `dev` arm does NOT** -- `dev/claude/bounded` shows
+**zero** ceremony docs on all 3 reps, identical in shape to
+`fix/claude/bounded`. This means, for Claude specifically, the
+before/after doc-ceremony DELTA on bounded is nil (0 -> 0) -- this
+battery cannot show a Claude-side ceremony reduction on bounded because
+Claude's dev arm apparently never had the "always write 2 docs even for
+a one-file flag" pathology to begin with (on this scenario, in this
+container). Per the pre-registration, criterion (d) is explicitly "not
+gated against a pass/fail bar," so this is recorded as the honest
+finding, not a failure -- but it means this battery's cross-harness
+regression evidence for the FIX's marginal contribution on
+`bounded`-class doc ceremony is really a Gemini-only before/after story
+(3/3 ceremony docs on dev -> 0/3 on fix); Claude's contribution is
+better read as "confirmed clean on both arms" than "measurably fixed."
+
+**Criteria verdicts (verbatim against the pre-registration above):**
+
+- **(a) Per-cell gauntlet pass rate, fix >= dev -- PASS, all 6
+  `(harness, scenario_class)` pairs.** claude/spike: dev 0/3 -> fix 1/3
+  (fix >= dev, though both are weak -- see Anomaly 2, a pre-existing
+  pathology on both arms, not a regression). claude/bounded: 3/3 ->
+  3/3 (tied). claude/arch: 3/3 -> 3/3 (tied). gemini/spike: 3/3 -> 3/3
+  (tied). gemini/bounded: 3/3 -> 3/3 (tied). gemini/arch: 3/3 -> 3/3
+  (tied). No cell shows fix < dev anywhere.
+- **(b) Fix-arm arch cells keep `spec_docs_written >= 1` (every rep)
+  AND `writing_plans_invoked` 3/3 -- PASS, both cells.**
+  `fix/claude/arch`: 1,1,1 spec docs (all >=1); `writing_plans_invoked`
+  True on 3/3, hand-confirmed live via the native `Skill` tool-call fix
+  from the smoke-test entry. `fix/gemini/arch`: 1,1,1 spec docs;
+  `writing_plans_invoked` True on 3/3.
+- **(c) Fix-arm bounded cells show `spec_docs_written == 0` (every
+  rep) AND `writing_plans_invoked` false on all 3 reps -- PASS, both
+  cells.** `fix/claude/bounded`: 0,0,0 spec docs, `writing_plans_invoked`
+  False on 3/3. `fix/gemini/bounded`: 0,0,0 spec docs,
+  `writing_plans_invoked` False on 3/3.
+- **(d) Dev-arm bounded cells recorded as baseline -- RECORDED, not
+  gated.** `dev/gemini/bounded` replicates the expected unconditional
+  two-doc ritual (3/3 reps, 1 spec + 1 plan doc each,
+  `writing_plans_invoked` True 3/3) -- matches the original Codex
+  dev-arm baseline this campaign established. `dev/claude/bounded`
+  does NOT replicate it (0/3 ceremony docs, identical in shape to its
+  own fix-arm counterpart) -- a genuine, disclosed cross-harness
+  divergence in the dev-arm baseline itself (see finding above), not a
+  criterion failure.
+
+**Cost -- real, disclosed overrun against the pre-registered ~$40-80
+estimate.** **Total measured: $141.04** across 33 of 36 reps with
+captured economics (the 3 zero-tool-call/indeterminate Claude-spike
+reps have `verdict.json.economics: null` -- genuinely unmeasured, not
+estimated, per this log's standing "no figure exists" convention, same
+as the SDD-battery round-1 Docker-crash reps). By agent: claude $50.24,
+gemini $90.80. By arm: dev $76.44, fix $64.60. By scenario class:
+**arch $116.72 (82.7% of the whole battery), bounded $19.60, spike
+$4.72.** The overrun is entirely explained by Gemini's arch cells:
+`dev/gemini/arch` rep2 alone cost **$26.38** (8.8M+ tokens on
+`gemini-3.5-flash`, the model `gemini_default` floats to since its
+`credentials.yaml` entry pins no model), `fix/gemini/arch` rep2 cost
+$21.18 -- both multiples of any single Claude arch rep ($5.80-$8.31) or
+any Codex arch rep from layer 2 (max $8.21). The brief's own framing
+("Claude/Gemini runs are the cheap side") held for Claude but was WRONG
+for Gemini specifically on the arch scenario class -- Gemini's
+token-per-turn cost on a long, multi-subagent SDD-path arch run is
+substantially higher than either Claude's or Codex's on the same
+scenario shape, not lower.
+
+**Ledger row:** 2026-07-30 | T4 layer-3 global regression battery (T4
+layer 3, `{dev,fix} x {claude,gemini} x {spike,bounded,arch}`, 36 of 36
+pre-registered reps, no Docker loss) | $141.04 (33/36 reps measured; 3
+Claude-spike indeterminate reps have no economics block, unmeasured) |
+(a) PASS all 6 pairs | (b) PASS both fix-arch cells | (c) PASS both
+fix-bounded cells | (d) recorded -- Gemini dev-arm replicates the
+two-doc-ritual baseline, Claude dev-arm does not.
+
+**Status: DONE. All four pre-registered criteria met their bar** -- (a)
+no cell regresses fix-vs-dev on gauntlet completion; (b) the arch
+two-doc/writing-plans ritual holds cross-harness on the fix arm; (c)
+the bounded ceremony-suppression holds cross-harness on the fix arm;
+(d) the dev-arm baseline is recorded honestly, including the surprising
+cross-harness divergence in what that baseline even looks like. Two
+real anomalies were found and handled, not hidden: a `run-quorum.sh`
+tooling defect (documented, worked around, not deeply fixed) and a
+pre-existing Claude+spike investigation-scoping pathology (present on
+both arms, explicitly not attributed to the fix). The battery ran
+**$61-101 over its own pre-registered estimate**, driven entirely by
+Gemini's arch-scenario token cost, disclosed rather than smoothed over.

@@ -8,6 +8,25 @@
 # already-scored reps, e.g. `run-quorum.sh dev cx-sdd-small 3 2` runs reps
 # 2-4.
 #
+# KNOWN LIMITATION (discovered T4 layer-3 battery, Task 11, 2026-07-30):
+# `quorum run` exits 1 on a measured `fail` verdict and 2 on
+# `indeterminate` -- NOT only on an infra crash (`src/cli/run-command.ts`
+# `exitCodeFor`). Because this script has `set -euo pipefail`, a single
+# rep's ordinary "the Gauntlet-Agent failed the scenario" verdict aborts
+# the REMAINING reps in THIS invocation silently -- both in the JOBS>1
+# batched loop (a mid-batch failure skips every later batch) and the
+# JOBS=1 sequential loop (`set -e` stops the `for` loop outright). This
+# is NOT limited to genuine infrastructure anomalies; ordinary scenario
+# variance (a real fail/indeterminate verdict) triggers it too. Each
+# already-completed rep's own results dir/verdict.json is unaffected
+# (data is not lost), but any rep never reached is silently never run --
+# the caller must diff the requested rep range against what actually
+# landed on disk and backfill missing reps with a separate REPS=1 call
+# per missing rep number (REP_START=<missing rep>). Not fixed here
+# (would need re-architecting both loops' failure handling); worked
+# around operationally in the T4 layer-3 battery instead -- see
+# `logs/2026-07-30-codex-efficiency-fixes.md`'s T4 LAYER 3 verdict entry.
+#
 # Env EVALS_ROOT overrides which evals checkout (lane) is used everywhere
 # this script would otherwise hardcode the primary checkout's path — e.g.
 # EVALS_ROOT=/Users/jesse/git/superpowers/evals-lane-b for a second,
