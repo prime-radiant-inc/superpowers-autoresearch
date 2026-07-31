@@ -1956,3 +1956,221 @@ headroom against that arch uncertainty.
 rep doubles as the smoke, per this round's instructions), full
 battery, scoring, and hand-recount (one rep per class from raw
 patch/approval timestamps, non-circular) follow in later log entries.
+
+### 2026-07-30 — T4 LAYER 2 RESULT ROUND 2: bounded-path approval hard stop closes round 1's gap 3/3; arch two-doc flow and completion both hold 3/3 under the bumped budget, margin razor-thin on one rep; spike smoke healthy (Task 9b)
+
+**Smoke test (spike rep4, lane A): PASS, scenario health confirmed.**
+`gauntlet.status: pass`, `economics.partial: false`. Scenario-identity
+marker present ("port is already in use" appears twice in the raw
+rollout — the correct spike stimulus, not a stale/wrong scenario sync).
+Bootstrap loaded and reachable (5 `SKILL.md` mentions, 7 `superpowers`
+mentions, 4 `using-superpowers` mentions in the raw rollout — the skill
+system is live, not a silent no-op). Zero `patch_apply_end` events —
+the same "genuine ephemeral investigation, no patch" shape 2/3 of round
+1's spike reps showed; unsurprising since spike's own router text is
+unchanged since round 1 and this is a single-rep sample, not a new
+3-rep claim. Proceeded to the full battery.
+
+**Battery launch:** lane A (`superpowers/evals`) ran `cx-ceremony-bounded`
+reps 4-6 (`JOBS=3`, one concurrent batch, ~90s total); lane B
+(`evals-lane-b`) ran `cx-ceremony-arch` reps 4-6 (`JOBS=3`, one
+concurrent batch, ~44 minutes total — up against the round's bumped
+45-minute `quorum_max_time`) concurrently with lane A. All launched as
+disowned background processes, polled via repeated foreground
+`until grep -q "^EXIT:"` loops against a written sentinel (the harness
+auto-backgrounded a few individual poll calls once they exceeded its own
+600s per-call ceiling on the long arch wait, surfacing as ordinary
+task-completion notifications rather than a Monitor tool invocation —
+no `Monitor` tool call was made this task). `docker ps -a` checked
+repeatedly through the run: both lane containers stayed `Up` for the
+entire ~50-minute battery, no `Exited` transition — no Docker loss.
+
+**All 7 pre-registered reps produced usable, complete rollout data**,
+`economics.partial: false` on all 7, `gauntlet.status: pass` on all
+7/7 — **no anomaly this round**, unlike round 1's arch rep3
+`investigate`. `run-quorum.sh` exited 0 for both lanes.
+
+**Scoring:** `score_e4.py`, invoked directly against all 7 new RUNDIRs
+in one call (rep4-6 for bounded/arch, rep4 for spike — fresh rep
+numbers, no collision with round 1's rep1-3 dirs, which remain
+untouched on disk). Output: `out/e4-mixed-cx-ceremony-arch-fix-
+cx-ceremony-bounded-fix-cx-ceremony-spike-fix-rep4-6.json`.
+
+**Results (scorer's own per-run table):**
+
+```
+class     rep  no-patch  user turns  docs written  tool calls  wall-clock(s)
+bounded    4      no          2           0             5          72
+bounded    5      no          2           0             5         104
+bounded    6      no          2           0             5          81
+spike      4     YES         N/A          0            N/A         N/A
+arch       4      no          5           2            14         515
+arch       5      no          8           2            11         489
+arch       6      no          7           2            21         701
+```
+
+Per-class means: bounded 5.0 tool calls, 2.0 user turns, 0.0 docs
+(n=3); arch 15.3 tool calls, 6.7 user turns, 2.0 docs (n=3); spike N/A
+(n=1, no-patch). Discrimination gate (spike vs. arch mean
+tool-calls-before-T): **inconclusive-by-zero this round** (spike's
+single smoke rep has no measurable patch) — a sampling-size artifact of
+running spike at n=1 this round, not a regression from round 1's thin
+n=1-with-a-patch data point; spike's router text and behavior are
+unchanged.
+
+**Manual hand-verification (non-circular — independent `json.loads` +
+own event-stream scan via a one-off script reusing round 1's
+`patch_apply_end`-timestamp-sort method, not `rollout_parser`), all 3
+bounded reps (the headline class) plus 2 of 3 arch reps (root-rollout
+identification required first, since arch rep4 spawned an 11-child SDD
+subtree same as round 1's rep3):**
+
+- **bounded rep4:** raw event stream — design presented in chat at
+  `00:42:20.773Z` ("This is a bounded change. Proposed design: ...
+  Gate all explicit per-request stderr log lines behind the handler's
+  quiet setting..."), approval `"looks good, that's what I wanted"` at
+  `00:42:49.510Z`, agent's `"Approved. I'll now follow the TDD
+  cycle..."` at `00:42:54.626Z`, first patch (`tests/test_server.py`)
+  at `00:43:04.821Z`. **Approval precedes the first patch by ~15
+  seconds — the gate held.** Independently recomputed: T =
+  `00:43:04.821Z` (already non-doc), user_turns_before_T=2,
+  tool_calls_before_T=5, wall_clock=session_start(`00:41:52.965Z`) to T
+  = 71.856s ≈ 72s. **Matches the scorer's row exactly (2 / 0 docs / 5
+  / 72).**
+- **bounded rep5:** design at `00:41:57.820Z`, approval at
+  `00:42:33.817Z`, `"Approved. I'm now applying the test-driven
+  workflow..."` at `00:42:44.319Z`, first patch at `00:43:05.664Z`.
+  **Approval precedes first patch by ~32 seconds.** Recomputed wall
+  clock ≈ 104s — **matches the scorer's row (2 / 0 docs / 5 / 104).**
+- **bounded rep6:** design at `00:42:18.407Z`, approval at
+  `00:42:47.576Z`, `"Approved—moving into TDD now..."` at
+  `00:42:51.501Z`, first patch at `00:43:09.017Z`. **Approval precedes
+  first patch by ~21 seconds.** Recomputed wall clock ≈ 81s — **matches
+  the scorer's row (2 / 0 docs / 5 / 81).** All 3 bounded reps this
+  round show the identical shape round 1's rep3 alone showed: design
+  in chat → explicit approval-shaped message → agent's own "Approved"
+  acknowledgment → only then a patch. Round 1's rep1/rep2 pattern
+  (implement first, approval as a post-hoc rubber stamp after code
+  already exists) **does not recur anywhere in this round's 3 reps.**
+- **arch rep4 (root rollout identified via `session_meta.cwd` matching
+  the run's top-level `coding-agent-workdir`, distinguishing it from
+  the 11 spawned children sharing container filesystem paths — this
+  rep chose the `subagent-driven-development` path, same choice round
+  1's rep3 made):** raw event stream — spec doc
+  (`docs/superpowers/specs/2026-07-31-reusable-notes-library-design.md`)
+  at `00:44:57.224Z`, plan doc
+  (`docs/superpowers/plans/2026-07-31-reusable-notes-library.md`,
+  written twice — `00:47:42.517Z` and `00:47:53.220Z`, a revision) at
+  `00:47:42.517Z`, first non-doc patch (`.gitignore`, worktree setup —
+  same edge case round 1 already flagged) at `00:49:52.959Z`. T =
+  `00:49:52.959Z`. Independently recomputed: user_turns_before_T=5 (5
+  root `user_message` events before T: the initial ask, an API-choice
+  answer, two "looks good, keep going" approvals, and the
+  subagent-driven-vs-solo choice), tool_calls_before_T=14,
+  wall_clock=session_start(`00:41:18.272Z`) to T = 514.687s ≈ 515s.
+  **Matches the scorer's row exactly (5 / 2 docs / 14 / 515), and the 2
+  distinct doc paths are exactly one `specs/*.md` and one `plans/*.md`
+  — the two-document ritual, unchanged shape from round 1.**
+- **arch rep5 (single-session, no subagent spawns — matching round 1's
+  rep1/rep2 pattern):** spec doc
+  (`docs/superpowers/specs/2026-07-31-library-cli-split-design.md`) at
+  `00:45:06.670Z`, plan doc
+  (`docs/superpowers/plans/2026-07-31-library-cli-split.md`) at
+  `00:47:30.456Z`, first non-doc patch (`.gitignore`) at
+  `00:49:30.186Z`. T = `00:49:30.186Z`. Recomputed wall_clock =
+  session_start(`00:41:21.181Z`) to T = 489.005s ≈ 489s. **Matches the
+  scorer's row exactly (489s), two-doc flow confirmed again.**
+
+**Arch budget margin — flagged as a concern, not a failure.** Arch
+rep4's own `verdict.json.economics` reports Gauntlet duration 43m55s
+(2635s) and Coding duration 42m08s (2528s) against this round's bumped
+45-minute (2700s) `quorum_max_time` — **only ~65 seconds (2.4%) of
+headroom before this exact rep would have repeated round 1's rep3
+timeout.** This rep independently chose the same
+`subagent-driven-development` path round 1's rep3 chose (11 spawned
+children, a full spec→plan→implement→whole-branch-review→fix-wave→
+re-review cycle), and it completed cleanly and scored `pass` this
+round — the bump from 30m to 45m was necessary and, this one time,
+barely sufficient. This is a real signal that the margin is thin, not
+generous: a future battery, or a slightly slower model/network day,
+could still reproduce round 1's timeout at the new ceiling. Recorded
+as a concern for any future round of this scenario, not a gating
+failure of this round's own criteria (completion 3/3 is unambiguous:
+`gauntlet.status: pass`, `economics.partial: false` on all 3 arch
+reps).
+
+**Verdicts against the round-2 pre-registered criteria (verbatim from
+the pre-registration entry above):**
+
+- **Bounded — "0 ceremony docs": PASS, 3/3, unchanged from round 1.**
+  Every bounded rep's `doc_paths_written_before_first_non_doc_patch` is
+  empty — confirmed by the scorer and independently by the raw event
+  scan of all 3 reps.
+- **Bounded — "strict pre-implementation approval 3/3": PASS, 3/3.**
+  **Round 1 → round 2 delta: FAIL (1/3) → PASS (3/3).** Every rep's
+  approval-shaped message ("looks good, that's what I wanted") and the
+  agent's own explicit "Approved..." acknowledgment both land BEFORE
+  the first patch in the raw timeline, by margins of 15-32 seconds —
+  the same shape round 1's lone compliant rep (rep3) showed, now
+  showing in all 3 reps. Commit `6faceb2`'s explicit STOP instruction
+  ("Implementation starts only after your human partner says yes...
+  Present, then stop until you hear yes") closes the exact gap round
+  1's headline finding identified.
+- **Arch — "two-doc flow 3/3": PASS, 3/3, unchanged from round 1.**
+  Every arch rep writes exactly one `docs/superpowers/specs/*.md` and
+  one `docs/superpowers/plans/*.md` before its first non-doc patch —
+  confirmed by the scorer and independently hand-verified for 2 of 3
+  reps (rep4's SDD-subagent path and rep5's single-session path), both
+  matching. `43ec25f`/`433184c` (SDD/codex wait-discipline commits
+  layered on top since round 1) did not disturb this shape.
+- **Arch — "gauntlet task completion 3/3": PASS, 3/3.** **Round 1 →
+  round 2 delta: FAIL (2/3, rep3's scenario-timeout `investigate`) →
+  PASS (3/3, all `gauntlet.status: pass`).** The pre-registered
+  `quorum_max_time` bump (30m → 45m, a disclosed harness-budget
+  accommodation, not a treatment change) closed the exact gap round 1's
+  anomaly identified — but see the razor-thin-margin flag above: this
+  is a real fix at this round's actual measured durations, not proof
+  the new ceiling has comfortable headroom going forward.
+- **Spike — "smoke rep healthy": PASS.** Single rep, correct scenario
+  marker, bootstrap loaded, clean no-patch investigation matching round
+  1's majority shape, `gauntlet.status: pass`. Not re-measured at n=3
+  per this round's reduced scope (spike's own router text is untouched
+  since round 1).
+
+**Cost (7 reps, from each rep's own
+`verdict.json.economics.total_est_cost_usd`, all `partial: false`):**
+bounded $0.68 + $0.77 + $0.80 = $2.26; spike $0.60; arch $8.21 + $2.96
++ $2.84 = $14.01 (rep4's $8.21 is the highest single rep in the
+battery — consistent with its 11-child SDD subtree running close to
+the full bumped budget). **Total: $16.87**, under the ~$30
+pre-registered budget.
+
+**Ledger row:** 2026-07-30 | T4 layer-2 Codex ceremony battery ROUND 2
+(fix arm @ `433184c`, `cx-ceremony-{bounded,arch}` n=3 each +
+`cx-ceremony-spike` n=1 smoke, 7 of 7 pre-registered — no Docker loss,
+no anomaly) | $16.87 (7/7 measured, `partial: false` on all) | bounded:
+0 docs PASS 3/3, strict approval-gate PASS 3/3 (round1→round2: FAIL
+1/3 → PASS 3/3) | arch: two-doc flow PASS 3/3 (unchanged), completion
+PASS 3/3 (round1→round2: FAIL 2/3 → PASS 3/3, via the disclosed
+`quorum_max_time` 30m→45m bump; margin on the one SDD-subagent rep was
+only ~65s/2.4%) | spike: smoke PASS (n=1, unchanged router text).
+
+**Status: DONE, clean wins on both treatments this round, with one
+honestly-flagged margin concern.** The two gaps round 1 left open are
+both closed: bounded's approval gate, round 1's headline finding (1/3
+strict compliance, 2/3 reps implementing before approval), is now 3/3
+— commit `6faceb2`'s explicit hard-stop wording fixed exactly the
+failure mode round 1 hand-verified. Arch's scenario-timeout anomaly
+(round 1's rep3, 2/3 completion) is also now 3/3 — the pre-registered,
+disclosed `quorum_max_time` bump (a harness accommodation, not a
+router-text change) fixed it, though this round's own data shows the
+fix has very little margin (one rep finished with roughly 65 seconds
+to spare out of a 45-minute budget while running the same
+subagent-driven SDD path that timed out at 30 minutes in round 1).
+Bounded's doc/plan ritual (round 1's clean PASS) and arch's two-doc
+flow (round 1's clean PASS) both hold with no regression under the
+additional wait-discipline commits (`43ec25f`, `433184c`) layered on
+top. Recommend treating the arch budget margin as a live risk, not a
+closed question, if any future round reuses this scenario without
+re-checking actual rep durations against whatever ceiling is in
+force.
