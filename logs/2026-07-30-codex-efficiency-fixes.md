@@ -3282,3 +3282,234 @@ scenario).
 
 **No run yet -- this is the pre-registration.** Smoke test(s), full
 matrix, hand-verification, and verdict follow in the next log entry.
+
+### 2026-07-31 -- TRIGGERING RE-RUN ROUND 2 RESULT: 7/7 reps PASS both clauses across all three harnesses; ANOMALY -- own wait-loop bug destroyed one in-flight codex rep, redone cleanly (Task 12b)
+
+**Codex smoke rep (rep2, `openai_responses`): healthy, ran full matrix.**
+`docker ps -a` clean (2 lane containers `Up`), disk 18% used before
+spending. Smoke rep hand-verified from the raw rollout JSONL
+(`.../rep2/triggering-react-todo-codex-openai_responses-linux-
+20260731T160807Z-b400/home/.codex/sessions/.../rollout-*.jsonl`): function
+calls 10-11 read `using-superpowers/SKILL.md` then `brainstorming/
+SKILL.md` from the staged plugin cache BEFORE any workdir
+investigation (first `exec_command` touching the workdir is index 18) or
+scaffold action -- clause 1 PASS. Agent messages: "This looks
+architectural until I inspect the repo: if there is no existing todo
+flow, we're creating a small app rather than changing one" (index 16,
+before inspecting), then "The workspace appears empty... I'm going to
+treat this as a new small React app" (index 26, after inspecting) --
+never reclassifies to bounded, proceeds to a full design proposal
+weighing Vite+React vs. Next.js vs. a plain HTML file and asks for
+approval before touching code (index 37) -- clause 2 PASS (implicit
+rather than the literal word "architectural" in the final framing,
+noted precisely rather than smoothed over). Cost $0.288668. Codex api-key
+auth confirmed working end-to-end on the first try: `bootstrap-installed`
+pre-check detail read "Codex Superpowers plugin enabled hook-less;
+native skill discovery" -- identical bootstrap path to the subscription
+credential, as expected (the api-key/subscription branch in
+`codex.ts:120-168` only changes `config.toml`'s model/provider block, not
+plugin staging).
+
+**Gemini smoke rep (rep4, lane B): ran in parallel with codex, healthy.**
+Hand-verified from `trajectory.json` (ATIF-normalized, cross-checked
+against the raw capture): step 2 is a native `Skill` tool call
+(`{"name":"brainstorming","skill":"superpowers:brainstorming"}`) --
+before step 3's `Glob` (investigative, not a write) and before any
+implementation action -- clause 1 PASS. The agent's own
+`reasoning_content` at step 3 is a striking, near-verbatim echo of this
+cycle's own fix: *"It seems like the request is bounded, so that's the
+path I'm taking to address it first! ... I've determined this is an
+architectural undertaking, a new project with no pre-existing code...
+**Boundedness relates to the repo's content, not my familiarity**, so
+I'll follow the full architectural process."* -- that final clause is
+almost a direct paraphrase of the new Red Flags row ("Bounded measures
+the repo, not your familiarity"). The user-facing message: *"I have
+classified this request: **this looks architectural**, as we are
+building a new React Todo List application from scratch in a fresh
+repository."* -- clause 2 PASS, unambiguous. Cost $0.260745. No
+regression from round 1's 3/3 -- if anything, stronger internalization
+of the tightened wording than round 1's paraphrase-level match.
+
+**ANOMALY -- self-inflicted, disclosed in full per the standing
+anomalies-stop-and-report-honestly rule.** After the codex smoke rep,
+launched a background wait-and-continue script intended to (1) block
+until the in-flight codex rep4 (`CREDENTIAL=openai_responses`,
+`REP_START=3, REPS=2` had been launched as one `run-quorum.sh`
+invocation covering reps 3-4; rep3 finished inside the same foreground
+call that got killed by this agent's own 120s default Bash timeout,
+rep4 was mid-flight when the host-side wrapper was killed) to finish,
+then (2) launch the claude battery (reps 5-7) in the same lane. The wait
+script's completion check (`find "$RUNDIR_PARENT" -mindepth 2 -maxdepth
+2 -iname verdict.json | head -1`) was buggy: `rep4`'s directory already
+contained a LEFTOVER round-1 claude verdict.json (`triggering-react-
+todo-claude-opus-linux-20260731T062342Z-2566`, from Task 12's original
+n=4 claude battery, sharing the numeral only because `run-quorum.sh`'s
+`--out-root` does not encode `CODING_AGENT` in the path) -- the find
+matched that stale file immediately (0s wait) instead of waiting for the
+actual codex run's own verdict.json, which did not yet exist. The script
+proceeded straight to `docker ps -a` then invoked
+`run-quorum.sh fix triggering-react-todo 3 5` for claude, which (per its
+own documented arm-selection step) runs `scripts/evals-container down`
+before `up` -- tearing down the lane A container the in-flight codex
+process was still running in. Confirmed via direct inspection: the
+interrupted run's directory
+(`.../rep4/triggering-react-todo-codex-openai_responses-linux-
+20260731T161144Z-9da3/`) has `phase.json` frozen at `{"phase":"agent",
+"pid":443,...}` from 16:11:45Z, no `verdict.json`, no
+`coding-agent-token-usage.json` (quorum's capture step never ran because
+the process was killed rather than exiting cleanly). Reading the
+partial rollout JSONL that did get flushed (83 events, vs. ~44 for a
+normal completed smoke rep) shows this rep had progressed well past a
+first response -- into `custom_tool_call`/`patch_apply_end` events,
+i.e. Codex had started actually scaffolding files -- when it was cut
+off, so real (if unmeasured) API spend was wasted, likely comparable to
+or higher than the ~$0.25-0.29 per completed codex rep given the greater
+depth reached. **Root cause is this task's own tooling bug (an
+insufficiently specific completion check), not a `run-quorum.sh` defect,
+not an adapter defect, not a router regression** -- disclosed rather
+than silently patched over or hidden by only reporting the eventual
+clean data. The claude reps 5-7 that ran immediately after were
+unaffected (each `run-quorum.sh` invocation tears down and re-ups
+cleanly at its own start, so the battery that displaced codex's rep4 ran
+in a fresh, uncorrupted container and all three completed normally).
+
+**Recovery:** ran one replacement codex rep as a fresh, unambiguous
+`rep8` (chosen to avoid any further collision with rep4's
+partial/orphaned state or reps 5-7's claude data) --
+`CREDENTIAL=openai_responses ./run-quorum.sh fix triggering-react-todo 1
+8`, this time waited for via the harness's own background-completion
+notification rather than a hand-written polling loop, avoiding a repeat
+of the same bug class. Completed cleanly, `final: pass`, cost
+$0.286294. The abandoned `rep4` codex directory is left in place
+(orphaned, no verdict) as the honest record of what happened; not
+deleted, not re-numbered to hide the gap.
+
+**Codex full matrix (reps 2, 3, 8 -- the valid n=3), hand-verified from
+raw rollout JSONL, not the Gauntlet-Agent's own paraphrase:**
+- **rep2** (smoke, detailed above): clause 1 PASS, clause 2 PASS (implicit).
+- **rep3**: SKILL.md reads at function-call index 10 (before any
+  workdir touch at index 16+) -- clause 1 PASS. Agent message at index
+  14: *"Using `superpowers:brainstorming` to shape the todo list before
+  implementation. This looks **architectural** because we may be adding
+  the app's primary flow rather than changing an existing todo flow"* --
+  clause 2 PASS, explicit. Cost $0.244695.
+- **rep8**: SKILL.md reads at indices 10, 18-19 (using-superpowers,
+  brainstorming, and test-driven-development), all before any
+  file-write/scaffold action (only read-only `rg --files`/`find` calls
+  interleave) -- clause 1 PASS. Agent message at index 26: *"This is a
+  new app in an otherwise empty workspace, so I'm treating it as an
+  **architectural path** under the brainstorming workflow"* -- clause 2
+  PASS, explicit. Cost $0.286294.
+- **Codex verdict: 3/3 PASS both clauses.**
+
+**Claude full matrix (reps 5, 6, 7), hand-verified -- with a real raw-log
+capture gap disclosed, not papered over.** Reps 5 and 7's on-disk JSONL
+session transcripts (`.../home/.claude/projects/.../*.jsonl`) cut off at
+only 21 lines each, ending right after the `Skill` tool call's result
+(the brainstorming `SKILL.md` content) is returned -- no further
+assistant turn is persisted to that file, even though the Gauntlet-Agent's
+own summary describes a full classification and an `AskUserQuestion`
+turn for both. `trajectory.json` (quorum's own ATIF normalization,
+checked independently) confirms the same 3-step truncation for rep5 --
+this is a genuine gap in what got flushed to the per-session JSONL
+before the run ended, not a parsing artifact of this task's own
+inspection. Resolved by falling back to the OTHER raw artifact quorum
+captures for TUI harnesses: the tmux screen captures at
+`gauntlet-agent/results/*/captures/NNN.ansi` -- a literal terminal
+recording, independent of the JSONL writer's flush timing, and no less
+"raw" for hand-verification purposes than the transcript file (same
+standing rule this log has applied to codex's screen-vs-rollout
+precedence, applied here in the other direction: the screen has content
+the transcript file lacks). Both `rep5` and `rep7`'s final capture
+(`006.ansi`, ANSI-stripped) show the full classification text:
+- **rep5**: *"Classification: A React todo list is a brand-new project
+  — no existing repo flow to modify — so by the book this is the
+  '**architectural**' path. But it's also the canonical small app, so
+  I'm going to run a lightweight version..."* -- explicitly affirms
+  architectural, then scales ceremony down WITHOUT reclassifying as
+  bounded (consistent with the router's own "the ceremony scales with
+  the task; the approval gate never does" line) -- clause 2 PASS. Skill
+  tool call is the first and only tool call in the (truncated) JSONL,
+  with zero Write/Edit/scaffold evidence anywhere in either artifact --
+  clause 1 PASS. Cost $0.255631.
+- **rep6**: full turn captured directly in the JSONL (no truncation this
+  rep) -- `Skill(superpowers:brainstorming)` at index 13, before the
+  first workdir touch (`ls -la && git log`) at index 23 -- clause 1
+  PASS. Text at index 22: *"I'll classify this: **a React todo list is a
+  new project** — there's no existing flow in the repo to modify — so
+  this is the **architectural path**. That said, a todo list is a
+  well-understood thing, so I'll keep the ceremony light..."* -- clause
+  2 PASS, explicit and a near-verbatim echo of the fix's own wording
+  ("no existing flow"). Cost $0.410864.
+- **rep7**: same truncation pattern as rep5, resolved the same way.
+  `006.ansi`: *"Classification: A React todo list is a brand-new project
+  — there's no existing app flow in this repo to modify — so by the
+  skill's rules this is the **architectural** path. That said, a todo
+  list is a small, well-understood thing, so I'll keep the ceremony
+  light..."* -- clause 2 PASS. Skill call is the session's only tool
+  call before the capture gap -- clause 1 PASS. Cost $0.271444.
+- **Claude verdict: 3/3 PASS both clauses -- a full reversal of round
+  1's 0/3 on clause 2.**
+
+**Verdict against the pre-registered criterion (brainstorming loads
+before any implementation action AND the session heads down the
+architectural path, 3/3 -- claude and codex; gemini smoke stays
+architectural):**
+
+| harness | clause 1 (brainstorming before code) | clause 2 (architectural classification) | combined | round 1 |
+|---|---|---|---|---|
+| codex | 3/3 PASS | 3/3 PASS | **PASS** | BLOCKED (0/3, credit exhaustion) |
+| claude | 3/3 PASS | 3/3 PASS | **PASS** | FAIL (clause 1 3/3, clause 2 0/3) |
+| gemini | 1/1 PASS (smoke) | 1/1 PASS (smoke) | **PASS** | PASS (3/3) |
+
+**Round 1 -> round 2 delta, the load-bearing finding:** Task 20's
+tightened bounded bullet (`70120d5`) closes the exact gap round 1 found.
+Claude went from unanimously self-classifying this canonical prompt
+"bounded" (3/3, reading "existing, understood flow" as app-genre
+familiarity) to unanimously "architectural" (3/3), with two of three
+reps' own language echoing the new wording almost verbatim ("no existing
+flow in the repo to modify" / "no existing repo flow to modify" vs. the
+skill's "no existing flow to change"). Codex, untested in round 1
+(subscription credits exhausted), is now unblocked via the api-key
+credential and passes 3/3 on the same tightened text, with one rep
+independently reasoning through the same existing-flow logic before
+even reading the full bullet's conclusion ("if there is no existing
+todo flow, we're creating a small app rather than changing one"). Gemini
+holds its round-1 3/3, with its own reasoning trace showing direct
+uptake of the new Red Flags row. Three-for-three harnesses, not a
+single-harness fix that leaves the others unconfirmed.
+
+**Cost (7 valid runs + 1 discarded/interrupted codex rep, every valid
+figure read directly from `verdict.json.economics.total_est_cost_usd`):**
+codex rep2 $0.288668, rep3 $0.244695, rep8 $0.286294; claude rep5
+$0.255631, rep6 $0.410864, rep7 $0.271444; gemini rep4 $0.260745.
+**Total measured: $2.018341.** Plus the interrupted codex rep4: cost not
+captured (no `verdict.json`/`coding-agent-token-usage.json` was ever
+written), real spend, unmeasured, plausibly $0.25-0.40 given it reached
+deeper into the run (patch-apply stage) than a completed smoke rep
+before being killed -- disclosed as an honest gap rather than omitted or
+estimated as zero. Grand total (measured + the ~$10-15 pre-registered
+estimate's implicit allowance for exactly this kind of one-off retry)
+remains well under budget.
+
+**Status: all three harnesses PASS, 7/7 valid reps hand-verified on
+both clauses, non-circular (raw JSONL/rollout/ANSI-capture inspection
+throughout, not the scenario's own inert Gauntlet-Agent verdict).** One
+operational anomaly (this task's own wait-loop bug, not a rig/adapter/
+router defect) destroyed one in-flight codex rep; disclosed in full,
+recovered cleanly with a distinctly-numbered replacement rep, and the
+orphaned partial run left on disk rather than hidden. The raw-log
+capture gap on claude reps 5/7 (JSONL truncation) is a real quirk of
+this harness worth flagging for whoever next relies on hand-verifying a
+TUI-driven claude rep: the ANSI screen captures are a legitimate
+fallback raw artifact when the JSONL cuts off early, not a lesser
+substitute for the Gauntlet-Agent's own paraphrase.
+
+**No `credentials.yaml` change was committed this round** (see the
+pre-registration entry's investigation: the pre-existing `openai_responses`
+entry already fit, so nothing needed adding). `.env.container` in both
+lanes now carries `OPENAI_API_KEY` (untracked, not committed, values
+never reproduced in this log).
+
+**Privacy sweep:** the standing grep run against the staged diff
+immediately before committing this entry -- no match, clean.
