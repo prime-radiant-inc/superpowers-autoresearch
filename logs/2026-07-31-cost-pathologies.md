@@ -5647,3 +5647,134 @@ lines) is synthetic model output about the wholly synthetic
 `ratelimit` fixture content — no real system, no real hostnames, no
 real credentials anywhere in the quoted material. No raw rollouts or
 `evals/results/` content committed this round (no new runs).
+
+## 2026-08-01 — Task 12 pre-registration — X4 fork-tax field verification (measurement study, no new battery runs)
+
+Per the design doc's X4 entry: "(a) instrument the mined corpora's
+signature... into a reusable scorer; (b) once the open PRs merge and
+field sessions accumulate, measure the before/after on fresh trees; (c)
+audit every other skill that spawns... for full-history forks and
+propose the isolation default there as a follow-up treatment if the
+audit finds dirty forks." (a) shipped in Task 2. This task runs a
+BOUNDED version of (b) — PRs #2059-#2063 have not merged yet and no
+real post-merge field sessions exist, so "fresh trees" here means the
+data already on disk, not the eventual field population — and (c) in
+full. No new quorum/API spend; this is a local, read-only measurement
+over files already on disk.
+
+### What will be measured
+
+**MINED population ("before" — real field corpus):** Task 2's two
+corpus-validated exemplars (Scantastic `.../07/26/rollout-...-019fa16f-
+feab.../` -> `task6_spec_review_a`; remux `.../07/24/rollout-...-
+019f96ab.../` -> `app_ui_review`), PLUS every other `spawn_agent`
+parent/child pair reachable in those same two already-touched local day
+directories (`~/.codex/sessions/2026/07/26/`, `~/.codex/sessions/
+2026/07/24/` — real, personal Codex session history, never committed).
+This reuses Task 2's own corpus-validation scope rather than trawling
+the full local corpus (8,077 rollout files, ~42GB across this machine's
+`~/.codex/sessions/`) — cheap (two day-directories already read once
+for Task 2), not exhaustive; disclosed as a bound, not a claim of full
+corpus coverage.
+
+**CAMPAIGN population ("after" — this campaign's own battery trees):**
+every `cp-*` rep directory with rollout files on disk from Tasks 8-11,
+across both container lanes (`/Users/jesse/git/superpowers/superpowers/
+evals/results/`, `/Users/jesse/git/superpowers/evals-lane-b/results/`).
+76 reps total: 16 (Task 8, X1 FULL: control/x1a/x1b/x1c x4 reps each),
+29 (Task 9, X7+X9: `cp-x7x9-conflicts` control/x1e/x7a/x7b/x9a/x9b x3
+each + the `-clean`/`-prose` sub-fixtures' x1g/x7a/x7b/control reps),
+21 (Task 10, X2+X8: `cp-x2-advisory` control/x2a/x2b/x2c x3 each,
+`cp-x8-approvals` control/x8a/x8b x3 each), 10 (Task 11, X5+X6:
+`cp-x5-leases` control/x5a/x5b x3 each, `cp-x6-smalledits` control x1 —
+the X6 gate-stop rep). Excludes the Task 6 pre-battery smoke (landed
+under a doubled `cp-cp-` prefix, disclosed minor in Task 6's own entry
+— not one of the pre-registered battery reps graded in Tasks 8-11).
+Every arm and every control rep is included — this experiment has no
+"treatment vs its own control" axis; see the confound statement below
+for why.
+
+### The comparison's honest scope (confound, stated up front)
+
+This is **not a controlled A/B on the isolation guidance.** The mined
+corpus is real field data (Scantastic, remux — two actual projects)
+captured before this campaign's fix cycle; it necessarily predates
+whatever `skills/using-superpowers/references/codex-tools.md` said at
+the time (unknown vintage, not reconstructable from the rollouts
+themselves). The campaign trees all run entirely on `codex-efficiency-
+fixes`@329b8f1 or a one-file diff cut from it (arm-manifest.md) —
+**every arm, including every control rep, mounts `codex-tools.md`'s
+current `spawn_agent {fork_turns: "none"}` guidance**, because that
+file lives in `skills/using-superpowers/references/` and no X-arm's
+manifest row touches it (verified below, in the audit). So there is no
+"guidance-off" arm anywhere in the campaign population to contrast
+against a "guidance-on" arm — the only before/after axis available is
+mined-corpus-vintage vs. campaign-vintage, confounded with:
+
+1. **Scenario/project type** — the mined corpus is varied real
+   production work; the campaign trees are five fixed synthetic SDD
+   fixtures (`cp-x1-buggy-sdd`, `cp-x2-advisory`, `cp-x5-leases`,
+   `cp-x7x9-conflicts*`, `cp-x8-approvals`). A directional difference
+   cannot separate "the guidance changed behavior" from "these
+   particular synthetic scenarios don't happen to need full-history
+   forks regardless of guidance."
+2. **Time/tooling** — different codex-cli versions, different model
+   presets, and whatever else changed on this machine between the
+   mined sessions' capture dates and this campaign's run dates are all
+   bundled into the same before/after contrast.
+
+The result below is reported as a field-measurement DATA POINT for the
+eventual post-merge verification this entry also specifies, not as a
+causal claim that the guidance caused the difference.
+
+### Audit target list
+
+`git grep -ilE "spawn_agent|fork_turns|full.?history|isolat|dispatch"
+329b8f1 -- 'skills/*'` (superpowers repo, no pre-filtering) returns:
+`brainstorming/SKILL.md`, `brainstorming/spec-document-reviewer-
+prompt.md`, `dispatching-parallel-agents/SKILL.md`, `executing-plans/
+SKILL.md`, `requesting-code-review/SKILL.md`, `requesting-code-review/
+code-reviewer.md`, `subagent-driven-development/{SKILL,implementer-
+prompt,re-review-prompt,task-reviewer-prompt}.md`, `systematic-
+debugging/SKILL.md`, `using-git-worktrees/SKILL.md`, `using-
+superpowers/SKILL.md`, `using-superpowers/references/{antigravity,
+codex,gemini,pi}-tools.md`, `writing-plans/{SKILL,plan-document-
+reviewer-prompt}.md`, `writing-skills/SKILL.md`. Every hit gets read
+and classified (isolated / full-history / silent) in the verdict entry
+below — no skill edits this campaign, per the design doc's "propose...
+as a follow-up treatment" framing (proposal only).
+
+### Instrument
+
+`campaigns/cost-pathologies/score_x4_forktax.py` (Task 2, corpus-
+validated, unmodified) via a new thin wrapper,
+`campaigns/cost-pathologies/task12_measure_forktax.py` — same "one-shot
+triage helper" scope as Task 9/10's `task*_extract_signals.py` (not
+itself a corpus-validated scorer). Disclosed reason the wrapper exists:
+`fork_stats()`'s `find_rollouts()` globs `session_dir/**/*.jsonl`, and
+Python's `glob(..., recursive=True)` silently refuses to descend a `**`
+wildcard segment into a hidden (dot-prefixed) directory. Every battery
+rep's real content sits under a hidden `.../home/.codex/sessions/...`
+path, so calling `fork_stats()` directly on a rep's root directory
+silently returns zero children for every single rep (verified: 0
+children, ~0.05s runtime, no exception) — not a scorer defect for its
+Task-2-validated use (which always pointed directly at an already-
+resolved path past `.codex`, same as this task's mined-corpus
+measurement above), but a real footgun for this task's battery-tree use
+case. Same dot-directory glob-skip class already disclosed in Task 9's
+`task9_extract_signals.py find_ledger()`. The wrapper resolves each
+rep's actual `.../home/.codex/sessions` directory first (literal
+`.codex` path component in the glob pattern — the same technique
+`task10_extract_signals.py`'s `root_rollout()` already uses, which is
+why that helper never hit this bug) and calls the unmodified scorer on
+the resolved path. `score_x4_forktax.py` itself is not edited.
+
+### Privacy sweep (pre-registration entry)
+
+Standard needle set (real hostname/username via `hostname`/`whoami`,
+never written literally; API-key/email patterns) run against this
+entry before commit: no match, clean. Project codenames named above
+(Scantastic, remux) reuse Task 2's own precedent (its report and this
+log's Task 2 entry already cite them as the same class of low-
+sensitivity SDD-taxonomy/provenance label as `task6_spec_review_a`); no
+finding text, file:line content, or other session substance is quoted.
