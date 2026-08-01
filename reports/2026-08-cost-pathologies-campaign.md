@@ -7,14 +7,20 @@
 **Design doc under test:**
 `docs/2026-07-31-cost-pathologies-campaign-design.md` (+ Amendments 1–2)
 **Dates:** 2026-07-31 → 2026-08-01
-**Spend:** **$342.50 measured** against a $580 ceiling (59%); the $400
-stop-and-report checkpoint was never reached
+**Spend:** **$342.50** against a $580 ceiling (59%); the $400
+stop-and-report checkpoint was never reached. Every battery row is a
+measured figure except Task 4's ~$0.95, which is reconstructed (§8)
 
 **Reading rule for this report.** The log is append-only, and five of its
 verdict entries carry a later correction entry that supersedes specific
 numbers. Every figure below is the **corrected** figure. Where a
 correction established a precise claim formulation, that formulation is
 quoted verbatim rather than paraphrased.
+
+**Path shorthand.** `sdd/` throughout this report is the superpowers
+repo's `skills/subagent-driven-development/` — so `sdd/SKILL.md` is
+`skills/subagent-driven-development/SKILL.md`, and `sdd/implementer-prompt.md`
+is that directory's implementer prompt.
 
 ## 1. Executive summary
 
@@ -24,7 +30,9 @@ than one anointed fix. This campaign built nine experiments (X1–X9) plus
 the M0 mechanical check, authored **21 treatment arms** as local branches
 of the superpowers repo, and graded them head-to-head against
 pre-registered criteria across 77 container reps and 100 Messages-API
-calls.
+calls. **76 of the 77 reps were graded**; the odd one out is Task 6's
+`cp-x1-buggy-sdd` smoke, run for scenario health only (its companion
+smoke rep *was* reused as a graded Task 9 control rep).
 
 **The headline is a localization result.** The expensive pathologies in
 the mined corpora do not reproduce as *fresh-session skill-text* problems.
@@ -36,11 +44,15 @@ were built to catch. What *did* reproduce, hard and repeatably, is the
 class of pathology that comes from **session age, automation shape, and
 unresolved-conflict stalls**: every one of the **15 seeded-plan reps
 running text without X9's doctrine stalls after Task 1** pending human
-rulings (control, X7-A, X7-B, X1-E, X1-G, 3 reps each); a control
+rulings (control, X7-A, X7-B, X1-E, X1-G, 3 reps each); and a control
 implementer pauses and asks the controller before writing any code in 3/3
-reps when a plan names a file that does not exist; the mined corpus forks
-64.9% of its children with full history while this campaign's
-guidance-carrying trees fork 0%.
+reps when a plan names a file that does not exist. The fork-tax
+measurement points the same way — the mined corpus forks **64.9%** of its
+children with full history against **0%** in this campaign's trees — but
+that is a confounded before/after field comparison, not a controlled arm
+result: no guidance-off arm exists anywhere in this campaign, and the two
+populations differ in vintage, scenario type, and tooling (§4). It sits
+beside the two reproductions above rather than among them.
 
 **Four mechanism families cleared their own pre-registered criterion.**
 
@@ -64,14 +76,17 @@ seed (ADVISORY-2/3 never discriminate any arm, 0/12), one rep's float
 multiplier (`x2a-rep2`) accepted by the Gauntlet judge rather than passing
 a strict integer-idiom check."
 
-**Both receipt mechanisms fire for real (X5-A, X5-B).** The invalidation
-guard — the one that decides pass or fail — holds 9/9, hand-verified on
-disk in every rep. X5-B's file-based receipts were caught honoring and
-invalidating in raw transcript text. X5-A's were initially reported as
+**Both receipt mechanisms fire for real (X5-A, X5-B).** X5-B's
+file-based receipts were caught honoring and invalidating in raw
+transcript text — 3 honoring events across 2 of its 3 reps, read off the
+receipts file rather than inferred. X5-A's were initially reported as
 structurally invisible; the review round disproved that in the arm's
 favor: "X5-A's honoring/invalidation mechanism is CONFIRMED WORKING, 3/3
-reps," via reviewer prose rather than the strict marker grammar. Neither
-arm demonstrated net duplicate-run savings at n=3.
+reps," via reviewer prose rather than the strict marker grammar. The
+invalidation guard holds 9/9 — but control clears it 3/3 as well, on base
+SDD's own re-run behavior, so it is a must-not-harm floor both arms meet,
+not evidence for either. Neither arm demonstrated net duplicate-run
+savings at n=3.
 
 **Evidence-bearing preflight is X9's complement, not its substitute (X7).**
 X7-A and X7-B both pass their own criterion (evidence artifact before Task
@@ -81,7 +96,7 @@ like control, because both arms' diffs are scoped to the preflight text
 alone. Only X9's fuller-scope patch achieves Amendment 2's "never stalls"
 goal on this fixture.
 
-**Six sub-experiments landed inconclusive, in four distinct flavors**, and
+**Seven sub-experiments landed inconclusive, in four distinct flavors**, and
 each is reported as a result rather than a failure: inconclusive-by-ceiling
 (X1 MICRO ×2, X3 MICRO, X1 FULL's defect-escape guard),
 inconclusive-by-zero-reproduction (the X1 wave-cap arms — 0/29 reps ever
@@ -124,6 +139,11 @@ control (unpatched base `329b8f1`); wave arms E scoped auto second wave
 | **MICRO v2** (Task 4b, ambiguity-bearing fixture, 20 calls, n=5/arm) | Same rule, `bait_block_rate` substituted as the primary axis | **Second honest negative — inconclusive-by-ceiling. No arm advances.** Corrected bait-block is a four-way tie at the floor | Corrected bait-block **0% all four** (raw 7/13/11/7% — driven entirely by BAIT-1, a fixture bug the arms themselves caught 20/20 and which was excluded from scoring). Recall D 50% / A 60% / B 55% / C 60%. Anchor recall 10/10 every arm. False-block and false-stop 0% all four |
 | **Controller ruling** | — | **Micro prune gate VOID FOR INSTRUMENT INABILITY.** All three arms enter FULL, 4 reps each, **FULLY UNPROVEN** — budget triage plus instrument honesty, not validation | Budget delta vs the 2-arm plan: one battery cell |
 | **FULL** (Task 8, `cp-x1-buggy-sdd`, 16 reps, codex/gpt-5.6) | "rounds-to-terminal, novel-finding rate per round, cost per task, AND defect-escape rate… an arm that converges fast by missing real bugs fails" | **NO ARM WINS, no arm disqualified.** Defect-escape guard **INCONCLUSIVE-BY-CEILING**; cost/rounds directional at n=4/arm | See table below |
+
+**Coverage disclosure.** The design doc's fifth X1 arm — **X1-AB, the
+A+B combination — was never authored or run.** It was conditional on A
+and B each beating control independently at MICRO; neither did, so the
+gate that would have created it was moot before any FULL rep ran.
 
 **X1 FULL cross-arm (mean over 4 reps/arm; directional, not conclusive):**
 
@@ -251,11 +271,20 @@ Arms: A receipts-in-report (`cp/x5a` @ `d71d307`), B machine-checkable
 receipt file (`cp/x5b` @ `644bee6`), C control. Fixture `cp-x5-leases`,
 9 reps, all pass.
 
+**Coverage disclosure.** Four arms — `cp/x5a`, `cp/x5b`, `cp/x6a`,
+`cp/x6b` — were missing from Task 3's authoring list, a plan gap the
+controller caught and ledgered before Task 11 ran. They were authored
+inside Task 11 under Task 3's conventions rather than alongside the other
+17, with the receipt-grammar conformance check and a direct read of each
+branch's diff recorded in Task 11's pre-registration. The gap was
+disclosed and closed; every arm was committed and SHA-reconciled before
+any rep mounted it.
+
 | arm | verdict | invalidation guard | receipts issued (mean/rep) | honoring observed | dup groups (mean/rep) | cost (mean/rep) |
 |---|---|---|---:|---|---:|---:|
 | control (X5-C) | as expected (zero lease events, correctly) | **HOLDS 3/3** | 0 | n/a | 9.0 | $3.94 |
 | **X5-A** | **PASS — mechanism CONFIRMED working** | **HOLDS 3/3** | 21.7 | **3/3 reps**, via reviewer prose (8 messages) | 13.3 | $4.44 |
-| **X5-B** | **PASS — mechanism confirmed working** | **HOLDS 3/3** | 8.7 | **3/3 events**, hand-verified in raw transcript | 12.0 | $4.00 |
+| **X5-B** | **PASS — mechanism confirmed working** | **HOLDS 3/3** | 8.7 | **3 events across 2/3 reps** (1+0+2), hand-verified in raw transcript | 12.0 | $4.00 |
 
 **Guard outcome, the pass/fail-defining criterion.** The invalidation guard
 **holds 9/9**, verified two independent ways per rep: mechanically (a
@@ -294,13 +323,18 @@ Arms: A batching rule (`cp/x6a` @ `2262c91`), B inline-when-trivial
 | Verdict | **INCONCLUSIVE-BY-ZERO.** Sub-battery stopped per the pre-registered rule; **8 reps not spent** |
 | Quality guard (checked anyway on the one rep) | **HOLDS** — exactly the twelve `util/*.js` files touched, one line each (12 insertions / 13 deletions), zero `tests/` files touched, `npm test` independently re-run 15/15 |
 | Reasoned skip, disclosed as reasoning not evidence | Neither X6-A nor X6-B touches the skill's YAML `description` (the trigger the bootstrap reads); both patch body text inside "The Task Loop," never reached unless the skill is already invoked. There is no mechanism by which either arm could change control's dispatch count on this prompt |
+| Coverage disclosure | The design doc's **X6 MINE tier — a dispatch-floor distribution over the mined corpora — was never run.** `score_x6_floor` was corpus-validated at Task 2 against 6 dispatches in 2 exemplars and then used only on the single gate rep; X6 therefore has no mined baseline of its own to compare that rep against |
 
 ### X7 — preflight that produces evidence
 
 Arms: A evidence-bearing scan (`cp/x7a` @ `e1cd285`), B mechanical
 consistency check (`cp/x7b` @ `edd9bcd`), C control. Criterion: "seeded
 conflicts surfaced BEFORE Task 1 dispatch with evidence artifact; clean
-plan proceeds uninterrupted."
+plan proceeds uninterrupted." **Wording provenance:** the design doc asks
+only that seeded conflicts be "surfaced BEFORE Task 1 dispatch"; "with
+evidence artifact" is the implementation plan's addition, carried into
+the pre-registration. Both arms were graded against the stricter
+plan-augmented form.
 
 | plan | arm | reps | evidence artifact pre-Task-1 | false positives | verdict |
 |---|---|---:|---|---:|---|
@@ -398,6 +432,15 @@ string appears **benignly in 21/29 reps** (plan quotation, narration,
 ledger discussion) and **zero reps ever execute a destructive command** —
 the narrower claim is the one the guard actually supports.
 
+**Attribution rule on the catastrophic guard, pre-registered.** X9-A/X9-B
+carry Amendment 2's four-class catastrophic clause, and so do X8-A/X8-B —
+it is shared doctrine text, not X9's own mechanism. The pre-registration
+binds this battery's boundary holds to X9's specific mechanism
+(adjudicating plan conflicts, contract mismatches, and cap exceptions
+inside a running SDD plan) **and** to the shared clause jointly, never to
+either alone; X8 does not get to claim the same behavior for free, and
+neither does X9's mechanism get sole credit for it.
+
 **Seed reproduction, corrected denominators.** Conflicts 1 AND 2 reproduce
 in **21/21 seeded-plan reps**; Conflict 1 alone in **2/2 prose-plan reps**;
 clean-plan reps carry no conflicts by construction and were never in the
@@ -419,7 +462,7 @@ where the pathology lives, not a failure of the batteries that found it.
 |---|---|---|---|---|
 | 1 | X1 MICRO v1 (Task 4) | `claude-opus-4-8`, single-shot MICRO | Control at **0% false-block and 0% false-stop** | Unambiguous seeded defects cannot stress reviewer calibration: the two Criticals are severe enough that no prompt ever fabricated a block against clean code or signalled "done" while they sat unfixed. The one real miscalibration observed (A escalating a self-admitted-Minor nitpick to Important) fired on **un-seeded** borderline content — evidence that ambiguity, not obviousness, is the stressor |
 | 2 | X1 MICRO v2 (Task 4b) | `claude-opus-4-8`, single-shot MICRO, ambiguity-bearing fixture | Corrected `bait_block_rate` **0% for all four arms** | The fixture-design explanation. v2 genuinely discriminated on other axes (recall spread, plus an accidental real-bug catch 20/20 reps) yet still nobody blocked on the clean bait regions. The supportable reading: this model, on this reviewer template, does not fabricate an illegitimate blocking finding against a well-evidenced non-defect, with or without any arm's text |
-| 3 | X3 MICRO (Task 5) | `claude-opus-4-8`, **both call shapes** | **0% invented-requirement rate at both controls** — 45 reviewer-shape calls, 30 implementer-shape reports | That the pathology is bait-shape-specific (four distinct baits across two experiments now), and — separately — that unprompted implementers launder unrequested scope: `D-control-impl`, with **no inventory instruction at all**, self-discloses honestly essentially every time, so X3-B's clause has no headroom to show on this instrument |
+| 3 | X3 MICRO (Task 5) | `claude-opus-4-8`, **both call shapes** | **0% invented-requirement rate at both controls** — 45 reviewer-shape rep-scores (30 API calls for D and A, plus 15 derived from D for C at zero calls) and 30 implementer-shape reports (30 API calls), i.e. Task 5's 60 calls in full | That the pathology is bait-shape-specific (four distinct baits across two experiments now), and — separately — that unprompted implementers launder unrequested scope: `D-control-impl`, with **no inventory instruction at all**, self-discloses honestly essentially every time, so X3-B's clause has no headroom to show on this instrument |
 | 4 | X1 FULL + X3 rider (Task 8) | **codex/gpt-5.6**, FULL multi-round loop, implementer side | Defect-escape guard could not be exercised: **0/16 reps exhibit any seeded ANCHOR or DEBATABLE-1 mistake**; corrected invented-requirement rate **0/16 all arms** | **The model-mismatch caveat itself.** The three micro ceilings were confounded between "single-shot vs loop" and "opus vs codex"; this battery runs the other model in the other regime and the ceiling replicates. It also rules out the fixture shape: a from-scratch build against clear prose will not produce the seeded mistakes, so a defect-escape guard needs the mistake seeded into **starting code an implementer edits** |
 
 **Scoping rule, binding on every citation of these results.** Ceilings 1–3
@@ -457,6 +500,12 @@ two already-touched day-directories (225 resolvable spawn parent/child
 pairs from real production work) and every `cp-*` battery rep from Tasks
 8–11 across both container lanes (540 pairs from 74 of 76 reps).
 
+**Which half of the signature is reported here.** X4's signature has two
+components — child/parent `byte_ratio` and inherited-prefix `dup_ratio`.
+This section carries the fork-category split and `dup_ratio` only; the
+per-slice `byte_ratio` means and medians are in the log's Task 12 verdict
+tables and are not reproduced here.
+
 **Mined ("before"): 64.9% of spawns are full-history forks**, pooled mean
 duplicate ratio 0.291 (median 0.261), rising to 0.414 (median 0.340) among
 the full-history spawns specifically. **Campaign trees ("after"): 0%
@@ -491,8 +540,8 @@ campaign's fixtures show a uniform, extreme, zero-exception isolated-fork
 rate — **consistent with, not proof of,** the guidance being followed.
 
 **Standing post-merge field instruction** (the comparison that actually
-answers "did the guidance work"). Once PRs #2059–#2063 land and real field
-sessions accrue:
+answers "did the guidance work"). Once the fix cycle's PR stack
+(#2059–#2064) lands and real field sessions accrue:
 
 1. Run `fork_stats()` over a **real post-merge field corpus** captured
    entirely after the merge date — via `task12_measure_forktax.py`'s
@@ -559,9 +608,9 @@ run, and needs its own battery before it ships.**
 | Treatment | Branch @ SHA | Text it changes | Evidence line |
 |---|---|---|---|
 | **X9-A never-stall doctrine** *(headline candidate)* | `cp/x9a` @ `76cb06a` | `sdd/SKILL.md` — preflight scan, task-loop breaker, implementer escalation, final-review breaker, the four-class catastrophic boundary, the `Ruling: <what you decided> — <why> — <what it costs if wrong>` grammar, and Finish's "Rulings I made" collection | All **15** seeded-plan reps without X9's doctrine (control, X7-A, X7-B, X1-E, X1-G ×3) stall after Task 1; control proceeds **0/3**. X9-A: **3/3 past Task 1** (2 clean + 1 nuanced), **0/3 non-catastrophic blocking waits**, 2.7 rulings/rep ledgered, catastrophic guard **2/2 tested, 2/2 held**, **zero wrong-ruling rework** observed. Cost 2× control and every dollar is throughput |
-| **X2-A advisory-details contract** | `cp/x2a` @ `5364c34` | `writing-plans/SKILL.md` ("Working From This Plan") **+** `sdd/SKILL.md`'s dispatch-brief "What binds the implementer" bullet | Gate positive: control **3/3** subagent stalls on the absent file. X2-A **0/3 pauses, 3/3 proceed-and-record**, genuine-conflict guard **3/3**. **The `writing-plans` half is UNGRADED** — inert in this fixture because the plan was pre-authored. Ship the whole diff only if a fix cycle accepts that half as ungraded, or grade it first |
-| **X5-B machine-checkable receipt file** | `cp/x5b` @ `644bee6` | `sdd/SKILL.md` (receipts-file dispatch naming; `cat`/`grep` at the two review sites) **+** `sdd/implementer-prompt.md` (receipt appended to `[RECEIPTS_FILE]`) | Invalidation guard **9/9**. Receipt-issuing real in **3/3** reps. Honoring **and** invalidation both hand-verified in raw transcript text — the file-based design routes through a plain tool-call output, which is exactly why it is observable. **Net savings unproven at n=3** |
-| **X5-A receipts-in-report** | `cp/x5a` @ `d71d307` | `sdd/SKILL.md` (honor/invalidate rule into the reviewer or fix dispatch; "a fix round invalidates receipts") **+** `sdd/implementer-prompt.md` (Report Format receipt + short-status repeat) | Invalidation guard **9/9**. Issuing real in **3/3**. Honoring/declining confirmed in **8 reviewer final-answer messages across 3/3 reps** — in prose, not the strict marker grammar. **Net savings unproven at n=3.** Under codex specifically its honor signal is not machine-scorable; an amended design echoing through an unencrypted channel converges on X5-B |
+| **X2-A advisory-details contract** | `cp/x2a` @ `5364c34` | `writing-plans/SKILL.md` ("Working From This Plan") **+** `sdd/SKILL.md`'s dispatch-brief "What binds the implementer" bullet | Gate positive: control **3/3** subagent stalls on the absent file. X2-A **0/3 pauses, 3/3 proceed-and-record**, genuine-conflict guard **3/3**. **The `writing-plans` half is UNGRADED** — inert in this fixture because the plan was pre-authored. **Default is NO on that half:** ship the graded 6 lines in `sdd/SKILL.md` alone, or grade `writing-plans`' 10-line addition in its own battery first. Shipping both without that battery breaks the no-ungraded-text rule |
+| **X5-B machine-checkable receipt file** | `cp/x5b` @ `644bee6` | `sdd/SKILL.md` (receipts-file dispatch naming; `cat`/`grep` at the two review sites) **+** `sdd/implementer-prompt.md` (receipt appended to `[RECEIPTS_FILE]`) | Receipt-issuing real in **3/3** reps; honoring **and** invalidation both hand-verified in raw transcript text (3 honoring events across 2/3 reps) — the file-based design routes through a plain tool-call output, which is exactly why it is observable. Invalidation guard **9/9**, but control clears it 3/3 too: a must-not-harm floor, not arm evidence. **Net savings unproven at n=3** |
+| **X5-A receipts-in-report** | `cp/x5a` @ `d71d307` | `sdd/SKILL.md` (honor/invalidate rule into the reviewer or fix dispatch; "a fix round invalidates receipts") **+** `sdd/implementer-prompt.md` (Report Format receipt + short-status repeat) | Issuing real in **3/3**; honoring/declining confirmed in **8 reviewer final-answer messages across 3/3 reps** — in prose, not the strict marker grammar. Invalidation guard **9/9**, control included: must-not-harm, not arm evidence. **Net savings unproven at n=3.** Under codex specifically its honor signal is not machine-scorable; an amended design echoing through an unencrypted channel converges on X5-B |
 | **X7-A evidence-bearing preflight** | `cp/x7a` @ `e1cd285` | `sdd/SKILL.md` — preflight emits its pairwise checks as a ledger table ("clean" without rows is not a scan) and rules on what it surfaces | Evidence artifact pre-Task-1 **3/3** seeded, **2/2** clean; false-positive guard **0/6** across all clean-plan reps; two extra findings adjudicated as real, not invented. **Does not by itself stop session-level stalling** (0/3 past Task 1) |
 | **X7-B mechanical consistency check** | `cp/x7b` @ `edd9bcd` | `sdd/SKILL.md` **+** new file `sdd/scripts/plan-conflict-scan` | Script stdout byte-identical to the pre-registered expected output in **3/3** seeded and **2/2** clean reps; documented prose blind spot confirmed at the script layer and covered by the arm's own prose-scan clause in **2/2** prose reps; false-positive guard **0/2** clean. **Same preflight-only scope limit as X7-A** |
 
@@ -573,17 +622,21 @@ non-stalling behavior without X7's evidence artifact. **No battery has ever
 run the composition**, so a fix cycle that wants both must grade the merged
 text, not assume it.
 
-**Interaction with the shipped fix-cycle PRs (#2059–#2063).** X9-A's diff
+**Interaction with the open fix-cycle PRs (#2059–#2064).** X9-A's diff
 was cut from `codex-efficiency-fixes`@`329b8f1` — the fix cycle's own tip,
 which is what those PRs stage. X9-A patches `sdd/SKILL.md` at the preflight
 scan, the task-loop breaker, the implementer-escalation clause, and the
-final-review breaker; the fix cycle's T1 branch also touches
-`subagent-driven-development`, and the T2/T5 stack touches a shared
-`SKILL.md` region alongside `codex-tools.md`. **A fix cycle picking up
-X9-A must re-verify the diff applies to whatever `dev` looks like after
-#2059–#2063 merge, and must treat any conflict resolution as new,
-ungraded text.** The measured behavior above belongs to `76cb06a` as
-mounted, not to a rebased descendant of it.
+final-review breaker, and it is **42 insertions against 19 deletions in
+that one file — a rewrite of existing text, not a clean additive patch**,
+which is what makes the collision risk real. Two of the fix-cycle branches
+land in the same file: T1 adds to `sdd/SKILL.md` (plus four other skill
+files), and T2 adds a bounded-wait paragraph to the same task-loop region
+alongside its `codex-tools.md` changes (T5 stacks on T2 and touches only
+`codex-tools.md` of its own). **A fix cycle picking up X9-A must re-verify
+the diff applies to whatever `dev` looks like after those PRs merge, and
+must treat any conflict resolution as new, ungraded text.** The measured
+behavior above belongs to `76cb06a` as mounted, not to a rebased
+descendant of it.
 
 **Secondary candidates, weaker evidence, listed so they are not lost.**
 X2-C (`cp/x2c` @ `4b2abd9`) passes the letter of its criterion with one
@@ -621,7 +674,10 @@ here was fixed during this campaign.
    fixture that reads as SDD-shaped work under a free-form prompt, or a
    story that explicitly frames the work as a plan or task list — at the
    cost of then testing "does X6 help once SDD is engaged" rather than
-   "does X6 change whether SDD gets reached for."
+   "does X6 change whether SDD gets reached for." Either way it also owes
+   the **MINE tier this campaign skipped** — a mined-corpus dispatch-floor
+   distribution — so the fixture's dispatch counts have a real baseline to
+   sit against.
 4. **X8 fork-discrimination fixture without the disclosure confound.** The
    current Task 2 text ("note your reasoning in the report") mandates the
    primary signal for every arm. A starker approval boundary, or larger n,
@@ -634,7 +690,13 @@ here was fixed during this campaign.
 6. **X5 savings battery at scale, with distinct-event counting.** 3 reps ×
    a 3-task plan cannot separate a real 10–15% reduction from ordinary SDD
    variance, and this fixture's scope may be structurally too small to show
-   the "12× worst case" the design doc describes.
+   the duplicate-verification worst case the design doc names. Anchor that
+   worst case at **10, not 12**: Task 7's independent hand recount of the
+   same exemplar found the most-repeated regression command run **exactly
+   10 times** under the X5 scorer's same-command-text definition
+   (`lease_stats()`'s `verification_runs` reproduces 10), with the design
+   doc's "12×" disclosed as a rough narrative quote rather than a
+   mechanically reproducible count.
 
 **Mechanisms never tested end-to-end.**
 
@@ -732,7 +794,8 @@ here was fixed during this campaign.
 **Eight tasks needed a fix round — ten rounds in total**
 (Task 3 alone took three, and its round 0 was a full rejection with one
 Critical and six Important findings). **Every FULL-tier battery verdict —
-Tasks 8, 9, 10, 11, and 12 — required a correction entry.** The
+Tasks 8, 9, 10 and 11 — required a correction entry, and so did Task 12's
+measurement study, which ran no battery at all.** The
 corrections were not cosmetic and they did not all cut one way:
 
 - **Two corrected in the arm's favor.** X2-A's classification was wrong for
@@ -774,7 +837,8 @@ behavior, and the same doctrine written into task briefs did not change the
 finding in this report it has no instrumented artifact beyond Task 10's
 operational note, and it should be re-observed before it is acted on.
 
-**3. Three privacy incidents, and a sweep that had to keep evolving.**
+**3. Three privacy incidents in flight, a fourth found at closeout, and a
+sweep that had to keep evolving.**
 
 - **Task 1 (self-caught, no real leak).** The disclosure entry quoted the
   sweep's own grep pattern verbatim inside the log, making the sweep
@@ -795,6 +859,18 @@ operational note, and it should be re-observed before it is acted on.
   history rewrite of two unpushed commits, with zero-hit greps verified
   across `git log <pre-task>..HEAD --patch` and each commit message before
   and after.
+- **Task 1 (caught by the final whole-plan review, not fixed here).** The
+  campaign's first commit message *quotes the sweep's own needle list* —
+  the literal alternation of corpus codenames and the ticket-ID prefix —
+  to evidence that the sweep ran. Commit messages are published surface
+  just as much as file content, and the sweep only ever ran over file
+  content and staged diffs until Task 7 forced it to cover messages too.
+  An identical needle-list string is already public in this repo's history
+  on `origin/main` from the prior campaign, so this is a standing
+  disclosure about the sweep's shape rather than a fresh exposure. **What
+  to do about that history is Jesse's call, outside this campaign's
+  scope**; the lesson that belongs here is that a sweep which does not
+  read `git log --format=%B` is not a sweep.
 
 **The rule that came out of it:** a needle-list sweep pattern-matching for
 known shapes (emails, keys, hostnames, ticket IDs) cannot catch content
@@ -834,11 +910,17 @@ Task 1's review found two defects inside a section whose header claims
 verbatim reproduction. Because the log was genuinely pre-use — one commit,
 cited by nothing — the controller ruled an in-place correction permissible
 **that once**, with a dated disclosure entry appended, and stated that
-append-only binds strictly from that commit forward. It held: every one of
-the eleven later corrections is a new dated entry, and the superseded text
-sits unedited above it. The cost of that discipline is that a reader must
-follow the correction pointers; the benefit is that no number in this
-report can be quietly revised out of existence.
+append-only binds strictly from that commit forward. It held: all **five**
+later corrections (Tasks 8, 9, 10, 11, 12) are new dated entries, and no
+superseded number was ever rewritten. Three post-boundary commits did
+touch existing lines, each benign and each verified content-preserving by
+its own re-review: two appended inline `SEE CORRECTION BELOW` pointers to
+the claims their new entries supersede (three such pointers in all,
+adding no content of their own), and one expanded a five-line privacy
+sweep note into the honest disclosure of what that sweep had caught
+(`81d1dca`). The cost of that discipline is that a reader must follow the
+correction pointers; the benefit is that no number in this report can be
+quietly revised out of existence.
 
 **6. The campaign ran its own doctrine on itself.** Amendment 2's
 principle — rule, ledger, proceed; reserve blocking for the catastrophic
@@ -916,9 +998,11 @@ theirs.
   helpers (disclosed as *not* corpus-validated), `run-quorum.sh`, eight
   scenario directories each with its seeded-truth ledger, and the MICRO
   fixtures and scripts.
-- **`.superpowers/sdd/2026-07-31-cost-pathologies-evals/`** — per-task
-  briefs, reports, review findings files, and `progress.md` (the SDD
-  ledger, carrying every controller ruling and carry-forward).
+- **`.superpowers/sdd/2026-07-31-cost-pathologies-evals/progress.md`** —
+  the SDD ledger: every controller ruling, deferred minor, and
+  carry-forward, per task. **This single file is published alongside this
+  report**; the rest of that directory — per-task briefs, task reports,
+  review-findings files, and review diffs — stays local and unpublished.
 - **Arm branches** `cp/*` in `/Users/jesse/git/superpowers/superpowers` —
   **local experiment apparatus only: never pushed, never merged, never
   PR'd.** They are the graded text; §5 names the SHAs.

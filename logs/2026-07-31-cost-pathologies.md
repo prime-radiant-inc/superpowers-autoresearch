@@ -6158,3 +6158,122 @@ convention Task 7's fix round made binding.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-08-01 | Task 13 (campaign closeout — report + this entry, no runs) | $0.00 | Campaign CLOSED. `reports/2026-08-cost-pathologies-campaign.md` published. Final total **$342.50 of $580** (59%), $400 checkpoint never reached. 4 winning mechanism families (X9-A, X2-A, X5-A/X5-B, X7-A/X7-B) staged for a FUTURE fix cycle with Jesse's approval — nothing ships from this campaign; the `cp/*` arms stay local, unpushed, unmerged. 4 instrument ceilings + 3 other inconclusive types reported as results. Queue for the next campaign: report section 6. |
+
+## 2026-08-01 — Task 13 fix round 1: final whole-plan review — closeout report corrected, SDD ledger published
+
+The whole-plan review ran across the entire campaign — this log, the
+plan, the SDD ledger, and the closeout report — before anything was
+pushed. It returned Important findings I2–I7, minors M1–M12, two
+handoff sharpenings, and two structural decisions; the controller ruled
+on each, and this entry records the wave that closed them. **No
+measurement, verdict, or cost figure changed.** Every fix is a text
+correction, a coverage disclosure, or a claim narrowed to what the data
+already supports.
+
+**Report corrections** (`reports/2026-08-cost-pathologies-campaign.md`).
+**I2** — the X3 MICRO ceiling row now reconciles: 45 reviewer-shape
+rep-scores = 30 API calls (D and A) + 15 derived for C at zero calls,
+beside 30 implementer-shape reports, which is Task 5's 60 calls exactly.
+**I3** — the append-only lesson now counts **five** dated correction
+entries (Tasks 8–12, not "eleven") and states the true post-boundary
+picture: three commits did touch existing lines, all benign and each
+verified content-preserving by its own re-review — two appended
+`SEE CORRECTION BELOW` pointers (three sites in all, no content of their
+own) and `81d1dca` expanded a five-line privacy note into the honest
+disclosure of what that sweep had caught. **I4** — the executive summary
+no longer lists the 64.9%-vs-0% fork contrast among the hard
+reproductions; §4's confound now rides with it inline. **I5** — the X5
+rows lead with mechanism-confirmed evidence, and the invalidation guard
+is labelled for what it is: a must-not-harm floor control clears 3/3
+too, not arm evidence. **I6** — the queue's X5-savings item anchors on
+Task 7's recount (**10**, under this campaign's own exact-command-text
+definition) rather than the design doc's narrated "12×". **I7** — three
+coverage disclosures added: **X1-AB was never authored** (both its
+conditions failed at MICRO, so its gate was moot), the **X6 MINE tier
+was never run** (`score_x6_floor` was validated on 6 dispatches at Task 2
+and then used only on the gate rep), and `cp/x5a`/`cp/x5b`/`cp/x6a`/
+`cp/x6b` were **authored inside Task 11 rather than Task 3**, after the
+plan gap was ledgered and disclosed.
+
+**Minors.** M1 seven inconclusive sub-experiments, not six; M2 Task 12 is
+a measurement study, not a battery; M3 the $342.50 total is measured
+except Task 4's reconstructed ~$0.95; M4 **76 of the 77 container reps
+were graded**; M5 the `sdd/` path shorthand is defined once up front;
+M6 the `byte_ratio` half of X4's signature is pointed at this log's Task
+12 tables instead of being silently dropped; M7 X7's criterion is flagged
+as the plan-augmented, stricter wording rather than the design doc's;
+M10 the fix cycle's stack is **#2059–#2064**; M11 X5-B honored **3 events
+across 2/3 reps** (1+0+2), not "3/3"; M12 the X9 catastrophic-guard holds
+are attributed jointly to X9's own mechanism and the shared four-class
+clause, per Task 9's pre-registered attribution rule.
+
+**Handoff sharpening.** The X9-A warning now carries the fact that made
+it necessary — **42 insertions against 19 deletions in one file, a
+rewrite of existing text rather than a clean additive patch** — and names
+**T2**, not T5, as the second `SKILL.md` conflict surface (T5 stacks on
+T2 and touches only `codex-tools.md` of its own). The X2-A row's default
+on its ungraded `writing-plans` half is now an explicit **NO**: ship the
+graded six lines alone, or grade the other half first.
+
+**A sweep hole this review found, disclosed not fixed.** Commit messages
+are published surface, and this campaign's first commit message quotes
+the sweep's own needle list verbatim to evidence that the sweep ran — the
+same self-matching shape Task 1 fixed *inside* the log while leaving it in
+the message. The sweep only began covering messages at Task 7. An
+identical needle-list string is already public in this repo's history on
+`origin/main` from the prior campaign, so this is a disclosure about the
+sweep's shape, not a fresh exposure; **what to do about that history is
+Jesse's call and outside this campaign's scope.** The lesson is in the
+report: a sweep that does not read `git log --format=%B` is not a sweep.
+
+**Decision 1 (ruled) — the SDD ledger is published.**
+`.superpowers/sdd/2026-07-31-cost-pathologies-evals/progress.md` was
+swept against the full needle set and force-added (that directory is
+gitignored); **nothing else from the directory ships** — briefs, task
+reports, findings files, and review diffs stay local. Three controller
+rulings this log never carried become public with it: Task 3's review
+ruling narrowing X3-B to the design doc's own verb (its *effect* was
+already visible in the published `arm-manifest.md`; the ruling was not),
+Task 8's ruling closing X1 on the honest ceiling verdict rather than
+re-battering a fixture shape already known not to elicit the pathology,
+and Task 13's own commit-but-hold-the-push ruling. The report's §9
+sources bullet is narrowed to name that one file rather than the
+directory.
+
+**Decision 2 (ruled) — the plan's checkboxes stay unticked.** One pointer
+line under the plan's header records that per-task completion lives in
+the published ledger and in this log, and that the checkboxes were never
+this campaign's tracking mechanism. Nothing was retroactively ticked.
+
+**M8 — provenance of the "all thirteen plan tasks are complete" line.**
+The closeout entry above was written while Task 13's own Step 2 was still
+outstanding: this task completes on the push to `origin/main`, which
+follows this wave. Read that line as true of Tasks 1–12 and Task 13's
+Step 1 when it was written, and true in full once the push lands.
+
+### Privacy sweep (this entry, the newly published ledger, and every staged diff)
+
+Full needle set run before commit — machine identity (this host's real
+hostname and username resolved at sweep time via `hostname`/`whoami`,
+never written literally, with the short-host form re-run word-anchored),
+donor-username and foreign-homedir path shapes, mined-corpus codenames,
+client/project names, ticket-ID shapes, email patterns, and API-key
+patterns — over the ledger file in full, this entry, the report and plan
+diffs, and the commit message. **No leaks.** Three matches, each already
+adjudicated earlier in this campaign and re-confirmed benign here:
+(1) the short-hostname needle is two characters on this host and
+therefore hits ordinary prose (the FULL hostname, word-anchored, returns
+**0** in every swept file, and the two-character form matches nothing
+case-sensitively); (2) the ledger carries the same single
+`/Users/jesse/...` provenance-path convention this log and the report
+already use; (3) the ledger names the session donor by first name in one
+Task 7 line — the same form Task 7's own privacy round deliberately kept
+while scrubbing his username, identical to text already published in this
+repo's prior campaign report and ledger on `origin/main`, and identical
+to this log's own Task 7 entry. The ledger names remote hosts by their
+`remote-host-a`/`remote-host-b` aliases only, and quotes no rollout,
+session, or business-logic content.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-08-01 | Task 13 fix round 1 (final whole-plan review fixes; no runs) | $0.00 | Report corrections I2–I7, M1–M7, M10–M12, both handoff sharpenings, and the commit-message sweep-hole lesson; SDD ledger published (`git add -f`, that one file only); plan pointer line; M8 provenance correction. No measurement, verdict, or cost figure changed. Campaign total unchanged: **$342.50 of $580** (59%). |

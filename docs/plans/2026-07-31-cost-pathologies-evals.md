@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Completion tracking for this campaign (all 13 tasks are done):** per-task completion, controller rulings, and carry-forwards live in `.superpowers/sdd/2026-07-31-cost-pathologies-evals/progress.md` (published) and `logs/2026-07-31-cost-pathologies.md` — the checkboxes below were never the tracking mechanism here and are deliberately left unticked.
+
 **Goal:** Build and run the X1–X9 competing-hypothesis experiment portfolio from `docs/2026-07-31-cost-pathologies-campaign-design.md` (+ Amendments 1–2), producing per-experiment winning-arm verdicts (or honest negatives) with correctness guards intact.
 
 **Architecture:** Campaign home `campaigns/cost-pathologies/` in this repo (superpowers-autoresearch, main, push authorized). Treatment arms are LOCAL branches of the superpowers repo cut from `codex-efficiency-fixes`' tip (the control text) — never pushed, never merged; batteries run them as quorum arms through the established container lanes. Scorers validated against the mined `_tmp/cost-pathologies-2026-07-31/` corpora before grading anything fresh. Shipping winners is a LATER fix cycle, out of this plan's scope.
