@@ -45,6 +45,22 @@ header comment for the full contract, including its known REPS-abort
 limitation on a mid-battery fail/indeterminate verdict. Scorers import
 `campaigns/codex-efficiency/rollout_parser.py` rather than forking it.
 
+**This campaign's own scenarios** (`cp-x1-buggy-sdd`, `cp-x2-advisory`,
+`cp-x7x9-conflicts` + its `-clean`/`-prose` siblings, `cp-x8-approvals`,
+`cp-x5-leases`, `cp-x6-smalledits`) run through
+`campaigns/cost-pathologies/run-quorum.sh` instead — modeled on the
+codex-efficiency script but simpler (each scenario carries its own
+`fixtures/` subdirectory, so a battery syncs the whole scenario directory
+into the evals lane rather than merging a separate top-level fixtures
+tree). **Known gap (Task 6, owed to Task 8+):** it only resolves ARM
+`control` (pointing at a caller-created `/tmp/cp-arm-control` worktree at
+`codex-efficiency-fixes` @ 329b8f1); it does not yet know how to
+materialize one of the 17 `cp/<arm>` branches from
+`campaigns/cost-pathologies/arm-manifest.md` into its own worktree the way
+codex-efficiency's script resolves its four fixed arm names. See the
+script's own header comment for the fuller constraint (each arm needs its
+own directory; `JOBS>1` would race on a shared one).
+
 ## Budget
 
 ~$580 ceiling (of the original $1000 envelope, net of the codex-efficiency
