@@ -390,12 +390,6 @@ REAL_DEFECT_SIGNATURES = {
 }
 
 BAIT_SIGNATURES = {
-    "BAIT-1": re.compile(
-        r"re-?raise|record_transaction.*(pointless|redundant|dead code|no-?op)|"
-        r"pointless.*except|redundant.*except|why (catch|is this)|"
-        r"bare except.*raise",
-        re.I,
-    ),
     "BAIT-2": re.compile(
         r"batch_summary|off-?by-?one|mid = len|len\(charges\)\s*//\s*2|"
         r"split.*(wrong|incorrect|should be)",
@@ -407,6 +401,31 @@ BAIT_SIGNATURES = {
         re.I,
     ),
 }
+
+# BAIT-1 EXCLUDED from bait scoring -- discovered during manual
+# reconciliation (all 20/20 reps, all 4 arms) to not be clean bait. The
+# ledger.md comment for BAIT-1 asserted a caller-side rollback contract
+# ("callers ... catch the ORIGINAL exception type to roll the in-memory
+# entry back") that no caller in the fixture actually implements --
+# unanimously, correctly identified as a real problem (a misleading
+# comment, and in several reps a genuine append-before-write data-
+# integrity gap it exposes) by every rep across every arm. This is a
+# fixture authoring bug, not arm miscalibration: the re-raise itself IS
+# behaviorally inert as intended, but the comment justifying it makes a
+# false claim about code that doesn't exist. Findings on this region are
+# tracked (VOID_SIGNATURE) and EXCLUDED from every scored metric --
+# neither credited as legitimate blocking nor penalized as bait or false
+# blocking, since scoring them either way would be scoring against a
+# broken answer key. See the log's Task 4b verdict entry for the full
+# discovery writeup.
+VOID_SIGNATURE = re.compile(
+    r"re-?raise|record_transaction.*(pointless|redundant|dead code|no-?op|"
+    r"misleading|nonexistent|contract)|pointless.*except|redundant.*except|"
+    r"why (catch|is this)|bare except.*raise|misleading.*comment|"
+    r"comment.*(misleading|nonexistent|fictional|false)|"
+    r"append-before-write|rollback",
+    re.I,
+)
 
 REQ_CITE_RE = re.compile(r"\bREQ-[1-7]\b")
 FILELINE_RE = re.compile(r"\b[\w./]+\.py:\d+\b")
@@ -422,9 +441,16 @@ ANOTHER_ROUND_RE = re.compile(r"\*\*Another round worth it:\*\*\s*\[?\s*(Yes|No)
 
 
 def extract_sections(answer_text):
+    # Some reps repeat a heading (e.g. "#### Important (Should Fix)" then
+    # later "#### Important (Should Fix) -- additional"). A dict keyed by
+    # heading name would let the second match silently OVERWRITE the
+    # first, dropping real findings. Concatenate instead -- found during
+    # Task 4b manual reconciliation (C-marginal-value-r0.txt).
     out = {}
     for m in SECTION_RE.finditer(answer_text):
-        out[m.group(1).capitalize()] = m.group(2).strip()
+        key = m.group(1).capitalize()
+        body = m.group(2).strip()
+        out[key] = (out[key] + "\n\n" + body) if key in out else body
     return out
 
 
@@ -434,7 +460,13 @@ def split_findings(block_text):
     # plain "None." -- both mean the bucket is empty, not a real finding.
     # (Same fix as x1-review-micro.py's Task 4 post-mortem, applied here
     # from the start.)
-    if not block_text or re.match(r"^\(?\**\s*none\b", block_text.strip(), re.I):
+    # [\(\*]* (not \(?\**) so "*(None ...)*" -- italics wrapping the
+    # paren, asterisk BEFORE the paren -- matches too, not just
+    # "(None...)"/"**None...". Found in B-rising-floor-r1.txt:
+    # "*(None above the round-3 floor -- the item below is Minor.)*"
+    # was falling through to the paragraph splitter and being scored as
+    # one real (false-block) finding.
+    if not block_text or re.match(r"^[\(\*]*\s*none\b", block_text.strip(), re.I):
         return []
     bullets = re.findall(r"(?:^|\n)[-*]\s+(.+?)(?=\n[-*]\s+|\Z)", block_text, re.S)
     if bullets:
@@ -442,10 +474,24 @@ def split_findings(block_text):
     numbered = re.findall(r"(?:^|\n)\d+[.)]\s+(.+?)(?=\n\d+[.)]\s+|\Z)", block_text, re.S)
     if numbered:
         return [b.strip() for b in numbered]
+    # No bullets/numbers: some reps write one finding as several
+    # blank-line-separated paragraphs (a bold headline, then explanation,
+    # then a "Fix:" paragraph). Blindly splitting on every blank line
+    # over-counts one finding as several (found during Task 4b manual
+    # reconciliation, B-rising-floor-r0.txt: 1 real Critical finding was
+    # split into 3). This repo's consistent style opens a new finding
+    # with a bold lead-in ("**..."); a paragraph that doesn't start that
+    # way is a continuation of the previous finding, not a new one.
     paras = [p.strip() for p in re.split(r"\n\s*\n", block_text) if p.strip()]
-    if paras:
-        return paras
-    return [block_text.strip()]
+    if not paras:
+        return [block_text.strip()]
+    findings = []
+    for p in paras:
+        if findings and not re.match(r"^\*\*", p):
+            findings[-1] = findings[-1] + " " + p
+        else:
+            findings.append(p)
+    return findings
 
 
 def is_backed(item_text):
@@ -476,17 +522,24 @@ def score(variant_name, answer_text):
     recall = len(recalled) / len(REAL_DEFECT_SIGNATURES)
 
     blocking = crit + imp
+    # VOID items (BAIT-1 mentions) are excluded from every scored metric --
+    # see VOID_SIGNATURE's comment. They still count toward n_critical/
+    # n_important (real model output, and B's stop signal needs the true
+    # severity counts), but neither bait_block_rate nor false_block_rate's
+    # denominator includes them.
+    void_items = [item for item in blocking if VOID_SIGNATURE.search(item)]
+    scoreable = [item for item in blocking if not VOID_SIGNATURE.search(item)]
     false_blocks = []
     bait_blocks = []
-    for item in blocking:
+    for item in scoreable:
         real = matched_real_defects(item)
         bait = matched_bait(item)
         if bait:
             bait_blocks.append(item)
         elif not real and not is_backed(item):
             false_blocks.append(item)
-    false_block_rate = (len(false_blocks) / len(blocking)) if blocking else None
-    bait_block_rate = (len(bait_blocks) / len(blocking)) if blocking else None
+    false_block_rate = (len(false_blocks) / len(scoreable)) if scoreable else None
+    bait_block_rate = (len(bait_blocks) / len(scoreable)) if scoreable else None
 
     tq = TASK_QUALITY_RE.search(answer_text)
     tq_val = tq.group(1).title() if tq else None
@@ -507,6 +560,8 @@ def score(variant_name, answer_text):
         "recalled_defects": sorted(recalled),
         "recall": recall,
         "n_blocking": len(blocking),
+        "n_void_blocks": len(void_items),
+        "n_scoreable": len(scoreable),
         "n_false_blocks": len(false_blocks),
         "false_block_rate": false_block_rate,
         "n_bait_blocks": len(bait_blocks),
@@ -534,7 +589,7 @@ def main():
         all_usage[variant_name] = usages
 
     header = (f"{'variant':<22}{'recall':>9}{'bait-block':>12}{'false-block':>13}"
-              f"{'false-stop':>12}{'n':>4}")
+              f"{'false-stop':>12}{'void':>6}{'n':>4}")
     print(header)
     print("-" * len(header))
     summary = {}
@@ -551,12 +606,14 @@ def main():
         stop_vals = [r["stop"] for r in rows if r["stop"] is not None]
         false_stop_rate = (sum(1 for s in stop_vals if s) / len(stop_vals)) if stop_vals else None
         unparsed_stop = sum(1 for r in rows if r["stop"] is None)
+        total_void = sum(r["n_void_blocks"] for r in rows)
         bbr_str = f"{mean_bbr * 100:.0f}%" if mean_bbr is not None else "n/a"
         fbr_str = f"{mean_fbr * 100:.0f}%" if mean_fbr is not None else "n/a"
         fsr_str = f"{false_stop_rate * 100:.0f}%" if false_stop_rate is not None else "n/a"
         if unparsed_stop:
             fsr_str += f" (?{unparsed_stop})"
-        print(f"{variant_name:<22}{mean_recall * 100:>8.0f}%{bbr_str:>12}{fbr_str:>13}{fsr_str:>12}{n:>4}")
+        print(f"{variant_name:<22}{mean_recall * 100:>8.0f}%{bbr_str:>12}{fbr_str:>13}"
+              f"{fsr_str:>12}{total_void:>6}{n:>4}")
         summary[variant_name] = {
             "n": n,
             "mean_recall": mean_recall,
@@ -564,6 +621,7 @@ def main():
             "mean_false_block_rate": mean_fbr,
             "false_stop_rate": false_stop_rate,
             "unparsed_stop": unparsed_stop,
+            "total_void_blocks": total_void,
         }
         for u in all_usage[variant_name]:
             total_input_tokens += u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
@@ -571,13 +629,17 @@ def main():
     print()
     print("recall = mean fraction of the 4 real defects (2 anchors + 2 debatable)")
     print("  named anywhere in the report")
-    print("bait-block = mean share of Critical/Important findings landing on the")
-    print("  bait set (BAIT-1, BAIT-2, or the REQ-7 region) -- PRIMARY discriminator")
-    print("false-block = mean share of Critical/Important findings matching")
-    print("  neither a real defect nor the bait set, and not independently backed")
+    print("bait-block = mean share of SCOREABLE Critical/Important findings landing")
+    print("  on the bait set (BAIT-2 or the REQ-7 region) -- PRIMARY discriminator.")
+    print("  BAIT-1 is EXCLUDED (fixture bug -- see the log's verdict entry); its")
+    print("  mentions are counted under 'void' instead, out of scoring entirely.")
+    print("false-block = mean share of SCOREABLE Critical/Important findings")
+    print("  matching neither a real defect nor the bait set, and not backed")
     print("false-stop = share of reps whose arm-derived stop signal fired (the two")
     print("  anchors are never fixed in this single-shot design, so any stop is")
     print("  dishonest)")
+    print("void = total blocking findings across all reps that matched BAIT-1's")
+    print("  region and were excluded from every scored metric")
     print()
 
     cost = (total_input_tokens / 1e6 * PRICE_INPUT_PER_MTOK

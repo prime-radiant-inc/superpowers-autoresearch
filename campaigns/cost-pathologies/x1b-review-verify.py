@@ -29,10 +29,35 @@ REAL_DEFECT_NEEDLES = {
 }
 
 BAIT_NEEDLES = {
-    "BAIT-1": ["re-raise", "reraise", "record_transaction", "dead code", "pointless"],
     "BAIT-2": ["batch_summary", "off-by-one", "off by one", "mid = len"],
     "REQ-7-region": ["duplicate", "req-7", "same code", "reused"],
 }
+
+# BAIT-1 EXCLUDED here too, matching x1b-review-micro.py's fix -- see
+# that script's VOID_SIGNATURE comment for the full discovery writeup.
+# Findings matching this are tracked but excluded from every scored
+# metric, not scored as bait or as false blocks. Bare "record_transaction"
+# is deliberately NOT a standalone needle -- that function name also
+# appears inside legitimate REQ-4/ANCHOR-CRITICAL findings that merely
+# mention it in passing (C-marginal-value-r3.txt's Critical#2), which a
+# bare substring match over-triggers on; require it to co-occur with a
+# qualifying word, matching the main scorer's regex semantics.
+VOID_STANDALONE_NEEDLES = ["re-raise", "reraise", "bare except", "roll back",
+                           "rollback", "append-before-write"]
+VOID_QUALIFIER_NEEDLES = ["pointless", "redundant", "dead code", "no-op",
+                          "noop", "misleading", "nonexistent", "fictional",
+                          "does not exist", "doesn't exist", "no such caller"]
+
+
+def is_void(item_text):
+    low = item_text.lower()
+    if any(n in low for n in VOID_STANDALONE_NEEDLES):
+        return True
+    if "record_transaction" in low and any(n in low for n in VOID_QUALIFIER_NEEDLES):
+        return True
+    if "comment" in low and any(n in low for n in VOID_QUALIFIER_NEEDLES):
+        return True
+    return False
 
 VARIANTS = ["D-control", "A-criterion-backing", "B-rising-floor", "C-marginal-value"]
 
@@ -77,9 +102,29 @@ def parse_answer(text):
             elif re.search(r"\bno\b", after):
                 another_round = "No"
             continue
-        if bucket and re.match(r"^\(?none\b", low):
+        # "none"/"below the round-N floor" placeholder lines (including
+        # italic-wrapped "*(Below the round-3 floor ...)*") are not
+        # findings. Found in B-rising-floor-r0.txt: this line starts
+        # with "*" as markdown italics, not a bullet marker -- the old
+        # startswith("*") check below (no whitespace requirement) took
+        # it as a real bulleted finding.
+        if bucket and re.match(r"^[\(\*]*\s*(none\b|below the round)", low):
             continue
-        if bucket and (stripped.startswith("-") or stripped.startswith("*")):
+        # A whole line wrapped in italics-parens ("*(...)*") is always
+        # meta-commentary about the round/floor, never a finding, no
+        # matter how it's phrased -- B's round-3 framing produces this
+        # preamble in different wording almost every rep ("below the
+        # round-3 floor", "Round-3 floor: Critical only", etc.); matching
+        # the structural shape instead of enumerating phrasings.
+        if bucket and re.match(r"^\*\(.*\)\*$", stripped):
+            continue
+        # A new finding starts at "- " (dash bullet), "* " (star bullet),
+        # or "**" (a bold lead-in used as the whole paragraph's headline,
+        # this corpus's other common style for un-bulleted findings --
+        # no space needed after "**" itself). A single "*" NOT followed
+        # by another "*" or a space is markdown italics on ordinary
+        # prose (e.g. "*(Below the round-3 floor...)*"), not a bullet.
+        if bucket and re.match(r"^(-\s|\*\*|\*\s)", stripped):
             buckets[bucket].append(stripped.lstrip("-* ").strip())
         elif bucket and stripped and not stripped.startswith("#"):
             if buckets[bucket]:
@@ -106,9 +151,11 @@ def score_verify(variant_name, text):
     recall = len(recalled) / len(REAL_DEFECT_NEEDLES)
 
     blocking = buckets["critical"] + buckets["important"]
+    void_blocks = [item for item in blocking if is_void(item)]
+    scoreable = [item for item in blocking if not is_void(item)]
     false_blocks = 0
     bait_blocks = 0
-    for item in blocking:
+    for item in scoreable:
         low = item.lower()
         is_bait = any(matches_any(item, needles) for needles in BAIT_NEEDLES.values())
         if is_bait:
@@ -121,8 +168,8 @@ def score_verify(variant_name, text):
         backed = cites_req or (has_fileline and has_reach_word)
         if not hit_real and not backed:
             false_blocks += 1
-    false_block_rate = (false_blocks / len(blocking)) if blocking else None
-    bait_block_rate = (bait_blocks / len(blocking)) if blocking else None
+    false_block_rate = (false_blocks / len(scoreable)) if scoreable else None
+    bait_block_rate = (bait_blocks / len(scoreable)) if scoreable else None
 
     if variant_name == "C-marginal-value":
         stop = (another_round == "No") if another_round else None
@@ -137,6 +184,8 @@ def score_verify(variant_name, text):
         "n_minor": len(buckets["minor"]),
         "recall": recall,
         "n_blocking": len(blocking),
+        "n_void_blocks": len(void_blocks),
+        "n_scoreable": len(scoreable),
         "n_false_blocks": false_blocks,
         "false_block_rate": false_block_rate,
         "n_bait_blocks": bait_blocks,
@@ -173,8 +222,8 @@ def main():
             v = score_verify(variant_name, text)
             checked += 1
             fields = ["n_critical", "n_important", "n_minor", "n_blocking",
-                      "n_false_blocks", "n_bait_blocks", "task_quality",
-                      "another_round", "stop"]
+                      "n_void_blocks", "n_scoreable", "n_false_blocks",
+                      "n_bait_blocks", "task_quality", "another_round", "stop"]
             diffs = {}
             for field in fields:
                 if main_row.get(field) != v.get(field):

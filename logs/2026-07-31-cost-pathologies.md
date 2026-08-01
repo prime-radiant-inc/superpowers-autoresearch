@@ -978,3 +978,211 @@ Privacy sweep run on this entry before commit (standing needle set +
 `ANTHROPIC_API_KEY` pattern, filtered of scrubbed remote-host
 placeholders): no match, clean — this entire task is a synthetic
 fixture with no real session content.
+
+## 2026-07-31 — Task 4b VERDICT: X1 MICRO fixture v2 — no arm beats control (BLOCKED-equivalent, corrected primary metric)
+
+Ran the pre-registered battery: 20 calls (4 variants × 5 reps),
+`claude-opus-4-8`, cached under `out/x1b-review-micro/` (gitignored).
+Manual reconciliation against the independent verifier surfaced a
+**fixture design bug** (not a scorer bug) plus three scorer/verifier
+parsing bugs. All four are documented below with the fix and the
+before/after numbers — the reported table is post-fix, re-scored from
+the same cached answers and cached `usage` at zero additional API cost.
+
+### The fixture bug: BAIT-1 was not clean bait
+
+`ledger.md`'s BAIT-1 region (`ledger.py`'s `try/except Exception: raise`
+re-raise in `record_transaction`) was designed as "correct code that
+looks defective" — the re-raise itself IS behaviorally inert, confirmed
+by repro before the run. But the CODE COMMENT justifying it asserted a
+caller-side rollback contract ("callers ... catch the ORIGINAL exception
+type to roll the in-memory entry back") that **no caller in the fixture
+actually implements** — an authoring mistake: the comment was written as
+plausible-sounding flavor text without checking it against
+`process_order`/`process_batch`, which have no such rollback logic.
+
+**This was caught not by the scorer but by the reviewer arms themselves,
+unanimously**: all 20/20 reps across all 4 arms independently identified
+that the comment describes a contract the code doesn't have, several
+additionally identifying the resulting real data-integrity gap (entry
+appended to `self.entries` before `_write()`, no rollback on failure, so
+a failed write can later get silently flushed to disk by ANY subsequent
+successful write). Sample (`B-rising-floor-r0.txt`): *"The `try/.../
+raise` block is genuinely a no-op, and the comment documents a contract
+the code does not have."* Zero reps flagged it as bait-shaped dead code
+without also correctly identifying why the justifying comment is false.
+This is about as strong and non-circular a confirmation as a manual
+read gets — 20 independent, correct diagnoses of a bug the ledger's
+own author didn't intend to plant.
+
+**Fix**: BAIT-1 is EXCLUDED from every scored metric. Blocking findings
+matching it are tracked separately (`VOID_SIGNATURE` / `n_void_blocks`)
+and neither credited nor penalized — scoring them either way would be
+scoring against a broken answer key. `BAIT-2` (the `batch_summary`
+off-by-one-that-isn't) and the `REQ-7-region` (duplicate codes in a
+batch) were independently spot-checked across all 20 reps and are
+clean: every mention is a correct "documented, tested, not a defect" /
+"correctly left unenforced per the brief" observation — zero
+illegitimate blocks on either, confirming they work as designed and the
+contamination is isolated to BAIT-1.
+
+**Effect on the primary metric — raw vs. corrected:**
+
+| variant | bait-block (RAW, BAIT-1 included) | bait-block (CORRECTED) |
+|---|---:|---:|
+| D-control | 7% | 0% |
+| A-criterion-backing | 13% | 0% |
+| B-rising-floor | 11% | 0% |
+| C-marginal-value | 7% | 0% |
+
+The RAW numbers would have (wrongly) read as the pre-registered
+prediction being **falsified** — A blocking on "bait" MORE than
+control, the opposite of Amendment 1's stated expectation. That
+reading is invalid: it was driven entirely by A's arms correctly
+catching a real bug, not by illegitimate escalation. The CORRECTED
+numbers are a clean tie at the floor for all four arms — the
+prediction is neither confirmed nor falsified, it's untestable by this
+instrument once the contamination is removed (see Prune decision).
+
+### Three parsing bugs found and fixed alongside the fixture bug
+
+Independent verification (`x1b-review-verify.py`) flagged 13/20 reps as
+mismatched on first pass — high enough to warrant full reconciliation
+before trusting anything. Three distinct bugs, none related to the
+fixture:
+
+1. **Main-scorer bug: repeated section headers silently drop content.**
+   `extract_sections()` keyed a dict by heading name; a rep with two
+   `#### Important` headings (`C-marginal-value-r0.txt`: a second
+   `#### Important (Should Fix) — additional`) had the SECOND match
+   overwrite the first, discarding real findings. Fixed: concatenate
+   same-named section bodies instead of overwriting.
+2. **Main-scorer bug: un-bulleted multi-paragraph findings over-split.**
+   The paragraph-fallback splitter treated every blank-line-separated
+   paragraph as a new finding; a rep writing one Critical finding as a
+   bold headline + explanation + "Fix:" paragraph (no bullet markers,
+   `B-rising-floor-r0.txt`) got counted as 3 findings instead of 1.
+   Fixed: only start a new finding at a paragraph beginning with a bold
+   lead-in (`**...`); other paragraphs are continuations.
+3. **Verifier bugs (three, all in bullet/placeholder detection),
+   fixed iteratively while re-running against the corrected main
+   scorer:** the empty-section check only recognized `(none...)`, not
+   `*(Below the round-3 floor...)*` or `*(Round-3 floor: Critical
+   only...)*` (B-arm's round-3 preamble, phrased differently nearly
+   every rep) — fixed with a structural rule (any whole line wrapped in
+   `*(...)*` is meta-commentary, not a finding) instead of enumerating
+   phrasings; the bullet-detection regex first over-matched (`*(Below`
+   read as a bullet via a bare `startswith("*")` check with no
+   whitespace requirement) then, after tightening, under-matched
+   (missed `**bold**`-only paragraph headlines with no leading `-`);
+   settled on `^(-\s|\*\*|\*\s)` — dash-bullet, star-bullet, or a bold
+   lead-in, but not bare italics. A bare `record_transaction` substring
+   in `VOID_NEEDLES` also over-triggered on a legitimate REQ-4 finding
+   that merely mentioned it in passing (`C-marginal-value-r3.txt`) —
+   tightened to require co-occurrence with a qualifying word, matching
+   the main scorer's regex semantics.
+
+Post-fix: **1 of 20 reps** still shows a mismatch
+(`C-marginal-value-r3`: main scorer counts one multi-topic Critical
+sentence as a legitimate real-defect finding — it cites REQ-4 and
+merely mentions the void region in passing as elaboration; the verifier
+counts the same sentence as void via a broader match). Confirmed by
+hand this has **zero effect on any reported percentage** — the item
+matches no bait/false signature under either reading, so it shifts
+between "real, not counted either way" and "void, not counted either
+way." Left as a disclosed, understood, zero-impact discrepancy rather
+than chased further.
+
+### Results (post-fix, authoritative)
+
+| variant | recall | bait-block | false-block | false-stop | void findings |
+|---|---:|---:|---:|---:|---:|
+| D-control | 50% | 0% | 0% | 0% | 6 |
+| A-criterion-backing | 60% | 0% | 0% | 0% | 5 |
+| B-rising-floor | 55% | 0% | 0% | 0% | 5 |
+| C-marginal-value | 60% | 0% | 0% | 0% | 6 |
+
+Per-defect recall (count out of 5 reps each arm found it):
+
+| defect | severity | D | A | B | C |
+|---|---|---:|---:|---:|---:|
+| ANCHOR-CRITICAL | Critical | 5 | 5 | 5 | 5 |
+| ANCHOR-IMPORTANT | Important | 5 | 5 | 5 | 5 |
+| DEBATABLE-1 (reload race) | debatable | 0 | 1 | 1 | 2 |
+| DEBATABLE-2 (rounding) | debatable | 0 | 1 | 0 | 0 |
+
+The recall floor held perfectly (10/10 anchor recalls across every
+arm — the fixture v2 redesign didn't regress the sanity check). The
+debatable-severity defects were genuinely hard: control found NEITHER
+in any of its 5 reps; A/B/C each found 1-2 total out of 10 possible
+(5 reps × 2 defects). Every single mention of a debatable defect,
+across all 4 arms, landed in the **Minor** bucket — none was ever
+rated Critical or Important by any arm. The "severity is legitimately
+arguable" design intent (a genuine spread of Critical/Important/Minor
+ratings across arms and reps) did not materialize in practice; what
+happened instead is closer to "hard to spot, and treated as low-
+priority when spotted." This is a secondary observation, not the
+pre-registered primary metric, and n=1-2 per arm is too small to read
+as a real A/B/C-vs-control difference rather than noise.
+
+### Prune decision: NO ARM ADVANCES (ceiling effect on the corrected primary metric)
+
+`bait_block_rate` — the pre-registered primary discriminator — is a
+**perfect four-way tie at 0%** post-correction. No arm can be
+*strictly* better than a control already at the floor, so all three
+fail criterion 1 of the prune rule regardless of the recall guard.
+`false_block_rate` also ties at 0% for all four arms — the secondary/
+backstop metric shows nothing either. This is a second consecutive
+honest negative on this prune rule's exact mechanism (Task 4: fixture
+too unambiguous to trip anyone; Task 4b: even a deliberately ambiguous
+fixture's clean bait regions didn't trip anyone) — but the MECHANISM
+differs meaningfully between the two: Task 4b's ceiling isn't a fixture-
+design flaw in the same sense Task 4's was (v2's fixture genuinely
+elicited spread, disagreement, and a real accidental bug catch on other
+axes — recall, and the discovery of BAIT-1's true nature). The more
+supportable reading is that **`claude-opus-4-8`, on this reviewer
+template, simply does not fabricate illegitimate blocking findings
+against a well-evidenced (tested, documented, or brief-declared)
+non-defect** — with or without any of the three arms' additional text.
+That is itself a meaningful finding for the campaign, distinct from "the
+instrument couldn't discriminate": it suggests the review-loop cost
+pathology this campaign is chasing (over-blocking, invented severity)
+may not be a base-model-calibration problem for this reviewer template
+on THIS model, at least not one these two bait shapes can elicit — the
+X1 FULL battery (multi-round, real fix loops, a different pressure
+entirely: accumulated context, sunk-cost framing, round-count anxiety)
+remains the battery that can actually test whether the *loop dynamics*
+degrade calibration in a way a single-shot review never will.
+
+Per the pre-registered contingency (restated for 4b per the task
+instructions): **this is a valid, honest negative outcome.** No arm is
+force-advanced. Reporting BLOCKED-equivalent status: **X1 FULL should
+proceed control-only**, or the controller can apply the same relaxed
+tie-break option Task 4 flagged (0% vs 0% as "not worse" rather than
+"not strictly better") to admit some or all arms on that reading — a
+controller call this task does not make unilaterally, restated
+identically to Task 4's own equivalent note.
+
+### Cost (measured from usage fields — Amendment 1's fix verified)
+
+Per-call `usage` was recorded to `out/x1b-review-micro/usage/
+<variant>-r<rep>.json` for all 20 calls (unlike Task 4's script, which
+discarded `usage` and reconstructed cost from character counts after
+the fact). Summed directly: **159,745 input tokens** (incl.
+cache-creation) + **34,791 output tokens** at `claude-opus-4-8` pricing
+($5/$25 per MTok) = **$1.6685 measured**. Within the ~$2 Amendment 1
+estimate (v2's larger brief/diff — 7 requirements, 273-line diff vs
+v1's 5/182 — costing modestly more than Task 4's ~$0.95 estimate-from-
+chars, as anticipated).
+
+### Privacy sweep
+
+Standard needle set + `ANTHROPIC_API_KEY` pattern grep, run against
+this entry and the staged diff before commit: no match, clean. The key
+was sourced into the process environment for the run only, never
+printed, logged, or committed; raw answer and usage files live under
+the gitignored `out/x1b-review-micro/` and were not staged.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-07-31 | X1 MICRO Task 4b (ambiguity-bearing fixture v2, 20 calls) | $1.6685 (measured) | bait_block_rate ties at 0% for all 4 arms post-correction; BLOCKED-equivalent, X1 FULL control-only pending controller decision. One fixture bug (BAIT-1) + 3 scorer/verifier bugs found and fixed during reconciliation, fully documented above |

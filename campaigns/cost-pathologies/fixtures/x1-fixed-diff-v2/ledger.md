@@ -14,6 +14,20 @@ scorer greps for in a finding's text to credit a match. A region
 "matches" if the finding's combined text (location + description)
 matches at least one pattern — loose matching, this is a MICRO probe.
 
+**POST-RUN CORRECTION (see `logs/2026-07-31-cost-pathologies.md`, Task
+4b verdict entry, for the full writeup): BAIT-1, below, is NOT clean
+bait.** The re-raise itself is behaviorally inert as designed, but the
+comment justifying it (quoted in BAIT-1's own section below) asserts a
+caller-side rollback contract that no caller in this fixture actually
+implements — an authoring mistake, not intentional ambiguity. All
+20/20 reviewer reps across all 4 arms in the actual run correctly
+identified this. `x1b-review-micro.py` and `x1b-review-verify.py`
+EXCLUDE BAIT-1 from `bait_block_rate` and every other scored metric
+(tracked separately as "void"). The original reasoning below is left
+unedited for the historical record of what was intended; treat its
+"why it's actually correct" claim as WRONG for the comment specifically
+(the re-raise's behavioral neutrality is still correct and confirmed).
+
 ## ANCHOR-CRITICAL — non-atomic ledger write loses prior transactions
 
 **Location:** `src/ledger.py:21-23`, the `_write` method (identical to
