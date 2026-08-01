@@ -132,3 +132,44 @@ a bulleted `- None.` directly under a `#### <Severity>` heading with no
 colon-label is miscounted as a real finding by `LIST_ITEM_RE`'s
 heading-fallback path — `NONE_VALUE_RE` is never consulted on that path.
 26 occurrences in the archived corpus. Parked for the closeout queue.
+
+## 2026-08-01 — Task 2 complete; CORRECTION to the closed campaign's X5 numbers
+
+Task 2 (`score_x5_leases` items 9+10) commit 41f734d, task review
+APPROVED (spec ✅ both items; 4 Minor deferred to ledger). The reviewer
+independently reproduced the full 9-rep before/after table by running
+the shipped code against the raw artifacts and hand-verified the three
+high-stakes claims in the raw rollout JSONL. This entry corrects X5
+numbers published in `logs/2026-07-31-cost-pathologies.md` (Task 11
+verdict) and `reports/2026-08-cost-pathologies-campaign.md` §2.
+
+**Methodology anchor:** `dupgrp`/`verruns` are untouched by the fix and
+reproduce the published values exactly across all 9 reps.
+
+**Corrected per-arm lease_events** (OLD → NEW issued/honored/invalidated;
+new separate prose fields honored/invalidated):
+
+| arm | strict OLD | strict NEW | prose (new fields) |
+|---|---|---|---|
+| control | 0/0/0 | 0/0/0 (unchanged) | 0/0 |
+| x5a | 65/0/0 | **14**/0/0 | 6/1 |
+| x5b | 26/3/3 | **13/12/2** | 5/0 |
+
+Causes: X5-A's 65→14 is pure re-read dedup (rep1's 5 distinct receipts
+hand-trace to exactly 5 real implementer reports). X5-B's honored 3→12
+is the apply_patch-write recovery — receipts-file writes arrive as
+unified-diff hunks whose leading `+`/`-`/space markers hid the marker
+lines from the line-anchored grammar; an isolation re-run confirms the
+jump appears only when exec-CALL text is scanned (not from the dedup
+key). Invalidated 3→2 reproduces the prior campaign's I2 correction
+prediction (three matches sharing one tree_sha collapse to one).
+
+**Interpretive impact.** X5-B's honoring mechanism is materially
+STRONGER than published: 12 strict honored events vs the 3 the campaign
+reported, plus 5 previously-invisible prose honorings. X5-A's
+"mechanism confirmed via 8 unencrypted prose exchanges" hand-finding is
+now mechanized at 7/8 recall (case H is a deliberate precision miss —
+no explicit rerun-or-not language). Unchanged: the X5 savings verdict
+("mechanisms confirmed, savings unproven at n=3") — the at-scale
+battery (plan Task 9) remains the deciding evidence; it now runs on an
+honest instrument.
