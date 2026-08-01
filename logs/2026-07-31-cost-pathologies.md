@@ -4859,3 +4859,360 @@ synthetic model output about the wholly synthetic `checkout-fixture`
 content. No raw rollouts or `evals/results/`/`evals-lane-b/results/`
 content committed. Cost figures re-verified directly against primary
 `verdict.json` economics data, not re-typed from memory.
+
+## 2026-08-01 — Task 11 pre-registration — X5 + X6 batteries
+
+Pre-registered BEFORE any rep runs, per the standing rule. This task also
+closed a disclosed gap: `cp/x5a`, `cp/x5b`, `cp/x6a`, `cp/x6b` were defined
+in the design doc but never authored (Task 6's report flagged their
+absence from `arm-manifest.md` and Task 3's branch list). Authored this
+task — `campaigns/cost-pathologies/arm-manifest.md`'s dated addendum has
+the full mechanism writeup; this entry covers the battery.
+
+### LESSON OPERATIONALIZED (Task 9 C1) — binding on this task's scoring
+
+Per-rep, before grading any compliance claim: extract the actually-
+delivered Gauntlet-Agent text from the raw rollout and check it against
+`story.md`'s script before trusting any narrative about what the
+Coding-Agent was told. Lower risk here than Task 10's batteries — neither
+`cp-x5-leases` nor `cp-x6-smalledits`' `story.md` scripts an
+adjudication-shaped ad-lib category (no "respond neutrally" branch that
+could accidentally resolve a seed); both scripts are "type this exact
+message," then a minimal "yes, go with the default" / "looks good, keep
+going" for any workflow question. Applied anyway, as a standing per-rep
+step, not skipped because the risk looks low this time.
+
+### Receipt-grammar conformance check (X5-A/X5-B arm text) — done before this entry was written, not assumed
+
+`campaigns/cost-pathologies/score_x5_leases.py`'s module docstring is the
+spec: `LEASE-RECEIPT:`/`LEASE-HONORED:`/`LEASE-INVALIDATED:`, each
+`^LEASE-(RECEIPT|HONORED|INVALIDATED):\s*command=...\s+tree_sha=\S+
+(\s+result=(pass|fail))?\s*$`, case-sensitive, `re.MULTILINE`-anchored.
+Both arms' patched `sdd/implementer-prompt.md`/`sdd/SKILL.md` text
+instructs the exact same three markers verbatim, and every instruction to
+emit one is explicit that it starts at the very beginning of its own line
+— no bullet dash, no backticks — since an LLM's default instinct is to
+wrap a fixed-format token in markdown, which would break the regex's `^`
+anchor. Verified two ways, not just written and trusted: (1) constructed
+sample text shaped like each arm's actual instructed output — an
+implementer's Report Format receipt line, its post-list short-status
+repeat (X5-A), a controller dispatch citing a receipt (X5-A), and a
+receipts-file `cat` dump carrying all three marker kinds (X5-B) — and ran
+`score_x5_leases.py`'s own `_LEASE_LINE_RE` against each: all matched,
+with the expected `command_norm`/`tree_sha`/`result` groups. (2) re-read
+X5-A's diff specifically for the one real bug this check caught before
+commit: the first draft asked the implementer to repeat its receipt line
+INSIDE the short-status bullet list (`- Your verification receipt line,
+repeated verbatim...`), which would have put `LEASE-RECEIPT:` after a
+`- ` bullet prefix on the same line — never matching `^`. Fixed by pulling
+the repeat out of the list into its own trailing paragraph before the
+branch was committed (see `cp/x5a`'s single commit — this was caught and
+fixed pre-commit, not shipped and found later).
+
+### Arms, SHAs, and mounted-worktree reconciliation
+
+Verified against `campaigns/cost-pathologies/arm-manifest.md` directly
+(`git branch --list 'cp/x5*' 'cp/x6*' -v` in the superpowers checkout):
+
+| arm | branch | SHA (manifest, verified) | mounted worktree |
+|---|---|---|---|
+| control (X5-C/X6-C) | — (unpatched base) | 329b8f1 | `/tmp/cp-arm-control` (pre-existing, Tasks 6/8/9/10) |
+| X5-A receipts-in-report | `cp/x5a` | d71d307 | materializes on first `run-quorum.sh` call this task |
+| X5-B machine-checkable receipt file | `cp/x5b` | 644bee6 | materializes on first `run-quorum.sh` call this task |
+| X6-A batching rule | `cp/x6a` | 2262c91 | materializes on first `run-quorum.sh` call this task |
+| X6-B inline-when-trivial | `cp/x6b` | f46243f | materializes on first `run-quorum.sh` call this task |
+
+`run-quorum.sh` (Task 8's generalized arm resolver) reconciles each
+mounted worktree's `git rev-parse HEAD` against the manifest SHA before
+every rep; a mismatch aborts the run.
+
+**Mechanism, read directly off each branch's diff against
+`codex-efficiency-fixes`** (not assumed from the design doc summary):
+
+- **X5-A** touches `sdd/SKILL.md` (two sites: the "do not ask a reviewer
+  to re-run tests" bullet gains the honor/invalidate rule, citing
+  `LEASE-HONORED:`/`LEASE-INVALIDATED:` into the reviewer or fix dispatch
+  itself — not the ledger, per the Task 9 lesson that ledger/progress.md
+  content does not reliably survive capture — and the fix loop gains "A
+  fix round invalidates receipts") and `sdd/implementer-prompt.md` (the
+  Report Format section gains a `LEASE-RECEIPT:` instruction plus a
+  trailing post-list repeat in the short status; "After Review Findings"
+  notes the fix round needs a fresh receipt).
+- **X5-B** touches the same two files with the file-based variant: SKILL.md
+  gains a "Receipts file" dispatch-naming bullet (`…/task-N-receipts.md`,
+  mirroring the brief→report convention) and rewrites the same two review
+  sites to `cat`/`grep` the file mechanically and append
+  `LEASE-HONORED:`/`LEASE-INVALIDATED:` back to it instead of citing into
+  prose; implementer-prompt.md's receipt instruction appends to
+  `[RECEIPTS_FILE]` instead of the report/short-status.
+- **X6-A** and **X6-B** each add ONE paragraph at the top of "The Task
+  Loop" (before the existing "Everything you paste into a dispatch
+  prompt…" paragraph — the gate point before any per-task dispatch
+  decision, same anchor X1-B/X1-C share for their own competing
+  mechanisms): X6-A collapses same-shape small tasks into one batch
+  dispatch; X6-B does a single mechanical, no-new-test, no-judgment edit
+  inline instead of dispatching, with an explicit boundary ("touches more
+  than one file, needs a new or updated test, or calls for judgment...
+  still gets its own subagent dispatch — when in doubt, dispatch").
+  Neither touches `implementer-prompt.md` or needs the LEASE- grammar; X6
+  is graded from ordinary dispatch shape (`score_x6_floor`), not marker
+  lines.
+
+### Fixtures used
+
+`campaigns/cost-pathologies/scenarios/cp-x5-leases` (`quorum_max_time:
+40m`) and `cp-x6-smalledits` (`quorum_max_time: 25m`), both built Task 6,
+`coding-agents: codex` per each `checks.sh`. Neither was graded in Task 6
+(smoke covered only `cp-x1-buggy-sdd` and `cp-x7x9-conflicts`) — this
+task's smoke reps are the first behavioral data either scenario has
+produced.
+
+**`cp-x5-leases`** (from `seeded-truth-ledger.md`, read in full): a
+3-task SDD plan (token-bucket rate limiter). Task 1 creates `TokenBucket`
+(default capacity 100); Task 2 creates `allow_request` middleware,
+verified with `pytest tests/` (the whole directory); Task 3 lowers the
+default to 10, which invalidates Task 2's own test assertion (still
+asserting the old default of 100) — **the REQUIRED-rerun point**: any
+receipt for `tests/` at Task 1+2's tree SHA is stale the moment Task 3's
+commit lands, and `tests/test_middleware.py`'s assertion MUST be updated
+and re-verified, not skipped as "already green." Between "Task 1 done" and
+"Task 3 starts," the tree does not change — any `pytest tests/` run in
+that window (a cautious re-check before Task 3, a reviewer re-verifying
+Task 2) is a legitimate duplicate a lease-aware arm should skip.
+`checks.sh` requires `tool-called Agent` unconditionally (the story's own
+scripted opening message names subagent-driven-development explicitly),
+so — unlike X6 below — there is no risk the pathology fails to engage at
+all.
+
+**`cp-x6-smalledits`** (from `seeded-truth-ledger.md`, read in full):
+twelve independent single-bug files under `util/` (off-by-one, swapped
+branch, missing line, wrong constant — each with its own `// BUG:`
+comment and its own failing test), verified as committed: `npm test`
+reports 14 failing / 1 passing of 15 assertions. Files are mutually
+independent by construction (no cross-file imports) so the pathology
+under study is dispatch/context overhead per unit of work, not
+coordination cost. `checks.sh` asserts ONLY that `npm test` passes at the
+end — it makes NO assertion on dispatch shape (no `tool-called Agent`
+check, unlike `cp-x5-leases`), because the whole point is that dispatch
+shape is what this battery measures, not what the fixture demands.
+
+**Risk disclosed, not assumed away: X6 may fail to engage the pathology
+at all.** `cp-x6-smalledits`' `story.md` never mentions a plan file, a
+task list, or subagent-driven-development by name — nothing in the
+scripted prompt ("There are a dozen small independent bugs described in
+BUGS.md... please fix all of them") forces the Coding-Agent to read this
+skill in the first place, unlike `cp-x5-leases` where the opening message
+names the skill directly. If control's own smoke rep shows ZERO
+`spawn_agent`/Task-tool dispatches (the agent just edits all twelve files
+inline, in its own turn, without ever touching subagent-driven-development
+or any other dispatch skill), the patched `sdd/SKILL.md` text in X6-A/B
+sits completely unread regardless of which arm is mounted — an
+inconclusive-by-zero condition under this campaign's standing
+discrimination rule ("a control arm that won't exhibit the pathology stops
+that battery rather than being reported as a treatment win"). Per that
+standing rule: **the X6 smoke rep (control, rep 1) is a gate** — if it
+shows zero dispatches, the X6 sub-battery STOPS there (report
+inconclusive-by-zero, do not spend the remaining 8 X6 reps); if it shows
+at least one dispatch, the full 9-rep X6 battery proceeds as budgeted.
+This does not apply to X5 (`checks.sh` forces the dispatch unconditionally,
+per above).
+
+### X5 matrix (unconditional)
+
+`cp-x5-leases` × {control, X5-A, X5-B} × 3 reps = **9 reps**. Smoke 1
+control rep first, inspect, then the remaining 8.
+
+**Criteria, verbatim from this log's `## Pre-registered criteria`
+section:** "identical suites re-run at identical tree state (12x worst
+case)... Guard: the invalidation probe — mutate the tree mid-flow and the
+suite MUST re-run (an arm that skips a required re-run fails regardless of
+savings)." Concretely, per rep, via `score_x5_leases.lease_stats()` run
+against every rollout file for that rep (root + every child thread):
+
+1. **Duplicate collapse:** `duplicate_groups` entries for `pytest`
+   commands sharing a `(command_norm, tree_sha)` pair — the Task 1→Task 3
+   window's legitimate re-verification opportunity. Fewer/smaller
+   duplicate groups under a treatment arm, or `lease_events.receipts_honored
+   > 0` citing the same window, is the claimed savings.
+2. **The invalidation guard (REQUIRED per rep, not conditional):** after
+   Task 3's commit, `tests/` MUST be re-run — verified two ways per rep,
+   never one alone: (a) mechanically, a `verification_runs` entry with a
+   `tree_sha` matching (or timestamped after) Task 3's own commit SHA; (b)
+   the resulting `tests/test_middleware.py` on disk (or in the final
+   commit's diff) actually asserts the corrected default (10, not 100) —
+   the guard fails if either is missing, regardless of `lease_events`
+   showing savings elsewhere. An arm that shows `LEASE-HONORED:` (or
+   silently skips) a `pytest tests/` run spanning Task 3's commit fails
+   this guard outright, full stop, independent of every other measure.
+3. **Grammar conformance, X5-A/X5-B only:** `lease_events.receipts_issued`
+   > 0 confirms the arm's text actually produced parseable markers in a
+   real rollout (not just in my own constructed samples above) — a
+   necessary sanity check, not itself a pass/fail criterion (control is
+   expected to show all-zero `lease_events`, correctly, per the scorer's
+   own docstring).
+
+**Seed-reproduction gate:** Task 3's commit must be REACHED for the
+invalidation guard to grade on that rep (a rep that stalls out on Task 1
+or 2 and never reaches Task 3 is EXCLUDED from the guard, disclosed, not
+scored as a pass or fail). `cp-x1-buggy-sdd`'s precedent (Task 6: a real,
+deep 3-task SDD engagement with a fix wave, merged clean) makes a stall
+before Task 3 unlikely but not impossible.
+
+### X6 matrix (gated on the smoke rep, per the disclosed risk above)
+
+`cp-x6-smalledits` × {control, X6-A, X6-B} × 3 reps = **9 reps**, gated:
+proceeds past the control smoke only if that rep shows ≥1 subagent
+dispatch (see "Risk disclosed" above).
+
+**Criteria, verbatim from this log's `## Pre-registered criteria`
+section:** "dispatching an agent costs a context floor regardless of task
+size... FULL (fixture with a dozen small edits, cost per completed edit
+per arm; quality guard: all edits reviewed and correct)." Concretely, per
+rep, via `score_x6_floor.dispatch_floor()` run against the rollout tree:
+
+1. **Dispatch count and shape:** number of resolvable `spawn_agent`
+   dispatches (0 inline-only, 1 batched-all-twelve, up to 12
+   one-per-file), each dispatch's `total_tokens`/`useful_output_tokens`/
+   `floor_ratio`. X6-A predicted to converge toward 1 large batch
+   dispatch; X6-B predicted to converge toward 0 dispatches (all twelve
+   done inline) if the agent judges each fix as within the arm's stated
+   boundary, or a small number if some edits trip the "needs judgment"
+   escape hatch.
+2. **The quality guard (all-edits-correct, REQUIRED, non-negotiable):**
+   hand-verified per the seeded-truth ledger's own framing — `npm test`
+   passing at the end is `checks.sh`'s mechanical floor, but the guard is
+   stronger than that single aggregate: each of the twelve `util/*.js`
+   files' actual diff is read and confirmed to fix ITS OWN seeded bug (not
+   just that the suite went green, which twelve independent single-test
+   files make hard to fake, but disclosed as a real distinction worth
+   checking explicitly) and that no file was left untouched while its test
+   was skipped or weakened instead of fixed. An arm that "wins" on dispatch
+   cost while leaving any of the twelve genuinely unfixed, or weakens a
+   test instead of fixing the code, fails this guard regardless of its
+   cost number.
+
+**Seed-reproduction gate:** the twelve-bugs-fixed condition must be
+reachable in the fixture's own `quorum_max_time` (25m) for the quality
+guard to grade; a rep that runs out of time with bugs still open is
+disclosed as a timeout, not silently excluded or force-scored either way.
+
+### Scoring methodology
+
+Automated where a corpus-validated scorer already exists — `score_x5_leases.
+lease_stats()` (Task 7, TDD'd, `campaigns/cost-pathologies/
+test_score_x5_leases.py` green) and `score_x6_floor.dispatch_floor()`
+(Task 2, TDD'd, `test_score_x6_floor.py` green) — run directly against
+each rep's rollout tree (root = earliest-first-timestamp file under
+`home/.codex/sessions/**/rollout-*.jsonl`, same resolution Task 9/10
+established; children resolved via `rollout_parser.child_links()`/
+`extract_spawns()`, already validated machinery, not reforked). Every
+scorer claim is read against the raw rollout before being trusted
+(non-circular) — minimum 1 rep per arm (5 arms × 1 = 5 reps minimum:
+control, X5-A/B, X6-A/B, or fewer if X6 is gated off) gets a full manual
+read of the relevant transcript sections, not just the scorer's summary
+numbers. The X6 quality guard (all-edits-correct) is hand-verified for
+EVERY rep that reaches grading, not sampled — twelve small file diffs per
+rep is cheap to read in full, and "all edits reviewed and correct" is the
+guard's own literal text.
+
+### Predictions (written before any rep runs)
+
+- **X5 control**: predicted to show at least one duplicate `pytest tests/`
+  run at an unchanged tree_sha somewhere in the Task-1-done→Task-3-starts
+  window (a reviewer or the controller re-verifying before moving on),
+  since current text has no receipt mechanism at all — `lease_events` all
+  zero (correct, per the scorer's own docstring, not a bug). The
+  invalidation point (Task 3) is expected to re-run regardless of arm,
+  since re-running tests after a code change is baseline SDD behavior
+  with or without a lease.
+- **X5-A/X5-B**: predicted to reduce or eliminate the Task-1→Task-3 window
+  duplicate while the Task 3 invalidation still fires correctly. Open
+  question, not assumed: whether X5-B's file-based mechanical check
+  produces a MORE reliable honor/invalidate signal than X5-A's
+  dispatch-prose citation, given a real agent's tendency to summarize
+  rather than reproduce fixed-format lines exactly — this is exactly what
+  the receipt-grammar conformance check (`lease_events.receipts_issued`)
+  is for.
+- **X6 control**: uncertain in a way the other predictions are not — this
+  is the smoke-gated risk above. If it dispatches at all, predicted to
+  dispatch close to one-per-file (twelve), the shape the base `subagent-
+  driven-development` process default ("fresh subagent per task") would
+  produce if the agent treats BUGS.md's list as an implicit task list.
+- **X6-A/X6-B**: predicted to show markedly fewer dispatches than control
+  (X6-A toward one big batch, X6-B toward zero-to-few), each converging on
+  a lower `floor_ratio` sum, while the quality guard holds at the same
+  rate as control (neither mechanism is predicted to introduce new
+  correctness risk — batching or inlining twelve genuinely independent
+  one-line fixes has no cross-file coordination hazard, per the fixture's
+  own design).
+
+### Budget projection and STOP rule (binding)
+
+Running campaign total entering this task: **$304.90** (Task 10's ledger
+row). The brief's own estimate for this 18-rep battery is ~$70-90
+combined. Bottom-up cross-check, since neither scenario has a prior
+measured rep: `cp-x5-leases` is a full 3-task SDD plan structurally
+similar to `cp-x1-buggy-sdd` (Task 6: $7.68 for a materially MORE complex
+domain — concurrency, Decimal arithmetic, catalog-backed invoicing) but
+much simpler in domain content (a token bucket + one middleware function +
+one constant change) — estimating control **$3-6/rep**, treatment arms
+similar-to-modestly-higher on report/receipt text (**$3-7/rep**); 9 reps ≈
+**$30-55**. `cp-x6-smalledits` has the widest uncertainty band precisely
+because dispatch SHAPE is the thing being measured: if control dispatches
+near one-per-file (twelve context floors), each floor-dominated dispatch
+could run **$0.50-1.50** on top of a small useful edit, controls near
+**$6-15/rep**; if X6-A/B collapse that to 0-1 dispatches, treatment reps
+could run **$1-3/rep**; 9 reps ≈ **$25-60** (wide, and gated off entirely
+at $0 additional spend if the smoke shows zero dispatches). **Combined
+range: ~$55-115**, bracketing the brief's $70-90 point estimate with the
+X6-dispatch-count uncertainty as the main risk to the low end.
+
+**HARD RULE, checked after every completed rep, not just at combo
+boundaries** (JOBS=1 for this battery specifically, so a projection can be
+acted on between every single rep rather than only after a 3-rep group
+lands): after each rep, sum `verdict.json`'s `.economics.total_est_cost_usd`
+across every rep completed so far this task, compute
+`running_total_before_task ($304.90) + spent_so_far_this_task`, and
+project the REMAINING reps at the mean $/rep observed so far this task
+(not the pre-registered estimate — measured, once any data exists). **If
+that projection exceeds $395, STOP: do not launch the next rep, report the
+partial battery honestly (which combos completed, which didn't, cost to
+that point), and do not use the fixed 18-rep count in this brief as
+license to run through the checkpoint.** This is a harder rule than
+Task 9/10's operational disk/container check — it is a hard financial
+stop, not a disclosed operational note.
+
+### Operational
+
+Single container lane (`/Users/jesse/git/superpowers/superpowers/evals`,
+default `EVALS_ROOT`) — no concurrent second lane this task, since the
+STOP rule needs a rep-by-rep cost read, which a second concurrently-
+running lane would make harder to attribute correctly before deciding
+whether to launch the next rep. `JOBS=1` (sequential) for the same reason,
+a deliberate departure from Tasks 8-10's `JOBS=2/3` — wall-clock cost is
+accepted in exchange for the ability to check the STOP rule before every
+single launch, given how close this task starts to the checkpoint.
+Foreground polling only, no monitors — each rep is launched as a tracked
+foreground command (up to 600000ms) and waited on for its own completion
+before the next decision is made, per this task's explicit "never end
+your turn with work outstanding" instruction. Docker confirmed up; two
+containers from Task 10 still running are expected to be torn down by
+`run-quorum.sh`'s own `down`/`up` cycle on this task's first invocation,
+not a leftover anomaly. Disk: 70Gi free before starting. An infra anomaly
+(crash, $0 run, container failure) stops the affected combo and gets an
+honest entry; an ordinary non-pass verdict (measured `fail`/
+`indeterminate`) is data, backfilled per `run-quorum.sh`'s documented
+`set -euo pipefail` procedure, same as Tasks 8-10.
+
+### Privacy sweep
+
+Standard needle set (this machine's real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; the `_tmp/cost-pathologies-2026-07-31/` corpus
+codenames; remote-host alias reminders) run against this entry and the
+staged diff before commit: no match on real values, clean. Absolute
+`/Users/jesse/git/...` paths present throughout are the same
+already-established, low-sensitivity provenance-citation convention this
+campaign has used since Task 1. Every fixture/seed quoted above is Task
+6's wholly synthetic `ratelimit`/`util`-bugs content; no `_tmp/` corpus
+content or real session content is read or cited this task.
