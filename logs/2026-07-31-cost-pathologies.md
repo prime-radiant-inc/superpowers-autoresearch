@@ -1186,3 +1186,38 @@ the gitignored `out/x1b-review-micro/` and were not staged.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-07-31 | X1 MICRO Task 4b (ambiguity-bearing fixture v2, 20 calls) | $1.6685 (measured) | bait_block_rate ties at 0% for all 4 arms post-correction; BLOCKED-equivalent, X1 FULL control-only pending controller decision. One fixture bug (BAIT-1) + 3 scorer/verifier bugs found and fixed during reconciliation, fully documented above |
+
+## 2026-07-31 — CONTROLLER RULING: X1 FULL arm selection (deviation from the micro prune gate)
+
+The pre-registered MICRO prune gate (Task 4: at most 2 arms strictly
+better than control advance) is VOID FOR INSTRUMENT INABILITY, ruled
+after two structurally different micros both ceilinged: control sits at
+0% false-block/bait-block in single-shot review, so no arm can register
+as strictly better on the gated axis. Task 4b's review independently
+confirmed the ceiling is a property of the model+template in single-shot
+form, not lazy fixture design (its fixture discriminated on other axes
+and caught a genuine accidental defect). The loop-borne pressures X1's
+arms target (accumulated context, sunk cost, round anxiety) are only
+elicitable at FULL.
+
+Ruling: X1 FULL runs ALL THREE arms + control (A criterion-backing, B
+rising floor, C marginal-value stop), 4 reps each. Rationale, from the
+task review's independent judgment: A and C carry the best
+harder-fixture recall (60% vs control 50%) — A with one thin (n=1)
+watch-item (an un-seeded Minor→Important escalation in micro v1), C
+with zero strikes; B was the arm the micro was STRUCTURALLY least able
+to test (its round-tracking mechanism cannot exist in single-shot form),
+so excluding it would prune on absence of evidence against the
+campaign's competing-hypotheses directive. All three enter FULL as
+FULLY UNPROVEN — this ruling is budget triage plus instrument honesty,
+not validation; FULL's pre-registered guards remain the actual test.
+Budget delta vs the 2-arm plan: one battery cell (~$35-50), inside the
+ceiling.
+
+Micro-tier residual for the record: the two micros' combined evidence
+("single-shot opus-4-8 review does not fabricate illegitimate blocks
+against well-evidenced non-defects regardless of arm text") rests on
+n=5/arm × 2 bait shapes — cite it as suggestive, never as established.
+
+Privacy sweep run on this entry (standard needle set, filtered of the
+scrubbed placeholders): no match, clean.
