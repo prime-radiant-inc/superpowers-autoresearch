@@ -2418,3 +2418,368 @@ machine-identity needles (hostname, username-as-account-identity,
 donor-username-shaped paths) the sweep actually screens for. This task's
 own fixtures and scenario are entirely synthetic (Task 6); no real
 session content is read or cited in this pre-registration.
+
+## 2026-08-01 — Task 8 VERDICT: X1 FULL battery (A/B/C+control) + X3 rider
+
+Ran the pre-registered 16-run battery (4 arms × 4 reps, `cp-x1-buggy-sdd`,
+codex, both lanes). One operational deviation, disclosed immediately
+below; otherwise ran exactly as pre-registered.
+
+### Operational deviation: two lane-script restarts (not a battery-stopping anomaly)
+
+`run-quorum.sh`'s documented `set -euo pipefail` limitation (a single
+rep's non-pass verdict aborts the remaining queued reps in that
+invocation) fired twice: lane B's `x1b` batch aborted after rep2 measured
+`fail` (before `x1c` was ever queued), and lane A's `control` batch
+aborted after rep2 measured `indeterminate` (before `x1a` reps 2-4 were
+queued). Both were **real, measured, non-infra verdicts** — rollouts
+complete, cost real ($10.87 and $10.34 respectively), the coding agent
+self-reported cleanly in both cases — not container crashes, not `$0`
+runs, not budget exhaustion. Per the standing rule (anomalies that stop
+the battery are infra failures; ordinary scenario variance is data), this
+did not stop the battery: the missing reps were backfilled with separate
+`REP_START`-offset invocations (documented in the runner's own header
+comment as the correct response to this exact situation). All 16
+pre-registered reps completed. Full diagnosis of the two "non-pass"
+patterns below (Results section) — both are genuine X1-relevant findings
+in their own right, not swept under an operational note.
+
+### Per-rep results
+
+| arm | rep | verdict | cost | chains | Σrounds | Σdispatch | ref w/ real modules |
+|---|---:|---|---:|---:|---:|---:|---|
+| control | 1 | pass | $8.74 | 6 | 9 | 9 | HEAD |
+| control | 2 | indeterminate | $10.34 | 5 | 5 | 6 | feature/usage-billing (unmerged) |
+| control | 3 | pass | $8.05 | 5 | 6 | 6 | HEAD |
+| control | 4 | pass | $11.30 | 6 | 9 | 9 | HEAD |
+| x1a | 1 | pass | $11.32 | 6 | 7 | 7 | HEAD |
+| x1a | 2 | pass | $11.15 | 5 | 7 | 7 | HEAD |
+| x1a | 3 | pass | $6.31 | 5 | 7 | 7 | HEAD |
+| x1a | 4 | indeterminate | $12.21 | 4 | 7 | 7 | usage-billing (unmerged) |
+| x1b | 1 | pass | $10.18 | 5 | 6 | 6 | HEAD |
+| x1b | 2 | fail | $10.87 | 5 | 6 | 6 | feature/usage-billing (unmerged) |
+| x1b | 3 | pass | $9.59 | 5 | 5 | 5 | HEAD |
+| x1b | 4 | pass | $8.07 | 5 | 6 | 6 | HEAD |
+| x1c | 1 | pass | $10.24 | 5 | 7 | 7 | HEAD |
+| x1c | 2 | pass | $9.26 | 5 | 5 | 5 | HEAD |
+| x1c | 3 | pass | $9.00 | 5 | 6 | 6 | HEAD |
+| x1c | 4 | indeterminate | $11.54 | 5 | 8 | 8 | feature/usage-billing (unmerged) |
+
+`Σrounds`/`Σdispatch` are per-rep totals across every review chain
+`score_x1_chains.chain_stats()` found (task1/task2/task3 per-task
+reviews + the final whole-branch review, and any re-review/fix rounds)
+— a proxy for total review effort, not a single "the loop" round count
+(this scenario runs 5-6 distinct review chains per rep, not one).
+"ref w/ real modules" records which git ref actually carries the four
+billing modules for that rep — `HEAD` (merged to main) for 12/16 reps,
+an unmerged feature branch for the other 4 (see Operational deviation
+above) — resolved and read from directly for every defect-escape check
+below; a rep's post-check "fail" never excluded it from X1/X3 scoring.
+
+### Cross-arm summary table (mean over 4 reps/arm; n=4/arm — directional, not statistically conclusive)
+
+| arm | mean cost | mean Σrounds | mean Σdispatch | mean novel-finding-rate | pass rate |
+|---|---:|---:|---:|---:|---:|
+| **D control** | $9.61 | 7.2 | 7.5 | 0.483 | 3/4 |
+| **A criterion-backing** | $10.25 | 7.0 | 7.0 | 0.679 | 3/4 |
+| **B rising floor** | $9.67 | 5.8 | 5.8 | 0.652 | 3/4 |
+| **C marginal-value** | $10.01 | 6.5 | 6.5 | 0.577 | 3/4 |
+
+Total battery cost: **$158.1788** (16 runs; measured, summed from each
+rep's `verdict.json` `economics.total_est_cost_usd` — coding-agent +
+gauntlet-agent combined). Against the $120-150 pre-registered estimate:
+~5% over the top of the range, not a budget concern (see ledger row).
+
+### Defect-escape guard: CEILING EFFECT — the guard could not be exercised
+
+**Both ANCHOR regions (REQ-3 durability, REQ-4 post-discount floor) were
+implemented CORRECTLY, from scratch, in ALL 16 reps, across ALL FOUR
+arms.** Verified two ways, not one: (1) a mechanical scan for each
+region's literal mistake shape across all 16 reps' generated
+`billing/*.py` (reading whichever ref — `HEAD` or the unmerged feature
+branch — actually carries the real modules, per the table above); (2) a
+full manual source read of the ledger write path, the invoicer floor
+check, `reload_plans`, and `prorate` for **7 of the 16 reps**
+(control rep1/rep2, x1a rep1/rep4, x1b rep1/rep2 [via extensive
+review-chain quoting plus targeted source greps], x1c rep4 — at least 2
+reps read per arm as pre-registered), confirming the mechanical scan's
+"no mistake present" reading in every case read. Representative
+evidence: every rep's ledger uses append-only writes (`os.O_APPEND` /
+`.open("ab")`) with `os.fsync()` and, in most reps, an explicit rollback
+path on write failure — never the seeded `open(path, "w")` +
+whole-list `json.dump()` truncate-on-write shape; every rep's invoicer
+applies the volume discount BEFORE comparing against the $2.00 floor
+(confirmed by line-order analysis across all 16, one ambiguous case
+manually resolved — x1c rep1 used an inverted `>=` comparison the
+line-order script's regex missed, manually confirmed correct on
+inspection).
+
+**DEBATABLE-1 (REQ-5, hot-reload concurrency) was ALSO implemented
+correctly in all 16 reps** — every rep's `reload_plans` does an atomic
+whole-dict-reference reassignment under a lock (`self._plans =
+<new_snapshot>`), never the seeded `.clear()`-then-`.update()` race.
+Zero escape opportunity here either.
+
+**DEBATABLE-2 (REQ-6, proration rounding) was present — genuinely
+unpinned, no explicit rounding mode — in literally all 16 reps (a
+uniform condition, not natural variance), but flagged in only 1 of 16
+reps total** (x1b rep3's final reviewer, correctly as an Important,
+plan-level "no currency precision or rounding policy" observation, not
+a code defect). n=1 is too sparse for any cross-arm read; consistent
+with the MICRO tier's own finding that debatable-severity issues are
+hard for a reviewer to spot regardless of arm text.
+
+**Verdict on the escape guard**: this is the SAME ceiling-effect
+pattern Tasks 4/4b found on the reviewer side (opus-4-8 does not
+fabricate blocks against well-evidenced non-defects) and Task 5 found
+on the X3 reviewer/implementer sides — now confirmed for the FIRST time
+on the **implementer side**, in the **FULL, multi-round, real-loop
+regime**, on **codex/gpt-5.6** (lifting the model-mismatch caveat this
+battery was explicitly tasked with resolving). The pre-registered
+criterion — "an arm that converges fast by missing real bugs fails" —
+**cannot bind on any arm here**: no arm let a seeded defect escape,
+because no arm's implementer ever introduced one. This is a genuine,
+disclosable finding about this fixture+model combination, not a scoring
+failure: `cp-x1-buggy-sdd`'s seeded mistakes describe patterns a rushed
+or careless implementation might produce, and gpt-5.6, building fresh
+from an explicit, well-specified prose requirement, reliably does not
+produce them. **A FULL battery designed to stress the defect-escape
+guard on this model needs a fixture that seeds the mistake into
+STARTING code an implementer edits, not a from-scratch build against
+clear prose** — flagged for whoever extends X1 next, in the same spirit
+as Task 4's "fixture-design finding for whoever designs X1 FULL" note.
+
+Real, ORGANIC bugs (not the seeded ones) were caught throughout — e.g.
+control rep1's final review found and drove a fix for a genuine
+multi-instance ledger race (two `UsageLedger` instances recording the
+same event both returning `true`); x1a rep1's (this battery's smoke)
+review found and fixed a real fsync-failure-handling durability gap.
+The review LOOPS are doing real work — they are just not being tested
+against THIS fixture's specific seeded shapes, because those shapes
+never occur.
+
+### X3 rider: invented-requirement rate, unbacked-escalation, X3-C false-demotion
+
+**`invented_requirement_hits` (BAIT-1/REQ-7 blocked as a defect) — raw
+mechanical count vs. manually corrected, same discipline as Task 4b's
+raw-vs-corrected BAIT-1 table:**
+
+| arm | raw (score_x3_rider.py) | manually corrected |
+|---|---:|---:|
+| control | 0 | 0 |
+| x1a | 2 | **0** |
+| x1b | 0 | 0 |
+| x1c | 0 | 0 |
+
+Both raw x1a hits are confirmed FALSE POSITIVES on manual read, not
+real bait-blocking: (1) x1a rep2's `final_rereviewer` finding uses the
+word "deduplication" describing the LEDGER's own event-ID
+idempotency logic (`billing/ledger.py:17-23`, REQ-1/REQ-3 territory),
+not REQ-7's duplicate-meter-reading batch semantics — `classify_finding`'s
+bare `dedup` alternative (lifted verbatim from the ledger's own REQ-7
+signature, designed for defect-PRESENCE recall, not bait-BLOCKING
+precision) matched the substring out of context; (2) x1a rep4's `task3`
+finding says "the code merges all events for a meter" while describing
+an UNRELATED plan-transition/meter-identity design gap, not REQ-7's
+"duplicate readings within one batch" case — `merge.*(event|reading)`
+matched incidentally. **Not fixed in the scorer** (same "generous
+mechanical proxy, verify by hand" discipline this campaign's
+false_block_rate/bait_block_rate metrics have carried since Task 4 —
+tightening a regex to eliminate 2 known false positives risks
+brittleness against the next real corpus shape, per that precedent);
+disclosed and manually corrected instead. **Corrected result: 0/16
+reps across all four arms show reviewer-side invented-requirement
+blocking** — a second ceiling effect, mirroring the seeded-defect
+finding above and directly resolving the Task 5 ruling's open question
+(X3's MICRO-tier ceiling was suspect of being an opus-4-8, single-shot
+artifact; it replicates cleanly on codex/gpt-5.6 in the real multi-round
+FULL loop).
+
+Implementer-side invention (the OTHER X3 pathology, per the ledger's own
+framing: "an implementer that adds unrequested dedup/merge logic 'to be
+safe'"): **zero** across all 16 reps — no generated `invoicer.py`
+contains dedup/merge code for the REQ-7 region in ANY rep (mechanical
+scan, all 16, all four arms; REQ-7 is explicit in the plan and every
+implementer left it alone).
+
+**`unbacked_findings`** (Critical/Important findings with no literal
+REQ-N citation AND no paraphrase match to their own region) —
+**reported for completeness but explicitly NOT trusted as a clean
+invented-requirement indicator**: control 20, x1a 38, x1b 35, x1c 23
+(raw counts across ~20-22 chains/arm). Manual sampling (3 findings per
+arm, drawn at random) found this metric is dominated by TWO confounds,
+both disclosed, neither fixed: (1) real, organic findings about genuine
+bugs OUTSIDE the fixture's 5 curated regions (e.g. quadratic ledger
+read cost, ledger-file-scan-on-every-write performance, `.superpowers/`
+scratch-workspace-in-merge hygiene) — these are legitimate X1-A-style
+"concrete reachable failure path" findings this scorer has no
+curated-region vocabulary to recognize as backed, since it was built
+against this ONE fixture's 5 seeded regions, not general-purpose; (2) a
+"none identified beyond the [already-counted] X finding" bare-label
+phrasing variant that `score_x1_chains._extract_findings()`'s
+`NONE_VALUE_RE` (exact-match `none`/`none.` only) does not recognize as
+a null value, inflating counts by re-counting an already-open finding a
+second time under a "New Breakage" heading. **Neither confound was
+fixed this task** (flagged here, in the same spirit as Task 7's
+disclosed-not-fixed 10-vs-12 discrepancy, for whoever next extends
+`score_x1_chains`/`score_x3_rider`) — `unbacked_findings` is reported
+as a rough upper bound on "findings this scorer's narrow vocabulary
+can't recognize as backed," not as an invented-requirement rate.
+
+**`x3c_false_demotion` (the ruling's carry-forward #1 — paraphrase-aware
+citation test, answered directly):**
+
+| arm | strict (literal REQ-N only) | paraphrase_aware |
+|---|---:|---:|
+| control | 5 | 0 |
+| x1a | 5 | 0 |
+| x1b | 4 | 0 |
+| x1c | 6 | 0 |
+
+Under a STRICT literal-citation-only reading, X3-C's mechanism (no
+citation → no fix round) would have demoted 4-6 true-positive
+Critical/Important findings per arm (real organic bugs matching one of
+the 4 real-defect region signatures but not literally citing `REQ-N`)
+to a non-blocking suggestion — a real, non-zero cost. Under the
+PARAPHRASE-AWARE reading (citation = literal `REQ-N` OR the SAME
+region's own paraphrase vocabulary), **every one of those findings is
+recognized as backed — 0 false demotions for all four arms.** This
+directly answers the carry-forward: X3-C is safe ONLY if implemented
+with paraphrase-aware citation matching; a literal-citation-only
+implementation would systematically punish reviewers for describing
+real bugs in their own words instead of quoting a requirement ID, at a
+measured cost of ~5 findings per 20-chain arm in this battery.
+
+**X3-B — honest incompleteness disclosure.** The task instructions
+asked this battery to give X3-B's controller-side flag half "its first
+real test." It did NOT get a meaningful test: none of the four mounted
+arms (control/x1a/x1b/x1c) carries X3-B's actual mechanism text (the
+"Requirements inventory" clause lives only on the un-mounted `cp/x3b`
+branch), so there is no elicited self-disclosure behavior to grep for,
+and applying X3-B's grep-and-flag logic post-hoc to reports that were
+never prompted to produce a requirements inventory in the first place
+would not be a real test of the mechanism — it would just confirm that
+un-prompted reports don't happen to write one (true, and uninformative).
+**X3-B remains COMPLETELY untested**, exactly as the controller ruling
+already found at the MICRO tier; this battery does not change that.
+Testing it for real requires mounting `cp/x3b` as its own arm in a
+future battery, not reusing X1's four arms as a rider.
+
+### X1-B/X1-C confound — separation result (clean, not ambiguous)
+
+X1-C's mechanism leaves an explicit, greppable textual marker
+("**Another round worth it:** Yes/No") in every reviewer/re-reviewer
+final answer — confirmed present in **all 4 x1c reps**, with the FINAL
+round of every single rep terminating on an explicit **"No"** verdict
+(rep1's last rollout: "Another round worth it: No."; rep2: "No"; rep3:
+"No.**"; rep4: "**No.**") — X1-C's stop-verdict mechanism is
+unambiguously LIVE and driving every x1c rep's convergence. X1-B's
+mechanism is controller-side (SKILL.md only; no reviewer-prompt text
+changes on `cp/x1b`) and produces NO equivalent reviewer-emitted
+marker — confirmed by grep: the literal string "another round worth
+it" appears in **zero** of the 4 x1b reps' rollouts. **This gives a
+clean, zero-ambiguity separation by construction**: any rep showing the
+marker is attributable to X1-C, and none of X1-B's reps show it — the
+pre-registered "flag ambiguous cases" contingency was never triggered.
+What this analysis CANNOT do is directly quote "the floor was crossed"
+from X1-B's own reviewer text, since that mechanism has no
+reviewer-facing field to quote — X1-B's markedly lower mean round count
+(5.8 vs. control's 7.2) is consistent with its rising-floor mechanism
+suppressing later-round Important-only findings from continuing the
+loop, but this is inferred from the AGGREGATE round-count pattern, not
+a directly-quoted controller decision. Disclosed as an honest
+analytical limit, not force-fit into a false-positive confirmation.
+
+### Operational finding: the 60-minute ceiling is still insufficient for a real minority of reps
+
+4 of 16 reps (25%) — one per arm, uniformly — did not reach a clean
+merge within the bumped 60-minute `quorum_max_time`: 3 hit
+`indeterminate` (the coding agent was still actively working, mid final
+-fix-wave, when the harness's time budget expired — confirmed via each
+verdict's own gauntlet summary, e.g. control rep2: "[the] final_fixer
+subagent ran for over 24 minutes without completing, and my allotted
+time budget (3600s) ran out while it was still 'Working'... logs kept
+showing periodic new rollout files and activity, so it did not appear
+stuck, just slow"); 1 hit a measured `fail` (x1b rep2 self-halted
+cleanly after its own single-fix-wave cap was exhausted, correctly
+reporting the branch preserved-but-unmerged — a real, legitimate
+stopping condition, not a crash). The near-uniform 1-per-arm
+distribution suggests this is predominantly a SCENARIO/BUDGET-level
+effect rather than an arm-specific one, but n=4/arm cannot rule out an
+arm-specific contribution with confidence. **Disclosed for whoever
+reruns this scenario**: even 60m (a 33% bump over the original 45m) is
+not comfortably sufficient for `cp-x1-buggy-sdd`'s real wall-clock
+variance; a further bump (or accepting a ~25% non-merge rate as this
+scenario's honest baseline) is the tradeoff for whoever revisits it.
+None of these reps were excluded from X1/X3 scoring above — their real
+code (read from the unmerged branch) and real review-chain data are
+fully represented in every table.
+
+### Verdict vs. pre-registered criteria: NO ARM WINS — inconclusive-by-ceiling on the guard, directional-not-conclusive on cost/rounds
+
+Per the pre-registered criterion ("rounds-to-terminal, novel-finding
+rate per round, cost per task, AND defect-escape rate... an arm that
+converges fast by missing real bugs fails"):
+
+- **Defect-escape guard**: cannot bind on any arm (ceiling effect
+  above) — this is the SAME class of honest negative Tasks 4/4b/5
+  reported, now extended to FULL/implementer-side/codex-gpt-5.6, not a
+  new failure of this task's design.
+- **Rounds-to-terminal**: X1-B fastest (5.8 mean Σrounds vs. control's
+  7.2), X1-C intermediate (6.5), X1-A statistically indistinguishable
+  from control (7.0 vs. 7.2) — **directionally consistent with this
+  entry's pre-registered predictions for B and C, but NOT for A** (A
+  was predicted to show the lowest unbacked/invented rate, not
+  necessarily the fastest convergence; on convergence specifically it
+  showed none). At n=4/arm this is suggestive, not statistically
+  conclusive — no formal significance test was run and none is
+  defensible at this sample size.
+- **Cost per task**: control cheapest ($9.61 mean) through x1a priciest
+  ($10.25 mean) — a ~$0.65 spread, smaller than the ~$1.5-3 per-rep
+  variance visible in the per-rep table above. Not a reliable
+  cross-arm signal at this n.
+- **Novel-finding rate**: x1a highest (0.679), control lowest (0.483) —
+  reported for completeness; not adjudicated as a pass/fail axis
+  because the pre-registered criteria did not specify a target
+  direction or threshold for it, and it is sensitive to chain
+  composition (single-round chains trivially score 0.0 or 1.0).
+
+**No arm is disqualified and no arm is declared a winner.** This is an
+honest, pre-registration-consistent negative result on the guard
+(structurally identical to Tasks 4/4b/5's ceiling findings) combined
+with weak, noisy, non-significant directional signal on the cost/rounds
+axes that matches two of three treatment-arm predictions (B, C) but not
+the third (A). Per the standing discrimination rule
+("inconclusive-by-zero is a stop, not a pass"), this is reported as
+exactly that — inconclusive on the guard — rather than rounded up to a
+pass for any arm.
+
+### Cost
+
+**This battery: $158.1788 measured** (16 real runs; ~5% over the
+$120-150 pre-registered estimate, not budget-concerning). **Running
+campaign total: $171.93** ($13.75 prior + $158.18 this battery) — well
+under the $400 stop-and-report checkpoint and the $580 ceiling.
+
+### Privacy sweep
+
+Standard needle set — real hostname/username (checked via
+`hostname`/`whoami`, never written literally, per the Task 7 lesson),
+`ANTHROPIC_API_KEY`/API-key patterns, email patterns, corpus codenames,
+remote-host alias reminders — run against this entry and the staged
+diff before commit: no match on real values, clean. `/Users/jesse/git/...`
+absolute paths present throughout are the same established,
+already-committed repo-path convention this campaign has used since
+Task 1 (distinct from the machine-identity needles the sweep screens
+for), not a new disclosure. No raw rollouts, no full session transcripts,
+and no `results/` directory content were committed — every quote above
+is a manually-selected excerpt (finding text, review verdicts, gauntlet
+summaries) of the same low-sensitivity class (synthetic-fixture
+provenance, code-review language about invented billing modules) this
+campaign's other verdict entries already quote; nothing here names a
+real host, a real user, or real business content — the entire fixture
+and every generated module is synthetic, invented for this eval.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-08-01 | Task 8: X1 FULL (A/B/C+control, 4 reps each, 16 runs) + X3 rider | $158.1788 (measured) | Defect-escape guard INCONCLUSIVE-BY-CEILING (0/16 reps exhibit any seeded anchor/debatable-1 mistake; 0/16 after correction on X3's bait region) — same ceiling-effect class as Tasks 4/4b/5, now confirmed on codex/gpt-5.6 in the real FULL multi-round loop, lifting the model-mismatch caveat. X1-B fastest convergence (5.8 vs control 7.2 mean rounds), X1-C intermediate (6.5) — directional, n=4/arm, not conclusive; X1-A showed no measurable speedup. X1-B/X1-C confound cleanly separated (X1-C's stop-verdict marker in 4/4 x1c reps, 0/4 x1b reps). X3-C's paraphrase-aware citation test rescues 100% of the 4-6/arm findings a strict literal-citation reading would false-demote. X3-B remains completely untested (no arm mounts its mechanism). 2 scorer false positives found+manually corrected (disclosed, not patched, matching prior false_block_rate precedent); 25% of reps (1/arm) hit the 60m wall-clock ceiling despite the bump, disclosed as an operational finding, not excluded from scoring. Running campaign total: $171.93 |
