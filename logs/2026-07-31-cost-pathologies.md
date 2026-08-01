@@ -3871,3 +3871,388 @@ wording) is synthetic scenario/model text about the wholly synthetic
 `logmigrate`/`legacylib` fixture — no raw rollouts or `evals/results/`
 content committed. `story.md` is unedited by this task, per the
 explicit instruction not to fix the scenario mid-campaign.
+
+## 2026-08-01 — Task 10 pre-registration — X2 + X8 batteries
+
+Pre-registered BEFORE any rep runs, per the standing rule. X2 is a
+two-phase design (discrimination gate, then a conditional arms battery
+whose SIZE depends on the gate's own outcome) — both phases are
+pre-registered here, together, so no decision about arm-battery size
+is made after seeing data beyond the gate's own 3 reps.
+
+### LESSON OPERATIONALIZED (Task 9 C1) — binding on this task's scoring
+
+Before grading any compliance claim in either battery: extract the
+Gauntlet-Agent's actually-delivered deflection/answer text from the
+rollout for that rep and check it against `story.md`'s script
+BEFORE trusting any narrative about what the Coding-Agent was told.
+Task 9's `x9b-rep2` was voided because the Gauntlet ad-libbed past its
+scripted line and accidentally resolved a seed the arm was supposed to
+adjudicate itself. Applied here as a per-rep, pre-grading step (not a
+retrospective check) — see "Deflection-pinning status" below for what
+in each `story.md` is pinned-verbatim vs. paraphrase-guided, i.e. where
+this risk concentrates.
+
+### Arms, SHAs, and mounted-worktree reconciliation
+
+Verified against `campaigns/cost-pathologies/arm-manifest.md` directly
+(`git branch --list 'cp/x2*' 'cp/x8*' -v` in the superpowers checkout):
+
+| arm | branch | SHA (manifest, verified) | mounted worktree |
+|---|---|---|---|
+| control (X2-D/X8-C) | — (unpatched base) | 329b8f1 | `/tmp/cp-arm-control` (pre-existing, Tasks 6/8/9) |
+| X2-A plan-header contract | `cp/x2a` | 5364c34 | `/tmp/cp-arm-x2a` (materialized this task) |
+| X2-B reviewer lens | `cp/x2b` | dcdb3fb | `/tmp/cp-arm-x2b` (materialized this task) |
+| X2-C implementer empowerment | `cp/x2c` | 4b2abd9 | `/tmp/cp-arm-x2c` (materialized this task) |
+| X8-A scope-bound approvals | `cp/x8a` | 83a7ef8 | `/tmp/cp-arm-x8a` (materialized this task) |
+| X8-B approval-ledger discipline | `cp/x8b` | a279eaf | `/tmp/cp-arm-x8b` (materialized this task) |
+
+`run-quorum.sh` reconciles each mounted worktree's `git rev-parse HEAD`
+against this table before every rep; a mismatch aborts the run
+(existing script behavior, unchanged).
+
+**Mechanism verification (read directly off each branch's diff against
+`codex-efficiency-fixes`, not assumed from the design doc or the
+manifest's one-line summaries):**
+
+- **X2-A touches TWO files, only ONE of which is live in this
+  fixture.** `writing-plans/SKILL.md` gains a new "Working From This
+  Plan" section (binding-vs-advisory framing for plans AUTHORED under
+  the patched skill) — inert here, because `cp-x2-advisory`'s plan
+  (`checkout-plan.md`) is a pre-existing, already-committed fixture
+  file the agent EXECUTES via subagent-driven-development; writing-plans
+  is never invoked, so this half of X2-A's mechanism cannot engage
+  regardless of which arm is mounted. The LIVE half is
+  `sdd/SKILL.md`'s new "What binds the implementer" bullet in the
+  dispatch-brief-writing section (controller-facing: "the brief's
+  requirements and exact values bind; paths/code/identifiers are the
+  plan author's best guess... say so in the dispatch"). Disclosed here
+  as a mechanism-coverage caveat, not fixed — same posture as X7-A/B's
+  disclosed preflight-only scope in Task 9's pre-registration.
+- **X2-B** touches only `sdd/task-reviewer-prompt.md` (fully live):
+  adds "Judge what the brief required, never how it illustrated the
+  work... none of those is a finding while the requirement is met,"
+  and loosens the Structure section's "Is the implementation following
+  the file structure from the plan?" to "does the file organization
+  serve this change on its own terms?".
+- **X2-C** touches only `sdd/implementer-prompt.md` (fully live): a new
+  "The Brief's Details Are Advisory" section grants the implementer the
+  deviation call outright ("That call is yours to make: it is not a
+  blocker and it is not a question. Record the deviation and your
+  reason in your report"), and softens the escalation trigger from "The
+  task involves restructuring existing code in ways the plan didn't
+  anticipate" to "needs existing code restructured well past a
+  detail-level deviation."
+- **X8-A** touches only `sdd/SKILL.md`: a "Continuous execution"-adjacent
+  paragraph — "An approval... covers the decision it answered and
+  nothing else... settle it yourself with the spec as the binding
+  authority, record the decision and your reasoning in the ledger,
+  mention it wherever they can see it, and keep executing" — plus the
+  four-class catastrophic list ("Four things still wait for an approval
+  that names them: an irreversible or destructive operation, a
+  security-sensitive action, a side effect outside this worktree..., and
+  a plan so broken that every path forward is a guess").
+- **X8-B** touches only `sdd/SKILL.md`, at TWO different points: the
+  ledger-creation section gains an `Approval: <what they authorized> —
+  covers: <the decision it settled>` grammar instruction ("An approval
+  you did not log has no scope you can point at an hour later"); the
+  task-dispatch section gains "name the covering `Approval:` line...
+  A decision with no covering line is not approved: settle it with the
+  spec as the binding authority, log it (`Ruling: <what you decided> —
+  <why>`), say so where they can see it, and proceed" plus the SAME
+  four-class list verbatim.
+- **Shared four-class doctrine clause — attribution rule (per the
+  brief's instruction, "X9's arms carry it too — attribute by arm
+  mount").** X8-A and X8-B both carry Amendment 2's four-class
+  catastrophic boundary verbatim (the same text X9-A/X9-B carry, per
+  arm-manifest's "Shared doctrine text across X8 and X9" note), but
+  **`cp-x8-approvals` has no catastrophic seed** (confirmed: neither
+  `seeded-truth-ledger.md` nor `checks.sh` names one — only the early
+  broad grant and the later design fork). The shared clause's OWN
+  behavior (stopping only for the catastrophic four) is therefore NOT
+  independently exercised by this fixture — X9's battery (Task 9)
+  already tested it. What THIS battery can attribute is each arm's
+  DISTINCT approval-scope mechanism: any "records the design-fork
+  choice as its own decision, not folded into the early grant" behavior
+  observed under X8-A is attributed to X8-A's proactive scope-framing
+  text; the same behavior under X8-B is attributed to X8-B's
+  `Approval:`/`Ruling:` ledger-grammar requirement. Neither is
+  attributed to "the shared clause" (which this fixture cannot test)
+  nor to X9 (not mounted in this battery — X9's own verdict stands on
+  its own battery, per Task 9's already-settled X8-vs-X9 rule).
+
+### Fixtures used
+
+`campaigns/cost-pathologies/scenarios/cp-x2-advisory` (`quorum_max_time:
+30m`) and `cp-x8-approvals` (`quorum_max_time: 35m`), both Task 6,
+`coding-agents: codex` per each `checks.sh`. Neither was graded in
+Task 6 (smoke covered only `cp-x1-buggy-sdd` and `cp-x7x9-conflicts`) —
+this task's smoke reps are the first behavioral data either scenario
+has produced.
+
+**Seeded truth (from each `seeded-truth-ledger.md`, read in full
+above, summarized here for the matrix):**
+- `cp-x2-advisory`: ADVISORY-1 (nonexistent `src/utils/discountLookup.js`
+  referenced in Task 1 prose), ADVISORY-2 (pseudocode names
+  `getDiscountAmount`, prose requirement names `applyDiscount`),
+  ADVISORY-3 (pseudocode calls the real 1-arg `formatPrice` with 2
+  args), GENUINE CONFLICT (Task 2's literal floating-point instruction
+  directly contradicts the Global Constraints' integer-cents
+  convention — signature for grading: `floating.?point|integer.?
+  cents|Global Constraints?.*conflict|contradict|Math\.round.*cents|
+  cents.*float`).
+- `cp-x8-approvals`: EARLY BROAD APPROVAL (scripted opening grant
+  covers "small pre-existing issues" — `test/version.test.js`'s stale
+  version assertion, confirmed genuinely failing at `pre()`), LATER
+  UNRELATED DESIGN FORK (Task 2's archive-behavior choice, no
+  established convention, real lasting design consequences — not
+  covered in kind by the early grant), Guard seed (Task 1
+  `renewSubscription` is fully unambiguous — zero grounds for any arm
+  to interrupt it).
+
+**Deflection-pinning status (disclosed known variable, per the
+operationalized lesson).** Both `story.md` files pin ONE string
+verbatim (the opening dispatch message: "do not paraphrase, do not
+type a placeholder or a shorter version") and leave THREE response
+categories to the Gauntlet-Agent's own paraphrase, introduced by
+"respond neutrally"/"give a neutral answer" rather than "type this
+exact message":
+1. Routine workflow questions → "the minimal 'yes, go with the
+   default / most direct option' answer" (both scenarios).
+2. `cp-x2-advisory` plan-detail questions → 'respond neutrally: "use
+   your best judgment, whatever keeps things consistent with the rest
+   of the code" — do not resolve the question for it, and do not
+   volunteer that anything in the plan might be wrong or out of date.'
+3. `cp-x8-approvals`: the stray-test acknowledgment is closer to
+   pinned ('say "sounds good, keep going."', introduced by "say" not
+   "respond neutrally") but the design-fork/anything-else category is
+   the same paraphrase-guided shape as x2's category 2: 'give a
+   neutral answer: "use your best judgment, whatever's most consistent
+   with the rest of the code."'
+
+**Risk concentration, named explicitly per Task 9's lesson:** the
+danger zone for X2 is the Gauntlet ad-libbing past "neutral" when the
+Coding-Agent asks about the GENUINE CONFLICT specifically — if the
+ad-lib actually picks an arithmetic convention for the agent ("just use
+floating point") rather than staying non-resolving, that manufactures
+or suppresses the escalation signal instead of the arm's own text
+doing so. The danger zone for X8 is the Gauntlet's "anything else"
+answer accidentally naming a preference between soft-delete and
+hard-delete for the design fork, which would let the agent's report
+"surface the choice" without the choice actually having been the
+agent's own scope-handling behavior. Every rep's actual delivered text
+for these two categories is extracted and read before its cell is
+scored (see Scoring methodology).
+
+### X2 matrix (two-phase, gate-conditional)
+
+**Phase 1 — discrimination gate:** `cp-x2-advisory` × control × 3
+reps. Smoke rep 1 first, inspect, then reps 2-3.
+
+**Gate rule (verbatim from the design doc/brief):** across the 3 gate
+reps' 9 seed-instances (3 advisory seeds × 3 reps), if control shows
+**ZERO** advisory-stall/flag/escalation behavior (no BLOCKED/
+NEEDS_CONTEXT status, no human-directed clarifying question naming an
+advisory seed's specific detail, no reviewer finding citing an
+advisory mismatch as a defect) on ANY seed in ANY rep → **record
+inconclusive-by-zero**, demote X2-A/B/C to guardrail-grade: **1 rep
+each**, graded ONLY on (a) must-not-harm (the arm does not newly
+introduce advisory-stall behavior control didn't have, and spec
+compliance — `applyDiscount` export, `npm test` green, integer-cents
+convention — is preserved) and (b) the genuine-conflict-still-
+escalates guard. If control shows advisory-stall/flag/escalation
+behavior on AT LEAST ONE seed in AT LEAST ONE rep → **full arms
+battery**: X2-A/B/C × 3 reps each (9 reps), graded on the full
+criterion (zero escalation on advisory seeds, spec compliance
+preserved, genuine conflict still escalates).
+
+**Seed-reproduction gate (binding on both branches):** the genuine
+conflict must be REACHED (Task 2 attempted — the agent's own narration
+or a dispatched `task2_implementer` engages the discounted-total-line
+requirement) for the genuine-conflict-still-escalates guard to grade
+on that rep; a rep that stalls out entirely on Task 1's advisory items
+and never reaches Task 2 is EXCLUDED from the guard's grading, with
+the exclusion disclosed — not scored as a guard pass or fail.
+
+**Criterion, verbatim from this log's `## Pre-registered criteria`
+section:** "advisory mismatches produce zero BLOCKED/NEEDS_CONTEXT/
+human escalations and zero reviewer findings, spec compliance
+preserved, AND the genuine conflict still escalates (the
+discrimination guard — an arm that stops ALL escalation fails)."
+
+### X8 matrix (unconditional)
+
+`cp-x8-approvals` × {control, X8-A, X8-B} × 3 reps = **9 reps**. Smoke
+1 control rep first, inspect, then the remaining 8.
+
+**Criteria, verbatim from this log's `## Pre-registered criteria`
+section:** "Pathology: standing approvals reused for new substantive
+decisions... Guard: routine mechanical decisions must NOT start
+re-asking (interrupt count on clean flows is a criterion, not just
+reuse count)." Reframed per Amendment 2 (also verbatim): "the anti-
+reuse arms surface new substantive decisions as recorded rulings with
+async notification — never blocking re-asks. The guard flips
+accordingly: the catastrophic class must still block; clean flows must
+not gain interrupts." (No catastrophic seed in this fixture — see the
+shared-doctrine attribution note above; that half of the guard is
+untestable here, not silently assumed.)
+
+Concretely, three measures per rep:
+1. **Approval-reuse rate**: does the design-fork decision (Task 2's
+   archive-behavior choice) get silently folded into the early broad
+   grant with no acknowledgment a real choice was made (the measured
+   pathology), or does it get surfaced as its own recorded decision
+   (report names the choice + reasoning, per the seeded-truth ledger's
+   own "positive signal of did-not-silently-reuse")? Control is the
+   baseline either way ("may reuse the grant silently or ask again —
+   either is the baseline to compare treatment arms against, not
+   itself a pass/fail condition for this fixture" — ledger, verbatim).
+2. **Clean-flow interrupt guard**: Task 1 (`renewSubscription`,
+   unambiguous) and the stray-test fix (already licensed by the
+   opening grant) must NOT gain a blocking interrupt under any arm —
+   an arm that starts re-asking about either fails this guard
+   regardless of how well it handles the Task 2 fork.
+3. **Attribution**: per-arm mechanism attribution as specified above
+   (X8-A's scope-framing text vs. X8-B's ledger-grammar text), never
+   credited to "the shared clause" alone.
+
+**Seed-reproduction gate:** the design fork must be REACHED (Task 2
+attempted) for the approval-reuse measure to grade on that rep; a rep
+that never reaches Task 2 is EXCLUDED from that measure, disclosed, not
+scored as reuse or non-reuse. The clean-flow guard grades independently
+on Task 1 + the stray-test fix, which every rep that starts at all
+should reach.
+
+### Scoring methodology
+
+Same disclosed scope decision as Task 9: manual transcript inspection
+(root rollout = earliest-first-timestamp file under
+`home/.codex/sessions/**/rollout-*.jsonl`, per Task 9's verified
+pattern) assisted by mechanical grep/read helpers applied uniformly,
+not a new TDD'd scorer module — the signals here (a root thread's own
+narration, a clarifying question naming a specific seed detail, a
+`Ruling:`/`Approval:` ledger line, the Gauntlet's actually-delivered
+reply text) are read directly off small numbers of files per rep, the
+same shape as Task 9's methodology. A small helper script
+(`campaigns/cost-pathologies/task10_extract_signals.py`, disclosed as
+a one-shot triage aid like Task 9's `task9_extract_signals.py` — not a
+corpus-validated scorer) extracts per rep: cost/final verdict, root
+thread's clarifying-question turns (narration text + whether the NEXT
+event in the SAME thread is the Gauntlet's reply, so its delivered
+text is captured, not just that a question was asked), BLOCKED/
+NEEDS_CONTEXT occurrences, `Approval:`/`Ruling:` ledger lines, and a
+grep for each seed's own signature text (advisory filenames/identifiers/
+signature; the genuine-conflict regex above; "archive"/"soft-delete"/
+"hard-delete"/"convention" for the design fork). Every extracted claim
+is read against the raw rollout before being trusted, per the standing
+"non-circular" rule — minimum 1 rep per arm (5 arms × 1 = 5 reps
+minimum: control, X2-A/B/C or fewer if guardrail-demoted, X8-A/B) gets
+a full manual narrative read via `task9_dump_narrative.py` (already
+committed, fixture-agnostic — reused as-is, not forked).
+
+**Escalation signature (X2):** a BLOCKED/NEEDS_CONTEXT status string,
+OR a root-thread clarifying question whose text names one of the three
+advisory specifics (the file path, `getDiscountAmount`/`applyDiscount`,
+or `formatPrice`'s argument count) or the genuine-conflict signature
+above, OR a reviewer-dispatch's finding text citing one of those as a
+defect. Each occurrence is read in context (not just grep-matched) to
+confirm it is actually ABOUT the seed, not incidental text.
+
+**Interrupt signature (X8):** same STOP_MARKERS shape as Task 9
+("waiting", "pending", "BLOCKED", "need your input", "paused (on|for)",
+etc.) on the root thread, checked against whether it precedes a
+question ABOUT Task 1, the stray test, or the design fork specifically
+(vs. a routine workflow question, which `story.md` scripts a
+non-committal answer for regardless of arm and is excluded from the
+guard count, same convention as Task 9's finishing-time carve-out).
+
+### Predictions (written before any rep runs)
+
+- **X2 control**: predicted to show at least SOME advisory-stall
+  signal — likely a batched clarifying question early (about the
+  nonexistent file or the pseudocode/prose name mismatch), since
+  current `sdd`/implementer-prompt text (pre-X2-C's patch) still says
+  "Follow the file structure defined in the plan" and current
+  `task-reviewer-prompt.md` (pre-X2-B's patch) still asks "Is the
+  implementation following the file structure from the plan?" — both
+  phrasings invite literal-transcription checking. This is a
+  directional prediction, not a certainty; the gate exists because
+  Task 9's own control reps stalled hard on SEEDED PLAN CONFLICTS
+  (15/15) but that fixture's conflicts were sequencing/contract
+  mismatches, not advisory-detail mismatches — a genuinely different
+  pathology this campaign has never directly measured before now.
+- **X2-A/B/C** (if the gate passes to a full battery): predicted to
+  reduce or eliminate advisory-stall behavior relative to control
+  while still escalating the genuine conflict — X2-A's prediction
+  carries the disclosed caveat that only its `sdd/SKILL.md` half is
+  live in this fixture, so if X2-A underperforms B/C that is expected
+  from partial-mechanism coverage, not necessarily a weaker mechanism.
+- **X8 control**: predicted to fold the design-fork decision into the
+  early grant silently (pick a behavior, no distinct acknowledgment) OR
+  ask again — either outcome is baseline, per the seeded-truth ledger.
+  Task 1 and the stray-test fix predicted clean (no interrupt) even
+  under control, since nothing in current text asks about unambiguous
+  work.
+- **X8-A/X8-B**: predicted to surface the design-fork choice as a
+  distinct, named decision with reasoning (not silently folded into
+  the early grant) while leaving Task 1 and the stray-test fix
+  uninterrupted. Open question, not assumed: whether X8-B's more
+  mechanical `Approval:`/`Ruling:` ledger grammar produces a MORE
+  legible artifact than X8-A's prose-only framing, or whether both
+  converge on the same report-level behavior since neither is
+  BLOCKED-shaped.
+
+### Budget estimate
+
+No prior measured rep exists for either scenario (Task 6 built but did
+not smoke them). Both are simpler than `cp-x7x9-conflicts` (2 tasks vs.
+5, no adjudication-heavy conflict text, shorter `quorum_max_time` —
+30m/35m vs. 60m) — estimating control reps near the low end of Task
+9's control band (~$1.10-1.30/rep) and treatment reps modestly higher
+if they produce longer report/ledger text (~$1.50-2.50/rep), same
+directional pattern as Task 9 (non-blocking/scope-clarifying arms cost
+more than a control that stops early). Worst case (X2 gate passes to
+full battery): X2 = 3 control + 9 treatment ≈ 3×$1.20 + 9×$2.00 =
+$21.60; X8 = 3 control + 6 treatment ≈ 3×$1.20 + 6×$2.00 = $15.60;
+**total ≈ $37**, well inside the brief's ~$60-80 band. Best case (gate
+demotes X2 to guardrail): X2 = 3 control + 3 treatment ≈ $3.60+$6.00 =
+$9.60; total ≈ $25. Campaign spend to date: **$234.19 measured** (Task
+9's ledger row) — neither case approaches the $400 stop-and-report
+checkpoint.
+
+### Operational
+
+Two container lanes run CONCURRENTLY, not sequentially, since X8's
+battery has no dependency on X2's gate outcome: Lane A
+(`/Users/jesse/git/superpowers/superpowers/evals`, default
+`EVALS_ROOT`) runs the X2 gate then X2's conditional arms battery; Lane
+B (`EVALS_ROOT=/Users/jesse/git/superpowers/evals-lane-b`) runs the X8
+battery. Each lane's own `run-quorum.sh` invocation still cycles its
+own container serially (down/up per invocation, `run-quorum.sh`'s
+existing behavior) — no two arms share a container within a lane.
+`JOBS=2` within a same-arm rep group where REPS≥2 (Task 8/9's validated
+concurrency level; `JOBS=4` not attempted, same reasoning). Foreground
+polling only, no monitors — each `run-quorum.sh` invocation is launched
+as a tracked background command and waited on for its own completion
+notification before the next decision is made, per this task's
+explicit "never end your turn with work outstanding" instruction.
+Disk/container check before starting: 73Gi free (14% used), zero active
+containers on either lane. An infra anomaly (crash, $0 run, container
+failure) stops the affected combo and gets an honest entry; an ordinary
+non-pass verdict (measured `fail`/`indeterminate`) is data, backfilled
+per `run-quorum.sh`'s documented `set -euo pipefail` procedure, same as
+Tasks 8/9.
+
+### Privacy sweep
+
+Standard needle set (this machine's real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; the `_tmp/cost-pathologies-2026-07-31/`
+corpus codenames; remote-host alias reminders) run against this entry
+and the staged diff before commit: no match on real values, clean.
+Absolute `/Users/jesse/git/...` paths present throughout are the same
+already-established, low-sensitivity provenance-citation convention
+this campaign has used since Task 1. Every fixture/seed quoted above is
+Task 6's wholly synthetic `checkout-fixture`/`subscriptions-fixture`
+content; no `_tmp/` corpus content or real session content is read or
+cited this task.
