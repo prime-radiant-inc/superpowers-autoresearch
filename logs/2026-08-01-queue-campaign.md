@@ -85,3 +85,50 @@ until Task 4 lands: the runner's SHA-reconcile check REFUSES to run any
 arm (worktree HEADs no longer match the rows it parses) — fail-closed,
 no battery can accidentally run the wrong base. Batteries (Tasks 9–12)
 are already blocked on Task 4.
+
+## 2026-08-01 — Task 1 complete; CORRECTION to the closed campaign's X1 FULL numbers
+
+Task 1 (`score_x1_chains` items 11+12) commit 1bf7035, task review
+APPROVED (spec ✅ both items; 2 Minor deferred to ledger). This entry
+corrects numbers published in `logs/2026-07-31-cost-pathologies.md`
+("Cross-arm summary table") and `reports/2026-08-cost-pathologies-campaign.md`
+§2's X1 FULL table.
+
+**Premise correction (item 12).** The queue item called the re-tasked
+single-reviewer pattern "invisible to the scorer"; Task 1's brief went
+further and assumed it absent from the archived corpus. It is present
+exactly once: `durability_fix2_reviewer` in `cp-x1-buggy-sdd-x1a-rep1`
+(one spawn, re-tasked via a second NEW_TASK envelope; the pre-fix scorer
+silently discarded round 1's "ADDRESSED" verdict). Rare, not absent —
+and the miss was real, exactly as item 12 predicted.
+
+**Recovered aggregation definition.** The published "mean
+novel-finding-rate" is the mean over all per-round rates flattened
+across every chain in the arm's 4 reps (verified: reproduces all four
+published values byte-for-byte with the pre-fix scorer;
+`campaigns/cost-pathologies/task1_recompute_x1_table.py '1bf7035^'`).
+
+**Corrected X1 FULL cross-arm table** (changes bolded conceptually;
+causes: 4 reps carried phantom `- Critical: none.` finding triples via
+the `_bare_label_findings` fallback bug + item 11's narrow regex; 1 rep
+carried the item-12 hidden round):
+
+| arm | mean Σrounds | mean Σdispatch | mean novel-finding-rate |
+|---|---:|---:|---:|
+| D control | 7.2 (unchanged) | 7.5 (unchanged) | 0.483 (unchanged) |
+| A criterion-backing | 7.0 → **7.25** | 7.0 → **7.25** | 0.679 → **0.586** |
+| B rising floor | 5.8 (unchanged) | 5.8 (unchanged) | 0.652 → **0.565** |
+| C marginal-value | 6.5 (unchanged) | 6.5 (unchanged) | 0.577 → **0.538** |
+
+**What does not move:** chain identities (410 fields compared, 10
+changed, 0 new/missing chains), costs, pass rates, guard outcomes, and
+the battery verdict (NO ARM WINS, directional-at-n=4 — unchanged). The
+treatment-arms-find-more-novel-findings ordering (A>B>C>D) survives with
+smaller gaps; B remains fastest on rounds; A's apparent rounds edge over
+its dispatch count disappears (both 7.25).
+
+**New queue candidate (from Task 1's corpus recon, out of its scope):**
+a bulleted `- None.` directly under a `#### <Severity>` heading with no
+colon-label is miscounted as a real finding by `LIST_ITEM_RE`'s
+heading-fallback path — `NONE_VALUE_RE` is never consulted on that path.
+26 occurrences in the archived corpus. Parked for the closeout queue.
