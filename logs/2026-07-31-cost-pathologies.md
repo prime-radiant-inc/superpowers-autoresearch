@@ -2152,11 +2152,25 @@ edits), **412 passed after** (35 new for score_x5_leases.py).
 
 Standing needle set (mining codenames, ticket-ID pattern, hostnames,
 emails, API-key patterns, absolute non-repo paths), case-insensitive, run
-against this entry and the staged diff before commit — no match, clean.
-Nothing from `_tmp/cost-pathologies-2026-07-31/` or the remote-host-a SSH
-session was committed: every fixture in `test_score_x5_leases.py` is
-original synthetic content; the rollout paths, thread/task-name labels,
-and abbreviated commit SHAs cited above are the same class of low-
+against this entry and the staged diff before commit. **First pass found
+a real leak, disclosed rather than silently fixed:** three of the
+regression-test fixtures for the three bugs above had been built directly
+from the real corpus text that exposed each bug, and still carried real
+content — a real absolute path containing the donor's actual local
+username, and real internal function/branch/test names from the
+remote-host-a exemplar's own project. All three were rewritten to
+synthetic equivalents (a generic placeholder path, generic `FooSelector`/
+`BarResolver`-style names) that preserve exactly the structural shape the
+regression test needs, with zero real content; the log prose above was
+scrubbed the same way (SHA fragments and generic labels like "the
+wave-1 fix commit's own bracket output" kept — they're non-identifying —
+real branch/function names and the commit-message paraphrase removed).
+Re-swept clean after the fix — verified via `git diff --cached` on the
+final staged diff, not just the working tree. Nothing from
+`_tmp/cost-pathologies-2026-07-31/` or the remote-host-a SSH session was
+committed: every fixture in `test_score_x5_leases.py` is now original
+synthetic content; the rollout paths, thread/task-name labels, and
+abbreviated commit SHAs still cited above are the same class of low-
 sensitivity provenance label Task 2's own validation entry and
 DESIGN.md/rollout_parser.py already cite verbatim — no finding text,
 business-logic file:line content, or other session substance is quoted
