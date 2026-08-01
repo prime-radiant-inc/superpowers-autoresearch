@@ -4,7 +4,7 @@ title: Metered usage billing plan execution (cost-pathologies campaign)
 status: ready
 tags: cost-pathologies, subagent-driven-development, x1
 quorum_tier: adhoc
-quorum_max_time: 45m
+quorum_max_time: 60m
 ---
 
 You are a software engineer overseeing this work. You have a plan

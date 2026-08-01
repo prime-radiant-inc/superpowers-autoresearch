@@ -2177,3 +2177,244 @@ business-logic file:line content, or other session substance is quoted
 anywhere above. The temporary 4-file working copy pulled from
 `remote-host-a` lived only in this session's own scratchpad directory
 (outside both this repo and `_tmp/`) and was deleted after validation.
+
+## 2026-08-01 — Task 8 pre-registration — X1 FULL battery (A/B/C+control) + X3 rider
+
+Pre-registered BEFORE any battery rep runs, per the standing rule.
+Committed together with the runner-integration code and scorer this
+entry cites, so every artifact named below already exists at this
+commit.
+
+### Arms, SHAs, and mounted-worktree reconciliation
+
+Per the controller ruling
+(`## 2026-07-31 — CONTROLLER RULING: X1 FULL arm selection`, this log):
+X1 FULL runs ALL THREE treatment arms plus control, 4 reps each — the
+plan's original 2-arm text does not govern this battery. SHAs verified
+against `campaigns/cost-pathologies/arm-manifest.md` (never hand-copied
+from the task brief without re-checking):
+
+| arm | branch | SHA (manifest) | mounted worktree | mounted HEAD | reconciled |
+|---|---|---|---|---|---|
+| X1-D control | — (unpatched base) | 329b8f1 | `/tmp/cp-arm-control` | 329b8f1 | yes (pre-existing from Task 6) |
+| X1-A criterion-backing | `cp/x1a` | 1851307 | `/tmp/cp-arm-x1a` | 1851307 | yes (materialized this task) |
+| X1-B rising severity floor | `cp/x1b` | 151b2e1 | `/tmp/cp-arm-x1b` | 151b2e1 | yes (materialized this task) |
+| X1-C marginal-value verdict | `cp/x1c` | 69fd769 | `/tmp/cp-arm-x1c` | 69fd769 | yes (materialized this task) |
+
+Each worktree's distinctive treatment phrase was grepped directly out of
+the mounted checkout before any run (not the branch in the abstract):
+X1-A's `task-reviewer-prompt.md` carries "A finding is Critical or
+Important only when you can back it"; X1-B's `SKILL.md` carries "The
+floor rises each round"; X1-C's `task-reviewer-prompt.md` carries
+"Another round worth it:"; control's `task-reviewer-prompt.md` matches
+neither X1-A's nor X1-C's phrase. All four confirmed present/absent as
+expected.
+
+### Runner integration (closes the Task 6/arm-manifest gap)
+
+`campaigns/cost-pathologies/run-quorum.sh` is generalized this task: ARM
+now accepts any arm-manifest short code (`x1a`, `x1b`, `x1c`, ..., or
+`control`), not just `control`. For a non-control ARM it greps
+`arm-manifest.md`'s row for `` `cp/<arm>` ``, parses the SHA column, and
+(if `/tmp/cp-arm-<arm>` does not already exist) materializes it —
+`git -C /Users/jesse/git/superpowers/superpowers worktree add --detach
+/tmp/cp-arm-<arm> <sha>` — exactly the shape the task instructions
+specified. Every invocation then reconciles the mounted worktree's own
+`git rev-parse HEAD` against the resolved SHA and refuses to run on a
+mismatch (`arm-manifest.md`'s own standing requirement: "a battery that
+cannot name its arm's SHA is ungraded"). Each arm gets its own dedicated
+directory (never checkout-switched between reps), so `JOBS>1` cannot race
+two arms against one worktree — the constraint the arm-manifest's
+"Runner integration gap" note flagged. `JOBS` parallel-batching (ported
+verbatim from `campaigns/codex-efficiency/run-quorum.sh`, previously
+absent from this campaign's script) is added in the same commit, since
+this battery needs it to fit in a reasonable wall-clock window (see
+Wall-clock below).
+
+### Scenario, matrix, budget bump
+
+Scenario: `cp-x1-buggy-sdd` (Task 6) — a from-scratch SDD build of a
+4-module metered-usage billing service, `coding-agents: codex` per its
+`checks.sh`. Matrix: **4 arms × 4 reps = 16 runs**, split across both
+container lanes (lane A `/Users/jesse/git/superpowers/superpowers/evals`,
+lane B `/Users/jesse/git/superpowers/evals-lane-b`) to keep wall-clock
+bounded — assignment: lane A runs control then X1-A (8 reps), lane B runs
+X1-B then X1-C (8 reps); `JOBS=2` within each arm (the validated
+precedent from the codex-efficiency campaign — `JOBS=4` is NOT attempted
+this battery; see Wall-clock/risk note below).
+
+**Wall-clock budget bump (disclosed harness accommodation, NOT a
+treatment change — mirrors the codex-efficiency campaign's
+`cx-ceremony-arch` 30m→45m precedent,
+`logs/2026-07-30-codex-efficiency-fixes.md`):**
+`scenarios/cp-x1-buggy-sdd/story.md`'s `quorum_max_time` is bumped from
+**45m to 60m** before this battery runs. Task 6's control smoke used
+~35 of its 45-minute budget on a single rep; a live 3-task SDD run with a
+fix wave is genuinely more expensive in wall-clock than a 45-minute
+ceiling comfortably absorbs across 16 reps of REAL variance, and a
+scenario-timeout `indeterminate` verdict on an otherwise-complete,
+non-infra rollout would contaminate this battery's cost/rounds numbers
+exactly the way it did in the codex-efficiency precedent. This is a
+scenario-harness change (edited on the host scenario directory, synced
+into each container by `run-quorum.sh` before every run), not a change to
+any arm's router/skill text under test.
+
+**Risk note, disclosed, not silently absorbed:** host disk is at 97%
+capacity (66Gi free of 1.8Ti) at the time of this pre-registration — the
+SAME class of condition (`logs/2026-07-30-codex-efficiency-fixes.md`,
+95%/103Gi free) flagged as a likely contributing factor in a prior
+Docker-daemon crash under `JOBS=2 × 2 lanes` concurrency. This battery
+runs the identical `JOBS=2 × 2 lanes` concurrency level (not higher) as
+the validated precedent, specifically BECAUSE that level (not `JOBS=4`)
+is what has actual crash history to weigh against — proceeding is a
+judgment call, not a guarantee; per the standing rule, a container crash
+mid-battery stops the battery and gets an honest entry, not a silent
+retry.
+
+**Budget estimate:** ~$120-150 for the 16 runs (Task 6's single control
+rep measured $7.68 coding-agent+gauntlet; treatment arms are not
+expected to be systematically cheaper or more expensive by construction,
+though X1-B/X1-C's convergence mechanisms are predicted to shift the
+distribution — see Predictions below). Campaign spend to date: **$13.75
+measured** (X1 MICRO $0.95 + X1 MICRO v2 $1.6685 + X3 MICRO $2.3491 +
+Task 6 smoke $8.78; SDD ledger's own "~$18" figure in
+`.superpowers/sdd/2026-07-31-cost-pathologies-evals/progress.md` is a
+round-up, not a discrepancy) — this battery does not approach the $400
+stop-and-report checkpoint even at the high end of its estimate.
+
+### Scorers
+
+- **`score_x1_chains.py`** (`chain_stats`/`resolve_chains`) — unchanged
+  aggregate behavior; this task adds `resolve_chains()` as an ADDITIVE,
+  non-breaking refactor (chain_stats() now calls it; zero output change,
+  confirmed by the pre-existing 24 X1 tests staying green unmodified) so
+  a second scorer can reuse the identical spawn-grouping/round-resolution
+  core without forking it. Reports rounds-to-terminal (`rounds`),
+  novel-finding rate per round, and `tokens_est` (cost proxy) per review
+  chain, per rep.
+- **Seeded-defect ledger** (`scenarios/cp-x1-buggy-sdd/seeded-defect-ledger.md`)
+  — hand-derived defect-escape per rep: for each of the 4 real
+  requirement-shaped regions (ANCHOR-CRITICAL/REQ-3, ANCHOR-IMPORTANT/
+  REQ-4, DEBATABLE-1/REQ-5, DEBATABLE-2/REQ-6), read the rep's actual
+  generated code (not assumed from the plan) to confirm whether the
+  mistake shape is present, then read the review chain to confirm
+  found-and-fixed vs. escaped. Per the ledger's own instruction, this is
+  NOT purely mechanical — at least 2 reps per arm (8 of 16 total) get a
+  full manual code+review read; the rest are cross-checked against
+  `score_x1_chains`'s finding text and `score_x3_rider`'s classification
+  as a first pass, escalated to a full manual read on any ambiguity.
+- **`score_x3_rider.py`** (new this task, TDD'd against 24 synthetic
+  finding-text cases, `test_score_x3_rider.py`) — the X3 rider, riding
+  the SAME 16 runs (X3-A/B/C are NOT separately mounted arms here; see
+  the X3-rider ruling below). Computes per chain:
+  `invented_requirement_hits` (Critical/Important findings classified
+  against the BAIT-1/REQ-7 signature — the reviewer-side
+  invented-requirement pathology), `unbacked_findings` (Critical/
+  Important findings backed by neither a literal REQ-N citation nor a
+  paraphrase match to their own region — the generic X3-A-style backing
+  check), and `x3c_false_demotion` (`strict` vs. `paraphrase_aware`
+  counts of true-positive findings X3-C's mechanism would demote to a
+  non-blocking suggestion). A companion `bait_signature_in_tree()`
+  best-effort greps the final generated tree for unrequested dedup/merge
+  code as a CANDIDATE flag only — every hit gets manually confirmed
+  before counting, never trusted blind (regex cannot distinguish real
+  REQ-7-violating dedup logic from an unrelated comment using the word
+  "duplicate").
+
+### Criteria (verbatim, reproduced from this log's `## Pre-registered
+criteria` section, itself verbatim from the design doc)
+
+**X1:** "Grading: rounds-to-terminal, novel-finding rate per round, cost
+per task, AND defect-escape rate on fixtures with seeded known defects
+(the E5 machinery) — an arm that converges fast by missing real bugs
+fails." An arm PASSES only if it does not trade defect-escape for
+convergence speed; a cheaper/faster arm that lets ANCHOR-CRITICAL or
+ANCHOR-IMPORTANT escape FAILS regardless of its cost/rounds numbers
+(these two are the recall floor — every arm is expected to catch them,
+per the seeded-defect ledger's own "Expected classification per arm"
+notes). DEBATABLE-1/2 escapes are graded for severity-distribution
+information, not pass/fail, per the ledger's own framing ("scored for
+severity distribution, not right/wrong").
+
+**X3 rider:** "Tiers: MICRO (baitable fixtures...) → FULL rider on X1's
+batteries (same runs, different scorer). Grading: invented-requirement
+rate, plus a guard that real spec requirements still get enforced." The
+guard here is REQ-3/4 recall (the anchors) staying intact under whichever
+X1 mechanism is running — an arm cannot be credited for a low
+invented-requirement rate if it achieved that by suppressing real
+findings too.
+
+### Per-arm predictions (written before any rep runs)
+
+- **X1-D control**: expected reference point — highest rounds-to-terminal
+  and dispatch count among the four arms (no convergence mechanism at
+  all beyond the shipped 5-round cap), reliable recall on both anchors,
+  and the baseline `invented_requirement_hits`/`unbacked_findings` rate
+  the X3 rider's other three arms are read against.
+- **X1-A criterion-backing**: predicted to show the LOWEST
+  `unbacked_findings` and `invented_requirement_hits` rates (its
+  mechanism is textually the closest match to X3-A's own citation rule,
+  which is exactly why the X3 rider is expected to show its clearest
+  signal on this arm) — with a WATCH ITEM carried from MICRO: applied
+  too strictly, criterion-backing could push DEBATABLE-1/2 findings out
+  of the blocking bucket entirely (not a failure per the ledger's
+  severity-distribution framing, but worth reporting). **Explicitly
+  scoped**: the MICRO ceiling this prediction partly leans on
+  ("`claude-opus-4-8`, single-shot, does not fabricate illegitimate
+  blocks") is OPUS-4-8-ONLY per the model-mismatch controller ruling —
+  this FULL battery runs codex/gpt-5.6, a different model in a different
+  (multi-round, real-loop) regime, so the MICRO result is background
+  context, not a transferred expectation.
+- **X1-B rising severity floor**: predicted FASTEST convergence
+  (mechanically constructed: Important findings lose blocking power from
+  round 3 on) but the HIGHEST defect-escape risk of the four arms if
+  either anchor first surfaces at round 3+ — this is the arm the
+  defect-escape guard is most likely to actually bind on.
+- **X1-C marginal-value verdict**: predicted INTERMEDIATE cost/rounds
+  between control and X1-B — convergence depends on the model's own
+  honesty about "would another round help," not a mechanical rule, so
+  its speedup (if any) is expected to be smaller and noisier than X1-B's.
+
+### X1-B/X1-C confound — analysis plan (separation metric)
+
+Both arms can converge faster than control; the risk is crediting the
+WRONG mechanism for an observed early stop. Per rep, for every arm-B and
+arm-C chain that terminates before the 5-round cap, this battery
+explicitly classifies the stop into exactly one of two buckets by
+reading the review/rereview transcript text (not inferred from round
+count alone):
+
+1. **Floor-crossing** (X1-B's own mechanism): the terminal round's
+   findings are entirely below the round's severity floor (i.e., Important
+   findings present but the round number means only Critical still
+   blocks) — attributable to X1-B's rule.
+2. **Stop-verdict** (X1-C's own mechanism): the terminal round's final
+   answer contains an explicit "Another round worth it: No" (or
+   equivalent marginal-value verdict text) — attributable to X1-C's
+   rule.
+
+Both are counted explicitly per rep, per arm, in the verdict entry —
+an X1-B rep whose transcript ALSO happens to contain marginal-value-style
+language (or vice versa) is flagged as ambiguous rather than silently
+assigned to one bucket, since neither arm's SKILL.md text is supposed to
+leak into the other's mounted worktree (confirmed absent above) but the
+model's own free-form narration is not similarly constrained.
+
+### Privacy sweep
+
+Standard needle set — this machine's own real hostname and username
+(checked directly via `hostname`/`whoami`, never written literally into
+this entry or the diff, per the Task 7 lesson — aliases only in
+committed text), `ANTHROPIC_API_KEY`/API-key patterns, email patterns,
+the `_tmp/cost-pathologies-2026-07-31/` corpus codenames, remote-host
+alias reminders — run against this entry and the staged diff before
+commit: no match on the real values, clean. `/Users/jesse/git/...`
+absolute paths ARE present throughout (this diff's own script/log
+prose) — these are the established, already-committed repo-relative
+convention this campaign's code has used since Task 1 (every prior
+`run-quorum.sh`/arm-manifest.md/README.md commit already names this same
+checkout path), not a new disclosure, and are distinct from the
+machine-identity needles (hostname, username-as-account-identity,
+donor-username-shaped paths) the sweep actually screens for. This task's
+own fixtures and scenario are entirely synthetic (Task 6); no real
+session content is read or cited in this pre-registration.

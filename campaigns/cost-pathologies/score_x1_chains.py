@@ -277,10 +277,27 @@ def _chain_key(task_name):
     return None
 
 
-def chain_stats(rollout_paths):
-    """Every review-convergence spawn_agent chain found across
-    ROLLOUT_PATHS, grouped by `_chain_key()` (see module docstring for the
-    two-tier grouping this implements). `{"chains": []}` if none found."""
+def resolve_chains(rollout_paths):
+    """The shared grouping/resolution core `chain_stats()` aggregates over
+    and `score_x3_rider.py` (Task 8) reads raw finding text from -- factored
+    out so the X3 rider scorer can reuse the EXACT same chain grouping (two-
+    tier `_chain_key()`, tier-1 implementer exclusion, round resolution to a
+    child's final-answer findings) without forking this loop, per this
+    campaign's standing DRY discipline (see scorer_common.py's own docstring
+    for the Task 2/Task 7 precedent this follows). Pure extraction, zero
+    behavior change -- `chain_stats()` below is now a thin aggregation layer
+    over this function's output; its existing tests are the regression
+    guard for that claim.
+
+    Returns `{(parent_basename, (kind, label)): {"dispatch_count": int,
+    "resolved_rounds": [round_dict, ...]}}` -- `round_dict` is
+    `{"fork_turns": str, "findings": [(severity, normalized_text), ...],
+    "tokens": int|None}`, one per round with a resolved child rollout AND a
+    final-answer message (unresolvable rounds -- no thread_id, no matching
+    child file, or no final_answer -- are silently dropped, same as
+    chain_stats() always did). `dispatch_count` is the tier-filtered
+    candidate-round count BEFORE that resolution step (may exceed
+    `len(resolved_rounds)`)."""
     groups = {}  # (parent_basename, chain_key) -> [(spawn, thread_id), ...]
     for parent_path in rollout_paths:
         spawns = rp.extract_spawns(parent_path)
@@ -294,7 +311,7 @@ def chain_stats(rollout_paths):
             group_key = (os.path.basename(parent_path), key)
             groups.setdefault(group_key, []).append((s, links.get(s.call_id)))
 
-    chains = []
+    chains = {}
     for (parent_basename, (kind, label)), entries in groups.items():
         entries.sort(key=lambda e: e[0].timestamp)
 
@@ -325,6 +342,23 @@ def chain_stats(rollout_paths):
                 "findings": _extract_findings(finals[-1].message),
                 "tokens": _cumulative_total_tokens(child_path),
             })
+
+        chains[(parent_basename, (kind, label))] = {
+            "dispatch_count": dispatch_count,
+            "resolved_rounds": resolved_rounds,
+        }
+
+    return chains
+
+
+def chain_stats(rollout_paths):
+    """Every review-convergence spawn_agent chain found across
+    ROLLOUT_PATHS, grouped by `_chain_key()` (see module docstring for the
+    two-tier grouping this implements). `{"chains": []}` if none found."""
+    chains = []
+    for (parent_basename, (kind, label)), data in resolve_chains(rollout_paths).items():
+        dispatch_count = data["dispatch_count"]
+        resolved_rounds = data["resolved_rounds"]
 
         novel_rate = []
         severity_seq = []

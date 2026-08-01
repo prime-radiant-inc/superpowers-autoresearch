@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: control | cp/<arm>)
+# usage: run-quorum.sh ARM SCENARIO REPS [REP_START]
+#   ARM: control | <arm-manifest short code, e.g. x1a, x1b, x1c, x3a, ...>
+#        ('cp/x1a' is also accepted -- the leading 'cp/' is stripped).
 #
 # Runs one cost-pathologies-campaign scenario through the evals-container
 # quorum wrapper, REPS times, writing each rep to
@@ -18,25 +20,34 @@
 # never run -- the caller must diff the requested rep range against what
 # landed on disk and backfill with a separate REPS=1 call per missing rep.
 #
-# ARM SELECTION -- KNOWN GAP (Task 6, disclosed for Task 8+ to close). The
-# cost-pathologies arm-manifest (campaigns/cost-pathologies/arm-manifest.md)
-# defines 17 treatment branches (cp/x1a, cp/x2b, ...) as local branches in
-# the superpowers checkout, cut from codex-efficiency-fixes @ 329b8f1. This
-# script does NOT yet know how to materialize an arbitrary cp/<arm> branch
-# into its own /tmp/cp-arm-<arm> worktree the way codex-efficiency's script
-# resolves its four fixed arm names -- only 'control' is wired up here,
-# pointing at a worktree the CALLER must have already created (e.g.
-# `git -C /Users/jesse/git/superpowers/superpowers worktree add --detach
-# /tmp/cp-arm-control 329b8f1`). The minimal generalization (resolve any
-# 'cp/<arm>' ARM by materializing /tmp/cp-arm-<arm> on demand if the
-# worktree doesn't already exist) is Task 8's job, not duplicated here --
-# see campaigns/cost-pathologies/arm-manifest.md's "Runner integration gap"
-# note for the fuller design constraint (each arm needs its own directory;
-# JOBS>1 would race on a shared one).
+# ARM SELECTION (Task 8 -- closes the gap Task 6 disclosed). Any ARM other
+# than 'control' is resolved against campaigns/cost-pathologies/
+# arm-manifest.md: ARM 'x1a' looks up branch `cp/x1a`'s manifest row and
+# reads its SHA column, then materializes (or reuses) a DEDICATED detached
+# worktree at /tmp/cp-arm-x1a -- e.g.
+#   git -C /Users/jesse/git/superpowers/superpowers worktree add --detach \
+#     /tmp/cp-arm-x1a 1851307
+# 'control' resolves to /tmp/cp-arm-control @ 329b8f1 (codex-efficiency-
+# fixes' tip -- there is no control branch; every arm is cut from this
+# SHA). Every arm gets its OWN worktree directory (never shared/checkout-
+# switched between reps), so JOBS>1 cannot race two different arms against
+# one checkout. Before every run this script reconciles the mounted
+# worktree's actual `git rev-parse HEAD` against the manifest SHA it
+# resolved and refuses to run on a mismatch -- a battery that cannot name
+# its arm's SHA is ungraded (arm-manifest.md's own "Runner integration
+# gap" note).
 #
 # Env EVALS_ROOT overrides which evals checkout (lane) is used, same
 # convention as codex-efficiency's script. Default:
 # /Users/jesse/git/superpowers/superpowers/evals.
+#
+# Env JOBS (default 1) parallelizes the rep loop: when JOBS>1 and REPS>1,
+# up to JOBS reps run concurrently as background subshells (each with its
+# own --out-root, batched in groups of JOBS, `wait`ed between batches)
+# instead of strictly sequentially -- ported from codex-efficiency's
+# run-quorum.sh. JOBS=1 (or REPS=1) keeps the original sequential loop.
+# All JOBS reps share the ONE arm worktree mounted for this invocation
+# (read-only during the run, never checkout-switched), so this is safe.
 #
 # Env CODING_AGENT (default codex) selects which Coding-Agent quorum
 # drives. Env CREDENTIAL (unset by default) adds `--credential <name>`
@@ -45,34 +56,70 @@
 # This campaign's scenarios/ directories carry their OWN fixtures/
 # subdirectory (unlike codex-efficiency's split top-level fixtures/ dir --
 # simpler because none of these scenarios currently share a fixture across
-# variants), so syncing a scenario is a single rsync of the whole
-# directory. The synced-in copy is excluded via the evals checkout's
-# .git/info/exclude -- it is never committed to superpowers-evals.
+# variants), so syncing a scenario is one whole-directory rsync. The
+# synced-in copy is excluded via the evals checkout's .git/info/exclude --
+# it is never committed to superpowers-evals.
 set -euo pipefail
 
 EVALS=${EVALS_ROOT:-/Users/jesse/git/superpowers/superpowers/evals}
 CAMP=/Users/jesse/git/superpowers/superpowers-autoresearch/campaigns/cost-pathologies
+SP_CHECKOUT=/Users/jesse/git/superpowers/superpowers
+JOBS=${JOBS:-1}
 CODING_AGENT=${CODING_AGENT:-codex}
 CREDENTIAL=${CREDENTIAL:-}
 
-ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: control | cp/<arm>)"}
-SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: control | cp/<arm>)"}
+ARM=${1:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: control | <arm-manifest short code>)"}
+SCEN=${2:?"usage: run-quorum.sh ARM SCENARIO REPS [REP_START]   (ARM: control | <arm-manifest short code>)"}
 REPS=${3:-1}
 REP_START=${4:-1}
 
-case "$ARM" in
-  control) SP_ROOT=/tmp/cp-arm-control ;;
+# Accept both 'x1a' and 'cp/x1a'.
+ARM=${ARM#cp/}
+
+MANIFEST="$CAMP/arm-manifest.md"
+
+if [[ "$ARM" == "control" ]]; then
+  SP_ROOT=/tmp/cp-arm-control
+  SP_REF=329b8f1
+  ARM_DESC="control (codex-efficiency-fixes, unpatched)"
+else
+  BRANCH="cp/$ARM"
+  SP_ROOT="/tmp/cp-arm-$ARM"
+  [[ -f "$MANIFEST" ]] || {
+    echo "run-quorum.sh: arm manifest not found: $MANIFEST" >&2
+    exit 1
+  }
+  row=$(grep -F "\`$BRANCH\`" "$MANIFEST" || true)
+  [[ -n "$row" ]] || {
+    echo "run-quorum.sh: unknown ARM '$ARM' -- branch \`$BRANCH\` not found in $MANIFEST" >&2
+    exit 1
+  }
+  SP_REF=$(awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $4); print $4}' <<<"$row")
+  [[ -n "$SP_REF" ]] || {
+    echo "run-quorum.sh: could not parse a SHA for $BRANCH out of manifest row: $row" >&2
+    exit 1
+  }
+  ARM_DESC="$BRANCH @ $SP_REF (per $MANIFEST)"
+fi
+
+if [[ ! -d "$SP_ROOT" ]]; then
+  echo "run-quorum.sh: materializing $SP_ROOT ($ARM_DESC)" >&2
+  git -C "$SP_CHECKOUT" worktree add --detach "$SP_ROOT" "$SP_REF"
+fi
+
+# Reconcile: the mounted worktree's HEAD must match the resolved SHA
+# (prefix match -- the manifest records abbreviated SHAs). A battery that
+# cannot name its arm's SHA is ungraded.
+mounted_head=$(git -C "$SP_ROOT" rev-parse HEAD)
+case "$mounted_head" in
+  "$SP_REF"*) ;;
   *)
-    echo "run-quorum.sh: unknown ARM '$ARM' (only 'control' is wired up -- see the ARM SELECTION comment at the top of this script)" >&2
+    echo "run-quorum.sh: $SP_ROOT is at $mounted_head, expected $SP_REF ($ARM_DESC) -- refusing to run an unreconciled arm" >&2
     exit 1
     ;;
 esac
-[[ -d "$SP_ROOT" ]] || {
-  echo "run-quorum.sh: arm worktree missing: $SP_ROOT" >&2
-  echo "  create it first, e.g.:" >&2
-  echo "  git -C /Users/jesse/git/superpowers/superpowers worktree add --detach $SP_ROOT 329b8f1" >&2
-  exit 1
-}
+echo "run-quorum.sh: arm '$ARM' resolved to $ARM_DESC, mounted at $SP_ROOT (HEAD=$mounted_head)" >&2
+
 [[ -d "$CAMP/scenarios/$SCEN" ]] || {
   echo "run-quorum.sh: no such scenario: $CAMP/scenarios/$SCEN" >&2
   exit 1
@@ -111,6 +158,29 @@ run_rep() {
 }
 
 rep_last=$((REP_START + REPS - 1))
-for r in $(seq "$REP_START" "$rep_last"); do
-  run_rep "$r"
-done
+
+if [[ "$JOBS" -gt 1 && "$REPS" -gt 1 ]]; then
+  # Batch the rep range into groups of at most JOBS, launching each group's
+  # reps concurrently (background subshells) and waiting for the whole group
+  # before starting the next -- ported from codex-efficiency/run-quorum.sh.
+  r=$REP_START
+  while [[ "$r" -le "$rep_last" ]]; do
+    pids=()
+    for ((i = 0; i < JOBS && r <= rep_last; i++, r++)); do
+      run_rep "$r" &
+      pids+=("$!")
+    done
+    failed=0
+    for pid in "${pids[@]}"; do
+      wait "$pid" || failed=1
+    done
+    [[ "$failed" -eq 0 ]] || {
+      echo "run-quorum.sh: a parallel rep failed (JOBS=$JOBS)" >&2
+      exit 1
+    }
+  done
+else
+  for r in $(seq "$REP_START" "$rep_last"); do
+    run_rep "$r"
+  done
+fi
