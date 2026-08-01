@@ -5486,4 +5486,164 @@ manually-selected snippet, not a file.
 
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
-| 2026-08-01 | Task 11 (X5 control/A/B, `cp-x5-leases`, 9 reps + X6 control gate, `cp-x6-smalledits`, 1 rep) | $37.6005 | X5: invalidation guard PASSES 9/9 (hand-verified); receipt-issuing works both arms; honoring/invalidation observed ONLY on X5-B (3/3 events, hand-verified in raw transcript) — X5-A's honoring channel is invisible under codex's encrypted inter-agent dispatch (M0-documented harness limit, not an arm defect); net duplicate-run reduction not demonstrated at n=3 for either arm. X6: INCONCLUSIVE-BY-ZERO — control smoke shows 0 subagent dispatches, sub-battery stopped per the pre-registered gate, 8 reps not spent. Running campaign total: $342.50 |
+| 2026-08-01 | Task 11 (X5 control/A/B, `cp-x5-leases`, 9 reps + X6 control gate, `cp-x6-smalledits`, 1 rep) | $37.6005 | X5: invalidation guard PASSES 9/9 (hand-verified); receipt-issuing works both arms; honoring/invalidation observed ONLY on X5-B (3/3 events, hand-verified in raw transcript) — X5-A's honoring channel is invisible under codex's encrypted inter-agent dispatch (M0-documented harness limit, not an arm defect); net duplicate-run reduction not demonstrated at n=3 for either arm. X6: INCONCLUSIVE-BY-ZERO — control smoke shows 0 subagent dispatches, sub-battery stopped per the pre-registered gate, 8 reps not spent. Running campaign total: $342.50 — **SEE CORRECTION BELOW: the "honoring ONLY on X5-B" claim is corrected in X5-A's favor.** |
+
+## 2026-08-01 — Task 11 correction (fix round 0): C1/I2 headline correction + scorer-limitation amendment
+
+**The Task 11 verdict entry above is UNCHANGED (append-only) and
+contains claims corrected below** — cross-check against this entry for
+the authoritative figures. Task review round 0 rejected pending this
+fix: all infrastructure work reproduced exactly (costs to the cent,
+guards, gate logic, arm hygiene, X6 gate reasoning) — the rejection was
+two prose-claim defects, one Critical (corrects in X5-A's favor), one
+Important. Both re-verified independently against raw rollout text
+before this entry was written, not taken on the reviewer's word alone.
+
+### C1 (Critical) — X5-A's honoring/invalidation mechanism IS observable in plaintext; corrects in X5-A's favor
+
+**Old claim:** "Honoring/invalidation observable ONLY on X5-B... X5-A
+shows `receipts_honored=0` and `invalidation_reruns=0` on all 3
+reps... X5-A's design routes the honor/invalidate signal INTO that
+exact encrypted channel, making it structurally invisible to any
+rollout-based scorer regardless of whether the controller actually
+attempts the behavior."
+
+**Corrected claim, re-verified directly:** only the DISPATCH *INTO* a
+reviewer subagent is encrypted (`"type": "encrypted_content"`,
+confirmed again this round) — the reviewer's own REPLY is a plaintext
+`event_msg/agent_message` (`phase=="final_answer"`), exactly the
+channel `rollout_parser.final_answers()` and the scorer's own docstring
+("X5-A's report-in-prose channel") already targets. My own original
+investigation printed reviewer messages truncated to `[:600]` chars for
+display, which cut off before the sentence that mattered in at least
+one case (x5a-rep1 `task1_review`) — the FULL message was never
+re-read before I concluded "never observed." Re-read every X5-A
+reviewer `final_answer` message in full, all 3 reps: **8 messages
+across 3/3 reps discuss the supplied lease receipt in prose and act on
+it**, confirmed verbatim against raw rollout text, not paraphrased:
+
+- rep1 `task2_review`: "⚠️ Full-suite verification was not rerun per
+  review constraints; the provided lease receipt reports `4 passed`."
+  (honoring)
+- rep1 `task1_review`: "⚠️ The implementation report's lease receipt
+  does not certify the stated commit, as noted in the task prompt;
+  independent focused verification was run." (declining/invalidating)
+- rep2 `task2_reviewer`: "Cannot independently verify the report's
+  historical TDD/output claims; per instruction, I did not rerun the
+  suite. The supplied verification receipt matches the stated HEAD."
+  (honoring)
+- rep2 `task3_reviewer`: "Cannot independently verify the report's
+  claimed RED/GREEN history or full-suite output without rerunning
+  tests; per the supplied lease receipt, `pytest tests/` passed at the
+  reviewed HEAD `865c13f`." (honoring)
+- rep3 `task3_review`: "...supplied LEASE-HONORED evidence records
+  `../../.venv/bin/python -m pytest tests/` passing at that SHA."
+  (honoring)
+
+The one HONORED-shaped raw-grep match originally traced to `sdd/
+SKILL.md`'s own instructional example (x5a-rep1) was correctly a false
+positive on ITS OWN — the error was stopping the investigation there
+instead of separately grepping reviewer replies for "receipt"/"lease"
+in prose form, and generalizing "structurally invisible" from one
+false-positive trace plus the strict-grammar scorer's 0/0/0 count.
+
+**Corrected verdict: X5-A's honoring/invalidation mechanism is
+CONFIRMED WORKING, 3/3 reps.** Implementers issue receipts; reviewers
+read and act on them — honoring (declining to re-run when the receipt
+covers the reviewed HEAD) in most quotes above, and explicitly
+DECLINING to trust the receipt and re-verifying independently in one
+(rep1 `task1_review`, the invalidation-shaped case: the receipt didn't
+certify the actual reviewed commit, so the reviewer ran its own
+verification instead — the mechanism's discriminating behavior working
+correctly, not failing). What remains true, narrowed and now precisely
+scoped: this behavior is **not machine-scorable by the strict
+`LEASE-HONORED:`/`LEASE-INVALIDATED:` line-anchored grammar** under
+codex specifically, because codex reviewers here narrate the decision
+in their own words rather than reproducing the fixed marker syntax — a
+real scorer-coverage gap (the grammar spec assumes the honoring seat
+emits the exact marker; it does not, under this harness/model), not a
+behavioral absence. **Net duplicate-run savings at n=3 remains UNPROVEN
+for both arms — unchanged by this correction**: X5-A's reviewers are
+shown BOTH honoring AND independently re-verifying across the 8 quotes
+above (e.g. rep1 `task1_review` re-ran tests despite a receipt
+existing), so this does not resolve into a clean "honored instead of
+re-run" savings story either.
+
+### I2 (Important) — `lease_events` counts (all three arms/kinds) carry a re-read-inflation caveat; the "X5-A asks in two places" explanation was asserted, not checked
+
+**Old claim:** "X5-A's per-rep count (mean 21.7) is markedly higher
+than X5-B's (mean 8.7) — read as a likely double-count of the same
+underlying verification event (X5-A's text asks for the receipt in
+BOTH the report file's Report Format section AND a trailing repeat
+after the short-status list...)."
+
+**Corrected claim, re-verified directly against x5b-rep3's raw
+transcript (not asserted):** the actual mechanism is `score_x5_leases.
+_text_sources()` re-scanning EVERY tool-call output that reads back the
+append-only, monotonically-growing receipts file — each `cat`/read
+captures the file's ENTIRE current content, so a marker line already
+present at an earlier read is re-matched at every later read of the
+same or a newer file state. Directly confirmed on x5b-rep3: its 10 raw
+`LEASE-RECEIPT` regex matches collapse to only 4 DISTINCT `tree_sha`
+values when grouped by content (a ~2.5× inflation from re-reads, not 4
+receipts read once each); its 2 `LEASE-HONORED` matches share ONE
+`tree_sha`; its 3 `LEASE-INVALIDATED` matches also share ONE
+`tree_sha` — all consistent with re-read inflation on the
+over-counting side. The scorer's `_text_sources()` also deliberately
+does NOT scan an exec call's own COMMAND text, only its OUTPUT, so a
+marker appended via (e.g.) `echo "LEASE-HONORED: ..." >> file` with no
+subsequent read-back of that exact content is never counted at all — an
+under-counting failure mode operating simultaneously with the
+over-counting one, exactly as flagged. The reviewer's specific "4
+distinct honored actions" figure for x5b-rep3 was not independently
+re-derived this round (would require tracing every exec CALL's own
+command text across all 11 rollout files — out of scope for a
+log/report-only correction round with no new runs); the ROOT-CAUSE
+MECHANISM was confirmed directly and is real.
+
+**Correction applied: every `lease_events` number in the Task 11
+verdict's cross-arm table (`receipts_issued`/`receipts_honored`/
+`invalidation_reruns`, all three arms) carries a re-read-inflation
+caveat** — these are TEXT-OCCURRENCE counts, not deduplicated-event
+counts, and can simultaneously over-count (repeated reads of unchanged
+content) and under-count (writes never read back). The underlying X5-B
+events hand-located in raw transcript text in the original verdict (a
+genuine honor, a genuine invalidation) remain real — that finding is
+unaffected. **Scorer limitation recorded for any future X5 battery, not
+fixed this task:** count distinct events either from the FINAL receipt
+file's full content (read once, before workspace deletion) or by
+deduplicating on `(kind, command_norm, tree_sha)` across the
+transcript, and additionally scan exec CALL command text (not only
+output) to catch writes that are never read back.
+
+### Corrected headline numbers (supersede the equivalent lines in the verdict entry above; that entry is unedited, per append-only)
+
+- **X5-A verdict: PASS, mechanism CONFIRMED working** (was: "PARTIAL
+  PASS... honoring/invalidation never observed"). Issuing AND
+  honoring/invalidation both confirmed, 3/3 reps, via reviewer prose —
+  just not machine-scorable by the strict grammar under codex.
+- **X5-B verdict: unchanged — PASS, mechanism confirmed working**
+  (independent confirmation from the original verdict stands); its own
+  `lease_events` counts now additionally carry the re-read-inflation
+  caveat above.
+- **Cross-arm `lease_events` table** (both the log verdict and
+  `task-11-report.md`): every cell reads as "marker occurrences
+  captured," not "distinct honor/invalidate/receipt events" — the
+  re-read-inflation mechanism above applies uniformly.
+- **Net duplicate-run savings: still UNPROVEN at n=3 for either arm —
+  unchanged.** This was never contingent on the C1/I2 corrections; both
+  arms' duplicate-group means remain at or above control's regardless
+  of how `lease_events` is read.
+
+### Privacy sweep
+
+Standard needle set (this machine's real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; the `_tmp/cost-pathologies-2026-07-31/`
+corpus codenames; remote-host alias reminders) run against this entry
+and the staged diff before commit: no match on real values, clean.
+Every quoted transcript excerpt above (reviewer findings, receipt
+lines) is synthetic model output about the wholly synthetic
+`ratelimit` fixture content — no real system, no real hostnames, no
+real credentials anywhere in the quoted material. No raw rollouts or
+`evals/results/` content committed this round (no new runs).
