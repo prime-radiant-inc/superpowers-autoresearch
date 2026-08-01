@@ -1,0 +1,72 @@
+diff --git a/src/resize.py b/src/resize.py
+new file mode 100644
+index 0000000..1a2b3c4
+--- /dev/null
++++ b/src/resize.py
+@@ -0,0 +1,40 @@
++"""Thumbnail resize (REQ-1).
++
++Pure-Python: images are represented as a flat RGB bytearray so this
++module has no imaging-library dependency, per Global Constraints.
++"""
++from dataclasses import dataclass
++
++
++@dataclass
++class Image:
++    width: int
++    height: int
++    fmt: str
++    pixels: bytearray  # width * height * 3 bytes, row-major RGB
++
++
++def resize_to_fit(image, target_w, target_h):
++    """Scale `image` into a target_w x target_h canvas."""
++    scaled = _nearest_neighbor_scale(
++        image.pixels, image.width, image.height, target_w, target_h
++    )
++    return Image(width=target_w, height=target_h, fmt=image.fmt, pixels=scaled)
++
++
++def _nearest_neighbor_scale(pixels, src_w, src_h, dst_w, dst_h):
++    """Nearest-neighbor resample from src_w x src_h to dst_w x dst_h.
++
++    Each destination axis is mapped independently back into the source
++    axis, so the two axes scale by whatever ratio dst/src happens to be
++    on that axis.
++    """
++    out = bytearray(dst_w * dst_h * 3)
++    for y in range(dst_h):
++        src_y = min(src_h - 1, (y * src_h) // dst_h)
++        for x in range(dst_w):
++            src_x = min(src_w - 1, (x * src_w) // dst_w)
++            src_i = (src_y * src_w + src_x) * 3
++            dst_i = (y * dst_w + x) * 3
++            out[dst_i:dst_i + 3] = pixels[src_i:src_i + 3]
++    return out
+diff --git a/tests/test_resize.py b/tests/test_resize.py
+new file mode 100644
+index 0000000..5d6e7f8
+--- /dev/null
++++ b/tests/test_resize.py
+@@ -0,0 +1,20 @@
++from src.resize import Image, resize_to_fit
++
++
++def _solid(width, height, fmt="PNG", rgb=(200, 100, 50)):
++    pixels = bytearray(rgb * (width * height))
++    return Image(width=width, height=height, fmt=fmt, pixels=pixels)
++
++
++def test_output_matches_target_dimensions():
++    src = _solid(400, 200)
++    out = resize_to_fit(src, 100, 100)
++    assert out.width == 100
++    assert out.height == 100
++
++
++def test_square_source_into_square_target_is_unchanged_color():
++    src = _solid(200, 200, rgb=(10, 20, 30))
++    out = resize_to_fit(src, 50, 50)
++    assert out.width == 50 and out.height == 50
++    assert bytes(out.pixels[0:3]) == bytes((10, 20, 30))

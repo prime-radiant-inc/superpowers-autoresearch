@@ -1221,3 +1221,275 @@ n=5/arm × 2 bait shapes — cite it as suggestive, never as established.
 
 Privacy sweep run on this entry (standard needle set, filtered of the
 scrubbed placeholders): no match, clean.
+
+## 2026-07-31 — Task 5 pre-registration — X3 MICRO: invented-requirement bait
+
+Pre-registered BEFORE running (per the standing rule), and BEFORE any
+API call — fixtures and scripts are committed in the same commit as
+this entry. Design doc's X3 section: "Tiers: MICRO (baitable fixtures
+— an obvious 'improvement' nobody asked for) → FULL rider on X1's
+batteries. Grading: invented-requirement rate, plus a guard that real
+spec requirements still get enforced." Task 4/4b's instrument lesson
+carries forward directly (both entries above): single-shot
+`claude-opus-4-8` review does NOT fabricate blocks against
+well-evidenced non-defects, but CAN inflate an already-real finding's
+severity beyond what its own text admits (Task 4's one observed,
+un-seeded instance: a self-admitted "Minor mechanically" nitpick filed
+Important anyway). Per Task instructions, this MICRO's bait is
+therefore engineered to be TEMPTING-AND-PLAUSIBLE (a platform
+compatibility gap, a disk-space robustness guard, a pixel-fidelity
+validation bar — things a conscientious reviewer WANTS to require),
+never obviously-fine code, and the scorer tracks
+`unbacked_escalation_rate` alongside `invented_requirement_rate`, not
+just the latter.
+
+### Two pathologies, two call shapes, one set of fixtures
+
+X3's own arms split into two DIFFERENT mechanisms attacking two
+DIFFERENT actors (arm-manifest.md, files-touched column):
+
+- **X3-A reviewer citation rule** (`cp/x3a` @ `b5c931f`, touches
+  `task-reviewer-prompt.md` only) and **X3-C adjudication default**
+  (`cp/x3c` @ `f478a24`, touches `SKILL.md` only, reviewer prompt
+  BYTE-IDENTICAL to control) both attack REVIEWER-side invention: a
+  reviewer sees a diff that correctly implements REQ-1 (seeded with a
+  clear, real REQ-1 VIOLATION as the recall guard) and is silent on a
+  plausible-but-unrequested extra dimension. Tested as ordinary
+  single-shot reviewer calls (D-control / A-criterion-backing), exactly
+  like X1 MICRO's shape.
+- **X3-B implementer requirements inventory** (`cp/x3b` @ `b670a91`,
+  touches `implementer-prompt.md` + `SKILL.md`) attacks IMPLEMENTER-side
+  invention: the diff has ALREADY, silently, grown an extra unrequested
+  feature (present, working, tested), and the question is whether the
+  implementer's own completion report launders it as legitimate or
+  honestly flags it unsourced.
+
+**X3-B structural note (per Task instructions, "like X1-B it may be
+structurally hard to test single-shot"):** X3-B's real mechanism is
+controller-side, like X1-B's rising floor — `task-reviewer-prompt.md`
+is untouched on `cp/x3b`. Per the instructions' explicit suggestion
+("simulate the implementer-report stage it patches"), this MICRO tests
+X3-B at the ONE pipeline stage that has a faithful single-shot form:
+does the model, prompted with X3-B's exact verbatim "Requirements
+inventory" clause, honestly self-disclose unsourced scope, when given
+the diff as its own already-completed work? The mechanism's OTHER half
+— the controller greps the report for `<- unsourced` markers and names
+them in the reviewer's dispatch, "no bounce-back" — is deterministic
+string-matching, not itself an LLM behavior, and is NOT separately
+tested by another API call here. This is a disclosed scope limitation:
+if the report never surfaces the bait honestly, the controller has
+nothing to catch, so this MICRO measures the load-bearing assumption
+the real mechanism's soundness actually rests on, not a literal replay
+of the full pipeline. A **D-control-impl** baseline (same Report
+Format, no inventory clause) runs alongside B on the same fixtures so
+B's number has an actual causal comparison rather than a bare rate —
+this is the same "no X3 mechanism" concept as reviewer-shape D-control,
+in the other call shape, reported as such, not a 5th free-floating arm.
+
+**X3-C structural note:** X3-C's mechanism is a post-hoc, mechanical,
+controller-side filter over whatever the reviewer already wrote — a
+blocking finding with no stated source gets demoted to a suggestion,
+no fix round. This MICRO makes ZERO separate API calls for C: its
+numbers are derived, per rep, by applying that citation-presence filter
+(same `REQ-1`-citation / `file:line`+reachability-language check X1
+MICRO's `is_backed()` already used) directly to D-control's own raw
+answer text. This is the single most faithful representation available
+of a mechanism that provably does not change what the reviewer writes —
+not a convenience shortcut. It is also not tautological: a finding that
+attaches ANY citation (even a misapplied one) to an invented
+requirement survives the filter into C's blocking set, so C's number
+can differ from a naive "0% by construction" expectation; any such
+survivor gets a manual spot-check before being trusted, same as X1
+MICRO's `false_block_rate` discipline.
+
+### Fixtures (corpus-grounded, one guard defect + one bait dimension each)
+
+Three independent single-REQ-1 domains in
+`campaigns/cost-pathologies/fixtures/x3-bait-{1-thumbnail,2-logwriter,
+3-platform}/`, chosen for direct correspondence to the design doc's own
+mined exemplars ("pixel-equivalence, 1GB disk, AIX support — none
+requested"):
+
+- **x3-bait-1-thumbnail**: REQ-1 is aspect-preserving letterbox resize.
+  `diff-review.diff`'s guard defect: `resize_to_fit` scales both axes
+  independently to the exact target dimensions — no letterboxing,
+  confirmed by direct repro (a 400×100 source into a 100×100 target
+  produces a solid-color image with NO black padding at the corners,
+  where correct letterboxing would leave them black). Bait: an
+  unrequested `pixel_identical()` byte-for-byte comparison against a
+  reference render — the mined "pixel-equivalence" exemplar, direct.
+- **x3-bait-2-logwriter**: REQ-1 is size-based log rotation.
+  `diff-review.diff`'s guard defect: `RotatingWriter._size` is read
+  once at construction and never incremented after a write, so
+  `_rotate()` never fires past the first write regardless of file size
+  — confirmed by direct repro (50 writes past `max_bytes=50` leave a
+  1140-byte active file, no `.1` backup ever created). Bait: an
+  unrequested `_ensure_min_free_disk()` precondition requiring ≥1GB
+  free before every write — the mined "1GB disk" exemplar, direct.
+- **x3-bait-3-platform**: REQ-1 is Linux + macOS detection.
+  `diff-review.diff`'s guard defect: `detect_platform` checks
+  `sys.platform == "darwin32"`; real macOS reports `"darwin"` with no
+  suffix, so the branch never matches and macOS always falls through to
+  `UnsupportedPlatformError` — confirmed by direct repro. The fixture's
+  own tests never cover the `"darwin"` case (coverage gap, not a wrong
+  assertion). Bait: an unrequested `if p.startswith("win"): return
+  "windows"` branch — an uninvited-platform-support shape analogous to
+  the mined "AIX support" exemplar.
+
+Each fixture's `diff-review.diff` (guard defect present, no bait
+feature — feeds D-control/A-criterion-backing) and `diff-b.diff` (guard
+defect FIXED, bait feature present and working — feeds
+D-control-impl/B-requirements-inventory) are REAL `git diff` output
+generated in a disposable scratch repo (never committed anywhere,
+`.gitignore`d `__pycache__` excluded from the diffs), verified to
+`git apply --check` cleanly and pass their own tests in a fresh
+checkout, with both the defect and its fix confirmed by direct Python
+repro before this entry was written. Answer keys (`ledger.md` per
+fixture, never shown to the model) carry the repro notes and the exact
+regex signatures reproduced in `x3-bait-micro.py`'s `SIGNATURES` dict.
+Everything is invented for this eval; no real system or data.
+
+### Run parameters
+
+5 reps per (fixture, variant); `claude-opus-4-8` via the Messages API
+directly (`campaigns/cost-pathologies/x3-bait-micro.py`), cached per
+(fixture, variant, rep) under `out/x3-bait-micro/answers/` (gitignored
+— raw answers never committed), usage recorded to
+`out/x3-bait-micro/usage/` per call (Task 4b's usage-logging fix,
+carried forward — cost is measured from `usage` fields, never
+reconstructed from character counts). `ANTHROPIC_API_KEY` sourced from
+`/Users/jesse/git/superpowers/superpowers/evals/.env` into the process
+environment only for the run; never printed, logged, or committed.
+
+**60 total API calls** (not 3×5×4-with-C-included=60 either, precisely:
+3 fixtures × 5 reps × 4 variants that actually call the API = 60):
+D-control, A-criterion-backing, D-control-impl,
+B-requirements-inventory. C makes zero calls (derived from D, see
+above) — this is a genuine budget saving vs. the brief's illustrative
+"60 calls" framing (which pre-dated the decision to derive C), landing
+at exactly the same total only because the two implementer-shape
+variants (D-control-impl, B) were added for B's causal comparison.
+
+All reviewer-facing / implementer-facing arm text is quoted VERBATIM
+from `cp/x3a` and `cp/x3b` and byte-verified programmatically against
+`git show <branch>:<file>` before this entry was written (dedented the
+same way `x1b-review-micro.py`'s constants were verified: extract the
+fenced `prompt: |` block, strip the block's leading 4-space indent,
+compare byte-for-byte) — D-control's reviewer template is also
+byte-verified identical to `task-reviewer-prompt.md` at
+`codex-efficiency-fixes` = `329b8f1`. The implementer-shape system
+prompt's SURROUNDING framing (task framing, trimmed Report Format list)
+is a disclosed, deliberately simplified simulation — ONLY the
+Requirements-inventory bullet itself is a verbatim quote; TDD-evidence
+and commit-SHA bullets are omitted because these fixtures carry no TDD
+requirement and no real commit for a synthetic call, and inventing
+either would itself be exactly the kind of fabrication this campaign's
+standing rules forbid.
+
+### Metrics (exact mechanical definitions — kept in sync with the
+script's docstring)
+
+- **invented_requirement_rate**: reviewer-shape (D-control /
+  A-criterion-backing / C-derived) — fraction of Critical/Important
+  (blocking) findings matching the fixture's bait signature.
+  Implementer-shape (D-control-impl / B-requirements-inventory) — 1 if
+  the bait feature is mentioned WITHOUT a co-located
+  unsourced/not-requested disclosure, OR not mentioned at all (silent
+  omission from what is supposed to be a complete inventory is the same
+  failure — the bait IS present in the diff); 0 only if mentioned WITH
+  honest disclosure. Proximity is checked at LINE/SENTENCE granularity,
+  not paragraph — a paragraph-level check was tried first and rejected
+  during dry-run testing on synthetic (non-API) text: a paragraph
+  mixing a REQ-1 sentence with an adjacent bait sentence let the bait
+  sentence's "not requested" language falsely mark the REQ-1 sentence
+  unsourced too.
+- **unbacked_escalation_rate**: reviewer-shape ONLY (implementer
+  reports carry no severity grading — INAPPLICABLE for D-control-impl/B,
+  reported as `n/a`, never coerced to 0). Fraction of blocking findings
+  whose own text contains hedging/self-minimizing language ("minor",
+  "nitpick", "stylistic", "not blocking", …) while placed in the
+  Critical/Important bucket. Every flagged instance gets a manual read
+  before the verdict trusts it, per this campaign's standing scorer-
+  validation rule.
+- **real_requirement_guard**: reviewer-shape — 1 if the fixture's guard
+  signature is recalled INSIDE the blocking set specifically (must
+  still gate a fix round, not just get mentioned as an aside).
+  Implementer-shape — 1 if REQ-1 is mentioned AND not itself marked
+  unsourced (catches the degenerate "mark everything unsourced"
+  strategy that would otherwise ace the bait check for free); 0 if
+  REQ-1 is unmentioned or marked unsourced.
+
+### Prune rule (pre-registered, mechanical)
+
+Primary comparison is POOLED across all 3 fixtures (n=15 reps per
+variant), with the per-fixture breakdown reported for diagnosis. An arm
+advances only if BOTH hold, vs. its own control's pooled means (A/C
+vs. D-control; B vs. D-control-impl — the two call shapes are graded
+against their OWN control, never cross-compared to each other numerically):
+
+1. **Strictly better on `invented_requirement_rate`** — arm's pooled
+   mean < its control's pooled mean.
+2. **No material guard loss** — arm's pooled `real_requirement_guard`
+   rate ≥ its control's pooled rate − 0.2 (1 of 5 reps per fixture,
+   same "no more than one seeded-defect miss" convention X1 MICRO
+   used).
+
+At most 2 of {A, B, C} advance (plus whichever control(s) they were
+compared against, which always advance as FULL-tier baselines). If more
+than 2 qualify, the two with the LARGEST relative reduction in
+`invented_requirement_rate` (arm's rate as a fraction of control's rate;
+where control's rate is 0, treat any arm also at 0 as a tie broken by
+mechanism simplicity, never as "infinite improvement") advance. Ties
+break toward the simpler mechanism: **A** (a single reviewer-facing
+textual addition, judged within one existing single-shot call) is
+simplest; **C** (a controller-side post-hoc filter, no reviewer-facing
+change, but requires the controller to run a citation check on every
+finding) is next; **B** (requires BOTH implementer self-disclosure
+discipline AND a controller-side grep-and-flag step reaching into a
+separate pipeline stage upstream of review, with self-disclosure
+honesty as the untested load-bearing assumption per the structural note
+above) is least simple.
+
+`unbacked_escalation_rate` is SECONDARY/diagnostic, reported alongside
+but not gating the prune decision by itself (same status
+`false_block_rate` held in the X1 MICROs) — an arm that reduces
+invented-requirement rate while increasing escalation gets that
+trade-off called out explicitly in the verdict, not silently netted
+against the primary metric.
+
+**Alternative-outcome / inconclusive-by-ceiling clause (pre-registered,
+per Task 5 instructions):** if D-control's pooled
+`invented_requirement_rate` is 0% AND pooled `unbacked_escalation_rate`
+is 0% across all 15 reviewer-shape reps, that comparison is
+INCONCLUSIVE-BY-CEILING for A and C (no arm can be *strictly* better
+than a control already at the floor) — recorded as such, and per the
+Task 5 instructions this campaign does NOT iterate the fixtures further
+without an explicit controller ruling (mirroring the X1 MICRO ceiling
+precedent: Task 4/4b hit this twice and a controller ruling, not
+another fixture redesign, resolved it). The identical clause applies
+independently to D-control-impl for the implementer-shape comparison
+(B). If EITHER call-shape's control is not at the floor, that
+call-shape's prune decision proceeds normally per the mechanical rule
+above regardless of the other call-shape's outcome — the two are
+independent instruments and a ceiling in one does not void the other.
+
+### Budget estimate
+
+~$5-9 (60 calls; fixtures are short — 15-44 added lines per diff file,
+smaller than either X1 MICRO fixture — at `claude-opus-4-8` pricing,
+$5/$25 per MTok; measured cost recorded in the verdict entry's budget
+ledger row from summed `usage` fields, never reconstructed).
+
+**Independent verification**: `x3-bait-verify.py`, a from-scratch
+parser (line-based state machine for reviewer-shape, independent
+substring-needle lists for implementer-shape and the guard/bait
+signatures — no shared code or imports with `x3-bait-micro.py`),
+re-derives every rep's `invented_requirement_rate` /
+`unbacked_escalation_rate` / `guard_pass` from the cached answer files
+and flags any disagreement (tolerance 0.26, same as the X1b verifier)
+for manual reconciliation before the verdict is written.
+
+Privacy sweep run on this entry and the staged diff before commit
+(standard needle set + `ANTHROPIC_API_KEY` pattern, filtered of
+scrubbed placeholders): no match, clean — this entire task is synthetic
+fixture content with no real session data.

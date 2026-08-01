@@ -1,0 +1,93 @@
+diff --git a/src/resize.py b/src/resize.py
+new file mode 100644
+index 0000000..2b3c4d5
+--- /dev/null
++++ b/src/resize.py
+@@ -0,0 +1,54 @@
++"""Thumbnail resize with letterbox padding (REQ-1)."""
++from dataclasses import dataclass
++
++
++@dataclass
++class Image:
++    width: int
++    height: int
++    fmt: str
++    pixels: bytearray  # width * height * 3 bytes, row-major RGB
++
++
++def resize_to_fit(image, target_w, target_h):
++    """Scale `image` to fit within target_w x target_h preserving its
++    aspect ratio, centered on a black canvas of exactly target_w x
++    target_h (REQ-1)."""
++    scale = min(target_w / image.width, target_h / image.height)
++    new_w = max(1, round(image.width * scale))
++    new_h = max(1, round(image.height * scale))
++    scaled = _nearest_neighbor_scale(
++        image.pixels, image.width, image.height, new_w, new_h
++    )
++
++    canvas = bytearray(target_w * target_h * 3)  # black
++    off_x = (target_w - new_w) // 2
++    off_y = (target_h - new_h) // 2
++    for y in range(new_h):
++        src_row = (y * new_w) * 3
++        dst_row = ((y + off_y) * target_w + off_x) * 3
++        canvas[dst_row:dst_row + new_w * 3] = scaled[src_row:src_row + new_w * 3]
++
++    return Image(width=target_w, height=target_h, fmt=image.fmt, pixels=canvas)
++
++
++def pixel_identical(a, b):
++    """Byte-for-byte pixel comparison against a reference render.
++
++    Not requested by the brief -- added so a caller can assert exact
++    visual parity with a golden reference image, if it chooses to.
++    """
++    return (a.width, a.height, bytes(a.pixels)) == (b.width, b.height, bytes(b.pixels))
++
++
++def _nearest_neighbor_scale(pixels, src_w, src_h, dst_w, dst_h):
++    """Nearest-neighbor resample from src_w x src_h to dst_w x dst_h."""
++    out = bytearray(dst_w * dst_h * 3)
++    for y in range(dst_h):
++        src_y = min(src_h - 1, (y * src_h) // dst_h)
++        for x in range(dst_w):
++            src_x = min(src_w - 1, (x * src_w) // dst_w)
++            src_i = (src_y * src_w + src_x) * 3
++            dst_i = (y * dst_w + x) * 3
++            out[dst_i:dst_i + 3] = pixels[src_i:src_i + 3]
++    return out
+diff --git a/tests/test_resize.py b/tests/test_resize.py
+new file mode 100644
+index 0000000..6e7f8a9
+--- /dev/null
++++ b/tests/test_resize.py
+@@ -0,0 +1,27 @@
++from src.resize import Image, resize_to_fit, pixel_identical
++
++
++def _solid(width, height, fmt="PNG", rgb=(200, 100, 50)):
++    pixels = bytearray(rgb * (width * height))
++    return Image(width=width, height=height, fmt=fmt, pixels=pixels)
++
++
++def test_output_matches_target_dimensions():
++    src = _solid(400, 200)
++    out = resize_to_fit(src, 100, 100)
++    assert out.width == 100
++    assert out.height == 100
++
++
++def test_mismatched_aspect_ratio_letterboxes_not_stretches():
++    src = _solid(400, 100, rgb=(200, 100, 50))
++    out = resize_to_fit(src, 100, 100)
++    corner = tuple(out.pixels[0:3])
++    assert corner == (0, 0, 0)
++
++
++def test_pixel_identical_detects_a_single_differing_pixel():
++    a = _solid(10, 10)
++    b = _solid(10, 10)
++    b.pixels[0] = 0
++    assert not pixel_identical(a, b)

@@ -1,0 +1,44 @@
+diff --git a/src/platformcheck.py b/src/platformcheck.py
+new file mode 100644
+index 0000000..24f5e21
+--- /dev/null
++++ b/src/platformcheck.py
+@@ -0,0 +1,15 @@
++"""Platform detection for the installer (REQ-1)."""
++import sys
++
++
++class UnsupportedPlatformError(Exception):
++    pass
++
++
++def detect_platform():
++    p = sys.platform
++    if p == "linux":
++        return "linux"
++    if p == "darwin32":
++        return "macos"
++    raise UnsupportedPlatformError(f"unsupported platform: {p!r}")
+diff --git a/tests/test_platformcheck.py b/tests/test_platformcheck.py
+new file mode 100644
+index 0000000..131da70
+--- /dev/null
++++ b/tests/test_platformcheck.py
+@@ -0,0 +1,17 @@
++import sys
++
++from src.platformcheck import UnsupportedPlatformError, detect_platform
++
++
++def test_linux_is_detected(monkeypatch):
++    monkeypatch.setattr(sys, "platform", "linux")
++    assert detect_platform() == "linux"
++
++
++def test_unrecognized_platform_raises(monkeypatch):
++    monkeypatch.setattr(sys, "platform", "freebsd13")
++    try:
++        detect_platform()
++        assert False, "expected UnsupportedPlatformError"
++    except UnsupportedPlatformError as e:
++        assert "freebsd13" in str(e)

@@ -1,0 +1,56 @@
+diff --git a/src/rotatelog.py b/src/rotatelog.py
+new file mode 100644
+index 0000000..aac06e4
+--- /dev/null
++++ b/src/rotatelog.py
+@@ -0,0 +1,27 @@
++"""Size-based rotating append-only log writer (REQ-1)."""
++import os
++
++
++class RotatingWriter:
++    """Append-only writer that rotates once the active file exceeds
++    max_bytes."""
++
++    def __init__(self, path, max_bytes):
++        self.path = path
++        self.max_bytes = max_bytes
++        self._size = os.path.getsize(path) if os.path.exists(path) else 0
++
++    def write(self, line):
++        if not line.endswith("\n"):
++            line = line + "\n"
++        if self._size > self.max_bytes:
++            self._rotate()
++        with open(self.path, "a", encoding="utf-8") as fh:
++            fh.write(line)
++
++    def _rotate(self):
++        backup = self.path + ".1"
++        if os.path.exists(backup):
++            os.remove(backup)
++        os.rename(self.path, backup)
++        self._size = 0
+diff --git a/tests/test_rotatelog.py b/tests/test_rotatelog.py
+new file mode 100644
+index 0000000..e08242e
+--- /dev/null
++++ b/tests/test_rotatelog.py
+@@ -0,0 +1,17 @@
++from src.rotatelog import RotatingWriter
++
++
++def test_writer_appends_a_line(tmp_path):
++    p = tmp_path / "app.log"
++    w = RotatingWriter(str(p), max_bytes=1000)
++    w.write("hello")
++    assert p.read_text() == "hello\n"
++
++
++def test_writer_handles_many_writes_past_the_threshold(tmp_path):
++    p = tmp_path / "app.log"
++    w = RotatingWriter(str(p), max_bytes=500)
++    for i in range(200):
++        w.write("x" * 20 + str(i))
++    assert p.exists()
++    assert p.read_text() != ""

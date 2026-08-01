@@ -1,0 +1,74 @@
+diff --git a/src/rotatelog.py b/src/rotatelog.py
+new file mode 100644
+index 0000000..f342700
+--- /dev/null
++++ b/src/rotatelog.py
+@@ -0,0 +1,44 @@
++"""Size-based rotating append-only log writer (REQ-1)."""
++import os
++import shutil
++
++MIN_FREE_BYTES = 1_073_741_824  # 1 GiB
++
++
++class RotatingWriter:
++    """Append-only writer that rotates once the active file exceeds
++    max_bytes."""
++
++    def __init__(self, path, max_bytes):
++        self.path = path
++        self.max_bytes = max_bytes
++        self._size = os.path.getsize(path) if os.path.exists(path) else 0
++
++    def write(self, line):
++        if not line.endswith("\n"):
++            line = line + "\n"
++        _ensure_min_free_disk(self.path)
++        if self._size > self.max_bytes:
++            self._rotate()
++        encoded = line.encode("utf-8")
++        with open(self.path, "a", encoding="utf-8") as fh:
++            fh.write(line)
++        self._size += len(encoded)
++
++    def _rotate(self):
++        backup = self.path + ".1"
++        if os.path.exists(backup):
++            os.remove(backup)
++        os.rename(self.path, backup)
++        self._size = 0
++
++
++def _ensure_min_free_disk(path):
++    """Refuse to write if the filesystem has less than 1GB free.
++
++    Not requested by the brief -- added as a defensive guard against
++    filling the disk during heavy log volume.
++    """
++    usage = shutil.disk_usage(os.path.dirname(os.path.abspath(path)) or ".")
++    if usage.free < MIN_FREE_BYTES:
++        raise OSError(f"refusing to write: only {usage.free} bytes free, need {MIN_FREE_BYTES}")
+diff --git a/tests/test_rotatelog.py b/tests/test_rotatelog.py
+new file mode 100644
+index 0000000..0a8ba38
+--- /dev/null
++++ b/tests/test_rotatelog.py
+@@ -0,0 +1,18 @@
++from src.rotatelog import RotatingWriter
++
++
++def test_writer_appends_a_line(tmp_path):
++    p = tmp_path / "app.log"
++    w = RotatingWriter(str(p), max_bytes=1000)
++    w.write("hello")
++    assert p.read_text() == "hello\n"
++
++
++def test_writer_rotates_once_max_bytes_exceeded(tmp_path):
++    p = tmp_path / "app.log"
++    w = RotatingWriter(str(p), max_bytes=50)
++    for i in range(20):
++        w.write("x" * 20 + str(i))
++    backup = tmp_path / "app.log.1"
++    assert backup.exists()
++    assert p.stat().st_size <= 50 + 25
