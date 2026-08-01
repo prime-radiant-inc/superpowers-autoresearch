@@ -68,6 +68,7 @@
 - [ ] Item 21: ruling recorded in the log — keep the 60m ceiling, grade non-merge as an outcome (default), OR size up; state the choice and why.
 - [ ] Item 23: the runner captures `.superpowers/sdd/*/progress.md` content to the rep's result dir before/independent of the session's own workspace deletion.
 - [ ] Item 22: investigate why `provenance.superpowers_rev` is null; fix if it's a runner-side one-liner, else document the gap and the per-invocation stderr echo as the fallback.
+- [ ] Base re-point (campaign-open amendment): `run-quorum.sh` must resolve arms against the manifest's 2026-08-01 rebase table (its compact 3-arms-per-row format does not match the runner's `grep -F`/awk-field-4 parsing — either reformat that table to the original row format or teach the runner the dated-section format, whichever is smaller) and `control` must resolve to `sim/dev-postmerge` @ 1fed99d instead of the hardcoded 329b8f1. Worktrees `/tmp/cp-arm-*` are already re-pointed to the rebased SHAs (controller did this 2026-08-01), so the runner's reconcile check fails closed until this lands — verify one arm and control resolve+reconcile cleanly as the test.
 - [ ] Commit.
 
 ### Task 5: X1 edit-existing-code fixture (item 1)

@@ -70,3 +70,18 @@ against the new base — the feared collision with the T1/T2 PR text did
 not materialize textually, but rebased x9a text remains UNGRADED until
 plan Task 11's composed battery (standing rule 4). New SHAs recorded in
 arm-manifest.md (dated section).
+
+## 2026-08-01 — Worktrees re-pointed; runner fails closed until Task 4
+
+All 21 `/tmp/cp-arm-*` worktrees re-pointed to the rebased arm SHAs;
+`/tmp/cp-arm-control` re-pointed from 329b8f1 to `sim/dev-postmerge`
+@ 1fed99d (under the "PRs landed" assumption, control = the post-merge
+base, not the old fix-branch tip). Two runner gaps found in review of
+`run-quorum.sh`: (1) the manifest's new compact rebase table doesn't
+match the runner's row-parsing format, so arm resolution would silently
+land on the OLD pre-rebase rows; (2) `control` is hardcoded to 329b8f1.
+Both folded into plan Task 4 as a campaign-open amendment. Net state
+until Task 4 lands: the runner's SHA-reconcile check REFUSES to run any
+arm (worktree HEADs no longer match the rows it parses) — fail-closed,
+no battery can accidentally run the wrong base. Batteries (Tasks 9–12)
+are already blocked on Task 4.
