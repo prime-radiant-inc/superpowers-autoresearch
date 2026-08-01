@@ -2783,3 +2783,87 @@ and every generated module is synthetic, invented for this eval.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-08-01 | Task 8: X1 FULL (A/B/C+control, 4 reps each, 16 runs) + X3 rider | $158.1788 (measured) | Defect-escape guard INCONCLUSIVE-BY-CEILING (0/16 reps exhibit any seeded anchor/debatable-1 mistake; 0/16 after correction on X3's bait region) — same ceiling-effect class as Tasks 4/4b/5, now confirmed on codex/gpt-5.6 in the real FULL multi-round loop, lifting the model-mismatch caveat. X1-B fastest convergence (5.8 vs control 7.2 mean rounds), X1-C intermediate (6.5) — directional, n=4/arm, not conclusive; X1-A showed no measurable speedup. X1-B/X1-C confound cleanly separated (X1-C's stop-verdict marker in 4/4 x1c reps, 0/4 x1b reps). X3-C's paraphrase-aware citation test rescues 100% of the 4-6/arm findings a strict literal-citation reading would false-demote. X3-B remains completely untested (no arm mounts its mechanism). 2 scorer false positives found+manually corrected (disclosed, not patched, matching prior false_block_rate precedent); 25% of reps (1/arm) hit the 60m wall-clock ceiling despite the bump, disclosed as an operational finding, not excluded from scoring. Running campaign total: $171.93 |
+
+## 2026-08-01 — Task 8 fix round 1: two corrections to the verdict entry (task review, both minor)
+
+Append-only per the standing rule (the verdict entry above is already
+cited by the budget ledger row and the SDD progress ledger; corrected
+here, not edited in place).
+
+**1. Per-rep table mislabel: control rep1 is NOT merged.** The verdict
+entry's per-rep results table labels control rep1's "ref w/ real
+modules" as `HEAD`, implying merged-to-main like the other 11 pass reps
+so labeled. Wrong. Re-verified directly against the live workdir
+(`results/cp-x1-buggy-sdd-control-rep1/cp-x1-buggy-sdd-codex-codex_sub-linux-20260801T052236Z-2901/coding-agent-workdir`):
+`git rev-parse --abbrev-ref HEAD` is `feature/usage-billing`; `main`
+sits at a single commit, `c5ee9dc "seed scenario fixtures"` — the real
+billing modules exist ONLY on the unmerged feature branch (8 real
+commits: `efcb099`..`6d9d060`). **Corrected label for this row:
+`feature/usage-billing (unmerged)`.**
+
+This was independently re-checked against the OTHER 11 `HEAD`-labeled
+rows before accepting the correction (not taken on the reviewer's word
+alone, per this campaign's own non-circular-verification discipline):
+control rep3/rep4, x1a rep1/rep2/rep3, x1b rep1/rep3/rep4, x1c
+rep1/rep2/rep3 all show `branch=main` with 6-12 real commits beyond the
+seed — genuinely merged, label confirmed correct for all 11.
+
+**This is a deliberate non-merge, not a crash/timeout artifact** — the
+same class the entry's Operational-finding section already documents
+for the 4 `indeterminate`/`fail` reps, but a DIFFERENT mechanism.
+Control rep1's own `verdict.json` gauntlet summary: "The session ended
+cleanly after a workflow question about branch handling, which I
+answered with the minimal default (\"Keep the branch as-is\")." — the
+scenario's own scripted deflection (`story.md`: "give the minimal 'yes,
+go with the default / most direct option' answer") was applied to a
+merge-vs-PR-vs-keep-as-is question, and "keep the branch as-is" was
+accepted by the Gauntlet-Agent as satisfying every acceptance
+criterion, PASS, $8.74.
+
+**Campaign observation for the closeout, not fixed this task**:
+`cp-x1-buggy-sdd/checks.sh`'s post-checks (`file-exists billing/*.py`)
+verify the CURRENT WORKING TREE's files, not which branch is checked
+out or whether it was merged to `main` — so a rep that never merges
+scores identically to one that does, provided the coding agent happens
+to still be sitting on a branch that has the files. **SDD's finishing
+step does not reliably converge on "merge" even in PASS reps** — this
+battery's own 16-run sample shows 5 of 16 reps (31%, not the 25% the
+verdict's Operational-finding section reports for the crash/timeout
+subset alone) ended with `main` never advanced past the seed commit:
+the 4 already-disclosed `indeterminate`/`fail` reps (genuinely
+interrupted mid-loop) PLUS control rep1 (a clean, deliberate,
+gauntlet-approved non-merge). Flagged for whoever closes out this
+campaign: a scenario wanting to grade "did the work land on `main`"
+needs its own check (e.g. `git -C <workdir> rev-parse main` compared
+against a known-real-module commit), not a bare `file-exists` check —
+`checks.sh` as written cannot distinguish "merged" from "left on a
+branch that happens to be checked out."
+
+**2. Pre-registration phrasing correction (one sentence).** The
+pre-registration entry's runner-integration description ("the battery
+must record the arm SHA it actually mounted... and reconcile it against
+this manifest") and this task's own operational framing ("mounted
+rev-parse HEAD recorded per run") overstate what was actually persisted:
+reconciliation happened PER SCRIPT INVOCATION, echoed to stderr
+(`run-quorum.sh`'s own `echo "run-quorum.sh: arm '$ARM' resolved
+to..."` line, visible in this task's own polling output, never written
+to a per-rep file), not as a persisted per-rep artifact alongside each
+rep's `verdict.json`. The actual audit trail for this correction itself
+was live inspection of each rep's `coding-agent-workdir` (as performed
+above), not a recorded log. Noted for any future rig work: `verdict.json`'s
+own `provenance.superpowers_rev` field is `null` on every rep in this
+battery (and, per inspection, appears to be a pre-existing harness-wide
+gap — not something this task's runner change introduced or could have
+fixed) — a real persisted per-rep SHA field exists in the schema but is
+not populated by the current harness.
+
+**Privacy sweep**: full needle set (real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; corpus codenames; remote-host alias
+reminders) run against this entry and the staged diff before commit —
+no match on real values, clean. The `/Users/jesse/git/...` absolute
+paths and the single run-dir name quoted above are the same
+already-established, low-sensitivity provenance-citation class this
+campaign's other entries use throughout (e.g. Task 6/7's own run-dir
+and rollout-path citations); no real hostname, username-as-identity, or
+business content appears anywhere in this entry.
