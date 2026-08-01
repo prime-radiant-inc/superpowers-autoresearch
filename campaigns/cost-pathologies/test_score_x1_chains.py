@@ -33,6 +33,25 @@ score_x1_chains.py's module docstring):
   - rollout-thread-authauthauth.jsonl -- the tier-2 chain's sole round:
     cumulative token_count total=1200; final_answer with one Minor
     finding (heading format).
+
+Item 12's retask fixtures (retask_parent.jsonl +
+rollout-thread-retaskretaskretask.jsonl) are a SEPARATE, self-contained
+fixture pair (own FIXTURES-relative paths, never mixed into ALL_PATHS)
+so they can't perturb the five-spawn scenario above. They construct the
+fourth chain pattern -- a single review-shaped thread re-tasked in place
+rather than fresh-spawned per round -- modeled directly on the one real
+corpus exemplar found while building this fix (`durability_fix2_reviewer`
+in `cp-x1-buggy-sdd-x1a-rep1`, cited in score_x1_chains.py's module
+docstring and `_retask_envelope_count()`'s docstring): ONE spawn_agent
+call (`config_review`, fork_turns="none") whose single resolved child
+rollout carries TWO NEW_TASK envelopes addressed to itself (the initial
+dispatch, then a re-task after the first verdict) and TWO
+`phase=="final_answer"` entries -- round 1 cumulative tokens=4000 (one
+Critical finding), round 2 cumulative tokens=7000 at its own final-answer
+timestamp, climbing to a file-final 7500 after a bit of post-final-answer
+wrap-up activity (one distinct Important finding) -- invisible to the
+pre-fix scorer, which would have kept only round 2's finding and reported
+`rounds=1`.
 """
 import os
 import unittest
@@ -43,6 +62,10 @@ CHILD_R1 = os.path.join(FIXTURES, "rollout-thread-r1r1r1r1.jsonl")
 CHILD_R2 = os.path.join(FIXTURES, "rollout-thread-r2r2r2r2.jsonl")
 CHILD_AUTH = os.path.join(FIXTURES, "rollout-thread-authauthauth.jsonl")
 ALL_PATHS = [PARENT, CHILD_R1, CHILD_R2, CHILD_AUTH]
+
+RETASK_PARENT = os.path.join(FIXTURES, "retask_parent.jsonl")
+RETASK_CHILD = os.path.join(FIXTURES, "rollout-thread-retaskretaskretask.jsonl")
+RETASK_PATHS = [RETASK_PARENT, RETASK_CHILD]
 
 
 class TestStem(unittest.TestCase):
@@ -140,6 +163,81 @@ class TestExtractFindings(unittest.TestCase):
         self.assertEqual(findings[0][0], "Minor")
         self.assertIn("unused import", findings[0][1])
 
+    # -- Item 11: NONE_VALUE_RE prose-none variants (corpus-derived) --
+    # Both positive cases below are the ONLY two real "none"-prefixed,
+    # non-exact bare-label values found across the full 16-rep-dir X1 FULL
+    # corpus (evals-lane-b/results/cp-x1-buggy-sdd-* +
+    # superpowers/evals/results/cp-x1-buggy-sdd-*) -- a minimal real pair:
+    # one that must become zero findings, one that (despite also starting
+    # "none") must NOT.
+
+    def test_bare_label_none_identified_beyond_excludes_zero_findings(self):
+        # Verbatim line from cp-x1-buggy-sdd-x1a-rep1's final reviewer
+        # round (rollout-2026-08-01T04-22-18-...019fbb8e...jsonl): the
+        # exact "none identified beyond the [already-counted] X" phrasing
+        # named in this task's brief. Before the fix, NONE_VALUE_RE's
+        # `^none\.?$` didn't match this value, so it was wrongly counted
+        # as a real Critical finding.
+        import score_x1_chains as sx1
+        text = "- Critical: none identified beyond the unresolved original durability finding."
+        self.assertEqual(sx1._extract_findings(text), [])
+
+    def test_bare_label_none_beyond_excludes_zero_findings(self):
+        # "none beyond X" -- the brief's other named prose variant.
+        # Adapted from a real corpus line (cp-x1-buggy-sdd-x1c-rep1,
+        # "None beyond the critical durability defect.") into bare-label
+        # form to exercise NONE_VALUE_RE directly; the original appeared
+        # as a plain list item, not a "Severity: <value>" line.
+        import score_x1_chains as sx1
+        text = "Critical: none beyond the critical durability defect."
+        self.assertEqual(sx1._extract_findings(text), [])
+
+    def test_bare_label_no_new_findings_excludes_zero_findings(self):
+        # "no new findings" -- the third prose variant named verbatim in
+        # this task's brief (not found verbatim in the archived corpus,
+        # unlike the two cases above; included because the brief names it
+        # explicitly as required NONE_VALUE_RE coverage).
+        import score_x1_chains as sx1
+        text = "Important: no new findings."
+        self.assertEqual(sx1._extract_findings(text), [])
+
+    def test_bare_label_none_blocking_is_a_real_finding_not_swallowed(self):
+        # Verbatim line from cp-x1-buggy-sdd-x1c-rep3's reviewer round
+        # (rollout-2026-08-01T08-40-48-...019fbc7b...jsonl): starts with
+        # "None" but is a REAL minor suggestion ("not blocking, but
+        # consider adding X"), not a zero-findings report. The broadened
+        # NONE_VALUE_RE must NOT match this -- the exact boundary case
+        # motivating the "at least two negative cases" requirement.
+        import score_x1_chains as sx1
+        text = (
+            "- Minor: None blocking. A direct unit test that `reload_plans` "
+            "removes stale IDs would strengthen catalog API coverage, though "
+            "the implementation clearly performs replacement rather than "
+            "update (`billing/plan_catalog.py:27`)."
+        )
+        findings = sx1._extract_findings(text)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "Minor")
+        self.assertIn("none blocking", findings[0][1])
+        self.assertIn("reload_plans", findings[0][1])
+
+    def test_bare_label_real_minor_finding_unrelated_to_none_not_swallowed(self):
+        # Verbatim line from cp-x1-buggy-sdd-x1b-rep4's reviewer round
+        # (rollout for the x1b-rep4 review chain): an ordinary real
+        # finding with no "none" prefix at all -- a plain regression guard
+        # that the broadened regex hasn't become so permissive it eats
+        # unrelated bare-label content.
+        import score_x1_chains as sx1
+        text = (
+            "- Minor: report’s historical pytest/TDD and whitespace-check "
+            "results cannot be independently verified from the supplied diff "
+            "alone; implementation claims themselves are substantiated."
+        )
+        findings = sx1._extract_findings(text)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "Minor")
+        self.assertIn("cannot be independently verified", findings[0][1])
+
 
 class TestClassifySeverityTrend(unittest.TestCase):
     def test_insufficient_data_below_two_rounds(self):
@@ -219,6 +317,71 @@ class TestChainStats(unittest.TestCase):
     def test_no_rollouts_returns_empty_chains(self):
         import score_x1_chains as sx1
         self.assertEqual(sx1.chain_stats([]), {"chains": []})
+
+
+class TestRetaskEnvelopeCount(unittest.TestCase):
+    def test_zero_on_a_child_with_no_inter_agent_messages(self):
+        # Regression guard: none of the pre-existing fixture children
+        # (CHILD_R1/R2/AUTH) carry any response_item/agent_message
+        # records at all -- confirms item 12's detector adds zero new
+        # signal on ordinary, non-retasked chains.
+        import score_x1_chains as sx1
+        self.assertEqual(sx1._retask_envelope_count(CHILD_R1), 0)
+
+    def test_two_on_the_constructed_retask_fixture(self):
+        import score_x1_chains as sx1
+        self.assertEqual(sx1._retask_envelope_count(RETASK_CHILD), 2)
+
+
+class TestChainStatsRetask(unittest.TestCase):
+    # Item 12: a single review-shaped thread re-tasked in place (NEW_TASK
+    # envelopes to itself, no fresh spawn_agent) must surface as TWO
+    # resolved rounds, not one -- see RETASK_PATHS' fixture docstring
+    # above for the exact scenario these assert against.
+
+    def test_two_rounds_resolved_from_one_spawn(self):
+        import score_x1_chains as sx1
+        result = sx1.chain_stats(RETASK_PATHS)
+        self.assertEqual(len(result["chains"]), 1)
+        chain = result["chains"][0]
+        self.assertEqual(chain["root_id"], "retask_parent.jsonl:config_review")
+        self.assertEqual(chain["rounds"], 2)
+
+    def test_dispatch_count_bumped_by_the_extra_round(self):
+        # One spawn_agent call, but the fourth pattern found a second real
+        # round inside it -- dispatch_count must reflect that (and must
+        # keep rounds <= dispatch_count holding), not stay pinned at 1.
+        import score_x1_chains as sx1
+        chain = sx1.chain_stats(RETASK_PATHS)["chains"][0]
+        self.assertEqual(chain["dispatch_count"], 2)
+
+    def test_both_rounds_findings_present_not_just_the_last(self):
+        # The pre-fix behavior would keep ONLY round 2's Important finding
+        # and silently discard round 1's Critical one.
+        import score_x1_chains as sx1
+        chain = sx1.chain_stats(RETASK_PATHS)["chains"][0]
+        self.assertEqual(chain["novel_finding_rate_per_round"], [1.0, 1.0])
+
+    def test_severity_trend_uses_both_rounds(self):
+        # Critical (round 1) -> Important (round 2) is a real decreasing
+        # trend, visible only once both rounds are resolved separately;
+        # pre-fix this collapsed to "insufficient_data" (a single round).
+        import score_x1_chains as sx1
+        chain = sx1.chain_stats(RETASK_PATHS)["chains"][0]
+        self.assertEqual(chain["severity_trend"], "decreasing")
+
+    def test_tokens_est_uses_max_not_sum_across_retasked_rounds(self):
+        # Round 1's cumulative reading (4000) and round 2's share ONE
+        # continuous counter -- summing would double-count round 1's
+        # spend into the total. tokens_est must be the thread's real file-
+        # final total (7500, after a bit of post-final-answer wrap-up
+        # activity), not 4000+7000=11000 -- and not 7000 either (round 2's
+        # OWN final-answer-timestamp reading, which would under-credit
+        # that trailing wrap-up; only NON-last rounds are bounded to their
+        # own timestamp, see resolve_chains()'s retask branch).
+        import score_x1_chains as sx1
+        chain = sx1.chain_stats(RETASK_PATHS)["chains"][0]
+        self.assertEqual(chain["tokens_est"], 7500)
 
 
 if __name__ == "__main__":

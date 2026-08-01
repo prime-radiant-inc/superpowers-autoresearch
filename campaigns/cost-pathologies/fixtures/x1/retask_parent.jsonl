@@ -1,0 +1,2 @@
+{"timestamp": "2026-07-31T02:00:00.000Z", "type": "response_item", "payload": {"type": "function_call", "name": "spawn_agent", "call_id": "call_RETASK", "arguments": "{\"task_name\": \"config_review\", \"fork_turns\": \"none\", \"model\": \"gpt-x\", \"reasoning_effort\": \"high\"}"}}
+{"timestamp": "2026-07-31T02:00:01.000Z", "type": "event_msg", "payload": {"type": "sub_agent_activity", "kind": "started", "event_id": "call_RETASK", "agent_thread_id": "thread-retaskretaskretask"}}
