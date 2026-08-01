@@ -124,9 +124,47 @@ every session given: each rollout's own final_answer-phase messages
 (`rollout_parser.final_answers()`, X5-A's report-in-prose channel), every
 inter-agent message payload (`rollout_parser.inter_agent_messages()`, so a
 receipt is found whether read from the child's own transcript or a
-parent's relayed view of it), and every exec/custom_exec command OUTPUT
-text (covers X5-B's machine-checkable file being read back via `cat` by a
-later seat, not just prose).
+parent's relayed view of it), every exec/custom_exec command OUTPUT text
+(covers X5-B's machine-checkable file being read back via `cat` by a
+later seat, not just prose), and (queue-campaign Task 2, item 10) every
+exec/custom_exec command's own CALL text (de-escaped, diff-marker-
+stripped -- see `_DIFF_MARKER_LEASE_RE`), so a marker WRITTEN but never
+read back by any later tool call is still counted.
+
+**Distinct-event counting (queue-campaign Task 2, item 10).** `lease_
+events`'s three strict counts are DISTINCT `(kind, command_norm,
+tree_sha)` events, not raw marker-line regex-match counts. An append-only
+receipts file gets re-matched every time it is re-read (a later `cat`, or
+a later `apply_patch` diff hunk showing an earlier line as unchanged
+context) -- this campaign's own I2 correction
+(`logs/2026-07-31-cost-pathologies.md`, 2026-08-01 entry) found a real
+X5-B rep whose 10 raw `LEASE-RECEIPT` matches collapsed to only 4
+distinct tree_sha values once deduplicated. `_lease_events()` dedups
+globally across every given rollout path (the same event relayed into a
+second session's transcript is still one event) and per kind (a RECEIPT
+and a HONORED line sharing a command_norm/tree_sha are different events).
+Deliberately NOT keyed on `result` too, per this task's own brief.
+
+**Prose-aware honor/invalidate detector (queue-campaign Task 2, item 9)
+-- ADDED alongside, never replacing, the strict grammar above.** Real
+corpus finding (this campaign's C1 correction, same log, same entry):
+codex reviewers under X5-A routinely narrate honoring or declining a
+supplied lease receipt in their OWN WORDS rather than reproducing the
+fixed marker syntax -- a real scorer-coverage gap under this harness, not
+a behavioral absence. Reported as separate `receipts_honored_prose`/
+`invalidation_reruns_prose` fields on `lease_events`, computed by
+`_lease_events_prose()`: a lease/receipt TERM and an explicit rerun-or-
+not PHRASE (`_PROSE_HONOR_PHRASE_RE`/`_PROSE_INVALIDATE_PHRASE_RE`) must
+co-occur on the SAME line of the same `_text_sources()` text (after
+masking out any strict-grammar line, so a real marker is never
+double-counted). Deliberately conservative -- precision over recall, per
+this task's own brief ("a missed prose-honoring is a disclosed
+limitation; a false honor-credit corrupts a savings battery"): 7 of the
+8 real X5-A prose exchanges this campaign found are caught; the 8th (a
+bare citation with no explicit rerun-or-not statement) is an intentional,
+disclosed miss. See `TestLeaseEventsProseDetector` (cites rep dir +
+rollout file per case) and this task's report for the corpus and the
+precision/recall analysis.
 
 **Privacy note, a deliberate divergence from score_e3's convention.**
 score_e3 never exposes raw/normalized command TEXT on an output record,
@@ -396,37 +434,154 @@ _LEASE_LINE_RE = re.compile(
     r"(?:\s+result=(?P<result>pass|fail))?\s*$",
     re.MULTILINE)
 
+# X5-B's machine-checkable receipts file is written via `apply_patch`
+# unified-diff hunks (real corpus shape, confirmed directly in
+# cp-x5-leases-x5b-rep3's raw rollout during this task's corpus
+# validation -- see test_apply_patch_diff_prefixed_lease_line_recovered_
+# from_command_text): every line in an Add/Update File hunk carries a
+# leading +/-/space diff marker, so a LEASE- line WRITTEN this way
+# ("+LEASE-HONORED: command=... tree_sha=...") never satisfies
+# _LEASE_LINE_RE's line-start anchor even once exec CALL command text is
+# scanned (below) -- that receipts file is never read back via a plain
+# `cat` in this rep, so without this the write is invisible to any
+# scanner. Stripping the ONE leading diff-marker character from a line
+# that would otherwise start with "LEASE-" recovers these writes without
+# loosening the grammar itself for any other source (final_answer text,
+# inter-agent messages, exec OUTPUT text are never diff-shaped).
+_DIFF_MARKER_LEASE_RE = re.compile(
+    r"^[+\- ](?=LEASE-(?:RECEIPT|HONORED|INVALIDATED):)", re.MULTILINE)
+
 
 def _text_sources(path):
     """Every text body in PATH worth scanning for LEASE- marker lines --
-    see module docstring's "Scanned across" note for why all three
-    sources are included."""
+    see module docstring's "Scanned across" note for why all sources are
+    included. Queue-campaign Task 2 (item 10) added exec CALL command
+    text (de-escaped, diff-marker-stripped -- see _DIFF_MARKER_LEASE_RE)
+    alongside the original final_answer/inter_agent/exec-OUTPUT sources,
+    to catch a marker WRITTEN but never subsequently read back by any
+    later tool call."""
     texts = []
     for f in rp.final_answers(path):
         if f.phase == "final_answer":
             texts.append(f.message)
     for m in rp.inter_agent_messages(path):
         texts.append(m.payload)
+    for ec in rp.exec_commands(path):
+        cmd = rp.deescape_custom_exec(ec.cmd, ec.encoding)
+        texts.append(_DIFF_MARKER_LEASE_RE.sub("", cmd))
     texts.extend(_collect_call_outputs(path).values())
     return texts
 
 
 def _lease_events(rollout_paths):
-    receipts_issued = receipts_honored = invalidation_reruns = 0
+    """Queue-campaign Task 2 (item 10): counts DISTINCT (kind,
+    command_norm, tree_sha) events, not raw marker-line regex
+    occurrences. An append-only receipts file re-read (a later `cat`, or
+    a later apply_patch diff hunk showing an earlier line as unchanged
+    context) matches the SAME event every time it is read, which a
+    per-match counter over-counts -- root-caused in this campaign's own
+    I2 correction (logs/2026-07-31-cost-pathologies.md, 2026-08-01
+    entry): a real X5-B rep's 10 raw LEASE-RECEIPT regex matches
+    collapsed to only 4 distinct tree_sha values once deduplicated.
+    Dedup is GLOBAL across all of ROLLOUT_PATHS (the same event relayed
+    into a second session's transcript is still one event, not two), and
+    keyed PER KIND (a RECEIPT and a HONORED line sharing an identical
+    command_norm/tree_sha are different events, never merged with each
+    other) -- deliberately NOT keyed on `result` too (per this task's own
+    brief: dedup on exactly (kind, command_norm, tree_sha))."""
+    seen = {"RECEIPT": set(), "HONORED": set(), "INVALIDATED": set()}
     for path in rollout_paths:
         for text in _text_sources(path):
             if not text:
                 continue
             for m in _LEASE_LINE_RE.finditer(text):
-                kind = m.group("kind")
-                if kind == "RECEIPT":
-                    receipts_issued += 1
-                elif kind == "HONORED":
-                    receipts_honored += 1
-                else:
-                    invalidation_reruns += 1
-    return {"receipts_issued": receipts_issued, "receipts_honored": receipts_honored,
-            "invalidation_reruns": invalidation_reruns}
+                seen[m.group("kind")].add((m.group("command_norm"), m.group("tree_sha")))
+    return {"receipts_issued": len(seen["RECEIPT"]),
+            "receipts_honored": len(seen["HONORED"]),
+            "invalidation_reruns": len(seen["INVALIDATED"])}
+
+
+# --- lease_events prose-aware honor/invalidate detector (item 9) -----------
+
+# ADDED alongside (never replacing) the strict grammar above. Real corpus
+# finding (this campaign's C1 correction,
+# logs/2026-07-31-cost-pathologies.md, 2026-08-01 entry, "X5-A's
+# honoring/invalidation mechanism IS observable in plaintext"): codex
+# reviewers under X5-A routinely narrate honoring or declining a supplied
+# lease receipt in their OWN WORDS instead of reproducing the fixed
+# marker syntax the strict grammar requires -- a real scorer-coverage
+# gap, not a behavioral absence. 8 such exchanges were found across the
+# 3 x5a reps (TestLeaseEventsProseDetector in the test suite cites rep
+# dir + rollout file for each). This detector is DELIBERATELY
+# conservative -- precision over recall, per this task's own brief ("a
+# missed prose-honoring is a disclosed limitation; a false honor-credit
+# corrupts a savings battery"): it requires a lease/receipt TERM and an
+# explicit rerun-or-not PHRASE to co-occur on the SAME line (this
+# corpus's reviewer statements are consistently one sentence per line/
+# bullet). 7 of the real corpus's 8 known exchanges satisfy this; the
+# 8th (a bare citation of "the supplied HEAD receipt records the full
+# suite passing" with no explicit rerun-or-not statement) is an
+# intentional, disclosed miss -- see this task's report for the
+# precision/recall analysis.
+_PROSE_TERM_RE = re.compile(r"\b(?:lease|receipt)\b", re.I)
+
+_PROSE_HONOR_PHRASE_RE = re.compile(
+    r"\b(?:not\s+re-?run|did\s+not\s+rerun|was\s+not\s+rerun|"
+    r"without\s+rerunning|honou?red|LEASE-HONORED)\b", re.I)
+
+_PROSE_INVALIDATE_PHRASE_RE = re.compile(
+    r"\b(?:does\s+not\s+certify|invalidat\w*|LEASE-INVALIDATED|"
+    r"independent\w*\s+(?:focused\s+)?verification\s+was\s+run)\b", re.I)
+
+# The grammar's own SPEC gets quoted verbatim inside the X5-A/X5-B plan's
+# own dispatch instructions, read back by every seat in every rep of BOTH
+# arms (real corpus shape found identically across all 6 x5a/x5b reps
+# during this task's full-corpus precision check) -- e.g. "`LEASE-
+# HONORED: command=<the command> tree_sha=<the sha>`" as a literal
+# grammar EXAMPLE, not a narrated decision. Without this guard that
+# boilerplate false-triggers the phrase heuristic above on every one of
+# those 6 reps, since it literally contains the LEASE-HONORED/
+# LEASE-INVALIDATED tokens. A literal "<" immediately after "command="
+# is the reliable, conservative signal that a line is quoting the SPEC --
+# a real command_norm value is never a literal angle-bracket placeholder.
+_PROSE_TEMPLATE_RE = re.compile(r"LEASE-(?:RECEIPT|HONORED|INVALIDATED):\s*command=<", re.I)
+
+
+def _mask_strict_lines(text):
+    """Blanks every strict-grammar LEASE- line (replaced with spaces of
+    the same length, preserving offsets) before prose scanning -- a
+    genuine strict-grammar line also contains the literal substrings the
+    prose heuristic looks for ("lease", "HONORED"), so without this it
+    would be counted twice: once strict, once prose."""
+    return _LEASE_LINE_RE.sub(lambda m: " " * len(m.group(0)), text)
+
+
+def _lease_events_prose(rollout_paths):
+    """Distinct-line-deduplicated counts of prose honor/invalidate
+    exchanges -- see the module-level comment above for the corpus and
+    the precision/recall tradeoff. Dedup mirrors _lease_events(): the
+    exact matched line's own stripped text is the dedup key, global
+    across ROLLOUT_PATHS, so the same reviewer sentence relayed into a
+    second text source (e.g. a parent's inter-agent relay of the same
+    message) is not double-counted."""
+    honored, invalidated = set(), set()
+    for path in rollout_paths:
+        for text in _text_sources(path):
+            if not text:
+                continue
+            masked = _mask_strict_lines(text)
+            for line in masked.split("\n"):
+                line = line.strip()
+                if not line or not _PROSE_TERM_RE.search(line):
+                    continue
+                if _PROSE_TEMPLATE_RE.search(line):
+                    continue
+                if _PROSE_HONOR_PHRASE_RE.search(line):
+                    honored.add(line)
+                if _PROSE_INVALIDATE_PHRASE_RE.search(line):
+                    invalidated.add(line)
+    return {"receipts_honored_prose": len(honored),
+            "invalidation_reruns_prose": len(invalidated)}
 
 
 # --- top-level ---------------------------------------------------------------
@@ -454,7 +609,7 @@ def lease_stats(rollout_paths):
     return {
         "verification_runs": verification_runs,
         "duplicate_groups": _duplicate_groups(verification_runs),
-        "lease_events": _lease_events(rollout_paths),
+        "lease_events": {**_lease_events(rollout_paths), **_lease_events_prose(rollout_paths)},
     }
 
 
@@ -476,6 +631,9 @@ def main(argv):
     print(f"lease_events: receipts_issued={events['receipts_issued']} "
           f"receipts_honored={events['receipts_honored']} "
           f"invalidation_reruns={events['invalidation_reruns']}")
+    print(f"lease_events (prose, alongside the strict grammar -- never folded in): "
+          f"receipts_honored_prose={events['receipts_honored_prose']} "
+          f"invalidation_reruns_prose={events['invalidation_reruns_prose']}")
     return 0
 
 

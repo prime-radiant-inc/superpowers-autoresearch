@@ -374,13 +374,25 @@ class TestLeaseEvents(unittest.TestCase):
             import score_x5_leases as sx5
             return sx5.lease_stats([path])
 
+    # NOTE: `lease_events`'s dict shape now always carries the Task 2
+    # prose-detector fields (`receipts_honored_prose`/
+    # `invalidation_reruns_prose`) alongside the strict-grammar three --
+    # see TestLeaseEventsDistinctCounting/TestLeaseEventsProseDetector
+    # below. None of the fixtures in THIS class contain any prose-honoring
+    # language, so every assertion here expects both new fields at 0;
+    # that they stay 0 is itself part of what these tests check (the
+    # strict-line text is masked out of prose scanning -- see
+    # test_strict_matched_line_never_also_counted_as_prose below).
+    _ZERO_PROSE = {"receipts_honored_prose": 0, "invalidation_reruns_prose": 0}
+
     def test_receipt_line_counted(self):
         result = self._stats([
             final_answer("2026-07-31T05:00:00.000Z",
                           "LEASE-RECEIPT: command=pytest tests/ tree_sha=abc1234 result=pass"),
         ])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 1, "receipts_honored": 0, "invalidation_reruns": 0})
+                          {"receipts_issued": 1, "receipts_honored": 0, "invalidation_reruns": 0,
+                           **self._ZERO_PROSE})
 
     def test_honored_line_counted(self):
         result = self._stats([
@@ -388,7 +400,8 @@ class TestLeaseEvents(unittest.TestCase):
                           "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234"),
         ])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 0, "receipts_honored": 1, "invalidation_reruns": 0})
+                          {"receipts_issued": 0, "receipts_honored": 1, "invalidation_reruns": 0,
+                           **self._ZERO_PROSE})
 
     def test_invalidated_line_counted(self):
         result = self._stats([
@@ -396,7 +409,8 @@ class TestLeaseEvents(unittest.TestCase):
                           "LEASE-INVALIDATED: command=pytest tests/ tree_sha=def5678"),
         ])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 1})
+                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 1,
+                           **self._ZERO_PROSE})
 
     def test_multiple_lines_one_message(self):
         text = ("Verification receipts:\n"
@@ -405,7 +419,8 @@ class TestLeaseEvents(unittest.TestCase):
                 "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234\n")
         result = self._stats([final_answer("2026-07-31T05:00:00.000Z", text)])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 2, "receipts_honored": 1, "invalidation_reruns": 0})
+                          {"receipts_issued": 2, "receipts_honored": 1, "invalidation_reruns": 0,
+                           **self._ZERO_PROSE})
 
     def test_lines_scanned_across_final_answer_inter_agent_and_exec_output(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -422,7 +437,8 @@ class TestLeaseEvents(unittest.TestCase):
             import score_x5_leases as sx5
             result = sx5.lease_stats([path])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 1, "receipts_honored": 1, "invalidation_reruns": 1})
+                          {"receipts_issued": 1, "receipts_honored": 1, "invalidation_reruns": 1,
+                           **self._ZERO_PROSE})
 
     def test_malformed_lines_ignored(self):
         result = self._stats([
@@ -431,14 +447,338 @@ class TestLeaseEvents(unittest.TestCase):
                           "lease-receipt: command=pytest tests/ tree_sha=abc1234 result=pass"),
         ])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0})
+                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0,
+                           **self._ZERO_PROSE})
 
     def test_no_lines_zero_everything(self):
         result = self._stats([
             final_answer("2026-07-31T05:00:00.000Z", "All tests pass, nothing else to report."),
         ])
         self.assertEqual(result["lease_events"],
-                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0})
+                          {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0,
+                           **self._ZERO_PROSE})
+
+
+class TestLeaseEventsDistinctCounting(unittest.TestCase):
+    """Task 2 (queue-campaign) item 10: `lease_events` counts DISTINCT
+    (kind, command_norm, tree_sha) events, not raw marker-line regex
+    occurrences. Root-caused by this campaign's own C1/I2 correction
+    (logs/2026-07-31-cost-pathologies.md, 2026-08-01 entry): a real X5-B
+    rep (x5b-rep3) whose append-only receipts file gets read back by every
+    later `cat`/apply_patch-diff view shows 10 raw `LEASE-RECEIPT` regex
+    matches collapsing to only 4 distinct tree_sha values once
+    deduplicated -- each earlier receipt gets re-matched at every later
+    read of the same or a newer file state. The other, opposite failure
+    mode named in that same correction: a marker written via an exec CALL
+    (not merely its matching output) that is never read back afterward was
+    invisible under the OLD `_text_sources()`, which scanned only exec
+    OUTPUT text."""
+
+    def _stats(self, lines):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_rollout(tmp, "a.jsonl", lines)
+            import score_x5_leases as sx5
+            return sx5.lease_stats([path])
+
+    def test_rereading_the_same_receipt_twice_counts_once(self):
+        # Two separate `cat receipts.txt` calls returning the IDENTICAL
+        # LEASE-RECEIPT line -- the real re-read-inflation mechanism the
+        # I2 correction root-caused.
+        line = "LEASE-RECEIPT: command=pytest tests/ tree_sha=abc1234 result=pass"
+        result = self._stats([
+            exec_cmd("2026-07-31T05:00:00.000Z", "c1", "cat receipts.txt"),
+            exec_output("2026-07-31T05:00:00.500Z", "c1", line),
+            exec_cmd("2026-07-31T05:01:00.000Z", "c2", "cat receipts.txt"),
+            exec_output("2026-07-31T05:01:00.500Z", "c2", line),
+        ])
+        self.assertEqual(result["lease_events"]["receipts_issued"], 1)
+
+    def test_same_command_different_tree_sha_receipts_both_count(self):
+        # Regression against OVER-dedup: two receipts for the SAME command
+        # at two DIFFERENT tree_sha values are genuinely distinct
+        # verification events (a real re-run after the tree changed), not
+        # re-reads of one event -- must not collapse to 1.
+        result = self._stats([
+            final_answer("2026-07-31T05:00:00.000Z",
+                          "LEASE-RECEIPT: command=pytest tests/ tree_sha=abc1234 result=pass"),
+            final_answer("2026-07-31T05:01:00.000Z",
+                          "LEASE-RECEIPT: command=pytest tests/ tree_sha=def5678 result=pass"),
+        ])
+        self.assertEqual(result["lease_events"]["receipts_issued"], 2)
+
+    def test_dedup_key_includes_kind_not_just_command_and_sha(self):
+        # A RECEIPT and a HONORED line sharing the identical command_norm/
+        # tree_sha are two DIFFERENT kinds of event (one issues, the other
+        # honors) -- must not collapse into a single dedup bucket.
+        result = self._stats([
+            final_answer("2026-07-31T05:00:00.000Z",
+                          "LEASE-RECEIPT: command=pytest tests/ tree_sha=abc1234 result=pass"),
+            final_answer("2026-07-31T05:01:00.000Z",
+                          "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234"),
+        ])
+        events = result["lease_events"]
+        self.assertEqual((events["receipts_issued"], events["receipts_honored"]), (1, 1))
+
+    def test_dedup_is_global_across_rollout_paths(self):
+        # The SAME event relayed into two different sessions' transcripts
+        # (e.g. an implementer's own report AND a reviewer's relayed view
+        # of it) must still collapse to one distinct event -- dedup can't
+        # be scoped per-path.
+        line = "LEASE-RECEIPT: command=pytest tests/ tree_sha=abc1234 result=pass"
+        with tempfile.TemporaryDirectory() as tmp:
+            a = write_rollout(tmp, "a.jsonl", [final_answer("2026-07-31T05:00:00.000Z", line)])
+            b = write_rollout(tmp, "b.jsonl", [final_answer("2026-07-31T05:01:00.000Z", line)])
+            import score_x5_leases as sx5
+            result = sx5.lease_stats([a, b])
+        self.assertEqual(result["lease_events"]["receipts_issued"], 1)
+
+    def test_exec_call_command_text_scanned_for_a_marker_never_read_back(self):
+        # A marker WRITTEN via an exec CALL (a heredoc append, here) whose
+        # content is never subsequently read back by any later `cat`/
+        # output must still be counted -- the OLD _text_sources() only
+        # scanned exec OUTPUT text, never the CALL's own command text, so
+        # this write was silently invisible before the fix.
+        cmd = ("cat <<'EOF' >> receipts.txt\n"
+               "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234\n"
+               "EOF")
+        result = self._stats([
+            exec_cmd("2026-07-31T05:00:00.000Z", "c1", cmd),
+        ])
+        self.assertEqual(result["lease_events"]["receipts_honored"], 1)
+
+    def test_apply_patch_diff_prefixed_lease_line_recovered_from_command_text(self):
+        # Real corpus shape (cp-x5-leases-x5b-rep3, rollout
+        # rollout-2026-08-01T18-59-09-019fbeb1-c4a3-7ee3-beae-b2d639d1dfee
+        # .jsonl, .../home/.codex/sessions/2026/08/01/): X5-B's
+        # machine-checkable receipts file is written entirely via
+        # `apply_patch` unified-diff hunks -- every line in an Add/Update
+        # File hunk carries a leading +/-/space diff marker, so a written
+        # LEASE- line ("+LEASE-RECEIPT: command=... tree_sha=...") never
+        # satisfies the strict grammar's line-start anchor even once exec
+        # CALL text is scanned, unless that leading diff marker is
+        # stripped first. Confirmed directly in the raw rollout during
+        # this task's corpus validation -- this exact receipts file is
+        # never read back via a plain `cat` in this rep, so without
+        # diff-marker stripping this write is invisible to any scanner.
+        js = ('const patch = "*** Begin Patch\n'
+              '*** Add File: /work/.superpowers/sdd/plan/task-1-receipts.md\n'
+              '+LEASE-RECEIPT: command=PYTHONPATH=. .venv/bin/pytest tests/test_token_bucket.py -q '
+              'tree_sha=6502982d9ec22bc0eba1d85575a4f62dc5744523 result=pass\n'
+              '*** End Patch";\n'
+              'text(await tools.apply_patch(patch));')
+        result = self._stats([
+            custom_exec_cmd("2026-08-01T18:59:09.000Z", "c1", js),
+        ])
+        self.assertEqual(result["lease_events"]["receipts_issued"], 1)
+
+
+class TestLeaseEventsProseDetector(unittest.TestCase):
+    """Task 2 (queue-campaign) item 9: a prose-aware honor/invalidate
+    detector, ALONGSIDE (never replacing) the strict LEASE-HONORED:/
+    LEASE-INVALIDATED: grammar -- reported as separate
+    `receipts_honored_prose`/`invalidation_reruns_prose` fields, never
+    folded into the strict counts.
+
+    Positive corpus: this campaign's own C1 correction
+    (logs/2026-07-31-cost-pathologies.md, 2026-08-01 entry, "X5-A's
+    honoring/invalidation mechanism IS observable in plaintext") found
+    "8 messages across 3/3 [x5a] reps discuss the supplied lease receipt
+    in prose and act on it" -- none of which reproduce the strict marker
+    syntax, because codex reviewers here narrate the honor/decline
+    decision in their own words. Only 5 of the 8 are quoted verbatim in
+    that log entry; this task re-scanned the raw x5a-rep{1,2,3} rollouts
+    directly (`cp-x5-leases-x5a-rep{1,2,3}`, under
+    .../home/.codex/sessions/2026/08/01/) and located all 8. 7 of the 8
+    are unambiguous enough for a conservative, high-precision detector to
+    catch (cases A-G below); the 8th is a citation with no explicit
+    rerun-or-not statement and is a deliberate, disclosed recall miss
+    (test_ambiguous_receipt_citation_without_explicit_rerun_language_
+    not_counted below) -- see the module docstring and this task's
+    report for the precision/recall tradeoff.
+    """
+
+    def _prose(self, lines):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_rollout(tmp, "a.jsonl", lines)
+            import score_x5_leases as sx5
+            events = sx5.lease_stats([path])["lease_events"]
+        return events["receipts_honored_prose"], events["invalidation_reruns_prose"]
+
+    # --- positive corpus: 7 of the 8 real X5-A reviewer exchanges ---------
+
+    def test_corpus_A_rep1_task1_review_declining_is_invalidation(self):
+        # cp-x5-leases-x5a-rep1, rollout-2026-08-01T17-07-03-019fbe4b-...
+        # .jsonl (task1_review) -- declines the receipt, reruns instead.
+        text = ("⚠️ The implementation report’s lease receipt does not certify the "
+                "stated commit, as noted in the task prompt; independent focused "
+                "verification was run.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:07:03.000Z", text)])
+        self.assertEqual((honored, invalidated), (0, 1))
+
+    def test_corpus_B_rep1_task2_review_honoring(self):
+        # cp-x5-leases-x5a-rep1, rollout-2026-08-01T17-11-25-019fbe4f-...
+        # .jsonl (task2_review)
+        text = ("⚠️ Full-suite verification was not rerun per review constraints; "
+                "the provided lease receipt reports `4 passed`.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:11:25.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    def test_corpus_C_rep2_task2_review_honoring(self):
+        # cp-x5-leases-x5a-rep2, rollout-2026-08-01T17-36-18-019fbe65-...
+        # .jsonl (task2_reviewer)
+        text = ("Cannot independently verify the report’s historical TDD/output claims; "
+                "per instruction, I did not rerun the suite. The supplied verification "
+                "receipt matches the stated HEAD.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:36:18.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    def test_corpus_D_rep2_task3_review_honoring(self):
+        # cp-x5-leases-x5a-rep2, rollout-2026-08-01T17-40-09-019fbe69-...
+        # .jsonl (task3_reviewer)
+        text = ("Cannot independently verify the report’s claimed RED/GREEN history or "
+                "full-suite output without rerunning tests; per the supplied lease "
+                "receipt, `pytest tests/` passed at the reviewed HEAD `865c13f`.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:40:09.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    def test_corpus_E_rep2_final_review_honoring_literal_honored_the_lease(self):
+        # cp-x5-leases-x5a-rep2, rollout-2026-08-01T17-41-13-019fbe6a-...
+        # .jsonl (final review) -- not quoted in the log's own 5 examples;
+        # found by this task's own re-scan.
+        text = ("The supplied HEAD receipt reports all three tests passing; I honored "
+                "the lease and did not rerun solely for confirmation.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:41:13.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    def test_corpus_F_rep3_task1_review_honoring(self):
+        # cp-x5-leases-x5a-rep3, rollout-2026-08-01T17-58-43-019fbe7a-...
+        # .jsonl (task1 review) -- not quoted in the log's own 5 examples;
+        # found by this task's own re-scan.
+        text = ("⚠️ Verification was not rerun per instruction; the supplied lease "
+                "receipt reports the exact test command passed at the reviewed HEAD.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:58:43.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    def test_corpus_G_rep3_task3_review_honoring_literal_LEASE_HONORED_in_prose(self):
+        # cp-x5-leases-x5a-rep3, rollout-2026-08-01T18-04-14-019fbe7f-...
+        # .jsonl (task3_review) -- the literal word "LEASE-HONORED"
+        # embedded mid-sentence, NOT as a line-anchored strict marker (no
+        # colon, no command=/tree_sha= fields on the same line) -- must be
+        # caught by the prose detector, not the strict one.
+        text = ("- Reviewed HEAD matches required "
+                "`6e49b665a5b5b06899befaa94987148550dba683`; supplied LEASE-HONORED "
+                "evidence records `../../.venv/bin/python -m pytest tests/` passing at "
+                "that SHA.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T18:04:14.000Z", text)])
+        self.assertEqual((honored, invalidated), (1, 0))
+
+    # --- precision: conservative misses and non-matches -------------------
+
+    def test_ambiguous_receipt_citation_without_explicit_rerun_language_not_counted(self):
+        # cp-x5-leases-x5a-rep3, rollout-2026-08-01T18-05-07-019fbe80-...
+        # .jsonl -- cites "the supplied HEAD receipt records the full
+        # suite passing" as one of several observations supporting merge
+        # readiness, but never states whether the reviewer reran tests or
+        # relied on the receipt instead. This is the log's 8th real
+        # exchange; a conservative, high-precision detector correctly
+        # does NOT credit it (disclosed recall miss, not a bug) since it
+        # lacks the explicit "not rerun"/"honored"/"without rerunning"
+        # signal every genuine positive case above carries.
+        text = ("Ready to merge: **Yes.** The branch aligns with REQ-1 through REQ-3 and "
+                "the supplied HEAD receipt records the full suite passing; the sole "
+                "finding is a non-blocking test-strengthening opportunity around "
+                "failed-take atomicity.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T18:05:07.000Z", text)])
+        self.assertEqual((honored, invalidated), (0, 0))
+
+    def test_receipt_mentioned_as_a_recommendation_not_a_live_decision_not_counted(self):
+        # cp-x5-leases-x5a-rep1, rollout-2026-08-01T17-14-52-019fbe52-...
+        # .jsonl -- recommends retaining a future verification receipt (no
+        # receipt existed yet in this rep; the report was missing) --
+        # not a decision about an EXISTING receipt, must not match.
+        text = ("Add `task-report.md` summarizing the implementation and full-suite "
+                "result. Because that changes HEAD, rerun `pytest tests/` at the "
+                "resulting final commit and retain an exact-head verification receipt.")
+        honored, invalidated = self._prose([final_answer("2026-08-01T17:14:52.000Z", text)])
+        self.assertEqual((honored, invalidated), (0, 0))
+
+    def test_grammar_spec_quoted_in_plan_dispatch_text_not_counted(self):
+        # cp-x5-leases-x5a-rep1, rollout-2026-08-01T17-02-28-019fbe46-...
+        # .jsonl (the root SDD-plan dispatch, read back by every seat in
+        # every one of this task's 6 x5a/x5b reps): the X5-A/X5-B plan's
+        # OWN dispatch instructions quote the LEASE- grammar verbatim as a
+        # worked example, using literal "<the command>"/"<the sha>"
+        # placeholder tokens rather than real values -- e.g. "backticks):
+        # `LEASE-HONORED: command=<the command> tree_sha=<the sha>`. A".
+        # This is a real corpus-validated false-positive class found
+        # during this task's full-corpus precision check: without a
+        # template guard, this identical boilerplate line false-triggers
+        # the phrase heuristic on EVERY rep of BOTH arms (same plan file,
+        # read repeatedly), since it literally contains the LEASE-HONORED/
+        # LEASE-INVALIDATED tokens. A literal "<" where a real command or
+        # tree_sha value would be is the reliable, conservative signal
+        # that a line is quoting the SPEC, not reporting a live decision.
+        honored_text = "backticks): `LEASE-HONORED: command=<the command> tree_sha=<the sha>`. A"
+        invalidated_text = "`LEASE-INVALIDATED: command=<the command> tree_sha=<the current sha>`"
+        honored, invalidated = self._prose([
+            final_answer("2026-08-01T17:02:28.000Z", honored_text),
+            final_answer("2026-08-01T17:02:28.500Z", invalidated_text),
+        ])
+        self.assertEqual((honored, invalidated), (0, 0))
+
+    def test_please_does_not_false_positive_on_lease_substring(self):
+        # "please" contains the literal substring "lease" -- a naive
+        # substring search (this task's own first-draft mining script hit
+        # this exact bug) must not treat it as a lease/receipt mention.
+        text = "Please rerun the suite before merging; nothing was honored here."
+        honored, invalidated = self._prose([final_answer("2026-08-01T05:00:00.000Z", text)])
+        self.assertEqual((honored, invalidated), (0, 0))
+
+    def test_release_does_not_false_positive_on_lease_substring(self):
+        text = "This change is ready for the next release; verification was not rerun."
+        honored, invalidated = self._prose([final_answer("2026-08-01T05:00:00.000Z", text)])
+        self.assertEqual((honored, invalidated), (0, 0))
+
+    # --- interaction with the strict grammar -------------------------------
+
+    def test_strict_matched_line_never_also_counted_as_prose(self):
+        # A genuine strict-grammar LEASE-HONORED: line also contains the
+        # literal substrings the prose heuristic looks for ("lease",
+        # "HONORED") -- it must be masked out of prose scanning so it is
+        # counted ONCE, under the strict field, never twice.
+        result = self._prose([
+            final_answer("2026-08-01T05:00:00.000Z",
+                          "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234"),
+        ])
+        self.assertEqual(result, (0, 0))
+
+    def test_prose_counts_are_separate_fields_never_folded_into_strict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_rollout(tmp, "a.jsonl", [
+                final_answer("2026-08-01T05:00:00.000Z",
+                              "LEASE-HONORED: command=pytest tests/ tree_sha=abc1234"),
+                final_answer("2026-08-01T05:01:00.000Z",
+                              "The provided lease receipt reports 4 passed; verification "
+                              "was not rerun per review constraints."),
+            ])
+            import score_x5_leases as sx5
+            events = sx5.lease_stats([path])["lease_events"]
+        self.assertEqual(events["receipts_honored"], 1)
+        self.assertEqual(events["receipts_honored_prose"], 1)
+
+    def test_rereading_the_same_prose_line_twice_counts_once(self):
+        # Same re-read-inflation concern as the strict grammar's item-10
+        # fix, applied consistently to the prose counts: the identical
+        # reviewer sentence relayed into two different text sources (its
+        # own final_answer AND a parent's inter-agent relay of it) must
+        # still collapse to one distinct prose event.
+        text = ("The provided lease receipt reports 4 passed; verification was not "
+                "rerun per review constraints.")
+        result = self._prose([
+            final_answer("2026-08-01T05:00:00.000Z", text),
+            inter_agent_message("2026-08-01T05:01:00.000Z", text),
+        ])
+        self.assertEqual(result, (1, 0))
 
 
 class TestLeaseStatsIntegration(unittest.TestCase):
@@ -448,7 +788,8 @@ class TestLeaseStatsIntegration(unittest.TestCase):
         self.assertEqual(result, {
             "verification_runs": [],
             "duplicate_groups": [],
-            "lease_events": {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0},
+            "lease_events": {"receipts_issued": 0, "receipts_honored": 0, "invalidation_reruns": 0,
+                              "receipts_honored_prose": 0, "invalidation_reruns_prose": 0},
         })
 
     def test_verification_runs_sorted_by_timestamp(self):
