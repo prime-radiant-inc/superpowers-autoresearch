@@ -12,7 +12,7 @@
 
 - §6 of `reports/2026-08-cost-pathologies-campaign.md` is the requirements source; every task cites its item numbers and the closeout maps all 23.
 - Append-only log `logs/2026-08-01-queue-campaign.md`: pre-registration before every battery; corrections as new dated entries; never edit an existing entry.
-- Scorer changes need regression tests run against real campaign artifacts (rep trees under lane result dirs / `_tmp` mining extracts) — never only synthetic strings. Tests live in `campaigns/cost-pathologies/tests/`.
+- Scorer changes need regression tests run against real campaign artifacts (rep trees under lane result dirs / `_tmp` mining extracts) — never only synthetic strings. Tests live flat in `campaigns/cost-pathologies/` (`test_*.py` alongside the scorers — extend the existing files).
 - Never commit: `_tmp/` corpora, raw session transcripts, lane `.env` files, `/tmp/cp-arm-*` paths, literal donor hostnames (use remote-host-a / remote-host-b) or donor usernames.
 - Arms (`cp/*`, `sim/*`) are local-only: never pushed, merged, or PR'd.
 - Battery spend requires a log pre-registration naming: arms, n, tier, scorer, pass/fail criteria, and the discrimination guard. MICRO before FULL for any new fixture.
@@ -24,7 +24,7 @@
 
 **Files:**
 - Modify: `campaigns/cost-pathologies/score_x1_chains.py`
-- Test: `campaigns/cost-pathologies/tests/test_score_x1_chains.py`
+- Test: `campaigns/cost-pathologies/test_score_x1_chains.py` (exists — extend)
 
 **Requirements:**
 - [ ] Item 11: `_extract_findings()`'s `NONE_VALUE_RE` recognizes prose-none variants ("none identified beyond the X above", "no new findings", "none beyond …") without swallowing real findings; add corpus-derived positive and negative cases.
@@ -36,7 +36,7 @@
 
 **Files:**
 - Modify: `campaigns/cost-pathologies/score_x5_leases.py`
-- Test: `campaigns/cost-pathologies/tests/test_score_x5_leases.py`
+- Test: `campaigns/cost-pathologies/test_score_x5_leases.py` (exists — extend)
 
 **Requirements:**
 - [ ] Item 10: `lease_events` counts distinct events — dedupe on `(kind, command_norm, tree_sha)` and/or read the final receipts file once; scan exec **call** command text, not only output.
@@ -49,7 +49,7 @@
 
 **Files:**
 - Modify: any scorer with a dot-directory glob defect; `campaigns/cost-pathologies/score_x3_rider.py`
-- Test: `campaigns/cost-pathologies/tests/test_scorer_hygiene.py`
+- Test: `campaigns/cost-pathologies/test_scorer_hygiene.py` (new, flat alongside the others)
 
 **Requirements:**
 - [ ] Item 14: audit every `glob`/`rglob`/`Path.glob('**…')` in `campaigns/cost-pathologies/*.py` for the dot-directory miss; fix with `os.walk` or literal dot components; test with a fixture tree containing `.worktrees/.superpowers/.codex` layers.
@@ -59,7 +59,7 @@
 ### Task 4: scenario hardening (items 15, 20, 21, 22, 23)
 
 **Files:**
-- Modify: `campaigns/cost-pathologies/cp-x7x9-conflicts/story.md` (and `-clean`, `-prose` variants), `cp-x2-advisory/story.md`, `cp-x8-approvals/story.md`, `cp-x1-buggy-sdd/checks.sh`
+- Modify: `campaigns/cost-pathologies/scenarios/cp-x7x9-conflicts/story.md` (and `-clean`, `-prose` variants), `scenarios/cp-x2-advisory/story.md`, `scenarios/cp-x8-approvals/story.md`, `scenarios/cp-x1-buggy-sdd/checks.sh`
 - Possibly modify: battery runner scripts (ledger capture, provenance)
 
 **Requirements:**
@@ -73,7 +73,7 @@
 ### Task 5: X1 edit-existing-code fixture (item 1)
 
 **Files:**
-- Create: `campaigns/cost-pathologies/cp-x1-edit-existing/` (story.md, setup.sh, checks.sh, seeded starting repo)
+- Create: `campaigns/cost-pathologies/scenarios/cp-x1-edit-existing/` (story.md, setup.sh, checks.sh, seeded starting repo)
 
 **Requirements:**
 - [ ] Starting code (not prose) carries the seeded defect shapes from the X1 design; the task is an edit/extend of that code so the defect-escape guard is finally reachable.
@@ -85,7 +85,7 @@
 ### Task 6: X1 wave-cap independent fixture (item 2)
 
 **Files:**
-- Create: `campaigns/cost-pathologies/cp-x1-wavecap/` (or a revised plan file within the X1 scenario family)
+- Create: `campaigns/cost-pathologies/scenarios/cp-x1-wavecap/` (or a revised plan file within the X1 scenario family)
 
 **Requirements:**
 - [ ] Plan whose cap-exception is reachable regardless of how other conflicts resolve — no earlier task may moot the cap-exception's target (the Conflict-1-composition defect named in item 2).
@@ -96,7 +96,7 @@
 ### Task 7: X6 plan-framed fixture + MINE tier (item 3)
 
 **Files:**
-- Create: `campaigns/cost-pathologies/cp-x6-planframed/`
+- Create: `campaigns/cost-pathologies/scenarios/cp-x6-planframed/`
 - Create: `campaigns/cost-pathologies/x6_mine_dispatch_floor.py` (mined-corpus dispatch-floor distribution)
 
 **Requirements:**
@@ -108,8 +108,8 @@
 ### Task 8: X8 confound-free + X2-B isolation fixtures (items 4, 5)
 
 **Files:**
-- Create: `campaigns/cost-pathologies/cp-x8-approvals-v2/`
-- Create: `campaigns/cost-pathologies/cp-x2-consequential/`
+- Create: `campaigns/cost-pathologies/scenarios/cp-x8-approvals-v2/`
+- Create: `campaigns/cost-pathologies/scenarios/cp-x2-consequential/`
 
 **Requirements:**
 - [ ] X8 v2: remove the "note your reasoning in the report" mandate (the disclosure confound); stark approval boundary; n sized so `Ruling:` grammar has a fair shot on the hard case.
