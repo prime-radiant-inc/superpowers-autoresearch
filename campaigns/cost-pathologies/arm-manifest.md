@@ -275,3 +275,24 @@ vocabulary) — all 4 pass; see the updated "Verification performed" section
 above. Privacy sweep on this addendum and the full manifest diff
 (hostnames, emails, API-key patterns, absolute non-repo paths, ticket-ID
 shapes): no matches.
+
+## 2026-08-01 rebase — queue campaign base (sim/dev-postmerge)
+
+All 21 arms rebased from 329b8f1 onto `sim/dev-postmerge` (= superpowers
+origin/dev @ bb2a34b + no-ff merges of PR heads 7c560e0, e9686d5, 4dc71b1,
+3ff8d15 — the "PRs #2059–#2064 landed" assumption; base delta vs 329b8f1
+is exactly 433184c's 4 deleted SKILL.md lines). All rebases clean, no
+conflicts. `cp/x9a`'s rebased diff retains its original 42ins/19del shape
+in `skills/subagent-driven-development/SKILL.md`; per standing rule, its
+rebased text is UNGRADED until the X7+X9 composed battery (plan Task 11)
+runs. New SHAs:
+
+| arm | SHA | | arm | SHA | | arm | SHA |
+|-----|-----|-|-----|-----|-|-----|-----|
+| cp/x1a | 89c7684 | | cp/x2c | 42ccda2 | | cp/x6b | 77f5426 |
+| cp/x1b | b618107 | | cp/x3a | b25bcd5 | | cp/x7a | ea84cf9 |
+| cp/x1c | 208dc4d | | cp/x3b | e5654c1 | | cp/x7b | 701a37d |
+| cp/x1e | 1c6db05 | | cp/x3c | 97ff02b | | cp/x8a | a152ce4 |
+| cp/x1g | a8df1ff | | cp/x5a | 6f0d340 | | cp/x8b | 14c13b1 |
+| cp/x2a | 03b8f6a | | cp/x5b | 4f456a1 | | cp/x9a | 61bf701 |
+| cp/x2b | 03a28c5 | | cp/x6a | d53436b | | cp/x9b | 85a8c90 |
