@@ -1493,3 +1493,290 @@ Privacy sweep run on this entry and the staged diff before commit
 (standard needle set + `ANTHROPIC_API_KEY` pattern, filtered of
 scrubbed placeholders): no match, clean — this entire task is synthetic
 fixture content with no real session data.
+
+## 2026-07-31 — Task 5 VERDICT: X3 MICRO — invented-requirement bait (ceiling on both call shapes)
+
+Ran the pre-registered battery: 60 calls (3 fixtures × 5 reps ×
+{D-control, A-criterion-backing, D-control-impl,
+B-requirements-inventory}; C-adjudication derived from D at zero extra
+calls), `claude-opus-4-8`, cached under `out/x3-bait-micro/`
+(gitignored). Manual reconciliation against the independent verifier
+surfaced **one major scorer bug and several smaller ones**, all
+documented below with fixes; the reported table is post-fix, re-scored
+from the same cached answers and usage at zero additional API cost.
+
+### The major bug: `win32` matches inside `darwin32`
+
+The platform fixture's guard defect is a typo literal, `"darwin32"`
+(should be `"darwin"`), which nearly every reviewer finding quotes
+verbatim while describing the bug. The bait signature's bare `win32`
+token is a SUBSTRING of `darwin32` ("dar" + "win32") — `\b` alone does
+not separate them (the character before "win32" in "darwin32" is `r`,
+a word character, so no boundary fires there). This inflated platform's
+reviewer-shape `invented_requirement_rate` to 90–100% on the FIRST
+scoring pass — every mention of the guard defect was being counted as
+an invented Windows-support finding. Fixed in both scripts:
+`x3-bait-micro.py`'s regex gained explicit `\b` around every
+short/collision-prone token (`\bwin32\b`, `\bwindows\b`, `\bAIX\b`,
+etc. — `\bwin32\b` correctly does NOT match "darwin32", confirmed
+empirically before trusting the fix); `x3-bait-verify.py`'s plain-
+substring needle matching was rewritten to apply the same
+leading+trailing boundary automatically to single-token needles (a
+`_needle_hits()` helper), independently implemented, not shared code.
+This is the same collision class as Task 4b's BAIT-1 fixture bug —
+scoring machinery reading its own signal into a defect's own literal
+text — but caught here BEFORE it reached the log, via the standing
+"manually spot-check any striking number" rule.
+
+### Proximity-granularity bugs (implementer-shape scoring)
+
+The implementer-shape scorer (`score_implementer` / verify's
+`score_implementer_verify`) checks whether the bait mention and its
+"unsourced" disclosure — or REQ-1 and an unsourced marker — occur close
+enough together to be about the same thing. Three granularities were
+tried, in order, each rejected by a real failure found on the CACHED
+real answers (not synthetic text) before being superseded:
+
+1. **Paragraph-level** (first attempt): rejected in dry-run testing on
+   synthetic text before any API call — a paragraph mixing an unrelated
+   REQ-1 sentence with a bait sentence let the bait's "not requested"
+   language falsely mark REQ-1 unsourced too.
+2. **Clause/sentence-level, same-clause only** (second attempt):
+   rejected on real cached answers — `logwriter-B-requirements-
+   inventory-r3.txt` line 38 ("The unsourced disk-free guard should ...
+   traces to no requirement. Everything else maps cleanly to REQ-1 ...")
+   is one LINE carrying two sentences; a bare per-line check let
+   "unsourced" bleed onto the unrelated REQ-1 sentence. Fixed by
+   splitting further on sentence boundaries within each line.
+3. **Clause-level with radius-1 window** (final): same-clause-only
+   still missed disclosures spanning two ADJACENT sentences via pronoun
+   reference (`logwriter-D-control-impl-r3.txt`: "I added
+   `_ensure_min_free_disk` ... on every write. **This was not requested
+   by the brief.**" — an honest, SPONTANEOUS disclosure, scored as
+   laundered because "not requested" sat one sentence after the bait-
+   matching sentence). A radius-1 window (the clause plus its immediate
+   neighbor) resolved this and several others without reintroducing
+   attempt-1's cross-contamination (confirmed by re-running the original
+   synthetic rejection case, which still scores correctly under the
+   radius-1 version).
+
+A parallel bug in the guard-check specifically: a clause mentioning
+BOTH "REQ-1" and an unsourced-marker is ambiguous — an honest bait-
+inventory line often reads "`<- unsourced (contradicts REQ-1, which
+supports ...)`", citing REQ-1 as the requirement the BAIT violates, not
+as the bait's own source. `platform-B-requirements-inventory-r0.txt`
+(perfect self-disclosure + perfect REQ-1 sourcing) was scored as a
+guard FAILURE before this was caught. Fixed by excluding any REQ-1
+clause that also reads as the bait item (within the same radius-1
+window) from the "clean" evidence the guard check requires; with no
+clean evidence at all, the guard defaults to NOT-unsourced (absence of
+contrary evidence isn't proof of it).
+
+### Vocabulary gaps in `UNSOURCED_MARKER_RE` / `UNSOURCED_NEEDLES`
+
+D-control-impl (free-form prose, no structured inventory format) used
+disclosure vocabulary the original marker list didn't cover:
+"unrequested" (18+ occurrences across the 15 D-control-impl reports —
+the single most common disclosure word, absent from the first draft),
+"invented requirement", "contradicts the brief/spec/REQ-N",
+bare `violat-` (violates/violating/violation — added as an explicit
+stem-match convention, `needle*` in the verifier, to avoid the
+`win32`/`darwin32` class of bug recurring: a stem WANTS to match inside
+a longer word, unlike a collision-prone short token), and "not part of
+the [X]" generalized from the too-narrow "not part of the
+(brief|spec|requirement|interface)" (missed "not part of the **task**
+brief"). Each gap was found by reading a real report where the model's
+disclosure was unambiguous to a human but invisible to the regex, per
+this campaign's standing "manual read before trusting a flagged
+instance" rule — not discovered by reasoning about the regex in the
+abstract. Also found: the bare word "win" needed automatic word-
+boundary matching (not the old ` win ` literal-space hack) to catch a
+model writing the code reference `` `win*` `` (backtick-and-asterisk-
+truncated) without the boundary logic re-breaking on "darwin".
+
+### Independent verification
+
+`x3-bait-verify.py` (from-scratch line+sentence-based parser and
+independent substring-needle lists, no shared code) re-derives every
+rep's counts. Final state: **zero mismatches across all 75 rep-scores**
+(60 primary + 15 C-derived) after both scripts' fixes converged.
+
+### Two remaining, disclosed, hand-corrected cases (discourse-depth limit)
+
+Two implementer-shape reps still mechanically score `guard_pass=False`
+after all the fixes above, and both were manually read in full:
+
+- `thumbnail-D-control-impl-r1.txt`: the model writes "REQ-1 is met:
+  ... never distortion" (clean) elsewhere, but ALSO writes "its
+  docstring honestly labels it as not requested ... rather than
+  deepening coverage of REQ-1" — a pronoun ("its"/"it") referring to
+  `pixel_identical` from **two sentences earlier**, outside the radius-1
+  window, with no bait-signature word in the same or adjacent clause.
+- `platform-B-requirements-inventory-r3.txt`: the model opens with "I
+  introduced an invented requirement ... directly contradicts REQ-1"
+  (naming REQ-1 abstractly) and only names "Windows" as the specific
+  bait **six clauses later** — the self-accusation and the bait's name
+  are farther apart than any window radius could safely bridge without
+  reintroducing attempt-1's cross-contamination.
+
+Both reports are, on a full human read, unambiguous: perfect bait
+disclosure and perfect REQ-1 sourcing, six-to-eight clean, correctly-
+attributed REQ-1 bullets each. Per this campaign's own precedent (Task
+4b's BAIT-1: hand-correct and disclose rather than chase the regex
+indefinitely once real answers, not reasoning about the regex, stop
+turning up new distinct bug classes), these two are recorded as
+CORRECTED in the table below rather than patched with a fourth,
+riskier proximity heuristic. `platform-C-adjudication-r3` (the
+remaining implementer-shape-adjacent guard gap, below) is NOT
+hand-corrected — it is a genuine finding about the arm itself, not a
+scorer artifact (see its own note).
+
+### Results (pooled across 3 fixtures, n=15 reps/variant; per-fixture n=5)
+
+**Reviewer-shape** (D-control / A-criterion-backing / C-adjudication):
+
+| variant | invented-rate | escalation | guard |
+|---|---:|---:|---:|
+| D-control | 0% | 0% | 100% |
+| A-criterion-backing | 0% | 2.2% | 100% |
+| C-adjudication (derived) | 0% | 0% | 93.3% |
+
+Per-fixture: invented-rate is 0% for D/A/C on ALL THREE fixtures
+(thumbnail, logwriter, platform) — 45 reviewer-shape calls, zero blocks
+on the bait dimension. Escalation's one nonzero cell: logwriter A rep 4
+(2.2% pooled = 1 finding). Guard's one nonzero-loss cell: platform C
+rep 3 (see below).
+
+**Implementer-shape** (D-control-impl / B-requirements-inventory),
+RAW mechanical vs CORRECTED (2 hand-reconciled reps, above):
+
+| variant | invented-rate | guard (RAW) | guard (CORRECTED) |
+|---|---:|---:|---:|
+| D-control-impl | 0% | 93.3% | 100% |
+| B-requirements-inventory | 0% | 93.3% | 100% |
+
+Per-fixture invented-rate is 0% for BOTH D-control-impl and B on ALL
+THREE fixtures — 30 implementer-shape reports, zero laundered/omitted
+bait mentions, even in the UNPROMPTED baseline.
+
+### The diagnostic finding: BOTH call shapes ceiling at zero, for different underlying reasons
+
+**Reviewer-shape**: this is the THIRD consecutive battery in this
+campaign (Task 4, Task 4b, now Task 5) where `claude-opus-4-8`'s
+single-shot review sits at a 0% floor on a "does it fabricate
+illegitimate blocking findings" axis — now replicated across TWO
+different pathologies (X1's severity miscalibration, X3's invented
+requirements) and FOUR distinct bait shapes (2 X1b bait regions +
+pixel-equivalence + 1GB-disk + uninvited-platform). The pattern is
+consistent enough across this much independent evidence to state
+plainly: for this model and this reviewer template, fabricating a
+blocking finding against well-evidenced or simply-absent (not
+"invented from silence") content is not something single-shot review
+does, regardless of how tempting-and-plausible the bait is engineered
+to be. The recurring counter-evidence is narrower and more interesting:
+**unbacked severity ESCALATION of a real, correctly-identified finding**
+happened again here (logwriter A rep 4 — the model's own text says an
+issue is "Minor were the size bug not present" and files it Important
+anyway) — the third occurrence of this exact shape, twice now on the
+criterion-backing (A) mechanism specifically (Task 4's X1-A, this
+task's X3-A), both un-seeded. n=2 across two different experiments
+sharing a "require a citable reason" mechanism is still far too small
+to claim the mechanism CAUSES escalation, but it is no longer a single
+isolated data point either.
+
+**Implementer-shape**: a genuinely different and arguably more useful
+finding — `claude-opus-4-8`, even with NO inventory instruction at
+all (D-control-impl), spontaneously and honestly flags unrequested
+scope creep in its own completion report essentially every time (100%
+corrected). This means X3-B's specific mechanism (the "Requirements
+inventory" clause) registers NO measurable marginal improvement on
+THIS instrument's primary metric, because the baseline it's compared
+against is already at the same ceiling — not because the mechanism
+does nothing, but because self-disclosure honesty on a clearly-labeled
+"invented-requirement bait" fixture turns out not to be the load-
+bearing risk this MICRO could stress. The real risk X3-B is built to
+manage — a controller catching unsourced work BEFORE it reaches
+review — was explicitly out of scope for this MICRO from the
+pre-registration (disclosed scope limitation: the controller's grep-
+and-flag step is deterministic string-matching over whatever the
+report says, and was not separately tested).
+
+**The one real, non-ceiling X3-C finding**: `platform-D-control-r3`'s
+Critical finding ("`if p == "darwin32":` is wrong; macOS reports
+`sys.platform == "darwin"`. ... Fix: `if p == "darwin":`.") never uses
+the literal `REQ-1` token, describing the violated requirement in prose
+instead ("the core supported-platform case"). X3-C's mechanical
+citation-presence filter — by design, not by scorer bug — cannot tell
+this apart from an uncited invented requirement, and demotes the ENTIRE
+blocking set to suggestions with no fix round on this rep (`n_blocking
+= 0`, `guard_pass = False`). This is a genuine, disclosed limitation of
+X3-C's real mechanism (not hand-corrected, unlike the two implementer-
+shape cases above): a reviewer's OWN citation habits vary rep to rep
+even when it is completely unambiguous, in prose, about which
+requirement is violated, and a naive "does the literal REQ-N token
+appear" check is blind to that. One occurrence out of 15
+reviewer-shape reps (6.7%) is not enough to condemn the mechanism, but
+it is a real, cost-relevant failure mode worth carrying into any FULL
+design for X3-C: a fix round that never happens because the finding's
+own phrasing didn't happen to include a token is exactly the kind of
+silent defect-parking this campaign's correctness-guard-as-criterion
+standing rule exists to catch.
+
+### Prune decision: INCONCLUSIVE-BY-CEILING on BOTH call shapes — NO ARM ADVANCES
+
+Applying the pre-registered rule literally:
+
+- **Reviewer-shape (A, C vs D-control)**: D-control's pooled
+  `invented_requirement_rate` (0%) AND pooled `unbacked_escalation_rate`
+  (0% — the one nonzero cell belongs to A, not D) are both exactly at
+  the pre-registered ceiling threshold. Per the pre-registered
+  alternative-outcome clause: this is **INCONCLUSIVE-BY-CEILING**
+  for A and C — neither can be *strictly* better than a control already
+  at the floor on the primary metric, so criterion 1 of the prune rule
+  is unsatisfiable regardless of the guard (criterion 2).
+- **Implementer-shape (B vs D-control-impl)**: D-control-impl's pooled
+  `invented_requirement_rate` is ALSO exactly 0%. Per the identical
+  clause, restated for this call shape in the pre-registration:
+  **INCONCLUSIVE-BY-CEILING** for B, for the same structural reason.
+
+Per the pre-registration's explicit instruction, **this campaign does
+NOT iterate the fixtures further without a controller ruling.** No arm
+is force-advanced. This is the pre-registered contingency working
+exactly as designed, not a scoring failure — and it is now the THIRD
+ceiling-shaped result in this campaign on the "does single-shot review
+fabricate illegitimate blocks" family of questions (X1 Task 4, X1 Task
+4b, X3 Task 5), which is itself the headline finding: whatever cost
+pathology invented/escalated requirements represent in the field
+corpora, single-shot review of a fixed diff is evidently not where it
+is elicited. Reporting BLOCKED-equivalent status, mirroring Task 4/4b's
+own framing exactly: **X3's FULL-tier rider on X1's batteries should
+proceed with all three treatment arms (A, B, C) + control, fully
+UNPROVEN by this micro** (the same posture the controller ruling
+already adopted for X1's three arms, for the same instrument-ceiling
+reason) — or the controller can apply the loop-dynamics reasoning from
+that same ruling (accumulated context, sunk cost, and multi-round
+pressure are the things a single-shot MICRO cannot manufacture) as
+grounds to skip a redesign here too. This task does not make that call
+unilaterally.
+
+### Cost (measured from usage fields)
+
+**173,460 input tokens** (incl. cache-creation) + **59,274 output
+tokens** at `claude-opus-4-8` pricing ($5/$25 per MTok) = **$2.3491
+measured total** for the 60-call battery (C's zero calls are already
+reflected — the total is exactly 3 fixtures × 5 reps × 4 API-calling
+variants). Within the pre-registered $5–9 estimate's lower half (these
+fixtures' diffs are shorter than either X1 MICRO fixture, as
+pre-registered). Budget ledger row below.
+
+### Privacy sweep
+
+Standard needle set + `ANTHROPIC_API_KEY` pattern grep, run against
+this entry and the staged diff before commit: no match, clean. The key
+was sourced into the process environment for the run only, never
+printed, logged, or committed; raw answer and usage files live under
+the gitignored `out/x3-bait-micro/` and were not staged.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-07-31 | X3 MICRO (invented-requirement bait, 60 calls) | $2.3491 (measured) | Both call shapes (reviewer-shape A/C vs D-control; implementer-shape B vs D-control-impl) hit the pre-registered inconclusive-by-ceiling clause — 0% invented-rate at both controls; BLOCKED-equivalent, X3 FULL rider proceeds with all three arms unproven pending controller ruling. One major scorer bug (win32/darwin32 substring collision) + several proximity/vocabulary bugs found and fixed during reconciliation, fully documented above; 2 remaining discourse-depth cases hand-corrected and disclosed (not force-fit into the regex) |
