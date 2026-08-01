@@ -5806,7 +5806,9 @@ full-history forks (`fork_turns="all"`) carry a mean duplicate ratio
 real corpus, median 0.340 vs 0.0001 — this is the mechanism the design
 doc names ("full transcript replay, on disk") showing up exactly where
 expected, on real production sessions (Scantastic, remux), not just
-the two exemplars Task 2 already validated.
+the two exemplars Task 2 already validated. **SEE CORRECTION BELOW —
+the "20-30x" multiplier is imprecise; the mean-based split is ~31x and
+the median-based split is ~2,400x.**
 
 ### Campaign battery trees ("after") — 540 children, 74/76 reps, both lanes
 
@@ -5865,7 +5867,8 @@ so there is no guidance-off arm in this campaign to isolate the
 guidance's own effect from the scenario/time/tooling confounds the
 pre-registration named. What this DOES establish: (1) the scorer's
 signature is real and discriminating (mined corpus's own internal
-`all` vs `none` split, 20-30x apart, is the same signature reproducing
+`all` vs `none` split, 20-30x apart **[SEE CORRECTION BELOW: ~31x on
+means, ~2,400x on medians]**, is the same signature reproducing
 inside a single population with no cross-corpus confound at all); (2)
 the campaign's synthetic SDD fixtures, running entirely on guidance-
 carrying text, show a uniform, extreme, zero-exception isolated-fork
@@ -5987,3 +5990,61 @@ anywhere in this entry — every number is an aggregate (n, mean,
 median, percentile) or a `task_name` label of the same disclosed
 class. No raw rollouts, `evals/results/`, `evals-lane-b/results/`, or
 `~/.codex/sessions/` content committed.
+
+## 2026-08-01 — Task 12 correction (fix round 1): I1 (Important) — the "20-30x" discriminating-ratio multiplier corrected
+
+**The Task 12 verdict entry above is UNCHANGED (append-only, two inline
+SEE-CORRECTION pointers added at the two sites this corrects) — this
+entry is the authoritative figure.** Task review round 0: Approved,
+with one Important precision finding — all underlying numbers in the
+verdict reproduced exactly (225/540 children, the fork_turns
+distributions, every mean/median/percentile cell); only the one-line
+"20-30x" characterization of the mined corpus's internal `all`-vs-
+`none` split was arithmetically loose.
+
+**Old claim:** "full-history forks... carry a mean duplicate ratio
+20-30x higher than isolated forks... in the SAME real corpus" and
+"mined corpus's own internal `all` vs `none` split, 20-30x apart."
+
+**Corrected claim, arithmetic shown, from the entry's own already-
+reported numbers** (`fork_turns="all"` mean dup 0.4137, `fork_turns=
+"none"` mean dup 0.01327; `fork_turns="all"` median dup 0.3396,
+`fork_turns="none"` median dup 0.0001411 — re-derived directly from
+the same per-child data the verdict entry's table was built from, not
+re-mined):
+
+- **Mean-based split: 0.4137 / 0.01327 = 31.17x — "~31x."** The
+  entry's rounded table cells (0.414/0.013) already round to this;
+  "20-30x" understated even the mean-only comparison the entry's prose
+  was making.
+- **Median-based split: 0.3396 / 0.0001411 = 2,406x — "~2,400x," not
+  20-30x.** The entry's own table quotes both medians side by side
+  (0.340 vs 0.0001) but the prose paragraph's "20-30x" and "20-30x
+  apart" language conflated the mean-based figure with the much larger
+  median-based one, understating the isolated-fork population's
+  near-zero central tendency by roughly two orders of magnitude.
+
+**Corrected headline (supersedes both "20-30x" mentions in the verdict
+entry above; that entry is unedited per append-only, with pointers
+added at both sites):** the mined corpus's internal `fork_turns="all"`
+vs `"none"` split is **~31x on means; the median split is far larger
+(~2,400x), reflecting isolated-fork sessions' near-zero median
+duplication** (more than half of isolated-fork children have a
+duplicate ratio under 0.0002, per the entry's own p25=0.000 cell for
+that slice) — the mean/median divergence itself is a real, disclosed
+property of the isolated-fork distribution (a long right tail among a
+mostly-near-zero population), not a discrepancy to resolve toward one
+number. Neither the underlying per-child data, the table's own
+mean/median cells, the 225/540 population counts, the 0%-vs-64.9%
+full-history-fork-rate headline, nor any other claim in the verdict
+entry is affected — this correction narrows one adjective phrase
+("20-30x") to the two precise multipliers the entry's own table
+already implied.
+
+### Privacy sweep
+
+Standard needle set (real hostname/username via `hostname`/`whoami`,
+API-key/email patterns) run against this entry before commit: no
+match, clean. No raw rollouts, corpus content, or session substance
+quoted — every figure here is arithmetic over aggregate numbers the
+verdict entry already published.
