@@ -5216,3 +5216,274 @@ already-established, low-sensitivity provenance-citation convention this
 campaign has used since Task 1. Every fixture/seed quoted above is Task
 6's wholly synthetic `ratelimit`/`util`-bugs content; no `_tmp/` corpus
 content or real session content is read or cited this task.
+
+## 2026-08-01 — Task 11 VERDICT: X5 battery (9/9 reps) + X6 gate (stopped inconclusive-by-zero)
+
+10 real quorum reps ran (`cp-x5-leases` × 9, `cp-x6-smalledits` × 1), codex,
+single lane, `JOBS=1` throughout (per the pre-registered HARD RULE, cost
+checked after every rep). All 10 landed a Gauntlet `pass` verdict with
+every mechanical `checks.sh` assertion passing — zero infra anomalies, no
+backfill needed. `run-quorum.sh` reconciled every mounted arm's `git
+rev-parse HEAD` against `arm-manifest.md` before every rep (visible in
+each run's own log line); no mismatch occurred.
+
+### X6: gate rep shows ZERO dispatches — sub-battery stopped per the pre-registered rule, 8 reps NOT spent
+
+Control smoke rep 1 (`cp-x6-smalledits`): Gauntlet pass, `npm test`
+15/15, cost $0.49, session length under a minute. `score_x6_floor.
+dispatch_floor()` on the rollout returns `{"dispatches": []}` — confirmed
+by the underlying fact, not just the scorer: this rep produced exactly
+ONE rollout file (no child threads at all). Hand-inspected the 3 records
+mentioning "subagent-driven-development" in that file: all three are the
+`using-superpowers` bootstrap's routine skill listing (loaded at every
+session start regardless of task), never an actual invocation or even
+serious consideration of the skill. The agent read `BUGS.md`, edited all
+twelve `util/*.js` files directly in its own turn, and finished — correct
+behavior for a task this small, but it means the pathology this battery
+exists to measure never engaged at all.
+
+**Per the pre-registered gate ("the X6 smoke rep is a gate — if it shows
+zero dispatches, the X6 sub-battery STOPS there"): X6 is INCONCLUSIVE-BY-
+ZERO.** The remaining 8 reps (X6-A ×3, X6-B ×3, control ×2) were NOT run.
+Reasoning for not spending them to double-check X6-A/X6-B specifically
+(disclosed, not silently assumed): neither arm touches the skill's YAML
+`description` field (the actual trigger signal a session's bootstrap
+reads to decide whether to invoke `subagent-driven-development` at all) —
+both patch only body text inside "The Task Loop," which is never reached
+unless the skill is already invoked. Since nothing about mounting X6-A or
+X6-B changes what makes the Coding-Agent choose to invoke the skill in
+the first place, and control's own invocation-trigger judgment already
+correctly declined for this exact prompt, there is no mechanism by which
+either arm could produce a different dispatch count than control did —
+running them would reproduce the same "0 dispatches, skill never
+touched" result for $0 additional signal. This is a reasoned skip, not an
+empirical one; it is disclosed as such rather than presented as verified.
+
+**X6 verdict: INCONCLUSIVE-BY-ZERO. No arm wins or loses; the fixture
+(as scripted) does not elicit the micro-dispatch pathology under this
+Coding-Agent/skill-set combination.** The quality guard was still
+hand-checked on the one rep that ran, per the standing "correctness rides
+beside cost" rule even on a gated-off battery: `git diff --stat` against
+the fixture's seed commit shows exactly the twelve `util/*.js` files
+touched, one line changed each (`12 files changed, 12 insertions(+), 13
+deletions(-)`), zero `tests/` files touched (bugs were fixed, not tests
+weakened), `npm test` independently re-run and confirmed 15/15 — the
+guard holds on the only data point available.
+
+### X5: 9/9 pass. Invalidation guard holds 9/9 (mechanically + hand-verified). Receipt-issuing works on both arms; honoring is observable on X5-B only, for a harness-level reason disclosed below
+
+**Per-arm summary** (via `score_x5_leases.lease_stats()` on every rep's
+full rollout tree; `dup groups`/`ver. runs` are per-rep counts, mean
+across 3 reps; `receipts_issued`/`honored`/`invalidated` are `lease_events`
+sums):
+
+| arm | pass | dup groups (per rep) | ver. runs (per rep) | receipts_issued (per rep) | receipts_honored (sum/3) | invalidation_reruns (sum/3) | cost (per rep) |
+|---|---|---|---|---|---|---|---|
+| control (X5-C) | 3/3 | 10, 11, 6 (mean 9.0) | 70, 69, 43 (mean 60.7) | 0, 0, 0 | 0 | 0 | $3.97, $3.98, $3.86 (mean $3.94) |
+| X5-A | 3/3 | 12, 18, 10 (mean 13.3) | 61, 92, 45 (mean 66.0) | 24, 22, 19 (mean 21.7) | 0 | 0 | $4.33, $4.94, $4.04 (mean $4.44) |
+| X5-B | 3/3 | 11, 7, 18 (mean 12.0) | 59, 60, 80 (mean 66.3) | 9, 7, 10 (mean 8.7) | 1+0+2 = 3 | 0+0+3 = 3 | $3.92, $4.08, $4.00 (mean $4.00) |
+
+**Invalidation guard (REQUIRED per rep, the pass/fail-defining criterion
+per the task's own framing — "an arm that skips a required re-run fails
+regardless of savings") — HOLDS 9/9, hand-verified, not trusted from the
+Gauntlet-Agent's own narrative alone.** For every rep, independently: (a)
+mechanically, the scorer's own duplicate/verification data shows `pytest`
+invocations at tree_sha's timestamped at or after Task 3's own commit
+(spot-checked directly in x5a-rep1 and x5b-rep3's raw output above); (b)
+the on-disk result was read directly, not inferred — a script grepped
+every rep's final `ratelimit/token_bucket.py` for its capacity default
+and every rep's `tests/test_middleware.py` for which value it asserts
+against: **all 9 reps show `capacity=10` (not the stale 100) and
+`range(10)` in the test (not `range(100)`)**, including all 3 control
+reps (base SDD's own "re-run tests after a code change" behavior handles
+this correctly with no lease mechanism at all — exactly the pre-
+registered prediction, not a lease-specific win). No rep shipped the
+seeded defect (Task 2's assertion surviving stale against the corrected
+default).
+
+**Receipt-issuing (the implementer's own half): works on BOTH arms, real
+and substantial.** Every X5-A/X5-B rep shows a real, positive
+`receipts_issued` count with true `^LEASE-RECEIPT:`-anchored lines —
+confirmed by reading the raw rollout text directly (not trusting the
+scorer's count blind): x5a-rep1's implementer FINAL_ANSWER messages
+(`task1_impl`, `task2_impl`, `task3_impl`, `final_fix`) each carry a
+bare, line-anchored `LEASE-RECEIPT: command=... tree_sha=... result=pass`
+line exactly matching the spec grammar, landing in the "X5-A's
+report-in-prose channel" the scorer's own docstring names
+(`final_answers()`, phase=="final_answer"). X5-A's per-rep count (mean
+21.7) is markedly higher than X5-B's (mean 8.7) — read as a likely
+double-count of the same underlying verification event (X5-A's text asks
+for the receipt in BOTH the report file's Report Format section AND a
+trailing repeat after the short-status list; both get captured as
+separate marker occurrences when either gets read back), not evidence
+X5-A implementers ran more verification than X5-B's — disclosed as a
+scoring-granularity caveat, not corrected after the fact.
+
+**Honoring/invalidation (the controller's half): observable ONLY on
+X5-B, for a real, disclosed, harness-level reason — not because X5-A's
+mechanism is behaviorally absent.** X5-A shows `receipts_honored=0` and
+`invalidation_reruns=0` on all 3 reps. Root-caused, not assumed: this
+campaign's own M0 verdict entry (2026-07-31, above) already documented
+that codex's inter-agent dispatch payloads are encrypted at rest ("scope
+was RECOVERABLE for only 17–24% of codex work... encrypted inter-agent
+dispatch payloads"). Directly confirmed again this task: every reviewer/
+re-review dispatch's actual prompt content in every rollout inspected is
+a `"type": "encrypted_content"` block, not plain text — `rollout_parser.
+inter_agent_messages()` correctly returns an EMPTY payload for these
+(nothing to decode), which is exactly the channel X5-A's honor/invalidate
+instruction targets ("cite it in the reviewer's dispatch itself"). The
+ONE `LEASE-HONORED`/`LEASE-INVALIDATED`-shaped text actually found in a
+raw grep of an X5-A rollout (x5a-rep1) was traced by hand to the
+`sdd/SKILL.md` file's OWN instructional text being read back by a
+skill-loading tool call — the literal example inside quotes, correctly
+NOT matching the scorer's line-anchored regex (this is the scorer working
+correctly, not a bug: an instruction ABOUT a receipt is not a receipt).
+**X5-B shows `receipts_honored=3` and `invalidation_reruns=3` across the
+3 reps, and this was hand-verified directly in raw transcript text, not
+trusted from the scorer's count:** x5b-rep3's receipts file, read back
+via a plain (unencrypted) `custom_tool_call_output` — a `cat`/grep-style
+tool result, exactly the channel X5-B's design routes through — shows a
+genuine `LEASE-HONORED: command=...pytest tests/test_token_bucket.py...`
+line appended directly after an existing `LEASE-RECEIPT:` line for the
+same command/tree_sha, and later, immediately after a fix commit's own
+git-log output, a genuine `LEASE-INVALIDATED:` line for the same command
+naming the pre-fix tree_sha. This is the mechanism actually firing,
+confirmed by reading the evidence, not inferring it from a summary
+number — and it is the direct, empirical confirmation of the
+pre-registration's own open question: "whether X5-B's file-based
+mechanical check produces a MORE reliable honor/invalidate signal than
+X5-A's dispatch-prose citation, given... the receipt-grammar conformance
+check... is exactly what this is for." It did.
+
+**Duplicate-run reduction (the primary claimed savings): NOT
+demonstrated at this sample size, for either arm — disclosed plainly,
+not talked around.** Neither X5-A's mean (13.3) nor X5-B's mean (12.0)
+is lower than control's mean (9.0); if anything both read slightly
+higher. At n=3 per arm, with real run-to-run variance in how many fix/
+re-review rounds a given SDD flow needs (independent of any lease
+mechanism — a rep that finds a real bug in review runs more
+verification regardless of arm), this difference is not attributable to
+the arms with any confidence, and X5-B's 3 honored citations against a
+combined 36 duplicate-group instances across its own 3 reps is a real
+but small fraction of the redundant-verification opportunity the design
+doc's "12× worst case" language describes. **Both arms may be honestly
+reported as: mechanism verified working (X5-B) or partially working
+(X5-A, issuing half only, honoring half structurally invisible in this
+harness) — cost savings not yet shown at this scale.**
+
+### X5 verdict per arm
+
+- **X5-A (receipts-in-report): PARTIAL PASS.** Invalidation guard holds.
+  Receipt-issuing verified real and correctly formed. Honoring/
+  invalidation never observed — traced to codex's encrypted inter-agent
+  dispatch payloads making the design's target channel invisible to any
+  rollout-based scorer, a harness limitation already on record in this
+  campaign (M0), not a defect in the arm's own text. Cannot be credited
+  with the mechanism's savings claim under this harness as currently
+  scorable.
+- **X5-B (machine-checkable receipt file): PASS, mechanism confirmed
+  working.** Invalidation guard holds. Receipt-issuing verified real.
+  Honoring AND invalidation both directly observed in raw, hand-read
+  transcript text — the file-based design's choice to route the signal
+  through a plain tool-call output rather than an encrypted dispatch
+  prompt is exactly what makes it observable where X5-A is not. Net
+  duplicate-run reduction not yet demonstrated at n=3; the mechanism
+  fires real but few times per rep relative to the total redundant-
+  verification opportunity.
+- **Control (X5-C): as expected** — zero lease_events (correct, per the
+  scorer's own docstring), invalidation guard holds on base SDD behavior
+  alone (re-running tests after a code change needs no lease).
+
+### Hand-verification (non-circular, per the pre-registration's ≥1-rep-per-arm minimum)
+
+Exceeded the minimum given the harness-encryption finding needed direct
+confirmation, not just a scorer count: **control** (rep1 — capacity/test
+on-disk check, direct); **X5-A** (rep1 — full raw-transcript trace of
+implementer receipts AND the one false-positive HONORED-shaped text,
+resolved to SKILL.md's own instructional example being read back, not a
+real honor); **X5-B** (rep3 — full raw-transcript trace of a genuine
+HONORED and a genuine INVALIDATED line, both read in context, plus
+independent on-disk capacity/test check); **X6 control** (rep1 — `git
+diff --stat` + independent `npm test` re-run, plus a direct read of the
+3 "subagent-driven-development" mentions to confirm they are bootstrap
+listing, not invocation). The invalidation guard's correctness half
+(capacity=10, `test_middleware.py` asserts 10) was additionally checked
+MECHANICALLY across all 9 X5 reps via a script grepping every rep's final
+tree (not sampled, not narrative-trusted) — reported in the table above.
+
+### Cost
+
+Task total: **$37.6005** (sum of `verdict.json`'s
+`.economics.total_est_cost_usd` across all 10 reps, re-verified directly,
+not re-typed from memory — see the per-rep table above). Well under the
+pre-registered combined estimate ($55-115) because X6's sub-battery was
+gated off after 1 rep instead of running its own budgeted 9 — the HARD
+STOP RULE was never approached (projected total never came close to
+$395; the closest any single-rep projection got was after x5a-rep2's
+$4.94, projecting a worst-case remaining-X5 total near $335, nowhere
+near the checkpoint). **Running campaign total: $304.90 + $37.6005 =
+$342.5005 ≈ $342.50.**
+
+### Concerns / carry-forwards (not fixed this task, flagged for whoever revisits X5/X6)
+
+1. **X5-A's honoring mechanism needs a different signal channel to be
+   scorable under codex specifically.** The dispatch-prose design is
+   sound on its own terms (it is exactly what the design doc's "receipts
+   in report" wording describes) but this campaign's own M0 finding
+   already predicted this failure mode for ANY mechanism that routes
+   through inter-agent dispatch text under codex. A future revision
+   wanting to credit X5-A's honoring behavior would need either (a) a
+   non-codex harness where dispatch payloads are not encrypted, or (b)
+   an amended X5-A design that also echoes the honor/invalidate line
+   through an unencrypted channel (a final_answer, a tool-call output) —
+   at which point it converges toward X5-B's own design choice.
+2. **X5-B's savings claim needs a bigger battery or a fixture with more
+   redundant-verification surface to discriminate from control with any
+   confidence.** 3 reps × a 3-task plan is not enough data to separate a
+   real ~10-15% reduction (if one exists) from ordinary SDD-flow
+   variance. The design doc's own "12× worst case" framing implies the
+   pathology can be much larger on bigger plans; this fixture's 3-task
+   scope may be structurally too small to show it clearly even when the
+   mechanism itself is confirmed firing.
+3. **X6's fixture, as scripted, cannot test the micro-dispatch floor
+   hypothesis against this Coding-Agent/skill-set combination.** The
+   dispatch guidance arms (X6-A/X6-B) remain completely untested
+   end-to-end — not because the text is wrong, but because nothing in
+   `cp-x6-smalledits`' `story.md` gives the Coding-Agent a reason to
+   invoke `subagent-driven-development` (or any dispatch skill) at all
+   for a dozen genuinely trivial file edits, and a capable model
+   correctly declines to invoke it unprompted. A future battery wanting
+   to test X6 would need either (a) a bigger/less-trivial "dozen edits"
+   fixture that plausibly reads as SDD-shaped work even under a
+   free-form prompt, or (b) a story that explicitly frames the work as a
+   plan/task-list (closer to `cp-x5-leases`' own framing), at the cost of
+   then testing "does X6 help once SDD is already engaged" rather than
+   "does X6 change whether SDD gets reached for at all."
+4. **The X5-A/X5-B receipts_issued gap (21.7 vs 8.7 per rep) is a
+   scoring-granularity artifact, not a behavioral difference,** per the
+   discussion above — worth a scorer note (not made this task, out of
+   scope for a battery task) if a future task wants a deduplicated
+   receipt count rather than a marker-occurrence count.
+
+### Privacy sweep
+
+Standard needle set (this machine's real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; the `_tmp/cost-pathologies-2026-07-31/` corpus
+codenames; remote-host alias reminders) run against this entry and the
+staged diff before commit: no match on real values, clean. The one
+literal-looking author/date string quoted above ("test <drill@test.local>
+... Sat Aug 1 19:06:19 2026") is the evals container's own synthetic git
+commit-author identity (`drill@test.local`, "Drill Test" — the harness's
+fixed placeholder, confirmed by checking an unrelated earlier task's own
+fixture git log, `cp-x1-buggy-sdd-control-rep1`, which carries the
+identical `Drill Test <drill@test.local>` identity), not a real
+credential or address. All rollout excerpts quoted
+above are synthetic model output about the wholly synthetic
+`ratelimit`/`util`-bugs fixture content; no raw rollouts or
+`evals/results/` content committed — every quoted excerpt is a
+manually-selected snippet, not a file.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-08-01 | Task 11 (X5 control/A/B, `cp-x5-leases`, 9 reps + X6 control gate, `cp-x6-smalledits`, 1 rep) | $37.6005 | X5: invalidation guard PASSES 9/9 (hand-verified); receipt-issuing works both arms; honoring/invalidation observed ONLY on X5-B (3/3 events, hand-verified in raw transcript) — X5-A's honoring channel is invisible under codex's encrypted inter-agent dispatch (M0-documented harness limit, not an arm defect); net duplicate-run reduction not demonstrated at n=3 for either arm. X6: INCONCLUSIVE-BY-ZERO — control smoke shows 0 subagent dispatches, sub-battery stopped per the pre-registered gate, 8 reps not spent. Running campaign total: $342.50 |
