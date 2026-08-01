@@ -5778,3 +5778,212 @@ entry before commit: no match, clean. Project codenames named above
 log's Task 2 entry already cite them as the same class of low-
 sensitivity SDD-taxonomy/provenance label as `task6_spec_review_a`); no
 finding text, file:line content, or other session substance is quoted.
+
+## 2026-08-01 — Task 12 VERDICT: X4 fork-tax instrumentation (mined-corpus + campaign-tree measurement, audit)
+
+### Mined corpus ("before") — 225 children, both day-directories
+
+`fork_stats()` run directly on `~/.codex/sessions/2026/07/26/` and
+`~/.codex/sessions/2026/07/24/` (the two exemplar day-directories from
+Task 2's validation). Both exemplar rows reproduce Task 2's committed
+table exactly: `task6_spec_review_a` byte_ratio 0.42479/dup_ratio
+0.278335 (was 0.42479/0.278335); `app_ui_review` byte_ratio
+0.28537/dup_ratio 0.131713 (exact match, both to 6 decimal places).
+
+225 resolvable `spawn_agent` parent/child pairs total. `fork_turns`
+distribution: `all` 146 (64.9%), `none` 63 (28.0%), numeric N (2-5
+turns) 16 (7.1%).
+
+| Population slice | n | mean byte_ratio | median | mean dup_ratio | median | p25 | p75 | max |
+|---|---|---|---|---|---|---|---|---|
+| ALL children | 225 | 0.638 | 0.700 | 0.291 | 0.261 | 0.036 | 0.451 | 0.998 |
+| `fork_turns="all"` only | 146 | 0.868 | 0.963 | 0.414 | 0.340 | 0.254 | 0.554 | 0.998 |
+| `fork_turns="none"` only | 63 | 0.181 | 0.017 | 0.013 | 0.0001 | 0.000 | 0.032 | 0.104 |
+
+The signature discriminates cleanly within the mined corpus itself:
+full-history forks (`fork_turns="all"`) carry a mean duplicate ratio
+20-30x higher than isolated forks (`fork_turns="none"`) in the SAME
+real corpus, median 0.340 vs 0.0001 — this is the mechanism the design
+doc names ("full transcript replay, on disk") showing up exactly where
+expected, on real production sessions (Scantastic, remux), not just
+the two exemplars Task 2 already validated.
+
+### Campaign battery trees ("after") — 540 children, 74/76 reps, both lanes
+
+Every `cp-*` rep from Tasks 8-11 (see pre-registration for the exact
+76-rep list), measured via `task12_measure_forktax.py`'s resolved-path
+wrapper (see pre-reg for why the naive invocation returns zero).
+
+**540 resolvable `spawn_agent` parent/child pairs. `fork_turns`
+distribution: `none` 540 (100.0%), `all` 0.** Every arm, every
+scenario, both lanes, zero exceptions.
+
+| Population slice | n | mean byte_ratio | median | mean dup_ratio | median | p25 | p75 | max |
+|---|---|---|---|---|---|---|---|---|
+| ALL children | 540 | 0.408 | 0.344 | 0.0003 | 0.0000 | 0.000 | 0.000 | 0.134 |
+
+Per-scenario/arm breakdown (mean dup_ratio; every cell rounds to
+0.0000 at 4 decimals except where noted) — included to show the
+uniformity is not an artifact of one scenario dominating the pooled
+n=540:
+
+| scenario-arm | n children | mean byte_ratio | mean dup_ratio | max dup_ratio |
+|---|---|---|---|---|
+| cp-x1-buggy-sdd-control | 46 | 0.502 | 0.0029 | 0.134 |
+| cp-x1-buggy-sdd-x1a/x1b/x1c | 44/39/42 | 0.50/0.55/0.49 | 0.0000 | ≤0.0004 |
+| cp-x2-advisory-control/x2a/x2b/x2c | 24/20/22/20 | 0.30-0.35 | 0.0000 | ≤0.0005 |
+| cp-x5-leases-control/x5a/x5b | 29/29/26 | 0.32-0.36 | 0.0000 | 0.0000 |
+| cp-x7x9-conflicts(-clean/-prose)-* (10 arm groups) | 4-23 each | 0.27-0.68 | 0.0000 | 0.0000 |
+| cp-x8-approvals-control/x8a/x8b | 20/22/19 | 0.336-0.338 | 0.0000 | 0.0000 |
+
+Two reps resolved zero children (74/76, not 76/76) — both expected,
+not data loss: `cp-x6-smalledits-control-rep1` is the X6 gate-stop rep
+itself (Task 11's own verdict: "control smoke shows 0 subagent
+dispatches, sub-battery stopped per the pre-registered gate" — the
+scenario's whole finding IS zero dispatches). `cp-x7x9-conflicts-x7b-
+rep3` has exactly 1 rollout file and an `indeterminate` verdict whose
+Gauntlet summary reads the session as catching the seeded catastrophic
+conflict (DROP TABLE) and stopping at/near Task 1 — consistent with
+the X7/X9 catastrophic-stop guard halting before any subagent dispatch
+ever happens, not an instrumentation gap. Neither changes the headline
+(0/540 `fork_turns="all"` either way).
+
+### The fork-tax signature, before/after, confound restated
+
+**Mined corpus: 64.9% of spawns are full-history forks, mean duplicate
+ratio 0.291 (median 0.261) pooled, 0.414 (median 0.340) among the
+full-history spawns specifically.** **Campaign battery trees (every
+arm, every scenario, both lanes): 0% full-history forks, mean duplicate
+ratio 0.0003 (median 0.0000).**
+
+This is the field-measurement data point the design doc asked for, but
+restated per the pre-registration: it is NOT a controlled before/after
+on the guidance. Every rep in the campaign population — control
+included — already mounts `codex-tools.md`'s isolated-fork guidance
+(confirmed in the audit below: no arm-manifest row touches that file),
+so there is no guidance-off arm in this campaign to isolate the
+guidance's own effect from the scenario/time/tooling confounds the
+pre-registration named. What this DOES establish: (1) the scorer's
+signature is real and discriminating (mined corpus's own internal
+`all` vs `none` split, 20-30x apart, is the same signature reproducing
+inside a single population with no cross-corpus confound at all); (2)
+the campaign's synthetic SDD fixtures, running entirely on guidance-
+carrying text, show a uniform, extreme, zero-exception isolated-fork
+rate across 5 different scenarios and every arm/control — consistent
+with (not proof of) the guidance being followed, since an alternative
+explanation (these particular fixtures never tempt a full-history fork
+regardless of guidance) cannot be ruled out from this data alone.
+
+### Audit: full-history-fork guidance across the mounted tree (329b8f1)
+
+Every hit from the pre-registration's `git grep`, read and classified:
+
+| Site | Classification | Note |
+|---|---|---|
+| `using-superpowers/references/codex-tools.md` | **Isolated, mechanism-level** | The only site naming the actual parameter: "give children a clean context with `spawn_agent {fork_turns: "none"}`; the default `"all"` copies your entire transcript into the child... isolated forks are the SDD default for context hygiene." This is the file that explains the 0/540 campaign result. |
+| `dispatching-parallel-agents/SKILL.md` | Isolated, principle-level | "You delegate tasks to specialized agents with isolated context... They should never inherit your session's context or history." Harness-agnostic — no `fork_turns` mention (Claude Code's Task tool has no such parameter; isolation is structural). This is the primary audit target the brief named. |
+| `subagent-driven-development/SKILL.md` | Isolated, principle-level | Identical sentence to `dispatching-parallel-agents` ("isolated context... never inherit"). This is the skill that actually drove the campaign's own battery reps. |
+| `requesting-code-review/SKILL.md` | Isolated, principle-level | "The reviewer gets precisely crafted context for evaluation — never your session's history." |
+| `subagent-driven-development/{implementer,re-review,task-reviewer}-prompt.md` | Different axis: no-recursive-dispatch | "You Do Not Dispatch Subagents" sections stop a spawned child from spawning its OWN children — prevents fork-tax compounding, but says nothing about the isolation of the FIRST dispatch. |
+| `requesting-code-review/code-reviewer.md` | Same axis: no-recursive-dispatch | Same "never spawn a subagent to review part of the diff" pattern. |
+| `executing-plans/SKILL.md`, `using-git-worktrees/SKILL.md` | Different axis: filesystem isolation | "Isolated workspace" here means a git worktree, not agent context — false-positive-adjacent for THIS audit's question, noted so the count isn't overstated. |
+| `writing-plans/SKILL.md` | Silent | Mentions dispatching "a fresh subagent per task"; no isolation-specific language either way. |
+| `brainstorming/SKILL.md`, `spec-document-reviewer-prompt.md`, `plan-document-reviewer-prompt.md` | Silent / false positive | `brainstorming/SKILL.md`'s hit is "design for isolation and clarity" (software architecture advice, unrelated to agent dispatch); the two reviewer-prompt templates only say what to dispatch and when, not the context-inheritance question. |
+| `systematic-debugging/SKILL.md` | False positive | Hit is "Can't isolate what worked" (debugging methodology — isolating a variable, not an agent). |
+| `writing-skills/SKILL.md` | False positive | Hit is about designing eval prompts ("fresh-context sample per call") for testing skill guidance itself, not an operative dispatch instruction. |
+| `using-superpowers/SKILL.md` | Silent (routing only) | "If you were dispatched as a subagent... ignore this skill" — routing logic, not isolation guidance. |
+| `using-superpowers/references/gemini-tools.md` | **Silent on isolation mechanism** | Maps "dispatch a subagent" to Gemini CLI's `invoke_agent`/`@generalist`; documents parallel dispatch but never states whether `invoke_agent` defaults to isolated or full-history context, nor whether an equivalent parameter needs setting. |
+| `using-superpowers/references/pi-tools.md` | **Silent on isolation mechanism** | Maps to the optional `pi-subagents` package's `subagent` tool (which the doc itself notes supports both "forked-context" and other modes) without saying which mode the skill-level "isolated context" principle requires the caller to select. |
+| `using-superpowers/references/antigravity-tools.md` | **Silent on isolation mechanism** | Maps to `invoke_subagent` with a `TypeName` (`self`/`research`); no statement about context inheritance for either type. |
+
+**Finding: exactly one of four harness-bridge files (`codex-tools.md`)
+carries concrete, parameter-level isolation guidance. The other three
+(`gemini-tools.md`, `pi-tools.md`, `antigravity-tools.md`) translate
+the verb "dispatch" to that harness's native tool call but never state
+whether the native call is isolated by default or, if not, which
+parameter to set** — the harness-agnostic principle-level sentences in
+`dispatching-parallel-agents`/`subagent-driven-development`/
+`requesting-code-review` say "isolated context, never inherit history"
+but nothing in the mounted tree tells a Gemini/Pi/Antigravity-driven
+session HOW to make that true at the tool-call level, the way
+`codex-tools.md` does for Codex. Claude Code itself has no bridge file
+at all — consistent with the Task tool being isolated by construction,
+no parameter to name.
+
+**Follow-up-treatment note (no skill edits this campaign, per the
+design doc's "propose... as a follow-up treatment" framing and this
+task's explicit no-edits scope):** if a future campaign or a real
+report confirms full-history forks actually happening under Gemini
+CLI, Pi, or the Antigravity CLI, the fix belongs in that harness's own
+`references/*-tools.md` bridge file (mirroring `codex-tools.md`'s
+"give children a clean context with X; the default Y copies your
+entire transcript" pattern), not in the harness-agnostic skill text
+(which already says the right thing at the principle level and would
+gain nothing from repeating parameter names three harnesses don't
+share). This is a documentation-completeness gap, not a demonstrated
+behavioral one — no field or mined evidence in this task shows a
+Gemini/Pi/Antigravity full-history fork actually occurring; the mined
+corpus here is 100% Codex sessions (the only harness this machine's
+`~/.codex/sessions/` corpus can contain) and the campaign trees are
+100% Codex (`CODING_AGENT=codex` throughout the design). Whoever picks
+this up needs a mined corpus from one of the other three harnesses
+before proposing text, not just this audit's absence-of-guidance
+observation.
+
+### Standing instruction for post-merge field measurement
+
+Once PRs #2059-#2063 land and real field sessions accrue on
+guidance-carrying skill text:
+
+1. Run `campaigns/cost-pathologies/score_x4_forktax.py`'s `fork_stats()`
+   — via `task12_measure_forktax.py`'s resolved-path pattern if the
+   target tree has hidden `.codex` path components anywhere in the
+   traversal, or directly if the caller already points past `.codex`
+   (both this task's mined-corpus and campaign-tree measurements are
+   examples of each case) — over a REAL post-merge field corpus: any
+   `~/.codex/sessions/` tree (this machine's or a donated one, same
+   privacy discipline as Task 2/7's corpus validation: aggregates and
+   hand-picked exemplars only cross into the log, never raw rollouts)
+   captured entirely AFTER the merge date.
+2. Report the same three numbers this entry reports: `fork_turns`
+   distribution (`all` vs `none` vs numeric), pooled mean/median dup
+   ratio, and dup ratio split by `fork_turns` category.
+3. The comparison that actually answers "did the guidance work" is
+   POST-MERGE FIELD DATA vs THIS ENTRY'S MINED-CORPUS BASELINE (both
+   real, varied production work — the scenario confound this entry
+   disclosed drops out, since both sides are field sessions, not one
+   field and one synthetic-fixture side) — not post-merge field data
+   vs this entry's campaign-tree numbers (those stay a same-guidance,
+   synthetic-fixture data point, not a baseline).
+4. If the post-merge `all`-fork rate is still substantial (not near
+   the campaign's 0%), that is real signal the guidance isn't reaching
+   real sessions the way it reaches this campaign's fixtures — worth
+   escalating, not silently re-averaging away.
+
+### Cost / ledger
+
+$0.00 API spend — every measurement in this entry is a local, offline
+`fork_stats()` call over files already on disk (mined-corpus scan:
+~74s + ~34s wall-clock; campaign-tree scan: ~4s for all 76 reps).
+Running campaign total unchanged from Task 11: $342.50.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-08-01 | Task 12 (X4 fork-tax instrumentation verdict — mined-corpus + campaign-tree measurement, no new battery runs) | $0.00 | 225 mined children (64.9% full-history, mean dup 0.291) vs 540 campaign children (0% full-history, mean dup 0.0003) — confounded field-measurement data point, not a controlled A/B; audit found 1/4 harness bridges (codex-tools.md) carries parameter-level isolation guidance, 3/4 silent (documentation gap, no field evidence of a problem). Running campaign total unchanged: $342.50. |
+
+### Privacy sweep
+
+Standard needle set (real hostname/username via `hostname`/`whoami`,
+never written literally; API-key/email patterns) run against this
+entry and the staged diff before commit: no match on real values,
+clean. `/Users/jesse/git/superpowers/...` paths reuse this log's own
+established convention (16 prior instances in the committed log before
+this task). Project codenames (Scantastic, remux, and the newly-quoted
+`ssh_core_review`/`task6_spec_review_a` labels) are the same low-
+sensitivity SDD-taxonomy/provenance class Task 2 already established
+and committed; no finding text, diff content, file:line content, or
+other session substance from any mined OR campaign session is quoted
+anywhere in this entry — every number is an aggregate (n, mean,
+median, percentile) or a `task_name` label of the same disclosed
+class. No raw rollouts, `evals/results/`, `evals-lane-b/results/`, or
+`~/.codex/sessions/` content committed.
