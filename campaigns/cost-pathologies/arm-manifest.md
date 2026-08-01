@@ -7,8 +7,8 @@ commit. Batteries cite the SHA below, not the branch name — branches are
 mutable, SHAs are the record.
 
 Controls are the unpatched base (329b8f1): X1-D, X1-F (human-exception),
-X2-D, X3-D, X7-C, X8-C, X9-C. X1-AB is not built; it is gated on A and B
-both beating control independently.
+X2-D, X3-D, X5-C, X6-C, X7-C, X8-C, X9-C. X1-AB is not built; it is gated
+on A and B both beating control independently.
 
 Mechanism definitions live in
 `docs/2026-07-31-cost-pathologies-campaign-design.md` (base + Amendments
@@ -27,6 +27,10 @@ Mechanism definitions live in
 | X3-A reviewer citation rule | `cp/x3a` | b5c931f | sdd/task-reviewer-prompt.md | Every requirement a finding invokes is quoted to its source line; an unquotable requirement is filed Minor as the reviewer's own. |
 | X3-B requirements inventory | `cp/x3b` | b670a91 | sdd/implementer-prompt.md, sdd/SKILL.md | Implementer's report traces every implemented requirement to its source and marks unsourced work; controller flags unsourced entries, ledgers them, and names them in the reviewer's dispatch (no bounce-back). |
 | X3-C adjudication default | `cp/x3c` | f478a24 | sdd/SKILL.md | A finding invoking an uncited requirement gets no fix round — it is ledgered as a suggestion for the final review. |
+| X5-A receipts-in-report | `cp/x5a` | d71d307 | sdd/SKILL.md, sdd/implementer-prompt.md | Implementer issues a `LEASE-RECEIPT:` line (command, tree_sha, result) in its report and short status; the controller cites it in a reviewer's or fix-round's dispatch instead of asking for a re-run when the tree_sha is unchanged, marking `LEASE-HONORED:`/`LEASE-INVALIDATED:` into that same dispatch. |
+| X5-B machine-checkable receipt file | `cp/x5b` | 644bee6 | sdd/SKILL.md, sdd/implementer-prompt.md | Same receipt grammar, written instead to a dedicated per-task receipts file (`…/task-N-receipts.md`); the controller `cat`/`grep`s the file mechanically before dispatching a reviewer or re-review and appends `LEASE-HONORED:`/`LEASE-INVALIDATED:` to the same file. |
+| X6-A batching rule | `cp/x6a` | 2262c91 | sdd/SKILL.md | Several small, independent, same-shape plan tasks are collapsed into one batch dispatch brief and one subagent, instead of one dispatch per task. |
+| X6-B inline-when-trivial | `cp/x6b` | f46243f | sdd/SKILL.md | A single mechanical edit needing no new test and no design judgment is made by the controller inline, in its own turn, instead of dispatched; anything touching more than one file, a test, or judgment still gets its own dispatch. |
 | X7-A evidence-bearing preflight | `cp/x7a` | e1cd285 | sdd/SKILL.md | Preflight emits its pairwise checks as a ledger table ("clean" without rows is not a scan) and rules on what it surfaces instead of batching a question. |
 | X7-B mechanical consistency check | `cp/x7b` | edd9bcd | sdd/SKILL.md, sdd/scripts/plan-conflict-scan (new) | A script over the plan's Files:/Interfaces: blocks and task code reports delete-vs-still-listed, modify-before-create, consumed-callable-with-no-producer, and in-task call/definition arity mismatches at setup; prose scan covers only what it cannot see; conflicts get rulings. |
 | X8-A scope-bound approvals | `cp/x8a` | 83a7ef8 | sdd/SKILL.md | An approval covers the decision it answered; new substantive decisions get a recorded ruling, with four named classes still waiting for an approval that names them. |
@@ -42,9 +46,13 @@ Per arm, before its row was written: `git diff codex-efficiency-fixes..cp/<arm>
 --stat` touches only the declared files; the branch carries exactly one
 commit; the arm's distinctive phrase greps in the patched file on that
 branch; and the added lines contain no other arm's distinctive phrase (the
-single pre-registered exception is X9-B, which is X9-A plus surfacing by
-design) and no measurement vocabulary. Re-run in full after fix rounds 1
-and 2; all 17 pass.
+pre-registered exceptions are X9-B, which is X9-A plus surfacing by design,
+and X5-A/X5-B, which legitimately share the `LEASE-RECEIPT:`/
+`LEASE-HONORED:`/`LEASE-INVALIDATED:` grammar verbatim — that grammar is a
+scorer-defined spec both arms must emit, not either arm's own distinctive
+phrasing; see Task 11's addendum below) and no measurement vocabulary.
+Re-run in full after fix rounds 1 and 2; all 17 pass. X5/X6 (4 more
+branches, 21 total) verified the same way in Task 11.
 
 **`plan-conflict-scan` (X7-B) validation — measured, from the committed
 blob** (`git show cp/x7b:…/plan-conflict-scan`, never the working tree:
@@ -185,3 +193,85 @@ matches X8-A. X1-G unchanged.
 (`/tmp/cp-arm-author`), reused serially and removed afterward. The
 `.worktrees/codex-efficiency-fixes` worktree holding the base branch was
 not touched.
+
+---
+
+## Addendum (Task 11, 2026-08-01): X5 and X6 arms — closing the Task 3 gap
+
+Task 6's report flagged that `cp/x5a`, `cp/x5b`, `cp/x6a`, `cp/x6b` were
+defined in the design doc but never authored — absent from both this
+manifest and Task 3's branch list, "out of [that] task's scope" and left
+for whoever owned Task 11's pre-registration. This addendum closes that
+gap: the four branches above (rows added to the main table) were authored
+the same way as the other 17 — single temporary worktree, cut from
+`codex-efficiency-fixes` at 329b8f1, one commit each, local-only.
+
+**The receipt grammar is a spec, not this task's invention.**
+`campaigns/cost-pathologies/score_x5_leases.py`'s module docstring (Task 7)
+defines the exact three line markers X5-A and X5-B must emit for
+`lease_events` to have any signal:
+
+    LEASE-RECEIPT: command=<command_norm> tree_sha=<sha> result=<pass|fail>
+    LEASE-HONORED: command=<command_norm> tree_sha=<sha>
+    LEASE-INVALIDATED: command=<command_norm> tree_sha=<sha>
+
+case-sensitive, line-anchored (`re.MULTILINE`, `^LEASE-...`). Both arms'
+skill text was written to reproduce this grammar verbatim and to say,
+every place a line is emitted, that it starts at the very beginning of its
+own line with nothing before it — no bullet dash, no backticks — since an
+LLM's natural instinct is to wrap a fixed-format token in markdown, which
+would break the `^` anchor. Sanity-checked directly against the scorer's
+own regex (not just read): constructed sample text shaped like each arm's
+instructed output (implementer report, implementer short status, a
+controller dispatch citing a receipt, a receipts-file `cat` dump) and
+confirmed `_LEASE_LINE_RE` matches all of them with the expected
+`command_norm`/`tree_sha`/`result` groups.
+
+**X5-A (`cp/x5a`) — receipts in report/short-status.** The implementer
+appends a `LEASE-RECEIPT:` line to its report's Report Format section and
+repeats it, on its own trailing line, after its short status list (the
+short list's own bullets could not carry it without a leading `- `
+prefix breaking the anchor, so the receipt line is pulled out of the list
+entirely). The controller cites a matching receipt into the *reviewer's
+dispatch* itself (never just the ledger — Task 9's operationalized lesson
+is that ledger/progress.md content does not reliably survive capture,
+inter-agent dispatch text does) and adds `LEASE-HONORED:`/
+`LEASE-INVALIDATED:` to that same dispatch. The fix loop gets its own
+paragraph: a fix round moves the tree, so the round's own fresh run is the
+only receipt that can cover it — `LEASE-INVALIDATED:` goes into the fix
+dispatch itself, and the fix report's fresh `LEASE-RECEIPT:` is what the
+re-review dispatch cites.
+
+**X5-B (`cp/x5b`) — machine-checkable receipt file.** Same grammar,
+delivered differently: the controller names a per-task receipts file
+alongside the report file (`…/task-N-brief.md` → `…/task-N-receipts.md`,
+mirroring the existing brief→report naming convention) and the
+implementer appends its `LEASE-RECEIPT:` line there instead of the report
+or short status. Before composing a reviewer or re-review dispatch, the
+controller `cat`s (or `grep LEASE-`s) the file itself — a mechanical read,
+not recalled prose — and appends `LEASE-HONORED:`/`LEASE-INVALIDATED:`
+back to the file. This is the arm's actual distinguishing mechanism from
+X5-A: the same three-line grammar, but the honoring seat's own act of
+checking is a tool call over a file (captured as exec-command output in
+the scorer's third channel) rather than trusting what it remembers from a
+report it already read once.
+
+**X6-A (`cp/x6a`) — batching rule** and **X6-B (`cp/x6b`) —
+inline-when-trivial** both land as a single paragraph at the top of "The
+Task Loop" (before the existing "Everything you paste into a dispatch
+prompt…" paragraph) — the natural gate point before any per-task dispatch
+decision fires, mirroring how X1-B/X1-C occupy the same anchor sentence in
+different directions. X6-B's boundary ("touches more than one file, needs
+a new or updated test, or calls for judgment about approach still gets its
+own subagent dispatch — when in doubt, dispatch") is the arm's answer to
+the design doc's "explicit boundary so it cannot swallow real tasks."
+Neither arm needs the LEASE- grammar; X6 is graded from ordinary dispatch
+shape (`score_x6_floor`'s dispatch count/size), not marker lines.
+
+**Verification.** Same automated pass as the other 17 (declared-files-only
+diff, one commit, distinctive phrase present, no cross-arm phrase leakage
+beyond the disclosed X5-A/X5-B grammar overlap, no measurement
+vocabulary) — all 4 pass; see the updated "Verification performed" section
+above. Privacy sweep on this addendum and the full manifest diff
+(hostnames, emails, API-key patterns, absolute non-repo paths, ticket-ID
+shapes): no matches.
