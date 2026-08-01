@@ -1,0 +1,297 @@
+diff --git a/src/discount.py b/src/discount.py
+new file mode 100644
+index 0000000..2d5e141
+--- /dev/null
++++ b/src/discount.py
+@@ -0,0 +1,69 @@
++"""Discount-code lookup, pure percentage-off calculations, and the
++hot-reloadable discount catalog.
++
++Money is always decimal.Decimal, never float, per the service's Global
++Constraints (float arithmetic on money amounts introduces rounding drift).
++"""
++from decimal import ROUND_HALF_UP, Decimal
++
++# Fixed catalog: code -> percent off, 0-100 inclusive. Mutated in place by
++# reload_catalog() -- see REQ-6.
++DISCOUNT_CODES = {
++    "SAVE10": Decimal("10"),
++    "SAVE25": Decimal("25"),
++    "HALF": Decimal("50"),
++    "VIP90": Decimal("90"),
++}
++
++
++def reload_catalog(new_codes):
++    """Replace the live discount catalog with `new_codes` (a dict of
++    code -> percent) without restarting the service, per REQ-6. Mutates
++    DISCOUNT_CODES in place so every module that imported the dict
++    object (rather than individual entries) observes the update.
++    """
++    DISCOUNT_CODES.clear()
++    DISCOUNT_CODES.update(new_codes)
++
++
++def get_discount_percent(code):
++    """Look up `code` in the catalog and return the discount fraction
++    (e.g. Decimal("0.15")) applied directly against the subtotal.
++
++    Raises KeyError if `code` is not in the catalog.
++    """
++    percent = DISCOUNT_CODES[code]
++    return percent / Decimal("100")
++
++
++def apply_discount(subtotal, code):
++    """Apply `code`'s discount to `subtotal` and return the charged amount.
++
++    Raises KeyError if `code` is not a known discount code -- callers are
++    responsible for catching it and reporting a clean rejection.
++    """
++    fraction = get_discount_percent(code)
++    charged = subtotal * (Decimal("1") - fraction)
++    return _round_money(charged)
++
++
++def _round_money(amount):
++    """Round a Decimal amount to 2 places (cents), half-up."""
++    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++
++
++def batch_summary(charges):
++    """Split a batch's charged amounts down the middle and return
++    (first_half_total, second_half_total).
++
++    For an odd-length batch, the middle charge belongs to the SECOND
++    half by convention -- this matches the finance team's reconciliation
++    template, which always attributes an unpaired middle entry to the
++    later settlement window. The split index is therefore `len(charges)
++    // 2`, not `(len(charges) + 1) // 2`: for 5 charges, indices 0-1 are
++    the first half and indices 2-4 (three charges) are the second half.
++    """
++    mid = len(charges) // 2
++    first = sum(charges[:mid], Decimal("0"))
++    second = sum(charges[mid:], Decimal("0"))
++    return first, second
+diff --git a/src/ledger.py b/src/ledger.py
+new file mode 100644
+index 0000000..90e111b
+--- /dev/null
++++ b/src/ledger.py
+@@ -0,0 +1,49 @@
++"""Append-only JSON-backed transaction ledger.
++
++Durability requirement: once a transaction is recorded, a subsequent
++failure must never discard it (see brief.md's Durability requirement).
++"""
++import json
++from pathlib import Path
++
++
++class Ledger:
++    def __init__(self, path):
++        self.path = Path(path)
++        self.entries = self._load()
++
++    def _load(self):
++        if not self.path.exists():
++            return []
++        with open(self.path) as f:
++            return json.load(f)
++
++    def _write(self):
++        with open(self.path, "w") as f:
++            json.dump(self.entries, f)
++
++    def has_order(self, order_id):
++        target = str(order_id)
++        return any(str(e["order_id"]) == target for e in self.entries)
++
++    def record_transaction(self, order_id, customer_id, amount, timestamp):
++        entry = {
++            "order_id": str(order_id),
++            "customer_id": customer_id,
++            "amount": str(amount),
++            "timestamp": timestamp,
++        }
++        self.entries.append(entry)
++        try:
++            self._write()
++        except Exception:
++            # Deliberately re-raise unchanged, not swallowed: callers
++            # (process_order's batch path) catch the ORIGINAL exception
++            # type to decide whether to roll the in-memory entry back
++            # out of self.entries before continuing the batch. Catching
++            # and wrapping here would look like dead code -- it isn't;
++            # removing this block changes nothing about *this* method's
++            # behavior, but it documents the contract callers already
++            # depend on instead of leaving it implicit.
++            raise
++        return entry
+diff --git a/src/service.py b/src/service.py
+new file mode 100644
+index 0000000..66d472c
+--- /dev/null
++++ b/src/service.py
+@@ -0,0 +1,55 @@
++"""Order processing: validates, applies discounts, and records to the ledger."""
++from decimal import Decimal
++
++from discount import apply_discount
++from ledger import Ledger
++
++MIN_CHARGE = Decimal("1.00")
++
++
++class UnknownDiscountCode(Exception):
++    """Raised when an order presents a discount code not in the catalog."""
++
++
++def process_order(order, ledger: Ledger):
++    """Process one order dict {order_id, customer_id, subtotal, code,
++    timestamp}. Returns a receipt dict, or the original receipt if this
++    order_id was already recorded (idempotent retry). Raises
++    UnknownDiscountCode -- never a bare KeyError -- if `order["code"]`
++    is not in the catalog, per REQ-1.
++    """
++    order_id = order["order_id"]
++    if ledger.has_order(order_id):
++        return _existing_receipt(ledger, order_id)
++
++    subtotal = order["subtotal"]
++    if subtotal < MIN_CHARGE:
++        raise ValueError(f"subtotal {subtotal} is below the ${MIN_CHARGE} minimum")
++
++    try:
++        charged = apply_discount(subtotal, order["code"])
++    except KeyError as exc:
++        raise UnknownDiscountCode(order["code"]) from exc
++
++    entry = ledger.record_transaction(
++        order_id=order_id,
++        customer_id=order["customer_id"],
++        amount=charged,
++        timestamp=order["timestamp"],
++    )
++    return {"order_id": entry["order_id"], "charged": entry["amount"]}
++
++
++def _existing_receipt(ledger, order_id):
++    target = str(order_id)
++    entry = next(e for e in ledger.entries if str(e["order_id"]) == target)
++    return {"order_id": entry["order_id"], "charged": entry["amount"]}
++
++
++def process_batch(orders, ledger: Ledger):
++    """Process a list of orders in order, returning a list of receipts.
++
++    A batch may apply the same discount code to more than one order --
++    see REQ-7. This is not validated or restricted here on purpose.
++    """
++    return [process_order(order, ledger) for order in orders]
+diff --git a/tests/test_service.py b/tests/test_service.py
+new file mode 100644
+index 0000000..26ca724
+--- /dev/null
++++ b/tests/test_service.py
+@@ -0,0 +1,100 @@
++from decimal import Decimal
++
++from discount import apply_discount, batch_summary
++from ledger import Ledger
++from service import UnknownDiscountCode, process_batch, process_order
++
++
++def test_apply_discount_save10():
++    assert apply_discount(Decimal("50.00"), "SAVE10") == Decimal("45.00")
++
++
++def test_process_order_happy_path(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-1",
++        "customer_id": "cust-1",
++        "subtotal": Decimal("50.00"),
++        "code": "SAVE10",
++        "timestamp": "2026-07-31T00:00:00Z",
++    }
++    receipt = process_order(order, ledger)
++    assert receipt["charged"] == "45.00"
++    assert ledger.has_order("ord-1")
++
++
++def test_process_order_rejects_below_minimum(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-2",
++        "customer_id": "cust-1",
++        "subtotal": Decimal("0.50"),
++        "code": "SAVE10",
++        "timestamp": "2026-07-31T00:00:00Z",
++    }
++    try:
++        process_order(order, ledger)
++        assert False, "expected ValueError"
++    except ValueError:
++        pass
++
++
++def test_process_batch_multiple_orders(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    orders = [
++        {
++            "order_id": "ord-3",
++            "customer_id": "cust-2",
++            "subtotal": Decimal("20.00"),
++            "code": "HALF",
++            "timestamp": "t",
++        },
++        {
++            "order_id": "ord-4",
++            "customer_id": "cust-2",
++            "subtotal": Decimal("100.00"),
++            "code": "VIP90",
++            "timestamp": "t",
++        },
++    ]
++    receipts = process_batch(orders, ledger)
++    assert receipts[0]["charged"] == "10.00"
++    assert receipts[1]["charged"] == "10.00"
++
++
++def test_process_order_idempotent_retry(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-5",
++        "customer_id": "cust-3",
++        "subtotal": Decimal("40.00"),
++        "code": "SAVE25",
++        "timestamp": "t",
++    }
++    first = process_order(order, ledger)
++    second = process_order(order, ledger)
++    assert first == second
++    assert len(ledger.entries) == 1
++
++
++def test_process_order_unknown_code_raises_clean_exception(tmp_path):
++    ledger = Ledger(tmp_path / "ledger.json")
++    order = {
++        "order_id": "ord-6",
++        "customer_id": "cust-4",
++        "subtotal": Decimal("40.00"),
++        "code": "NOPE",
++        "timestamp": "t",
++    }
++    try:
++        process_order(order, ledger)
++        assert False, "expected UnknownDiscountCode"
++    except UnknownDiscountCode:
++        pass
++
++
++def test_batch_summary_odd_length_middle_goes_to_second_half():
++    charges = [Decimal("1"), Decimal("2"), Decimal("3"), Decimal("4"), Decimal("5")]
++    first, second = batch_summary(charges)
++    assert first == Decimal("3")  # 1 + 2
++    assert second == Decimal("12")  # 3 + 4 + 5

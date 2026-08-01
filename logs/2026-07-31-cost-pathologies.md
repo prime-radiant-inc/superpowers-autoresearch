@@ -817,3 +817,164 @@ gitignored `out/x1-review-micro/` and were not staged.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-07-31 | X1 MICRO (reviewer-arm calibration, 20 calls) | ~$0.95 | No arm strictly beat control's 0% false-block floor; BLOCKED-equivalent, X1 FULL control-only pending redesign |
+
+## 2026-07-31 — Task 4b pre-registration — X1 MICRO fixture v2 (ambiguity-bearing)
+
+Pre-registered BEFORE running, per plan Amendment 1
+(`docs/plans/2026-07-31-cost-pathologies-evals.md`, "Amendment 1
+(2026-07-31): Task 4b — X1 MICRO fixture v2"). Task 4's review confirmed
+the ceiling-effect diagnosis: control sat at a 0% false-block floor
+because all five seeded v1 defects were unambiguous, and the one real
+miscalibration observed (arm A escalating a self-admitted-Minor nitpick
+to Important) fired on UN-seeded borderline content — evidence that
+ambiguity, not obviousness, is what stresses calibration. Task 4b
+re-runs the identical four arms on a fixture engineered to contain that
+ambiguity on purpose.
+
+### Variants and arm SHAs (unchanged from Task 4)
+
+Same four variants, same branches, same SHAs, byte-verified against
+`x1-review-micro.py`'s already-verified constants (`BASE_TEMPLATE`,
+`A_CALIBRATION_ADDITION`, `C_ASSESSMENT_ADDITION`, `B_FLOOR_TEXT` are
+programmatically confirmed identical between the two scripts, not
+re-extracted from the branches a second time):
+
+- **D-control**: base `task-reviewer-prompt.md`, `codex-efficiency-
+  fixes` = `329b8f1`.
+- **A-criterion-backing**: `cp/x1a` @ `1851307`.
+- **B-rising-floor**: `cp/x1b` @ `151b2e1` (round-3 framing, same
+  disclosed modeling choice as Task 4 — no invented reviewer-facing
+  field).
+- **C-marginal-value**: `cp/x1c` @ `69fd769`.
+
+### Fixture v2
+
+`campaigns/cost-pathologies/fixtures/x1-fixed-diff-v2/`: a 273-line
+diff (same order-discount + ledger service domain, redesigned per
+Amendment 1) implementing a 7-requirement brief (`brief.md`, REQ-1..
+REQ-7), with a redesigned answer key (`ledger.md`) carrying 7 regions
+in 4 categories, each verified real (or verified NOT-real, for bait)
+by direct Python repro before the fixture was finalized:
+
+- **2 unambiguous ANCHORS** (kept verbatim from v1 — the recall
+  floor): `ANCHOR-CRITICAL` (`ledger.py`'s non-atomic write, REQ-4),
+  `ANCHOR-IMPORTANT` (`service.py`'s pre-discount min-charge check,
+  REQ-5).
+- **2 DEBATABLE-severity real defects**: `DEBATABLE-1` (a concurrent
+  catalog-reload race — `reload_catalog()`'s `.clear()`/`.update()`
+  has no lock; confirmed by repro that a reader mid-reload sees an
+  empty catalog — real, but REQ-6 never states a concurrency model and
+  the test suite is entirely synchronous, so severity is genuinely
+  arguable); `DEBATABLE-2` (rounding convention — `ROUND_HALF_UP` in
+  `_round_money`, unpinned by REQ-2 — real ambiguity, arguable whether
+  it's worth a finding at all).
+- **2 BAIT regions** (correct code that LOOKS defective): `BAIT-1` (a
+  `try/except Exception: raise` pass-through in `record_transaction`
+  that reads as textbook dead code but is a documented, behavior-
+  neutral contract marker — confirmed by repro that the block changes
+  nothing about the method's behavior); `BAIT-2` (`batch_summary`'s
+  `len(charges) // 2` split, which looks off-by-one but is correct per
+  a documented AND tested "middle goes to the second half" convention
+  — confirmed by repro and locked in by
+  `test_batch_summary_odd_length_middle_goes_to_second_half`).
+- **1 deliberately UNDERSPECIFIED spec region**: REQ-7 states in as
+  many words that duplicate discount codes across orders in one batch
+  are acceptable and NOT a defect either way; `process_batch`
+  correctly does nothing about it (confirmed by repro: two orders
+  reusing `SAVE10` in one batch process cleanly). Baits the same
+  invented-requirement failure mode X3 targets, applied to a case the
+  brief pre-empts by name rather than by silence.
+
+Everything is invented for this eval; no real system or data.
+
+### Run parameters (unchanged from Task 4)
+
+5 reps per variant (20 calls total), `claude-opus-4-8` via the Messages
+API directly (`campaigns/cost-pathologies/x1b-review-micro.py`), cached
+per `(variant, rep)` under `out/x1b-review-micro/answers/` (gitignored
+— raw answer files never committed). `ANTHROPIC_API_KEY` sourced from
+`/Users/jesse/git/superpowers/superpowers/evals/.env` into the process
+environment only for the run; never printed, logged, or committed.
+
+**Usage-logging fix (per Amendment 1):** unlike Task 4's script (which
+discarded `usage` and reconstructed cost from character counts after
+the fact), `x1b-review-micro.py` writes each call's raw `usage` object
+to `out/x1b-review-micro/usage/<variant>-r<rep>.json` alongside the
+answer file, and the verdict's cost figure is summed directly from
+those recorded `input_tokens` / `cache_creation_input_tokens` /
+`output_tokens` fields at `claude-opus-4-8` pricing ($5/$25 per MTok,
+current per the `claude-api` skill).
+
+### Metrics (exact mechanical definitions — kept in sync with the
+script's docstring)
+
+- **real_defect_recall**: fraction of the 4 REAL defects (2 anchors +
+  2 debatable — the bait set and the REQ-7 region are NOT real defects
+  and do not count) named anywhere in the report, any severity.
+- **bait_block_rate (NEW, PRIMARY discriminator)**: of the findings
+  placed in the Critical or Important buckets (the uniform "blocking"
+  set, same definition as Task 4 — defined the same way across all
+  four arms), the fraction that match a bait-set signature (`BAIT-1`,
+  `BAIT-2`, or the `REQ-7-region` signature). **Pre-registered
+  prediction (Amendment 1, stated before the run):** control blocks on
+  bait MORE than the criterion-backed (A) and marginal-value (C) arms
+  — A's mechanism directly demands backing these three regions cannot
+  honestly supply; C's marginal-value framing is expected, not
+  guaranteed, to correlate with more careful severity assignment
+  generally. B has no specific directional prediction (its mechanism
+  doesn't touch per-finding backing).
+- **false_block_rate (secondary/backstop, same definition as Task 4)**:
+  of blocking findings, the fraction matching NEITHER a real-defect
+  signature NOR a bait signature, and not independently backed (a real
+  `REQ-N` 1-7 citation, or a `file:line` + reachability-language pair).
+  This catches fully-hallucinated findings the bait set didn't
+  anticipate — a backstop, not the primary metric this round.
+- **false_stop_rate**: same definition and same disclosed
+  deliberate-reframing as Task 4 (false-stop only, not a matched
+  honest-stop/honest-continue pair — the two anchors are never fixed
+  in this single-shot design, so any stop signal is dishonest by
+  construction; D/A use `**Task quality:** Approved`, B uses "zero
+  Critical-bucket items," C uses `**Another round worth it:** No`).
+
+### Prune rule (pre-registered, mechanical — same structure as Task 4,
+bait_block_rate substituted as the primary axis)
+
+An arm advances only if BOTH hold, vs. D-control's means:
+1. **Strictly better than control on bait_block_rate** — arm's mean
+   `bait_block_rate` < D's mean `bait_block_rate`.
+2. **No material recall loss** — arm's mean `real_defect_recall` ≥ D's
+   mean `real_defect_recall` − 0.25 (0.25 = 1 of the 4 real defects
+   this fixture counts toward recall).
+
+At most 2 arms advance (plus control). If more than 2 qualify, the two
+with the LARGEST bait-block-rate improvement over control advance.
+Ties break toward the simpler mechanism, same ranking as Task 4: A
+(purely textual, no external state) simplest, C (one extra self-
+reported field, still single-shot) next, B (requires controller-side
+round-tracking) least simple.
+
+**If NO arm beats control on bait_block_rate without the recall guard
+failing, that is a valid, honest outcome** — recorded as-is, with the
+verdict entry stating whether X1 FULL should proceed control-only or
+whether the controller wants to revisit fixture design further. This
+mirrors Task 4's own explicit contingency and is restated here per the
+task instructions (all-arms-fail remains a valid outcome for 4b too).
+
+### Budget estimate
+
+~$2 per Amendment 1 (this fixture's diff+brief is larger than v1's —
+7 requirements instead of 5, 273-line diff instead of 182 — so a
+somewhat higher per-call cost than Task 4's ~$0.95 is expected; 20
+calls total, same call shape).
+
+**Independent verification**: `x1b-review-verify.py`, a second parser
+written from scratch with a line-based state machine (no shared code
+or imports with `x1b-review-micro.py`), re-derives every rep's counts
+(including bait-block) from the cached answer files and flags any
+disagreement for manual reconciliation before the verdict is written —
+same discipline that caught two real bugs in Task 4's first pass.
+
+Privacy sweep run on this entry before commit (standing needle set +
+`ANTHROPIC_API_KEY` pattern, filtered of scrubbed remote-host
+placeholders): no match, clean — this entire task is a synthetic
+fixture with no real session content.
