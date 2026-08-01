@@ -1780,3 +1780,34 @@ the gitignored `out/x3-bait-micro/` and were not staged.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-07-31 | X3 MICRO (invented-requirement bait, 60 calls) | $2.3491 (measured) | Both call shapes (reviewer-shape A/C vs D-control; implementer-shape B vs D-control-impl) hit the pre-registered inconclusive-by-ceiling clause — 0% invented-rate at both controls; BLOCKED-equivalent, X3 FULL rider proceeds with all three arms unproven pending controller ruling. One major scorer bug (win32/darwin32 substring collision) + several proximity/vocabulary bugs found and fixed during reconciliation, fully documented above; 2 remaining discourse-depth cases hand-corrected and disclosed (not force-fit into the regex) |
+
+## 2026-07-31 — CONTROLLER RULING: X3 rider arms + the model-mismatch caveat (all three micro ceilings)
+
+**X3 rider ruling (mirrors X1's):** the X3 micro is inconclusive-by-ceiling
+with ZERO discrimination anywhere (0% floor on the primary metric, both
+call shapes, three fixture domains) — X3-A/B/C all ride X1's FULL battery
+FULLY UNPROVEN. Per-arm carry-forwards binding on the FULL design and
+verdicts: (1) X3-C's citation filter demoted a correct, unambiguous
+Critical because it was phrased in prose without the literal requirement
+ID — FULL either scores C with a paraphrase-aware citation test or
+explicitly accounts the false-demotion rate as the mechanism's cost;
+(2) X3-B's controller-side enforcement half (grep-and-flag of unsourced
+inventory lines) was untestable single-shot and remains COMPLETELY
+untested; (3) the win32/darwin32 scorer-bug disclosure slightly
+understated its blast radius (it also inflated the implementer-shape
+control's raw rate 80%→0% — numbers were corrected before any verdict;
+recorded here for completeness).
+
+**Model-mismatch caveat, applied retroactively to ALL THREE micro
+ceilings (Tasks 4, 4b, 5) and to the X1 FULL ruling (1b34f88):** the
+mined corpus pathologies are predominantly codex GPT-5.6-family
+sessions; every micro ran claude-opus-4-8. "Single-shot review does not
+elicit fabricated blocks / invented requirements" is therefore
+established only for OPUS-4-8 ON THIS TEMPLATE — model difference is a
+live alternative explanation alongside single-shot-vs-loop, and the two
+are confounded in the micro tier as run. The FULL batteries run codex
+in the containers, which addresses both axes at once; every FULL verdict
+that cites the micro ceilings must scope them accordingly.
+
+Privacy sweep run on this entry (standard needle set, filtered of the
+scrubbed placeholders): no match, clean.
