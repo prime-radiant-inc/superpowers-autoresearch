@@ -53,22 +53,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "..", "codex-efficiency"))
 import rollout_parser as rp
-
-
-def _cumulative_total_tokens(path):
-    """The LAST event_msg/token_count event's info.total_token_usage.
-    total_tokens in PATH, or None if no such event exists. See module
-    docstring for why "last" (not "sum") is the correct cumulative
-    reading for a single rollout file."""
-    last = None
-    for _ts, typ, p in rp.iter_records(path):
-        if typ == "event_msg" and p.get("type") == "token_count":
-            info = p.get("info") or {}
-            usage = info.get("total_token_usage") or {}
-            total = usage.get("total_tokens")
-            if isinstance(total, (int, float)):
-                last = total
-    return last
+from scorer_common import cumulative_total_tokens as _cumulative_total_tokens
+from scorer_common import resolve_child_path as _resolve_child_path
 
 
 def _useful_output_tokens(path):
@@ -79,13 +65,6 @@ def _useful_output_tokens(path):
     if not finals:
         return 0
     return len(finals[-1].message) // 4
-
-
-def _resolve_child_path(thread_id, rollouts):
-    for cand in rollouts:
-        if thread_id in os.path.basename(cand):
-            return cand
-    return None
 
 
 def dispatch_floor(rollout_paths):

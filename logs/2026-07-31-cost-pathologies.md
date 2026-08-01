@@ -1979,3 +1979,187 @@ checkout, outside this repo, and were not committed.
 | Date | Battery | $ cost | Notes |
 |---|---|---|---|
 | 2026-08-01 | Task 6 smoke (cp-x1-buggy-sdd + cp-x7x9-conflicts, 1 control rep each) | $8.78 (measured) | Both pass; scenario-health only, not graded |
+
+## 2026-08-01 — Task 7: X5 scorer (substring-aware duplicate-verification + leases) — corpus validation
+
+Built `campaigns/cost-pathologies/score_x5_leases.py` (`lease_stats`), TDD
+against synthetic fixtures, no real content. $0 API spend — engineering +
+read-only corpus reads only.
+
+### DRY closure (Task 2 deferral)
+
+Factored `_resolve_child_path`/`_cumulative_total_tokens` (previously
+duplicated 3x/2x across score_x1_chains.py, score_x4_forktax.py,
+score_x6_floor.py) into new `campaigns/cost-pathologies/scorer_common.py`
+(`resolve_child_path`/`cumulative_total_tokens`), then re-imported them
+under their original private names (`from scorer_common import
+cumulative_total_tokens as _cumulative_total_tokens`, etc.) in all three
+scorers so every call site is byte-identical — their own test suites
+(X1 24, X4 6, X6 6 = 36 tests) needed zero changes and stayed green. This
+scorer imports the same shared helpers rather than adding a copy #3.
+Closes the deferral noted in `.superpowers/sdd/.../progress.md`'s Task 2
+entry.
+
+### Design
+
+Extends `campaigns/codex-efficiency/score_e3.py`'s duplicate-gate
+machinery (imports `TEST_INVOCATION_RE`/`_normalize_cmd` directly, never
+forked) in two ways score_e3 doesn't attempt: (1) **substring-aware
+extraction** — a compound/chained command's test invocation (`cd x &&
+pytest tests/`, `npm test && echo done`) normalizes to the SAME
+command_norm as the bare form, by extracting only the matched
+invocation's own substring rather than normalizing the whole command
+string; (2) **tree_sha attribution** — every occurrence gets a tree_sha
+resolved from the NEAREST PRECEDING `git commit`/`git checkout
+<bare-sha>`/`git rev-parse HEAD` evidence found anywhere across the given
+rollout_paths (merged across sessions, like score_e3.mutation_timeline()).
+`git merge`/`rebase`/`reset` are deliberately EXCLUDED from SHA evidence
+(precision over recall — a fast-forward merge's "Updating A..B" output
+needs the SECOND hex token, a non-ff merge prints none at all; disclosed
+as an honest known limitation, not silently guessed). Unresolvable
+evidence — or no evidence at all — yields `tree_sha: null`, and null-SHA
+occurrences are never merged into a duplicate_groups entry, including
+with each other. `duplicate_groups` collapses to (command_norm, tree_sha)
+groups with count>=2; a differing SHA (a real mutation happened between
+two identical-text runs) is never conflated with a genuine duplicate.
+
+`lease_events` (`receipts_issued`/`receipts_honored`/`invalidation_reruns`)
+implements a receipt-line grammar (`LEASE-RECEIPT:`/`LEASE-HONORED:`/
+`LEASE-INVALIDATED:`, full syntax in the module docstring) that this
+scorer DEFINES as the SPEC the not-yet-authored `cp/x5a`/`cp/x5b` arm
+branches (Task 11) must emit — it is not reverse-engineered from a real
+artifact, and is clearly marked as such in the docstring.
+
+### Bugs found and fixed during corpus validation (pre-commit, TDD'd)
+
+Three real bugs, each found by running the scorer against Drew's donated
+session and reconciling by hand, each fixed with a new red→green test
+before moving on (same discipline as Task 2's/Task 5's precedent):
+
+1. **Single-line JS/JSON field-boundary leak.** A one-line custom_exec
+   call (`{"cmd":"cargo test ...","workdir":"...",...}`, no newline before
+   the next field) leaked `,"workdir":"...",...` into command_norm — chain
+   terminators (`&&`/`;`/newline) never fired, so the segment ran to end of
+   string. Fixed by adding `_JS_FIELD_BOUNDARY_RE` (a closing quote, comma,
+   next JSON/JS key) as an additional segment-end candidate, gated to
+   `custom_exec` encoding only.
+2. **First-bracket-not-the-commit-bracket.** `_sha_from_commit_output`
+   originally took the hex token inside the FIRST `[...]` bracket in a
+   commit's output text; a real pre-commit hook (`cargo build`) prints its
+   own earlier, unrelated bracket ("Finished `dev` profile `[unoptimized +
+   debuginfo]` target(s)...") that has no hex token, but on a session where
+   it DID, this would have silently mis-resolved. Fixed with
+   `_COMMIT_LINE_RE`, which requires the bracket's own content to be
+   git's actual `<ref> [(root-commit)] <hex>` shape.
+3. **Blanket trailing-character-class over-stripping.** The original
+   trailing-artifact cleanup stripped any run of
+   `[\s"',;)\]}]` from a segment's end — this corrupted a real `go test
+   -run 'Test(<alternation of two real function names>)'` argument
+   (legitimately ends `)'`) into a truncated command_norm missing that
+   closing `)'`. Fixed by requiring the stripped run to START with a
+   literal double-quote (`"[\s,;)\]}]*$`) — the JS wrapper's own string
+   delimiter is always `"` in every corpus example found; a shell
+   command's own single-quoted/parenthesized syntax is never touched. Also
+   gated the whole cleanup to `custom_exec` encoding only, so a plain
+   `exec_command`-encoded shell command (already fully decoded, no
+   wrapper) can never have a legitimate trailing double-quoted argument
+   corrupted.
+
+Test suite: **35 tests** for score_x5_leases.py (8 extraction, 9
+git-evidence resolution, 4 duplicate-groups, 8 lease-events grammar, 2
+integration — 4 of the 35 are direct regression tests for the three bugs
+above, using the real corpus shapes that exposed them, reduced to minimal
+synthetic fixtures).
+
+### Corpus validation
+
+**Exemplar 1 — Drew's donated session (3-restarts-in-under-an-hour), read
+directly from the already-local, uncommitted copy under
+`_tmp/cost-pathologies-2026-07-31/drew-bad-session/` (outside this repo).**
+Scored all 20 rollout files together. Two independent (own-parsing,
+pre-code) reconciliations:
+
+1. Before writing the scorer, hand-grepped the root rollout for every
+   `cargo test`/`npm test`-matching exec call and found exactly the three
+   full-suite restarts the design doc's Amendment 1 names (`cargo test
+   --all-features --quiet` at 18:46:42Z / 19:15:43Z / 19:31:07Z) plus two
+   `npm test` runs (19:17:49Z / 19:34:34Z). `lease_stats()`'s
+   `verification_runs` reproduces this exactly (5/5 occurrences, same
+   timestamps, same session).
+2. Hand-traced the tree_sha the scorer attributed to each: restart 1
+   resolves `115f916` (the wave-1 fix commit's own bracket output —
+   `[<branch> 115f916] <subject>` — committed by a child thread at
+   18:45:21Z, 81s before the restart — hand-verified against that
+   commit's own raw output text); restart 2 (+ its paired npm test)
+   resolves `3f619c6` (the wave-2 fix commit, committed 49s earlier at
+   19:14:54Z — matches the branch tip later printed by the session's own
+   `git log` at 19:20:29Z); restart 3 (+ its paired npm test) correctly
+   resolves `tree_sha: null` — the merge-to-main
+   step is a `git checkout main` + fast-forward `git merge`, both
+   deliberately unresolvable per this scorer's own documented, disclosed
+   limitation (not a bug: the tree genuinely didn't change content-wise on
+   this fast-forward, but this scorer doesn't attempt to parse merge
+   output for a SHA, so it correctly declines to guess rather than
+   silently asserting a possibly-wrong value).
+
+**Exemplar 2 — the 12x regression pattern.** Disclosed discrepancy: this
+task was pointed at the LOCAL host's own miner report for the 12x
+exemplar, but that report does not contain one — the actual
+"model-selector agent alone ran the same exact targeted regression 12
+times" finding lives in the sibling per-host report for `remote-host-a`
+(tree `019faee1`, remote — that host's raw sessions were never copied off
+it per that report's own stated methodology). Verified via read-only SSH
+access to `remote-host-a` (`grep`/`python3` over `~/.codex/sessions`, no
+whole-session copy pulled back except a temporary, uncommitted working
+copy of exactly 4 rollout files — the model-selector implementer/
+reviewer/rereview threads plus the tree's root — in this session's own
+scratchpad directory, deleted after validation). Two independent
+(own-parsing, pre-code) reconciliations:
+
+1. Before writing the scorer, hand-grepped the implementer thread for
+   every `go test`-matching exec call, extracted each `-run '<target>'`
+   value, and counted by exact target string: the single most-repeated
+   target (a `Test(<alternation of two function names>)` pattern, the
+   `gofmt`-chained compound form) occurs **exactly 10 times** — not the
+   audit's narrated "12" (a rough quote, not a mechanically-reproduced
+   count under this scorer's same-command-text definition; disclosed
+   honestly rather than force-fit). `lease_stats()`'s `verification_runs`
+   reproduces the identical count (10) for this exact command_norm across
+   the 4 scored files.
+2. Hand-traced one of the scorer's resolved tree_shas
+   (`c47b8a77dfc097a29be9bb6744282377ca21dfd9`, covering 5 of those 10
+   occurrences) back to its source evidence: a `git rev-parse HEAD`
+   bundled inside the ROOT thread's own task-dispatch script (immediately
+   after writing `task-2-brief.md`) at 19:27:47.944Z — the paired output
+   literally reads `c47b8a77dfc097a29be9bb6744282377ca21dfd9` on the line
+   right after the brief-write confirmation. Confirms cross-thread
+   evidence merging (root's own diagnostic command supplying the SHA a
+   CHILD thread's later test runs resolve against) works correctly on
+   real multi-thread data, not just synthetic fixtures.
+
+`lease_events` on both real exemplars: `{receipts_issued: 0,
+receipts_honored: 0, invalidation_reruns: 0}` — correct and expected (both
+predate the not-yet-authored X5-A/X5-B arms; this is the scorer's own
+documented honest prediction, not a null result to be concerned about).
+
+### Test suite
+
+`python3 -m pytest campaigns/ -q`: 377 passed before this task (unchanged
+by the DRY refactor — X1/X4/X6's own 36 tests stayed green with zero
+edits), **412 passed after** (35 new for score_x5_leases.py).
+
+### Privacy sweep
+
+Standing needle set (mining codenames, ticket-ID pattern, hostnames,
+emails, API-key patterns, absolute non-repo paths), case-insensitive, run
+against this entry and the staged diff before commit — no match, clean.
+Nothing from `_tmp/cost-pathologies-2026-07-31/` or the remote-host-a SSH
+session was committed: every fixture in `test_score_x5_leases.py` is
+original synthetic content; the rollout paths, thread/task-name labels,
+and abbreviated commit SHAs cited above are the same class of low-
+sensitivity provenance label Task 2's own validation entry and
+DESIGN.md/rollout_parser.py already cite verbatim — no finding text,
+business-logic file:line content, or other session substance is quoted
+anywhere above. The temporary 4-file working copy pulled from
+`remote-host-a` lived only in this session's own scratchpad directory
+(outside both this repo and `_tmp/`) and was deleted after validation.

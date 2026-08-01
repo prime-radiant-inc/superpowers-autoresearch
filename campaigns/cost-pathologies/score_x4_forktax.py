@@ -83,6 +83,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "..", "codex-efficiency"))
 import rollout_parser as rp
+from scorer_common import resolve_child_path as _resolve_child_path
 
 
 def find_rollouts(session_dir):
@@ -143,13 +144,6 @@ def _prefix_duplicate_bytes(parent_path, child_path):
         covered.update(range(b.b, b.b + b.size))
     duplicate_bytes = sum(len(child_lines[i]) for i in covered)
     return duplicate_bytes, total_bytes
-
-
-def _resolve_child_path(thread_id, rollouts):
-    for cand in rollouts:
-        if thread_id in os.path.basename(cand):
-            return cand
-    return None
 
 
 def fork_stats(session_dir):

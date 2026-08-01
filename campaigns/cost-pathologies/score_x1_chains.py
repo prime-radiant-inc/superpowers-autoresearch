@@ -141,6 +141,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "..", "codex-efficiency"))
 import rollout_parser as rp
+from scorer_common import cumulative_total_tokens as _cumulative_total_tokens
+from scorer_common import resolve_child_path as _resolve_child_path
 
 REVIEW_TASK_RE = re.compile(r"review", re.I)
 
@@ -259,30 +261,6 @@ def _classify_severity_trend(seq):
     if non_decreasing and strictly_increased:
         return "increasing"
     return "mixed"
-
-
-def _cumulative_total_tokens(path):
-    """The LAST event_msg/token_count event's info.total_token_usage.
-    total_tokens in PATH, or None if no such event exists. Same
-    cumulative-per-file reading as score_x6_floor.py's helper of the same
-    name -- see this module's docstring for the chain-level convention
-    built on top of it."""
-    last = None
-    for _ts, typ, p in rp.iter_records(path):
-        if typ == "event_msg" and p.get("type") == "token_count":
-            info = p.get("info") or {}
-            usage = info.get("total_token_usage") or {}
-            total = usage.get("total_tokens")
-            if isinstance(total, (int, float)):
-                last = total
-    return last
-
-
-def _resolve_child_path(thread_id, rollout_paths):
-    for cand in rollout_paths:
-        if thread_id in os.path.basename(cand):
-            return cand
-    return None
 
 
 def _chain_key(task_name):
