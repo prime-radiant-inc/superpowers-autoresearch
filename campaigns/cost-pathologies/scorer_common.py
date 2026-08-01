@@ -20,7 +20,23 @@ value is that session's own total spend, not a per-turn delta), and
 `resolve_child_path`'s "thread_id is a substring of the child rollout's own
 basename" resolution rule (the corpus's actual filename convention,
 `rollout-<timestamp>-<thread-id>.jsonl`).
+
+`find_files` (queue-execution campaign, Task 3, item 14) closes a THIRD
+dry-up debt of the same shape: `glob.glob(pattern, recursive=True)`'s `**`
+segment silently refuses to descend into a dot-prefixed directory
+(`.worktrees`, `.superpowers`, `.codex`), a bug class first disclosed in
+`task9_extract_signals.py find_ledger()` (fixed there with a direct
+`os.walk`, `logs/2026-07-31-cost-pathologies.md`) and independently
+re-hit by `score_x4_forktax.fork_stats()` over a battery rep root (same
+log, Task 12 entry: silently 0 children, no exception). Both
+`find_ledger()`-style ad hoc `os.walk` loops and the dedicated
+`task12_measure_forktax.py` wrapper built to route around
+`fork_stats()`'s defect are workarounds for the SAME underlying gap --
+every scorer/helper in this campaign that needs to locate files by name
+under a tree that might contain dot-prefixed directories should call
+`find_files` instead of `glob.glob(..., recursive=True)`.
 """
+import fnmatch
 import os
 import sys
 
@@ -54,3 +70,24 @@ def resolve_child_path(thread_id, rollout_paths):
         if thread_id in os.path.basename(cand):
             return cand
     return None
+
+
+def find_files(root, name_pattern, path_contains=None):
+    """Every file under ROOT whose basename matches NAME_PATTERN (fnmatch
+    glob syntax, e.g. `"rollout-*.jsonl"`), found via `os.walk` -- unlike
+    `glob.glob(pattern, recursive=True)`, `os.walk` descends into
+    dot-prefixed directories (see module docstring). PATH_CONTAINS, if
+    given, restricts hits to full paths containing that substring (e.g.
+    `os.path.join("home", ".codex", "sessions")`) -- the same specificity
+    a literal-component glob pattern would have had, without the
+    dot-directory blind spot in the WILDCARD segments around it."""
+    hits = []
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for fn in filenames:
+            if not fnmatch.fnmatch(fn, name_pattern):
+                continue
+            full = os.path.join(dirpath, fn)
+            if path_contains and path_contains not in full:
+                continue
+            hits.append(full)
+    return hits

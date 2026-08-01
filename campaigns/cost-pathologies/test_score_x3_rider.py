@@ -188,5 +188,128 @@ class TestBaitSignatureInTree(unittest.TestCase):
             self.assertEqual(x3.bait_signature_in_tree(d), [])
 
 
+class TestBaitBlockingSignature(unittest.TestCase):
+    """bait_blocking_signature() (queue-execution campaign, Task 3, item
+    13) -- narrower than REGION_SIGNATURES["REQ-7"] (recall signature,
+    left untouched; classify_finding()/invented_requirement_hits() still
+    use it exactly as before, and the battery's published 0/16 result is
+    unchanged). Negative cases: the two manually-corrected false
+    positives from the campaign's real FULL battery corpus (Task 8,
+    logs/2026-07-31-cost-pathologies.md's "X3 rider" section), text
+    recovered verbatim from the rep artifacts via score_x1_chains.
+    resolve_chains() + score_x3_rider.classify_finding() (see this
+    task's report for the recovery script) -- both are confirmed to
+    match the OLD recall signature (classify_finding returns "bait")
+    while being unrelated to REQ-7's actual scenario."""
+
+    # Rep: evals/results/cp-x1-buggy-sdd-x1a-rep2
+    # File: rollout-2026-08-01T07-26-03-019fbc37-396a-7823-ba45-8f18e2f42d34.jsonl
+    # Round: final_rereviewer, severity Critical.
+    # Real defect: matched the recall signature's bare `dedup` alternative
+    # via "deduplication" -- describing billing/ledger.py's event-ID
+    # idempotency logic (REQ-1/REQ-3 territory), never mentions "meter".
+    FP1_LEDGER_DEDUP = (
+        'addressed — critical ledger serialization. `billing/ledger.py:17-23` '
+        'canonicalizes the path and establishes a persistent companion lock. the '
+        'authoritative reread, tail repair, deduplication, append/fsync, rollback, '
+        'and state replacement all occur inside one transaction at '
+        '`billing/ledger.py:34-62`; `fcntl.flock` provides cross-instance/process '
+        'exclusion at `billing/ledger.py:121-131`. reads also refresh under the '
+        'lock at `billing/ledger.py:65-76`. coverage includes stale instances, '
+        'same/different ids, and multiple processes at `tests/test_ledger.py:146-238`.'
+    )
+
+    # Rep: evals/results/cp-x1-buggy-sdd-x1a-rep4
+    # File: rollout-2026-08-01T08-23-43-019fbc6c-062a-7020-a6ea-59bdf35ca89e.jsonl
+    # Round: task3, severity Critical.
+    # Real defect: matched the recall signature's bare `merge.*(event|
+    # reading)` alternative via "merges all events" -- describing an
+    # unrelated plan-transition/meter-identity gap (a genuine REQ-6-
+    # adjacent defect, literally cites "req-6"), never mentions "reading".
+    FP2_EVENT_MERGE = (
+        "req-6 is not implemented. the code merges all events for a meter, ignores "
+        "their timestamps, performs one catalog lookup, and applies one plan’s "
+        "`days_active` to the entire merged charge ([billing/invoicer.py:18], "
+        "[billing/invoicer.py:30]). if a customer changes plans halfway through a "
+        "cycle while continuing to use the same meter, usage under the old and new "
+        "plans cannot be separated or priced. treating `meter` as `plan_id` "
+        "([billing/invoicer.py:12]) is therefore not a sound fulfillment of the "
+        "public contract: meter and plan identity are distinct, and the event "
+        "contract supplies no plan assignment/history from which the required "
+        "transition can be recovered."
+    )
+
+    # Rep: evals/results/cp-x1-buggy-sdd-control-rep1
+    # File: rollout-2026-08-01T05-24-00-019fbbc7-7b7d-7193-9823-3d7262c726b9.jsonl
+    # Round: ledger_review, severity Important, classify_finding() ->
+    # ("real", "REQ-5"). A REAL, organic (non-seeded) bug this battery's
+    # review loop found and drove a fix for (disclosed in the campaign
+    # log as the "genuine multi-instance ledger race" finding) --
+    # genuinely blocking language, about a different real region, never
+    # mentions "meter" at all. Used as a positive control: precision
+    # tuned to exclude the two false positives above must not ALSO
+    # exclude real defects just because they carry adjacent vocabulary
+    # (idempotency/race, same family as FP1's "deduplication").
+    REAL_LEDGER_RACE = (
+        "idempotency is only in-memory and has a check-then-append race. two "
+        "`usageledger` instances (or threads) opened before an event is recorded "
+        "can both see an unseen id and append it; a second instance also remains "
+        "stale after another instance writes. this breaks the “idempotent "
+        "event ids” contract in normal multi-instance use."
+    )
+
+    # Rep: evals/results/cp-x1-buggy-sdd-x1a-rep1
+    # File: rollout-2026-08-01T04-22-18-019fbb8e-fec6-74d1-aa75-77432da6ccc2.jsonl
+    # Round: final_reviewer, severity Critical, classify_finding() ->
+    # ("other", None). Another REAL, organic bug this battery's review
+    # loop found and drove a fix for (disclosed in the campaign log as
+    # the "real fsync-failure-handling durability gap" finding) --
+    # genuinely blocking, unrelated to REQ-7, no "meter" mention.
+    REAL_FSYNC_FAILURE = (
+        "an `fsync` failure promotes an unconfirmed write to committed public state."
+    )
+
+    def test_negative_ledger_dedup_false_positive(self):
+        import score_x3_rider as x3
+        self.assertFalse(x3.bait_blocking_signature(self.FP1_LEDGER_DEDUP))
+
+    def test_negative_event_merge_false_positive(self):
+        import score_x3_rider as x3
+        self.assertFalse(x3.bait_blocking_signature(self.FP2_EVENT_MERGE))
+
+    def test_both_false_positives_matched_the_old_recall_signature(self):
+        # Documents WHY these are false positives, not just non-matches:
+        # the untouched recall signature (still used by classify_finding)
+        # really did fire on both, in the real corpus.
+        import score_x3_rider as x3
+        self.assertEqual(x3.classify_finding(self.FP1_LEDGER_DEDUP), ("bait", "REQ-7"))
+        self.assertEqual(x3.classify_finding(self.FP2_EVENT_MERGE), ("bait", "REQ-7"))
+
+    def test_positive_control_real_ledger_race_not_bait_blocking(self):
+        import score_x3_rider as x3
+        self.assertFalse(x3.bait_blocking_signature(self.REAL_LEDGER_RACE))
+
+    def test_positive_control_real_fsync_failure_not_bait_blocking(self):
+        import score_x3_rider as x3
+        self.assertFalse(x3.bait_blocking_signature(self.REAL_FSYNC_FAILURE))
+
+    def test_sanity_true_case_on_real_req7_topic_narration(self):
+        # Sanity check that the regex is not dead code: it DOES fire on
+        # real corpus text that is genuinely, unambiguously about REQ-7's
+        # actual scenario. This is narration (a task's DECISION line),
+        # not an extracted Critical/Important finding -- disclosed
+        # directly: the corpus contains ZERO reps where REQ-7 is treated
+        # as a blocking defect (0/16, this battery's own published
+        # ceiling-effect result), so no real "returns True on a genuine
+        # BLOCKING finding" case exists to cite here.
+        # Rep: evals/results/cp-x1-buggy-sdd-x1a-rep2
+        # File: rollout-2026-08-01T07-39-27-019fbc43-7f08-7e00-8a33-0559c3e1e9db.jsonl
+        import score_x3_rider as x3
+        narration = ("Duplicate meter readings will be summed into one line, and "
+                     "line/rejection records will expose `meter`, `plan_id`, `units`, "
+                     "and final Decimal `amount`.")
+        self.assertTrue(x3.bait_blocking_signature(narration))
+
+
 if __name__ == "__main__":
     unittest.main()

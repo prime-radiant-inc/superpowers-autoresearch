@@ -29,8 +29,25 @@ directory FIRST (literal-component glob), then calls the unmodified
 `fork_stats()` on that resolved path. score_x4_forktax.py itself is not
 edited -- consistent with this task's "no skill/scorer edits this
 campaign" scope.
+
+FOLLOW-UP (queue-execution campaign, Task 3, item 14): this wrapper's own
+`resolve_session_dirs()` had the SAME residual defect one level higher up
+-- the `**` segment BEFORE the literal `home` component still silently
+skips a dot-prefixed directory between REP_DIR and `home` (e.g. a real
+`<rep>/.worktrees/<name>/home/.codex/sessions` shape), confirmed by direct
+`glob.glob` reproduction against a fixture tree (this later task's
+report). Fixed with a plain `os.walk` scan (no glob at all) -- the
+literal-component discipline this docstring describes was the right
+IDEA, just not fully executed by a glob pattern that still had a
+wildcard segment upstream of it. `score_x4_forktax.find_rollouts()` was
+ALSO fixed directly in that same later task (it now uses the same
+`os.walk`-based `scorer_common.find_files()` this wrapper's rationale
+predates), so this wrapper's pre-resolution step is no longer strictly
+required for correctness -- kept anyway, unchanged in shape, since its
+per-rep session-dir warnings (`NO session dir resolved` /
+`MULTIPLE session dirs`) are still-useful diagnostics this task's scope
+did not ask for removed.
 """
-import glob
 import json
 import os
 import sys
@@ -50,11 +67,17 @@ EXCLUDE_PREFIXES = ("cp-cp-",)
 
 
 def resolve_session_dirs(rep_dir):
-    """Every `.../home/.codex/sessions` directory under rep_dir -- literal
-    `.codex` path component, so the hidden-dir glob-skip (see module
-    docstring) never triggers here."""
-    pattern = os.path.join(rep_dir, "**", "home", ".codex", "sessions")
-    return sorted(d for d in glob.glob(pattern, recursive=True) if os.path.isdir(d))
+    """Every `.../home/.codex/sessions` directory under rep_dir, found via
+    `os.walk` (see module docstring's FOLLOW-UP note -- the prior
+    glob-based version's leading `**` segment, BEFORE the literal `home`
+    component, could still skip a dot-prefixed directory between rep_dir
+    and `home`)."""
+    target_suffix = os.path.join("home", ".codex", "sessions")
+    hits = []
+    for dirpath, _dirnames, _filenames in os.walk(rep_dir):
+        if dirpath.endswith(target_suffix):
+            hits.append(dirpath)
+    return sorted(hits)
 
 
 def discover_reps():

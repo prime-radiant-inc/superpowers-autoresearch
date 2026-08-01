@@ -59,6 +59,28 @@ Nothing here re-derives chain grouping or finding extraction -- it
 imports `resolve_chains()` (Task 8's own additive refactor of
 score_x1_chains.py, zero behavior change to chain_stats()) so the exact
 same spawn-grouping/round-resolution logic backs both scorers.
+
+`bait_blocking_signature()` (queue-execution campaign, Task 3, item 13) is
+a FOURTH, SEPARATE function, added later: a narrower, precision-tuned
+REQ-7 topic test for reviewer-side blocking specifically. REGION_SIGNATURES
+["REQ-7"] above is deliberately left untouched -- it is recall-tuned (built
+for `bait_signature_in_tree()`'s defect-PRESENCE scan over implementer
+code, where "did this concept show up at all" is the right question) and
+`classify_finding()`/`invented_requirement_hits()` still use it, exactly
+as this task's report and the current battery's already-published 0/16
+result depend on. Reusing that same recall signature for a DIFFERENT
+question -- "does this specific reviewer finding treat REQ-7 as a
+blocking defect" -- produced 2 confirmed false positives in the real
+FULL battery corpus (x1a-rep2/x1a-rep4, both disclosed in
+logs/2026-07-31-cost-pathologies.md's "X3 rider" section: a bare `dedup`
+match on the LEDGER's own event-ID idempotency logic, and a bare
+`merge.*(event|reading)` match on an unrelated plan-transition/meter-
+identity finding -- neither mentions the fixture's actual bait vocabulary,
+"meter", at all). `bait_blocking_signature()` requires "meter" to
+co-occur with the duplicate/dedup/merge trigger; see its own docstring.
+It is a new, separately-named function future batteries can opt into --
+it does not replace or feed into `classify_finding()`/
+`invented_requirement_hits()`.
 """
 import glob
 import os
@@ -126,6 +148,52 @@ def classify_finding(text):
             kind = "bait" if region == BAIT_REGION else "real"
             return (kind, region)
     return ("other", None)
+
+
+# Precision-tuned REQ-7 topic test for bait_blocking_signature() -- see
+# module docstring's "bait_blocking_signature()" paragraph and this
+# function's own docstring for why it exists as a SEPARATE regex/function
+# rather than a tightening of REGION_SIGNATURES["REQ-7"] (left untouched).
+# Every alternative below requires "meter" -- the one word both real
+# false positives (bare `dedup` on ledger event-ID idempotency; bare
+# `merge.*(event|reading)` on a plan-transition/meter-identity finding)
+# never contained.
+BAIT_BLOCKING_RE = re.compile(
+    r"duplicat\w*.{0,30}meter|meter.{0,30}duplicat\w*|"
+    r"(dedup\w*|merg\w*).{0,30}meter.{0,30}reading|"
+    r"reading.{0,30}meter.{0,30}(dedup\w*|merg\w*)|"
+    r"same meter.{0,30}(twice|multiple|reused)",
+    re.I,
+)
+
+
+def bait_blocking_signature(text):
+    """Whether TEXT is specifically about REQ-7's own bait scenario
+    (duplicate meter READINGS within one invoicing batch) -- narrower
+    than REGION_SIGNATURES["REQ-7"], the recall signature `classify_finding
+    ()`/`invented_requirement_hits()` still use unchanged. Built for
+    bait-BLOCKING precision (is THIS finding about REQ-7 at all, before
+    a caller even asks whether it treats REQ-7 as blocking), not
+    defect-presence recall (`bait_signature_in_tree()`'s job, over
+    implementer CODE, not reviewer TEXT -- still served by the untouched
+    recall signature).
+
+    Verified against the campaign's own real FULL battery corpus (Task 8,
+    both manually-corrected false positives from
+    logs/2026-07-31-cost-pathologies.md's "X3 rider" section -- see
+    test_score_x3_rider.py's TestBaitBlockingSignature for the recovered
+    text, rep dir/file citations, and two genuinely-blocking-but-
+    off-topic real findings from the same corpus used as further
+    negative controls): both false positives return False here (neither
+    ever mentions "meter"); every real corpus mention of REQ-7's actual
+    scenario ("duplicate meter reading(s)", "same-meter reading(s)")
+    returns True. No rep in the corpus ever treats REQ-7 as a blocking
+    defect (0/16, the campaign's own disclosed ceiling-effect result) --
+    this function has no REAL "returns True on a genuine blocking
+    finding" case to cite from the corpus for that reason, disclosed
+    directly rather than manufactured; see the module docstring and this
+    task's report."""
+    return bool(BAIT_BLOCKING_RE.search(text))
 
 
 def has_literal_citation(text):

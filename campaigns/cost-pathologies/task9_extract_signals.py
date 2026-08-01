@@ -20,7 +20,10 @@ session file), the ledger file(s), and the verdict.json; extracts:
   - which SDD tasks got a subagent dispatch (Task N proxy: implementer
     agent_path names containing "taskN")
 """
-import json, sys, glob, os, re
+import json, sys, os, re
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from scorer_common import find_files as _find_files
 
 STOP_MARKERS = re.compile(
     r"waiting|pending|unresolved ruling|BLOCKED|safe stopping boundary|"
@@ -46,7 +49,11 @@ def load_jsonl(path):
 
 
 def root_rollout(rep_dir):
-    files = glob.glob(os.path.join(rep_dir, "**", "home", ".codex", "sessions", "**", "rollout-*.jsonl"), recursive=True)
+    # NOTE (queue-execution campaign, Task 3, item 14): plain glob() skips
+    # dot-directories under '**' -- same bug class as find_ledger() below,
+    # fixed the same way (find_files uses os.walk).
+    files = _find_files(rep_dir, "rollout-*.jsonl",
+                         path_contains=os.path.join("home", ".codex", "sessions"))
     if not files:
         return None, []
     def first_ts(f):
@@ -133,7 +140,10 @@ def ledger_signals(ledger_path):
 
 
 def find_verdict(rep_dir):
-    files = glob.glob(os.path.join(rep_dir, "**", "verdict.json"), recursive=True)
+    # NOTE (queue-execution campaign, Task 3, item 14): same dot-directory
+    # glob-skip bug as root_rollout() above -- verdict.json can sit under
+    # a hidden path too.
+    files = _find_files(rep_dir, "verdict.json")
     return files[0] if files else None
 
 

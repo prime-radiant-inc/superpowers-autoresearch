@@ -70,11 +70,11 @@ finalized:
 Usage: `fork_stats(session_dir)` where SESSION_DIR is any directory whose
 rollout files should be considered together -- a single run's
 `home/.codex/sessions` tree, or a real corpus directory like
-`~/.codex/sessions/2026/07/17/` (glob is recursive, matching either
-layout). Read-only; makes no writes.
+`~/.codex/sessions/2026/07/17/` (the walk is recursive and dot-directory
+safe, matching either layout -- see `find_rollouts()`). Read-only; makes
+no writes.
 """
 import difflib
-import glob
 import json
 import os
 import sys
@@ -83,12 +83,21 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "..", "codex-efficiency"))
 import rollout_parser as rp
+from scorer_common import find_files as _find_files
 from scorer_common import resolve_child_path as _resolve_child_path
 
 
 def find_rollouts(session_dir):
-    pattern = os.path.join(session_dir, "**", "*.jsonl")
-    return sorted(glob.glob(pattern, recursive=True))
+    # NOTE (queue-execution campaign, Task 3, item 14): this used to be
+    # glob.glob(session_dir/**/*.jsonl, recursive=True), which silently
+    # skips dot-prefixed directories under '**' -- calling fork_stats()
+    # directly on a battery rep root (real content under a hidden
+    # `.../home/.codex/sessions/...` path) returned 0 children with no
+    # error (logs/2026-07-31-cost-pathologies.md's Task 12 entry, worked
+    # around there with a resolve-then-call wrapper instead of fixing
+    # this function). find_files uses os.walk, which has no such
+    # restriction.
+    return sorted(_find_files(session_dir, "*.jsonl"))
 
 
 def _load(path):
