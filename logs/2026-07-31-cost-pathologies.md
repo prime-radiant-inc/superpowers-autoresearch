@@ -6048,3 +6048,113 @@ API-key/email patterns) run against this entry before commit: no
 match, clean. No raw rollouts, corpus content, or session substance
 quoted — every figure here is arithmetic over aggregate numbers the
 verdict entry already published.
+
+## 2026-08-01 — Task 13: CAMPAIGN CLOSEOUT — the cost-pathologies campaign is closed
+
+Closeout report: **`reports/2026-08-cost-pathologies-campaign.md`**
+(per-experiment cross-arm verdict tables for X1-X9 plus M0, the
+instrument-inability story, the X4 fork-tax section, the
+fix-cycle-ready treatment list, the next-campaign queue, process
+lessons, and the full budget table). This log remains the primary
+record; the report cites it and never supersedes it. Where a verdict
+entry above and its later correction entry disagree, the report carries
+the CORRECTED figure and says so — the superseded numbers appear
+nowhere in it.
+
+**Campaign closed.** All thirteen plan tasks are complete (Task 4b
+added by plan Amendment 1). Nine experiments plus M0 were designed,
+21 treatment arms were authored as local `cp/*` branches, and every
+battery ran against a pre-registration committed before it. No further
+batteries will run under this plan.
+
+**Headline, restated for this log's own record:** the mined corpora's
+cost pathologies localize to session age, automation shape, and
+unresolved-conflict stalls — not to fresh-session skill text. Four
+instrument ceilings (Tasks 4, 4b, 5 at MICRO on `claude-opus-4-8`;
+Task 8 at FULL on codex/gpt-5.6) established that neither model
+fabricates blocking findings, invents requirements, or produces the
+seeded implementer defects these fixtures were built to catch. Four
+mechanism families cleared their own pre-registered criterion: the
+never-stall doctrine (X9-A, `cp/x9a` @ `76cb06a` — the headline
+candidate), the advisory-details contract (X2-A, `cp/x2a` @ `5364c34`),
+the receipt mechanisms (X5-A `cp/x5a` @ `d71d307`, X5-B `cp/x5b` @
+`644bee6`), and evidence-bearing preflight (X7-A `cp/x7a` @ `e1cd285`,
+X7-B `cp/x7b` @ `edd9bcd`) as X9's complement rather than its
+substitute.
+
+**Shipping is NOT part of this campaign.** Every treatment above is
+apparatus: the `cp/*` branches were never pushed, never merged, never
+PR'd, and this closeout does not change that. Any shipping goes through
+a NEW fix cycle with Jesse's approval, under the standing
+no-unshipped-ungraded-text rule — a fix cycle may ship the exact graded
+diff at the exact SHA named above, and any addition, rewording, rebase
+conflict resolution, or merge of two arms' text is new text that no
+battery has run and needs its own battery first.
+
+**Queue pointer:** every parked item, carry-forward, and banked
+observation from this log and from
+`.superpowers/sdd/2026-07-31-cost-pathologies-evals/progress.md` is
+consolidated in the report's section 6 ("The queue — candidates for the
+next campaign") — 23 items across fixtures owed (X1 edit-existing-code,
+X1 wave-cap reachability, X6 plan-framed, X8 without the disclosure
+confound, X2-B isolation, X5 savings at scale), mechanisms never tested
+end-to-end (X3-B's controller half, X7+X9 composed), instrument work
+(lease-grammar prose coverage, distinct-event counting, the
+`NONE_VALUE_RE` gap, the fourth X1 chain pattern, the X3-rider BAIT
+signature, the dot-directory glob bug class), harness/scenario hygiene
+(deflection pinning, the X7-B parser-scope decisions, X5-A's honoring
+channel under codex, the three silent harness bridges, M0's
+scope-auditability follow-up), and banked observations (31%
+finishing-merge nonconvergence, the 25% 60m-ceiling rate, the null
+`provenance.superpowers_rev` field, the `progress.md` capture gap).
+
+**Final ledger reconciliation.** Summing every battery row in this
+table: $0.95 + $1.6685 + $2.3491 + $8.78 + $158.1788 + $62.2629 +
+$70.7079 + $37.6005 + $0.00 = **$342.4977 ≈ $342.50** — matching the
+running total carried since Task 11 and unchanged by Tasks 12 and 13
+(both $0). **59% of the $580 ceiling; the $400 stop-and-report
+checkpoint was never reached** (closest approach: Task 11's own
+rep-by-rep projection peaked near $335 under its binding hard stop
+rule). Totals across the campaign: **77 container reps + 100
+Messages-API calls**; Tasks 1, 2, 3, 7, 12 and this task spent $0.
+
+### Privacy sweep (both files: this entry and the closeout report)
+
+Full needle set run against BOTH `logs/2026-07-31-cost-pathologies.md`
+and `reports/2026-08-cost-pathologies-campaign.md` before commit —
+machine-identity shapes (this machine's real hostname and username,
+resolved at sweep time via `hostname`/`whoami` and never written
+literally into either file), homedir-as-account-identity path shapes,
+API-key patterns, email patterns, ticket-ID shapes, and the
+`_tmp/cost-pathologies-2026-07-31/` corpus codenames. **The report is
+clean on every class: zero hits.** Two findings in the log, both
+inspected and both benign, disclosed rather than passed over silently:
+
+1. The short-hostname form of the machine-identity needle is only two
+   characters on this host, which makes it a degenerate substring that
+   matches ordinary prose (it hit the `M4`/`M7` amendment headings in
+   Task 10's correction entry). Re-run word-anchored against the FULL
+   hostname: **0 hits in both files.** Not an occurrence of the
+   hostname — a needle-design artifact, noted so the next sweep does
+   not re-raise it as a leak.
+2. The three email-shape matches in the log are all the evals
+   container's own synthetic git commit-author identity, already
+   investigated and disclosed in Task 11's own privacy sweep as the
+   harness's fixed placeholder rather than a real address. Unchanged
+   by this task.
+
+The closeout report quotes no raw rollouts, no session transcripts, no
+`evals/results/` or `evals-lane-b/results/` content, and no mined-corpus
+project codenames; every quoted string in it is either a corrected claim
+formulation from this log or synthetic model output about this
+campaign's own synthetic fixtures. It carries exactly ONE absolute
+`/Users/jesse/...` path (naming where the `cp/*` arm branches live) —
+the same already-established, low-sensitivity provenance-citation
+convention this campaign has used since Task 1, and distinct from the
+machine-identity needles the sweep screens for. Remote hosts are named
+by their `remote-host-a`/`remote-host-b` aliases only, per the
+convention Task 7's fix round made binding.
+
+| Date | Battery | $ cost | Notes |
+|---|---|---|---|
+| 2026-08-01 | Task 13 (campaign closeout — report + this entry, no runs) | $0.00 | Campaign CLOSED. `reports/2026-08-cost-pathologies-campaign.md` published. Final total **$342.50 of $580** (59%), $400 checkpoint never reached. 4 winning mechanism families (X9-A, X2-A, X5-A/X5-B, X7-A/X7-B) staged for a FUTURE fix cycle with Jesse's approval — nothing ships from this campaign; the `cp/*` arms stay local, unpushed, unmerged. 4 instrument ceilings + 3 other inconclusive types reported as results. Queue for the next campaign: report section 6. |
