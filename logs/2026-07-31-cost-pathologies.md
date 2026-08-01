@@ -4643,3 +4643,219 @@ throughout are the same already-established, low-sensitivity
 provenance-citation convention this campaign has used since Task 8.
 `story.md` unedited by this task in either scenario, per the campaign's
 standing "do not fix the scenario mid-battery" rule.
+
+## 2026-08-01 — Task 10 correction (fix round 1): C1/C2/I1/I2 headline corrections + I3/M4-M7/⚠8-⚠10 amendments
+
+**The Task 10 verdict entry above is UNCHANGED (append-only) and
+contains claims corrected below** — cross-check against this entry for
+the authoritative figures. Task review round 0 (findings file
+`task-10-findings-round1.md`) approved conditional on this fix round:
+every mechanical claim reproduced exactly (costs, guards, deflection
+pinning), but four verdict-PROSE defects — two of which overclaimed in
+the winning arm's favor — required correction. All four re-verified
+independently against raw data before this entry was written (not
+taken on the reviewer's word alone).
+
+### C1 (Blocking) — X2-B verdict dropped a criterion term
+
+**Old claim:** "X2-B and X2-C PASS the letter of the criterion...
+since even their one stalled rep each never reaches the Gauntlet."
+**Corrected claim:** the pre-registered criterion is a three-way
+conjunction — zero BLOCKED status, zero NEEDS_CONTEXT status, AND zero
+human escalations. `x2b-rep2`'s `task1_implementer` literally emits
+`Status: NEEDS_CONTEXT` as a final_answer (the only rep, of 21, that
+emits any formal SDD status keyword) before a follow-up dispatch
+resolves it. **X2-B FAILS 1/3 under the criterion as written** — at
+most "no human escalation, one formal `NEEDS_CONTEXT`, no causal
+mechanism story." X2-C is unaffected by this correction: `x2c-rep3`'s
+stall (confirmed `send_message`+`wait_agent`) never emits ANY formal
+status keyword at any point — it goes straight from the pause to
+`Status: DONE` — so X2-C genuinely does pass the letter (zero BLOCKED,
+zero NEEDS_CONTEXT, zero human escalation), unlike X2-B.
+**Evidence (re-verified this entry):** direct re-read of
+`x2b-rep2`'s and `x2c-rep3`'s `task1_implementer` rollouts —
+`x2b-rep2`: `[14:34:18] CALL send_message` → `[14:34:22]
+NARRATION(final_answer): Status: NEEDS_CONTEXT` → `[14:34:34]
+NARRATION(commentary): Context is now resolved...`; `x2c-rep3`: same
+`send_message`+`wait_agent` pause shape, zero `Status:` line at any
+point in its transcript.
+
+### C2 (Blocking) — gate-pass justification claimed a category control never produced
+
+**Old claim:** "Per the gate rule this counts (the design's criterion
+names 'BLOCKED/NEEDS_CONTEXT... status' as its own category...): gate
+is POSITIVE." **Corrected claim:** no control rep ever emits a formal
+`BLOCKED` or `NEEDS_CONTEXT` status — re-checked directly: zero
+`Status:` lines of any kind in any of the 3 control `task1_implementer`
+rollouts (all three resolve to a bare `DONE`). The gate DECISION
+stands (a `send_message`+`wait_agent` pause before any code is written
+is a genuine stall, matching the design doc's "agents... get stuck"
+language) but the ORIGINAL JUSTIFICATION was wrong about what kind of
+evidence supports it. Restated: control's ADVISORY-1 pathology is a
+narrated pause-and-ask-the-controller round-trip (`send_message` +
+`wait_agent`, confirmed in 3/3 raw tool-call sequences), never a
+formal status code and never a question that reaches the human. This
+is the ONLY evidence the gate decision rests on, and it is sufficient
+on its own — no formal-status claim is needed or was ever true for
+control.
+
+### I1 (Blocking) — retracted an overclaimed campaign-wide compliance claim; 2/12 reps retain the seeded float multiplier, including in the winning arm
+
+**Old claim:** "confirms every checked `src/pricing.js` uses
+integer-only arithmetic... in its FINAL committed state... consistent
+with this holding campaign-wide beyond the 3 hand-read reps" (based on
+reading only 3 of 12 files). **Corrected claim, ALL 12 files now read
+in full this entry:** `applyDiscount`'s final implementation is
+integer-only in 10/12 reps, but **2/12 retain the seeded
+floating-point-flavored pattern** `Math.round(subtotalCents * (1 -
+percentOff / 100))` (division before rounding, the exact anti-pattern
+the Global Constraint prohibits) — **`x2a-rep2` (in the winning arm)**
+and `x2c-rep3`. Honest rate by arm: **control 0/3, X2-A 1/3, X2-B 0/3,
+X2-C 1/3.** Both retaining reps still Gauntlet `pass` — **X2-A's "spec
+compliance preserved" rests on the Gauntlet judge's functional-
+correctness acceptance of `Math.round(...)`, not a strict
+integer-cents-idiom check**; the AC is satisfied at the output-value
+level in every rep, but the underlying arithmetic idiom is not
+uniformly integer-only. **Evidence:** `grep -A3 "export function
+applyDiscount"` against all 12 final `src/pricing.js` files, this
+entry — the only two containing `percentOff / 100` (a division
+producing a fraction before the `1 -` subtraction) are `x2a-rep2` and
+`x2c-rep3`; the other 10 use `Math.floor`/`Math.trunc`/`BigInt` with
+integer numerators throughout.
+
+### I2 (Blocking) — X2-A's classification was wrong for 2/3 reps; the correction STRENGTHENS the arm
+
+**Old claim (ADVISORY-1 table):** `x2a-rep2` and `x2a-rep3` = "silent
+— never referenced the missing file at all." **Corrected claim: BOTH
+recorded the deviation explicitly in their final `concerns` field —
+X2-A is 3/3 proceed-and-record, not 1/3 proceed + 2/3 silent.** This
+STRENGTHENS X2-A's finding: the mechanism fires identically in every
+rep (proceed without pausing AND explicitly document the deviation),
+not just once. **Root cause of the original error:** the original
+classification used a grep-filtered narrative dump (`grep
+"NARRATION(commentary)|NARRATION(final_answer)" | sed -n '1,4p'`) that
+matched only the FIRST LINE of each multi-line `final_answer` block —
+cutting off the `concerns:` continuation line before it could be seen.
+**Evidence (full unfiltered re-read this entry):** `x2a-rep2`'s first
+dispatch final_answer: *"concerns: pre-existing untracked
+`package-lock.json` not committed; **missing illustrative lookup path
+handled locally as required**"*; `x2a-rep3`'s: *"Concerns: **referenced
+lookup file absent; used specified in-module plain object.** Pre-
+existing untracked `package-lock.json` untouched."* **Retracting the
+adjacent claim this depended on:** "all 12 X2 reps' `task1_implementer`
+threads were read in full" (Non-circular hand-verification section)
+overstated what was actually done — a subset (control x3, x2a-rep1,
+x2b-rep2/3, x2c-rep3) was read in full via unfiltered dumps; the
+remainder, including the two reps corrected here, were classified from
+a grep-filtered partial view. Scoped honestly: **6/12 X2 reps'
+`task1_implementer` threads were read via full unfiltered dump this
+task; all 12 were re-read in full for this correction entry.**
+
+### Corrected X2 claim block (supersedes the per-arm verdict table and prose above)
+
+**X2-A eliminates the ADVISORY-1 pause 3/3, with proceed-and-record
+3/3, and the genuine conflict escalating 3/3 — directional, n=3, one
+scenario, ONE live seed (ADVISORY-2/3 never discriminate any arm,
+0/12), one rep's float multiplier (`x2a-rep2`) accepted by the
+Gauntlet judge rather than passing a strict integer-idiom check.
+X2-B is downgraded to FAIL 1/3 under the criterion as written**
+(`x2b-rep2`'s literal `NEEDS_CONTEXT`). **X2-C remains a genuine pass
+of the letter with one disclosed residual stall (1/3, no formal
+status)** — unaffected by C1. Corrected per-arm table:
+
+| arm | ADVISORY-1 pause rate | proceed-and-record rate | criterion verdict (letter) | float-multiplier retained |
+|---|---:|---:|---|---:|
+| control (X2-D) | 3/3 | 0/3 | n/a (baseline, exhibits the pathology) | 0/3 |
+| X2-A | 0/3 | 3/3 | PASS | 1/3 (`x2a-rep2`) |
+| X2-B | 1/3 (formal `NEEDS_CONTEXT`) | 2/3 | **FAIL 1/3** | 0/3 |
+| X2-C | 1/3 (no formal status) | 2/3 | PASS (letter) | 1/3 (`x2c-rep3`) |
+
+### I3 (amendment, same entry) — stall cost quantified; cost separation reattributed to dispatch count, not the stall
+
+The ADVISORY-1 stall itself (`send_message`→`wait_agent`→resolution)
+runs **10-20 seconds** in every observed instance (re-timed this entry
+from raw timestamps: control-rep1 ~15s, control-rep2 ~13s,
+control-rep3 ~10s, x2b-rep2 ~16s) — a small, self-resolving,
+never-reaches-the-human cost, on the order of ~1% of a rep's total
+tokens per the review's accounting (not independently re-derived this
+entry). **The clean cost separation noted in the original verdict**
+(X2 control min $3.669438 > X2-A max $3.508235, no overlap) **is
+dispatch-count-driven, not stall-cost-driven**: control reps carry 9
+rollout threads uniformly (3/3); X2-A reps carry 7 threads in 2/3 reps
+and 9 in the one that needed a fix round (`x2a-rep2`, the same rep
+that retains the float multiplier). Extra subagent dispatches, not the
+~15-second pause, explain the cost gap. Reframed as supporting evidence
+for "X2-A's mechanism reduces downstream fix-round churn," not as
+"the stall itself is expensive."
+
+### M4-M7 (amendments, same entry)
+
+- **M4** — corrected pooled per-rep cost bands (re-verified against
+  all 21 `verdict.json` economics fields this entry): **control
+  $2.4388-$4.1586** (X8-control-rep2 low, X2-control-rep1 high) —
+  matches the review's figure exactly. **Treatment $2.7701-$4.1868**
+  (`x8a-rep1` low, `x2b-rep3` high) — the review's stated low end
+  ($2.8033, `x2c-rep3`) is off by one entry; `x8a-rep1` at $2.770094 is
+  the true pooled-treatment minimum across all 15 treatment reps
+  (X2-A/B/C + X8-A/B). Presented as independently re-verified against
+  primary `verdict.json` data, not copied forward uncorrected.
+- **M5** — "exactly one seed-related question" is the precise phrasing
+  for the genuine-conflict guard (distinguishing it from the routine
+  finishing-workflow question, which is not seed-related).
+- **M6** — disclosed lane deviation: `x2c`'s 3 reps ran on Lane B
+  (`evals-lane-b`), not Lane A as the pre-registration's Operational
+  section stated (Lane A ran control/X2-A/X2-B; Lane B ran X8's full
+  battery, then X2-C once X8 finished, to keep both lanes saturated).
+  No measurement impact — arm identity is the mounted SHA, reconciled
+  by `run-quorum.sh` before every rep regardless of which lane; this
+  is the same reconciliation guard that already governs every other
+  rep in this campaign.
+- **M7** — corrected count: **6 SHAs verified this task (5 treatment
+  arms + control)**, not "5 arm SHAs" as `task-10-report.md` stated.
+
+### ⚠8-⚠10 (amendments, same entry)
+
+- **⚠8** — narrowed: X2-B's patched text (`task-reviewer-prompt.md`)
+  is absent from every `task1_implementer` thread's own context in all
+  21 reps (verified: the string never appears inside an implementer
+  dispatch) — "never in the IMPLEMENTER's context" stands. But in
+  `x2b-rep2` the reviewer's output (produced under X2-B's patched
+  judgment lens) reaches the CONTROLLER shortly before the next
+  dispatch (re-checked this entry: reviewer narration lands at
+  `14:37:01`, the fix-round redispatch to `task1_implementer` at
+  `14:37:06`, consistent with the review's "~29s pre-dispatch" framing
+  once measured from the reviewer subagent's own completion rather
+  than the controller's narration) — so "never in scope" overclaimed;
+  the noise-attribution conclusion (X2-B's 1/3-vs-control's-3/3 gap
+  has no causal story) still stands, just not on a "never reaches
+  anything" basis.
+- **⚠9** — engagement vs. presence denominators for X2-B/X2-C:
+  of each arm's 3 reps, only 2/3 ever REFERENCE the missing file at
+  all (rep1 is silent in both arms — never engages with ADVISORY-1 in
+  any way). Read as "1 stall per 3 total reps" (33%, the headline
+  figure used throughout this entry) vs. "1 stall per 2 ENGAGED reps"
+  (50%) — both are true simultaneously and describe different
+  questions (overall pathology rate vs. rate conditional on the model
+  noticing the seed at all); control's 3/3 engagement-and-stall makes
+  this distinction moot for control specifically, since engagement and
+  stall coincide perfectly there.
+- **⚠10** — stated prominently (see the corrected X2 claim block
+  above): this entire battery's ADVISORY-side discrimination rests on
+  ONE seed (ADVISORY-1) inside ONE scenario — ADVISORY-2/3 never
+  produce any stall signal in any of the 12 reps, across 4 different
+  arm texts. Every X2 claim in this correction and the original
+  verdict should be read with that scope, not generalized to "advisory
+  mismatches" as a class.
+
+### Privacy sweep
+
+Standard needle set (this machine's real hostname/username checked
+directly via `hostname`/`whoami`, never written literally; API-key
+patterns; email patterns; corpus codenames; remote-host alias
+reminders) run against this entry and the staged diff before commit:
+no match on real values, clean. Every quoted transcript excerpt above
+(implementer narration, final_answer/concerns text, status lines) is
+synthetic model output about the wholly synthetic `checkout-fixture`
+content. No raw rollouts or `evals/results/`/`evals-lane-b/results/`
+content committed. Cost figures re-verified directly against primary
+`verdict.json` economics data, not re-typed from memory.
