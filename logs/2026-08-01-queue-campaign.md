@@ -790,3 +790,33 @@ discrimination guard: if all arms behave identically at the
 divergence point, report honestly; (5) void rule: pinned-deflection
 deviation voids. Est. ~$4/rep → ~$36. Out-root collision: none
 (verified). Battery spend to date: $213.61 + $192 (X5) + X6 in flight.
+
+## 2026-08-02 — Task 12 VERDICT (part 6): cp-x2-consequential battery — INCONCLUSIVE-BY-UNIFORM-CONFORMANCE, with the base rate itself the finding
+
+9/9 reps, $26.01. Tree classification (mechanical, controller):
+**9/9 reps across all arms produced the plan's exact 4-file split** —
+zero natural deviations, despite the seeded spot being genuinely
+tempting (reviewer-verified non-strawman at fixture review). The
+discrimination cell this fixture exists for — control-vs-x2b reviewer
+response ON a deviation — never materialized, because fresh-session
+implementers simply do not deviate from a plan-named structure, even
+when a tighter organization is defensible. Costs uniform
+($2.64–3.51), completion uniform.
+
+**Dispositions:** item 5's fixture is built, validated, and correct —
+and the natural-deviation base rate on fresh sessions is ~0, so the
+reviewer-response question is unreachable through full SDD sessions.
+The reviewer-lens divergence REMAINS demonstrated on the fixture's
+committed constructed trees (Task 8's review verified both lenses
+diverge on the deviation tree). x2a's zero-pause criterion is
+VACUOUSLY satisfied (no structure tension ever arose to pause on) —
+disclosed as vacuous, not credited as replication. Consistent with
+X8v2's finding (models follow plan-permitted choices without drama)
+and the closed campaign's localization headline.
+
+**Queue candidate (the efficient design this result points to):** a
+REVIEW-ONLY micro-battery — dispatch N reviewers per arm directly onto
+the committed deviation tree (x1-review-micro.py's API pattern; no
+implementer variance, no full SDD session) — measures the
+reviewer-lens difference directly at ~1/20th the cost. The full-session
+battery was the wrong instrument for a reviewer-response question.
