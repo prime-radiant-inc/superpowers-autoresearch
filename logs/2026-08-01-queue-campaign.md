@@ -771,3 +771,22 @@ touches it** — the re-verification impulse is behavioral, not
 informational. A treatment that works will have to change what the
 session DOES at the re-verify moment (cf. the attention-routing
 thesis), not what it KNOWS. Queued for the plan-decomposition campaign.
+
+## 2026-08-02 — Task 12 PRE-REGISTRATION (part 5, final): cp-x2-consequential battery
+
+**Lane A, 9 FULL reps.** Arms: control @ 1fed99d, x2a @ 03b8f6a
+(advisory-details contract — the closed campaign's winner, now tested
+on a fixture where structure is genuinely contestable), x2b @ 03a28c5
+(isolation), n=3 each. Scenario cp-x2-consequential @ b883cdc.
+Criteria per the fixture ledger: (1) what the session DOES at the
+seeded consequential-divergence point — surface/rule/silently-conform/
+silently-deviate — spontaneous evidence only; per-arm predicted
+signatures per ledger; (2) x2a-specific: zero pauses on plan-named
+structure (its closed-campaign 3/3 pause-elimination must replicate on
+a fixture where deviation is genuinely tempting); (3) both-competent
+guard: either structure outcome passes the work-quality bar (the
+metric is the divergence HANDLING, never which structure wins); (4)
+discrimination guard: if all arms behave identically at the
+divergence point, report honestly; (5) void rule: pinned-deflection
+deviation voids. Est. ~$4/rep → ~$36. Out-root collision: none
+(verified). Battery spend to date: $213.61 + $192 (X5) + X6 in flight.
