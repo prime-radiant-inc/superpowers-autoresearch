@@ -37,13 +37,16 @@ new capability whose own stated requirements (REQ-1 through REQ-4) each
 name the exact invariant the co-located pre-existing defect violates,
 so verifying the new requirement naturally requires tracing into the
 pre-existing code that shares it (see each region's "Why the new task
-pulls a reviewer there" below). An implementer who treats the plan as
-"add the new function, call the existing helpers, done" — the ordinary,
-minimal-diff-respecting reading of an SDD task whose `Files:` block
-never lists the pre-existing defective function as something to modify
-— carries every defect forward unexamined. A competent review, applied
-to the actual diff plus the code it depends on, has a direct textual
-hook (the new REQ's own wording) into each pre-existing bug.
+pulls a reviewer there" below). Two further requirements (REQ-6, REQ-7,
+added in fix round 1 — see "Reachability" below) additionally route
+BOTH files a `Files:`-block-only implementer would otherwise never
+open, via a small, legitimate, unrelated ask each. An implementer who
+treats the plan as "add the new function, call the existing helpers,
+done" — the ordinary, minimal-diff-respecting reading of an SDD task —
+carries every defect forward unexamined even once every defective
+file is open in front of them. A competent review, applied to the
+actual diff plus the code it depends on, has a direct textual hook
+(the new REQ's own wording) into each pre-existing bug.
 
 ## Reproducibility (why this differs from cp-x1-buggy-sdd's ledger)
 
@@ -54,6 +57,49 @@ did it survive to the end of the run untouched." This is what makes the
 defect-escape guard reachable at all: cp-x1-buggy-sdd measured a
 near-zero-occurrence quantity; this fixture measures a
 100%-starting-occurrence quantity's survival rate.
+
+## Reachability (fix round 1, per task-5-review.md's Important finding 1)
+
+The original design gave the two ANCHOR defects real, structural
+file-touch reachability (Task 1's `Files:` block lists
+`billing/usage_log.py` and `billing/statement.py` as Modify targets
+directly) but left the two DEBATABLE defects reachable only via
+review-tracing a named dependency (`billing/tier_catalog.py` and
+`billing/pricing.py` appeared in `Interfaces:`/REQ text only, never in
+a `Files:` block) — the old fixture's unreachability failure mode, in
+miniature, for half the region set.
+
+**Fix: both DEBATABLE files are now routed through Task 2's `Files:`
+block, each via a small, legitimate, unrelated requirement (REQ-6,
+REQ-7) that a competent engineer would want regardless of this
+fixture's seeded defects:**
+
+- REQ-6 (unknown tier id fails clearly) requires adding
+  `has_tier(tier_id)` to `TierCatalog` — plain input validation, no
+  mention of reload/concurrency/threads. Routes `billing/tier_catalog.py`
+  (DEBATABLE-1) into `Modify:`.
+- REQ-7 (zero-length cycle guarded) requires adding a `ValueError`
+  guard at the top of `prorate` — a plain divide-by-zero guard, no
+  mention of rounding/precision. Routes `billing/pricing.py`
+  (DEBATABLE-2) into `Modify:`.
+
+Neither requirement forces the seeded defect into view: REQ-6 doesn't
+ask anyone to read or change `reload_tiers`; REQ-7 doesn't ask anyone
+to touch the `return` line that lacks quantization. Catching either
+defect still requires a reviewer (or an unusually thorough implementer)
+choosing to read past the one line each REQ actually concerns —
+judgment is still required, exactly as designed; only the STRUCTURAL
+excuse to have the file open at all has changed, from "review-tracing a
+name" to "review-tracing a name, AND the file is already open for an
+unrelated edit." All four real regions now have real Files:-block
+file-touch reachability, symmetric with the bait region's own file
+(`billing/tier_change.py`, always Create:'d by Task 2). No residual
+reachability asymmetry remains to disclose.
+
+REQ-6/REQ-7 are NOT themselves seeded defects or new scored regions —
+they are routing mechanism only, plain correct-by-construction
+requirements with an obvious correct implementation. `scan_defects()`
+and the constructed outcome trees do not score them.
 
 ## Tiers seeded (4 real regions across 2 tiers, matching the design's
 ANCHOR/DEBATABLE taxonomy, + 1 bait region — 5 regions total, in the
@@ -158,16 +204,27 @@ reviewer could reasonably call this Critical (any hot-reload feature
 implies concurrent readers), Important (worth flagging before calling
 Task 2 done but not blocking), or a Minor/out-of-scope note (REQ-4
 didn't ask for a specific locking mechanism, and single-threaded
-callers never hit it). **Why the new task pulls a reviewer there:**
-Task 2's `Interfaces:` block explicitly names `reload_tiers`/`get_tier`
-as consumed, and REQ-4 states the tolerance requirement by name — a
-reviewer checking whether Task 2 actually satisfies REQ-4 must inspect
-what `reload_tiers` really does, since Task 2's own `Files:` block never
-lists `tier_catalog.py` as something the implementer is asked to touch.
-**Confirmed by direct repro:** a reader thread calling `get_tier` during
-a `reload_tiers` call (widened window via a `dict` subclass whose
-`clear()` sleeps) observes a `KeyError` from the transiently empty
-catalog, reproduced directly against this fixture's shipped code.
+callers never hit it). **Why the new task pulls a reviewer there
+(fix round 1: real file-touch reachability, not review-tracing alone):**
+Task 2's `Files:` block now lists `Modify: billing/tier_catalog.py`
+directly — REQ-6 (unknown tier id fails clearly, a plain input-
+validation ask unrelated to concurrency) requires adding
+`has_tier(tier_id)` right next to `reload_tiers`, so ANY implementer
+following Task 2 literally opens and edits this exact file, landing
+their own new method a few lines from the untouched race. This is a
+legitimate, blinding-preserving reason to be in the file — REQ-6 never
+mentions reload, threads, or races — but it does NOT force the defect
+into view: `reload_tiers`'s body is not something REQ-6 asks anyone to
+read or change, so noticing the race still takes a reviewer (or an
+implementer who reads more of the file than strictly required)
+choosing to look at the neighboring method, same as before. REQ-4's own
+wording (naming `reload_tiers`/`get_tier` and the tolerance
+requirement) remains the SECOND, independent pull, unchanged from the
+original design. **Confirmed by direct repro:** a reader thread calling
+`get_tier` during a `reload_tiers` call (widened window via a `dict`
+subclass whose `clear()` sleeps) observes a `KeyError` from the
+transiently empty catalog, reproduced directly against this fixture's
+shipped code.
 **Severity:** debatable — see above; not part of the unambiguous recall
 floor.
 
@@ -210,11 +267,24 @@ Important; others would treat the unquantized default as an
 unremarkable implementation detail not worth a finding, especially since
 nothing downstream currently renders an invoice line from
 `prorate_tier_change`'s raw return value. **Why the new task pulls a
-reviewer there:** REQ-3 mandates reuse of `prorate` by name for a
-NEW money-computing entry point (`prorate_tier_change`); a reviewer
-checking whether that new Decimal total is fit to bill against must
-look at what `prorate` actually returns. **Confirmed by direct repro:**
-`prorate(Decimal("10.00"), 1, 3)` returns
+reviewer there (fix round 1: real file-touch reachability, not review-
+tracing alone):** Task 2's `Files:` block now lists
+`Modify: billing/pricing.py` directly — REQ-7 (zero-length cycle
+guarded, a plain divide-by-zero guard unrelated to rounding) requires
+adding an early `ValueError` check at the top of `prorate` itself, so
+ANY implementer following Task 2 literally opens and edits this exact
+function body, reading straight past the untouched `return charge *
+Decimal(days_active) / Decimal(days_in_cycle)` line to add their guard
+above it. This is a legitimate, blinding-preserving reason to be
+inside `prorate` — REQ-7 never mentions rounding or precision — but it
+does NOT force the defect into view: REQ-7 only asks for a guard
+clause, not a rounding review, so noticing the missing quantization
+still takes a reviewer (or an implementer who reads the rest of the
+function they just edited) choosing to look past the one line REQ-7
+actually concerns. REQ-3's own wording (mandating reuse of `prorate` by
+name for a new money-computing entry point) remains the SECOND,
+independent pull, unchanged from the original design. **Confirmed by
+direct repro:** `prorate(Decimal("10.00"), 1, 3)` returns
 `Decimal("3.333333333333333333333333333")` (27 digits past the decimal
 point, unquantized), reproduced directly against this fixture's shipped
 code. **Severity:** debatable, same shape as DEBATABLE-1.
@@ -287,3 +357,15 @@ state: Task 1/2 code added, all four pre-existing defects untouched) —
 and a small mechanical scanner (`scan_defects()` in the same test file)
 classifies each region against both trees. See that file and this
 task's report for the classification results.
+
+**Fix round 1 addendum (task-5-review.md's Important finding 2):**
+ANCHOR-CRITICAL's catch criterion and DEBATABLE-1's catch criterion
+each document TWO independently valid fix shapes (temp-file/atomic-
+rename OR append-only writes; atomic reference swap OR a lock guarding
+both paths). `scan_defects()` now recognizes both shapes for both
+regions — validated against two ADDITIONAL constructed single-file
+variants (`fixtures/cp-x1-edit-existing-outcomes/variant-anchor-
+critical-append-only/`, `variant-debatable1-lock-guarded/`), each a
+real, working alternative implementation, not just a text fragment.
+Both are also behaviorally confirmed (crash-survival repro; a real
+lock-serialized concurrent-read repro), not scanned by regex alone.

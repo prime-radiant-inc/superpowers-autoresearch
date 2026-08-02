@@ -46,7 +46,7 @@ confirmation, and the point it raises isn't already answered by the
 plan's own requirements, reply with EXACTLY this text and nothing else
 — do not paraphrase, do not add a prefix or any extra framing:
 
-"looks good, keep going"
+"looks good, keep going."
 
 If what it raises IS already answered by the plan's own requirements,
 point it back at the plan and requirements it already has instead of

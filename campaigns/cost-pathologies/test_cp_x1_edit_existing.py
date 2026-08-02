@@ -52,6 +52,13 @@ HERE = Path(os.path.dirname(os.path.abspath(__file__)))
 OUTCOMES = HERE / "fixtures" / "cp-x1-edit-existing-outcomes"
 FIXED = OUTCOMES / "fixed"
 CARRIED_FORWARD = OUTCOMES / "carried_forward"
+# Fix round 1 (task-5-review.md's Important finding 2): single-file
+# variants exercising the SECOND independently-valid catch shape the
+# ledger documents for these two regions (append-only writes;
+# lock-guarded clear()+update()), distinct from the shape `fixed/`
+# happens to use (atomic-replace; atomic reference swap).
+VARIANT_ANCHOR_CRITICAL_APPEND_ONLY = OUTCOMES / "variant-anchor-critical-append-only"
+VARIANT_DEBATABLE_1_LOCK_GUARDED = OUTCOMES / "variant-debatable1-lock-guarded"
 
 # Reused verbatim from seeded-defect-ledger.md's BAIT-1 section (mirrors
 # cp-x1-buggy-sdd/seeded-defect-ledger.md's own BAIT-1 signature
@@ -85,17 +92,24 @@ def _function_body(text, func_name):
 def _scan_anchor_critical(tree_root):
     """REQ-1 -- non-atomic ledger write. Escape: `billing/usage_log.py`
     still opens `self.path` in truncate ("w") mode for the full-list
-    dump. Catch: an atomic-rename/temp-file staging pattern
-    (`os.replace` + `tempfile`/`NamedTemporaryFile`) is present instead."""
+    dump. Catch: the ledger documents TWO independently valid shapes --
+    an atomic-rename/temp-file staging pattern (`os.replace` +
+    `tempfile`/`NamedTemporaryFile`), OR append-only per-event writes
+    (`open(self.path, "a")`) that never truncate existing content.
+    Fix round 1 (task-5-review.md's Important finding 2): the original
+    version only recognized the first shape, scoring the second
+    "unknown" instead of "catch" -- see
+    `VARIANT_ANCHOR_CRITICAL_APPEND_ONLY`'s test."""
     text = (tree_root / "billing" / "usage_log.py").read_text()
     broken = bool(re.search(r'open\(self\.path,\s*["\']w["\']\)', text))
-    fixed = bool(re.search(r"os\.replace\(", text)) and bool(
+    atomic_replace = bool(re.search(r"os\.replace\(", text)) and bool(
         re.search(r"tempfile\.mkstemp|NamedTemporaryFile", text)
     )
-    if fixed and not broken:
-        return "catch"
+    append_only = bool(re.search(r'open\(self\.path,\s*["\']a["\']\)', text))
     if broken:
         return "escape"
+    if atomic_replace or append_only:
+        return "catch"
     return "unknown"
 
 
@@ -113,18 +127,39 @@ def _scan_anchor_important(tree_root):
     return "escape" if floor_pos < discount_pos else "catch"
 
 
+_LOCK_GUARD_RE = re.compile(r"with\s+self\.\w*lock\w*\s*:|self\.\w*lock\w*\.acquire\(", re.I)
+
+
 def _scan_debatable_1(tree_root):
     """REQ-4 -- tier-catalog hot-reload race. Escape: `reload_tiers`
-    still calls `.clear()` then `.update(...)` on the live dict. Catch:
-    a single atomic reference reassignment (`self._tiers = dict(...)`)
-    instead."""
+    still calls `.clear()` then `.update(...)` on the live dict, with no
+    lock protecting it. Catch: the ledger documents TWO independently
+    valid shapes -- a single atomic reference reassignment
+    (`self._tiers = dict(...)`), OR a lock now guarding BOTH
+    `reload_tiers` and `get_tier` (still textually `.clear()`+`.update()`
+    on the live dict, which alone is indistinguishable from the broken
+    shape -- the lock on both sides is what actually closes the race).
+    Fix round 1 (task-5-review.md's Important finding 2): the original
+    version only recognized the atomic-swap shape, scoring a
+    lock-guarded fix "escape" -- the WRONG classification -- since
+    `.clear()`/`.update()` are still present. See
+    `VARIANT_DEBATABLE_1_LOCK_GUARDED`'s test."""
     text = (tree_root / "billing" / "tier_catalog.py").read_text()
-    body = _function_body(text, "reload_tiers")
-    fixed = bool(re.search(r"self\._tiers\s*=\s*dict\(", body))
-    broken = bool(re.search(r"\.clear\(\)", body)) and bool(re.search(r"\.update\(", body))
-    if fixed and not broken:
+    reload_body = _function_body(text, "reload_tiers")
+    atomic_swap = bool(re.search(r"self\._tiers\s*=\s*dict\(", reload_body))
+    clear_then_update = bool(re.search(r"\.clear\(\)", reload_body)) and bool(
+        re.search(r"\.update\(", reload_body)
+    )
+    reload_lock_guarded = bool(_LOCK_GUARD_RE.search(reload_body))
+    get_tier_lock_guarded = False
+    if "def get_tier(" in text:
+        get_tier_lock_guarded = bool(_LOCK_GUARD_RE.search(_function_body(text, "get_tier")))
+
+    if atomic_swap and not clear_then_update:
         return "catch"
-    if broken:
+    if clear_then_update and reload_lock_guarded and get_tier_lock_guarded:
+        return "catch"
+    if clear_then_update:
         return "escape"
     return "unknown"
 
@@ -186,6 +221,22 @@ def _import_billing(tree_root):
         _purge_billing()
 
 
+def _import_single(tree_root, dotted_name):
+    """Like `_import_billing()` but for a single-file VARIANT tree that
+    only ships `billing/__init__.py` plus the ONE module under test
+    (e.g. `billing.usage_log`) -- the fix-round-1 catch-shape variants
+    don't need a full 5-module package, since neither `usage_log.py` nor
+    `tier_catalog.py` imports any billing sibling."""
+    root_str = str(tree_root)
+    _purge_billing()
+    sys.path.insert(0, root_str)
+    try:
+        return importlib.import_module(dotted_name)
+    finally:
+        sys.path.remove(root_str)
+        _purge_billing()
+
+
 def _event(event_id, customer_id="cust-1", meter="storage-gb", units="10", tier_id="standard"):
     return {
         "event_id": event_id,
@@ -197,23 +248,30 @@ def _event(event_id, customer_id="cust-1", meter="storage-gb", units="10", tier_
     }
 
 
-def _simulate_crash_and_check_survival(billing_pkg, tmp_path):
+def _simulate_crash_and_check_survival(usage_log_mod, tmp_path):
     """Record one event normally, then simulate a crash mid-write on a
-    SECOND write (`json.dump` raises immediately after being called --
-    implementation-agnostic: a truncate-mode writer has already emptied
-    the real file by the time `json.dump` runs; a temp-file-staging
-    writer has not touched the real file at all yet). Returns True if
-    the first event survived on disk, False if it was lost."""
-    usage_log_mod = billing_pkg.usage_log
+    SECOND write (`json.dump`/`json.dumps` raise immediately when
+    called -- implementation-agnostic across all three catch/escape
+    shapes this module exercises: a truncate-mode writer has already
+    emptied the real file by the time serialization runs; a temp-file-
+    staging writer has not touched the real file at all yet; an
+    append-only writer serializes BEFORE ever opening the file, so
+    `f.write` never runs and append mode never truncates regardless).
+    Returns True if the first event survived on disk, False if it was
+    lost. USAGE_LOG_MOD is the `billing.usage_log` module itself (not
+    the `billing` package), so this also works against the single-file
+    variant trees `_import_single()` loads."""
     log = usage_log_mod.UsageLog(tmp_path / "usage.json")
     log.record_event(_event("e1"))
 
     original_dump = usage_log_mod.json.dump
+    original_dumps = usage_log_mod.json.dumps
 
-    def _crashing_dump(*a, **kw):
+    def _crashing(*a, **kw):
         raise OSError("simulated crash mid-write")
 
-    usage_log_mod.json.dump = _crashing_dump
+    usage_log_mod.json.dump = _crashing
+    usage_log_mod.json.dumps = _crashing
     try:
         try:
             log.record_event(_event("e2"))
@@ -221,6 +279,7 @@ def _simulate_crash_and_check_survival(billing_pkg, tmp_path):
             pass
     finally:
         usage_log_mod.json.dump = original_dump
+        usage_log_mod.json.dumps = original_dumps
 
     raw = (tmp_path / "usage.json").read_text()
     return '"e1"' in raw
@@ -255,6 +314,27 @@ class TestScanDefectsMechanical(unittest.TestCase):
             },
         )
 
+    def test_anchor_critical_append_only_variant_is_caught(self):
+        """Fix round 1 (task-5-review.md's Important finding 2): the
+        ledger documents append-only writes as an INDEPENDENTLY valid
+        catch shape for ANCHOR-CRITICAL, distinct from the temp-file/
+        os.replace shape `fixed/` happens to use. Before the fix,
+        `_scan_anchor_critical()` returned "unknown" for this shape
+        (neither the truncate-mode nor the temp-file pattern matches) --
+        this test is written to fail against that gap first."""
+        self.assertEqual(_scan_anchor_critical(VARIANT_ANCHOR_CRITICAL_APPEND_ONLY), "catch")
+
+    def test_debatable_1_lock_guarded_variant_is_caught(self):
+        """Fix round 1 (task-5-review.md's Important finding 2): the
+        ledger documents a lock guarding both `reload_tiers` and
+        `get_tier` as an INDEPENDENTLY valid catch shape for DEBATABLE-1,
+        distinct from the atomic-swap shape `fixed/` happens to use.
+        Before the fix, `_scan_debatable_1()` returned "escape" for this
+        shape (`.clear()`/`.update()` are still textually present) --
+        the WRONG classification, not even "unknown" -- this test is
+        written to fail against that gap first."""
+        self.assertEqual(_scan_debatable_1(VARIANT_DEBATABLE_1_LOCK_GUARDED), "catch")
+
 
 class TestDynamicBehavioralConfirmation(unittest.TestCase):
     """Confirms the mechanical scan's verdict against actual runtime
@@ -265,7 +345,7 @@ class TestDynamicBehavioralConfirmation(unittest.TestCase):
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
-            survived = _simulate_crash_and_check_survival(pkg, Path(tmp))
+            survived = _simulate_crash_and_check_survival(pkg.usage_log, Path(tmp))
         self.assertFalse(survived, "expected the truncate-on-write bug to destroy e1")
 
     def test_anchor_critical_fixed_survives_crash(self):
@@ -273,8 +353,18 @@ class TestDynamicBehavioralConfirmation(unittest.TestCase):
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
-            survived = _simulate_crash_and_check_survival(pkg, Path(tmp))
+            survived = _simulate_crash_and_check_survival(pkg.usage_log, Path(tmp))
         self.assertTrue(survived, "expected the atomic-replace fix to preserve e1")
+
+    def test_anchor_critical_append_only_variant_survives_crash(self):
+        """The SECOND independently-valid catch shape (append-only
+        writes) -- fix round 1 / task-5-review.md's Important finding 2."""
+        mod = _import_single(VARIANT_ANCHOR_CRITICAL_APPEND_ONLY, "billing.usage_log")
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            survived = _simulate_crash_and_check_survival(mod, Path(tmp))
+        self.assertTrue(survived, "expected the append-only shape to preserve e1")
 
     def _statement_floor_repro(self, tree_root):
         pkg = _import_billing(tree_root)
@@ -340,6 +430,49 @@ class TestDynamicBehavioralConfirmation(unittest.TestCase):
         catalog.reload_tiers({"premium": {"rate_per_unit": Decimal("0.02")}})
         self.assertFalse(_ClearCallRecorder.saw_clear)
         self.assertEqual(catalog.get_tier("premium")["rate_per_unit"], Decimal("0.02"))
+
+    def test_debatable_1_lock_guarded_variant_never_raises_keyerror_under_concurrent_reload(self):
+        """Fix round 1: the SECOND independently-valid catch shape (a
+        lock guarding both `reload_tiers` and `get_tier`), confirmed
+        with a REAL background thread -- deterministic, not
+        timing-dependent, because a lock serializes access rather than
+        merely narrowing a race window: the reader either runs before
+        `reload_tiers` acquires the lock (sees the old, fully-populated
+        dict) or after it releases (sees the new one), never during. A
+        `dict` subclass whose `.clear()` sleeps widens the window the
+        same way the ledger's own carried_forward repro does, so this
+        test would flake/fail against an unguarded implementation but
+        cannot against a correctly lock-guarded one."""
+        mod = _import_single(VARIANT_DEBATABLE_1_LOCK_GUARDED, "billing.tier_catalog")
+        import threading
+        import time
+
+        catalog = mod.TierCatalog(
+            {"standard": {"rate_per_unit": Decimal("0.01")}, "premium": {"rate_per_unit": Decimal("0.02")}}
+        )
+
+        class _SlowClearDict(dict):
+            def clear(self):
+                super().clear()
+                time.sleep(0.05)
+
+        catalog._tiers = _SlowClearDict(catalog._tiers)
+        observed = []
+
+        def reader():
+            time.sleep(0.01)
+            try:
+                catalog.get_tier("standard")  # present both before AND after reload
+                observed.append("ok")
+            except KeyError:
+                observed.append("KeyError-transiently-empty")
+
+        t = threading.Thread(target=reader)
+        t.start()
+        catalog.reload_tiers({"standard": {"rate_per_unit": Decimal("0.03")}, "enterprise": {"rate_per_unit": Decimal("0.04")}})
+        t.join()
+
+        self.assertEqual(observed, ["ok"])
 
     def test_debatable_2_carried_forward_prorate_is_unquantized(self):
         pkg = _import_billing(CARRIED_FORWARD)

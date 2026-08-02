@@ -1,4 +1,6 @@
-"""Storage tier catalog, reloadable live without restarting the service.
+"""Storage tier catalog, reloadable live without restarting the service,
+extended with a tier-existence check (REQ-6 of
+credit-adjustments-plan.md's Task 2).
 
 CONSTRUCTED OUTCOME TREE (campaigns/cost-pathologies/
 test_cp_x1_edit_existing.py) -- "fixed": `reload_tiers` now replaces the
@@ -14,6 +16,10 @@ class TierCatalog:
 
     def get_tier(self, tier_id):
         return self._tiers[tier_id]
+
+    def has_tier(self, tier_id):
+        """Whether `tier_id` is currently present in the catalog (REQ-6)."""
+        return tier_id in self._tiers
 
     def reload_tiers(self, new_tiers):
         """Replace the live tier catalog with `new_tiers` without

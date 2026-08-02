@@ -34,6 +34,14 @@ proration. Synthetic fixture; no real system or customer data.
   one usage event for the same meter; whether the calculation merges
   them into one total or itemizes them separately is not specified and
   is not a defect either way. Do not treat either choice as a defect.
+- REQ-6 (unknown tier id fails clearly): `prorate_tier_change` MUST
+  raise a clear, named error — not a bare `KeyError` — when
+  `old_tier_id` is not present in the catalog. Add a
+  `has_tier(tier_id) -> bool` lookup to `TierCatalog` and use it to
+  check before looking the tier up.
+- REQ-7 (zero-length cycle guarded): `prorate` MUST raise a clear
+  `ValueError` — not a bare `ZeroDivisionError` — when `days_in_cycle`
+  is 0.
 
 ## Global Constraints
 
@@ -84,6 +92,8 @@ pre-discount one).
 
 **Files:**
 
+- Modify: `billing/tier_catalog.py`
+- Modify: `billing/pricing.py`
 - Create: `billing/tier_change.py`
 - Create: `tests/test_tier_change.py`
 
@@ -91,20 +101,29 @@ pre-discount one).
 
 - Consumes: `prorate`
 - Consumes: `reload_tiers`, `get_tier`
+- Produces: `has_tier(tier_id) -> bool` (on `TierCatalog`)
 - Produces: `prorate_tier_change(customer_id, log, catalog, old_tier_id, days_active, days_in_cycle) -> Decimal`
+
+Add `has_tier(tier_id)` to `billing/tier_catalog.py`'s `TierCatalog`,
+returning whether `tier_id` is currently present in the catalog (REQ-6).
+Add a guard to `billing/pricing.py`'s `prorate`: raise `ValueError`
+before doing any division when `days_in_cycle` is 0 (REQ-7).
 
 Implement `prorate_tier_change(...)` in `billing/tier_change.py`:
 gathers every usage event for `customer_id` from `log`, sums units per
-meter (REQ-5 governs duplicate meter readings within the window),
-computes each meter's full-cycle charge via `compute_charge` against
-`catalog.get_tier(old_tier_id)`, then prorates the summed full-cycle
-charge via the existing `prorate` function (REQ-3) for `days_active` of
-`days_in_cycle`. The tier lookup must tolerate a concurrent
-`catalog.reload_tiers` call per REQ-4. Returns the prorated `Decimal`
-total.
+meter (REQ-5 governs duplicate meter readings within the window). Uses
+`catalog.has_tier(old_tier_id)` to raise a clear, named error before
+calling `catalog.get_tier(old_tier_id)` (REQ-6), then computes each
+meter's full-cycle charge via `compute_charge` against that tier, then
+prorates the summed full-cycle charge via the existing `prorate`
+function (REQ-3, REQ-7) for `days_active` of `days_in_cycle`. The tier
+lookup must tolerate a concurrent `catalog.reload_tiers` call per
+REQ-4. Returns the prorated `Decimal` total.
 
 **Tests:** `tests/test_tier_change.py` covering: a known full-cycle
-charge prorated for a partial cycle against a known expected value.
+charge prorated for a partial cycle against a known expected value;
+`prorate_tier_change` raises a clear error for an unknown tier id
+(REQ-6); `prorate` raises `ValueError` for `days_in_cycle=0` (REQ-7).
 
 **Verification:** `pytest tests/`
 
