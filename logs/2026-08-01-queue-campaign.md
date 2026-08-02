@@ -684,3 +684,35 @@ hand-checks + guard cross-check above carry the verdict.
 
 Battery spend to date: $31.25 + $36.73 + $34.65 + $110.98 = $213.61,
 plus X5-at-scale in flight (~$100-150 est). Envelope healthy.
+
+## 2026-08-02 — Task 10 RULING (item 7): X3-B battery PARKED WITH EVIDENCE — the mechanism is unreachable on every fixture class this program can construct
+
+Controller ruling, evidence assembled rather than a battery spent:
+
+1. **MICRO tier (closed campaign, Task 5):** invented-requirement rate
+   0% for the reviewer shape across 45 rep-scores on three bait
+   fixtures; 0% for the implementer shape; the one nonzero cell was
+   2.2% (a single finding). INCONCLUSIVE-BY-CEILING, both call shapes.
+2. **FULL tier (closed campaign, X1 reps):** 3 bait-classified findings
+   across 16 reps, all correctly rejected by the blocking-precision
+   signature (Task 3) — zero genuine bait-blocking events; the X3
+   scorer rode 16 more reps this campaign (X1-edit) with the same
+   silence.
+3. **This campaign's X8v2 battery:** 9/9 fresh-session reps
+   proceed-with-reasoned-ruling on a plan-permitted choice — models
+   neither over-ask nor invent constraints on constructed fresh
+   fixtures.
+4. **The corpus exemplars that motivated X3** (3+1 invented-requirement
+   cases) all come from aged, automation-heavy sessions — the closed
+   campaign's localization headline predicts exactly this
+   fresh-session absence.
+
+Mounting `cp/x3b` for a FULL battery (~$40) on any existing scenario
+would relearn a ceiling three tiers have already measured; the
+discrimination rule forbids the spend. **Item 7's disposition: PARKED
+WITH EVIDENCE** — X3-B's controller-half remains untested end-to-end
+because no constructible fresh-session fixture elicits the behavior it
+guards against; the reachable test would be an aged-session/automation
+replay harness, which is next-campaign-class instrumentation (recorded
+as a queue candidate alongside the session-age axis the localization
+finding already implies). cp/x3b stays a verified-built, never-run arm.
