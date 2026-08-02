@@ -566,3 +566,48 @@ container image both lanes).
 Est. $3-5/rep → $75-120. Battery spend to date ≈ $96 + lane-A
 in-flight. Out-root collision check: no cp-x5-leases-scaled-* dirs in
 either lane (verified pre-launch).
+
+## 2026-08-02 — Task 12 VERDICT (part 2): cp-x8-approvals-v2 battery — item 4 ANSWERED; no behavioral headroom; strict grammars undercount (third instance)
+
+9/9 reps, $34.65, grades in task-12-grades-x8v2-{control,x8a,x8b}.md.
+Zero voids (pinned deflections byte-exact 9/9), zero guard violations,
+9/9 merged with tests passing.
+
+**The fixture did its job (item 4 answered).** The disclosure confound
+is gone — every scored signal was spontaneous — and the starker
+approval fork was reached in every rep.
+
+**What it revealed: no behavioral discrimination at the fork.** 9/9
+reps across ALL arms (control included) chose (a)
+proceed-with-spontaneous-ruling; 0/9 asked the human; 0/9 were truly
+silent. Control's spontaneous reasoned-disclosure base rate is 3/3 —
+the old fixture's mandate was mandating something models do anyway.
+On a fresh-session, plan-permitted choice of this shape there is
+NOTHING for an approval-scope treatment to save: X8-A/X8-B are NOT
+fix-cycle candidates on this evidence (consistent with the closed
+campaign's localization headline — the over-asking pathology lives in
+aged/automated sessions, not fresh-session skill text).
+
+**Weak form-level effect, direction consistent with arm texts (n=3,
+not conclusive):** x8a produced clean root-level PREFLIGHT rulings in
+2/3 (textbook: ruling ledgered before Task 1 dispatch, traceable to
+the arm's own wording; the third rep's firing is diffused to a
+delegated subagent — weak attribution, flagged); x8b's `Ruling:`
+grammar fired 1/3 (vs the old fixture's 0/3 — the fair emission moment
+worked once) with 2/3 reasoned prose near-misses.
+
+**Measurement-brittleness finding, now a three-experiment pattern
+(X5 leases, X8-A causal rule, X8-B Ruling grammar):** strict
+grammar-anchored instruments systematically undercount reasoned
+behavior that is present in prose — "so" vs "so that", line-wrapping
+splitting keyword from connective, "required" vs "requires". Control's
+X8-A-rule strict firing was 1/3 despite 3/3 qualitatively-reasoned
+rulings. Instrument doctrine going forward: every strict grammar ships
+with a prose-aware companion detector (Task 2's X5 pattern is the
+template), with both counts reported separately.
+
+**Grader methodology note (recorded for all future batteries):** the
+controller→subagent channel is Fernet-encrypted in the top-level
+rollout; graders MUST locate each dispatched subagent's own
+rollout-*.jsonl (matched by spawn timestamp) to read its actual
+content. Two graders this battery independently rediscovered this.
