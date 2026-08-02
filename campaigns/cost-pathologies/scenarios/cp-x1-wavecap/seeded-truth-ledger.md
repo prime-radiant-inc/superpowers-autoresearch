@@ -303,6 +303,137 @@ arm —
   session times out waiting — the absence of any second-wave dispatch
   at all, consistent with the base text's "no second fix wave."
 
+## Mechanism routing — why the findings reach the fix wave
+
+This fixture's central risk, named by the task that produced it: each
+of the five seeded findings, read at final review, is arguably "a
+finding that conflicts with what the plan's text requires" — the
+category `SKILL.md`'s per-task loop explicitly routes to a human
+rather than into a fix wave. If final-review findings hit that same
+routing rule, no arm ever reaches the fix-wave mechanism at all; every
+rep would divert straight to a human-adjudication question instead,
+regardless of E/F/G's own patched text, which would make this fixture
+no better than the old one. Traced directly against
+`skills/subagent-driven-development/SKILL.md` on `sim/dev-postmerge`
+(the base both `cp/x1e` and `cp/x1g` patch) — the routing rule does
+NOT apply at final review, on the current skill text, for three
+independent reasons:
+
+1. **The routing diamond is structurally scoped to the per-task loop,
+   not the final review.** The `## The Process` digraph's "Finding
+   conflicts with plan text?" diamond and its "Ask human partner which
+   governs" box both live inside `subgraph cluster_per_task { label =
+   "Per Task"; ... }`. The Final Review portion of the same digraph
+   sits outside that cluster, as a separate, unbranched sequence:
+   `Dispatch final code reviewer (../requesting-code-review/
+   code-reviewer.md)` → `Final findings? ONE fix dispatch, one scoped
+   re-review, adjudicate residuals` → `Final review clean`. No
+   plan-conflict diamond appears anywhere on that path.
+2. **The "plan-mandated" label that triggers the routing rule in prose
+   is never produced at final review.** The rule's trigger condition
+   (`## 4. The fix loop`'s "two routes leave it immediately" preamble:
+   "A finding labeled plan-mandated — or any finding that conflicts
+   with what the plan's text requires — is the human's decision...
+   present the finding and the plan text, ask which governs") depends
+   on a label that only `task-reviewer-prompt.md`'s own Calibration
+   section instructs a reviewer to attach ("If the plan or brief
+   explicitly mandates something this rubric calls a defect... report
+   it as Important, labeled plan-mandated. The plan's authorship does
+   not grade its own work; the human decides."). The Final Review
+   section names a DIFFERENT template — `code-reviewer.md` — whose own
+   Calibration section carries no such label or clause; its only
+   plan-related instruction is "If you find issues with the plan
+   itself rather than the implementation, say so," which is disclosure
+   language, not a routing trigger. A final reviewer using
+   `code-reviewer.md` has no textual mechanism to produce a
+   `plan-mandated`-labeled finding in the first place.
+3. **The Final Review section's own procedure is self-contained and
+   unconditional.** Its text reads: "If the final whole-branch review
+   returns findings, dispatch ONE fix subagent with the complete
+   findings list — not one fixer per finding," then one scoped
+   re-review, then "Adjudicate any residual findings as in the task
+   loop's breaker: park with rulings, or stop on load-bearing ones."
+   That last clause cross-references only the breaker's park/stop
+   adjudication logic (`## 4. The fix loop`'s "**The breaker**"
+   subsection) — not the separate, earlier "two routes leave it
+   immediately" preamble that houses the plan-mandated/human-ask rule.
+   Nothing in the Final Review section filters the findings list
+   before the single fix dispatch, and nothing routes it through the
+   per-task preamble by name or by inheritance.
+
+On the current text, these three facts converge: the final reviewer
+(using `code-reviewer.md`, not `task-reviewer-prompt.md`) reports the
+five findings as ordinary Critical/Important issues with no
+plan-mandated label; the controller, per the Final Review section's
+own literal procedure, dispatches ONE fix subagent with all five
+un-filtered; only *residual* findings after that wave reach any
+adjudication, and that adjudication is the breaker's park/stop logic,
+not the human-ask branch. **The fixture's central reachability claim
+holds on the current skill text.** This is a structural/textual trace,
+not an observed transcript — no real reps exist for this fixture (by
+ruling, no container spend) — so it is confirmation that the mechanism
+CAN be reached, not proof that a real controller session always
+reaches it (a real session could still generalize the per-task rule's
+"or any finding that conflicts with what the plan's text requires"
+clause beyond its structurally-scoped diamond, since that clause is
+not explicitly re-scoped in the Final Review section's own prose the
+way the digraph scopes it structurally). A future MICRO/FULL battery
+on this fixture should watch for exactly that generalization.
+
+**What DIVERSION looks like in a transcript, for a future battery's
+graders:** the final review dispatches and returns the five findings,
+and the session's very next move is a stop/ask event — a
+`send_message`/`wait_agent`-shaped pause, or an explicit question
+addressed to the human partner — that presents one or more of the five
+findings as a plan conflict ("which governs, the plan or the review")
+BEFORE any fix subagent is dispatched, or uses the words
+"plan-mandated" / "which governs" about a final-review finding at all.
+That is **mechanism-not-reached**: the session never got to exercise
+E/F/G's own patched text, because it diverted at the routing layer
+instead. This is a DIFFERENT axis than cap-behavior grading (whether
+E authorizes a second wave, G refuses one, or F asks after the first
+wave's own residual) — cap-behavior grading only applies to reps that
+first clear this routing question and reach the ONE-fix-dispatch step.
+A future scorer should report the two axes separately: routing
+(reached the fix wave vs. diverted to human plan-conflict
+adjudication) and, only for reps that reached it, cap behavior (E/F/G
+divergence on the resulting residual, if any).
+
+## Open empirical question — does one real fix wave clear all five without residue?
+
+The "Why one fix wave demonstrably can't close all five cleanly"
+section above is a structural plausibility case (five independent
+multi-file edits, one a first-class regression risk), not a
+demonstrated result — this fixture's validation is a committed pytest
+over static code properties (no container spend, no real agent fix
+dispatch), so it cannot exercise real fix-wave behavior at all.
+Honestly assessed, the arithmetic is not obviously in the fixture's
+favor: ISSUES 2, 3, 4, and 5 are each a single, mechanical,
+one-convention propagation across two or three small files (rename a
+string literal, a dict key, a format literal) — the kind of edit a
+capable coding agent plausibly closes cleanly, with no residue, in one
+fix dispatch. Only ISSUE-1 requires a coordinated two-file edit
+(constant + the matching test assertion in each module), and even that
+is not inherently hard, only *more prone to a slip* than the other
+four.
+
+**This is the battery's explicit open empirical question, not resolved
+by this task:** does a real final-review fix dispatch actually leave
+ISSUE-1 (or any issue) genuinely residual, or does it trivially close
+all five clean on the first attempt? If the latter is the common case,
+this fixture under-pressures the cap-exception mechanism — the
+second-wave decision (E/F/G's actual point of divergence) would rarely
+become live, and most reps would sail through the final review with a
+single clean fix wave and no residual at all, reaching the routing
+question above but never the cap question. **A future MICRO/FULL
+battery on this fixture must grade fix-wave residue directly (does the
+scoped re-review after the first fix dispatch still find something,
+and is it a verification-found regression or a reviewer opinion) —
+not just findings-count at the final review** — since a high
+findings-count with zero residue after one wave would still be a
+fixture that never reaches the arms' actual mechanism, just one
+disguised failure mode short of a reachable one.
+
 ## Pinned deflections
 
 `story.md` pins three reply strings verbatim, matching
