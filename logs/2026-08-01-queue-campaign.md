@@ -382,3 +382,67 @@ recorded for the battery: whether a real fix wave leaves residue across
 all five issues or trivially clears them (under-pressure risk). Suite
 211/552 green under both invocations. The wave-cap arms' mechanism is
 reachable-by-design for the first time; battery in plan Task 12.
+
+## 2026-08-01 — Task 12 PRE-REGISTRATION (part 1 of the fixture batteries): cp-x1-edit-existing + cp-x1-wavecap
+
+(Entry written to the log file before launch; committed at the next
+docs checkpoint so the concurrently-running Task 7 implementer's review
+package stays scoped to its own diff — timing disclosed for honesty.)
+
+**Battery A — cp-x1-edit-existing (item 1's run). Lane A, 16 FULL reps.**
+Arms (rebased SHAs per manifest): control @ 1fed99d, x1a @ 89c7684
+(criterion-backing), x1b @ b618107 (rising floor), x1c @ 208dc4d
+(marginal-value), n=4 each. Primary criteria: (1) defect-escape/catch
+per the fixture's seeded-truth ledger — scan_defects() mechanically,
+PLUS mandatory hand-verification of every "unknown" and any
+out-of-family lock naming (documented heuristic limit); (2) review
+dynamics via the fixed score_x1_chains; (3) the pre-registered X1 guard:
+an arm that converges faster while shipping more seeded defects FAILS
+regardless of cost. Discrimination guard: if control shows 0 escapes in
+4 reps, the fixture's escape pressure is insufficient — STOP and report
+before reading arm differences; if all arms are identical on every
+axis, ceiling is declared honestly. Est. $6-10/rep → $100-160.
+
+**Battery B — cp-x1-wavecap (item 2's run). Lane B, 9 FULL reps.**
+Arms: control @ 1fed99d, x1e @ 1c6db05 (scoped auto second wave),
+x1g @ a8df1ff (hard cap), n=3 each. Primary criteria: (1)
+mechanism-reached rate — final whole-branch review produces findings
+and a fix wave is dispatched; diversion to a human plan-conflict stop
+before any fix dispatch = mechanism-not-reached per the fixture
+ledger's routing signature; (2) cap behavior per arm once reached —
+E's scoped second wave fires only per its trigger text; G's hard cap
+holds (one wave, residuals adjudicated); control's behavior recorded
+as the baseline; (3) the ledger's open residue question — does ONE
+wave clear all five seeded issues (under-pressure check), graded from
+the fix-wave diff. Discrimination guard: if 0/9 reps reach a
+finding-bearing final review, the fixture failed — STOP. Void rule:
+pinned-deflection deviation voids the rep. Est. $3-5/rep → ~$35.
+
+Out-root collision check: neither lane contains any cp-x1-edit-existing-*
+or cp-x1-wavecap-* result dirs (new scenarios; verified pre-launch).
+Cumulative battery spend before launch: $31.25 of $1000.
+
+## 2026-08-01 — Task 7 complete (item 3): cp-x6-planframed + MINE tier with a real baseline
+
+Commit 95b695c; review APPROVED (spec ✅, 0 Critical/Important, 2 Minor
+deferred). The fixture: cp-x6-smalledits's dozen-small-edits work
+reframed as an explicit 12-task SDD plan (every task single-file,
+Modify-only, one-line — the batching-vs-dispatch decision live at each);
+trade-off recorded in the ledger (tests X6-once-engaged, not
+whether-SDD-engages); predicted arm signature (control ~12 dispatches,
+x6a few batches, x6b ~0) labeled a prediction. Privacy: reviewer
+independently swept all 54 files + commit message — clean; MINE script
+is aggregate-only by construction including error paths.
+
+**MINE baseline (item 3's second half), controller-run against this
+host's real session archive** (aggregate stats only; corpus root passed
+as CLI arg; the task's local-corpus run had disclosed n=2, superseded by
+this): **174 dispatching sessions, 2,072 dispatches. Dispatch count per
+session: median 2, p75 4, max 369, mean 11.9** (histogram: 1→45, 2→55,
+3→26, 4-5→22, 6-10→9, 11+→17). **Dispatch-floor ratio
+(total tokens consumed ÷ useful output tokens): p25 3,287× — median
+79,504× — p75 2.24M×** (per-dispatch total tokens median 7.4M vs useful
+output median 274). The heavy tail reflects full-history duplication in
+long multi-dispatch sessions, consistent with the closed campaign's
+fork-tax measurements. The cp-x6-planframed battery's dispatch counts
+now have a real-world distribution to sit against.
