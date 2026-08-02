@@ -611,3 +611,24 @@ controller→subagent channel is Fernet-encrypted in the top-level
 rollout; graders MUST locate each dispatched subagent's own
 rollout-*.jsonl (matched by spawn timestamp) to read its actual
 content. Two graders this battery independently rediscovered this.
+
+## 2026-08-02 — Task 13 complete (items 16, 17, 19); spawn-limit process note
+
+Commits 532805e (parser-limit pinning tests ×4 + multi-name backtick
+decomposition fixed in the VENDORED campaign copy of plan-conflict-scan
+— cp/x7b's graded treatment copy deliberately untouched per the
+no-ungraded-text rule; drift risk tracked), 63fbacf (design Amendment 3:
+X5-A honoring echoes through the plain exec-output channel X5-B already
+proved survives codex encryption), 595456c (scope-auditability design
+note — M0's unfalsifiability fix, explicit input to the
+plan-decomposition campaign, citing the wave-cap reviewer-blindness
+finding). Ripple check: the FIXED scanner still reports zero conflicts
+on cp-x1-wavecap's plan — no correction needed. Suites 282/623
+pristine.
+
+**Process note:** the session hit its 200-subagent spawn limit at this
+task's review dispatch. Per the never-stall doctrine the controller
+performed the Task 13 review directly (full evidence in
+task-13-review.md, independence break disclosed); remaining battery
+grading requires either a raised limit (CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION)
+or a fresh session — surfaced to Jesse.
