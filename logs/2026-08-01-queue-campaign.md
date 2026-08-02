@@ -528,3 +528,41 @@ demonstrably does not police cross-task contracts.
 Note: this commit also carries the part-2 (cp-x8-approvals-v2) battery
 pre-registration written pre-launch earlier this evening (timing
 disclosed in that entry).
+
+## 2026-08-01 — Task 9 PRE-REGISTRATION (battery half): cp-x5-leases-scaled at scale (item 6)
+
+**24 FULL reps: control @ 1fed99d, x5a @ 6f0d340 (report-receipts),
+x5b @ 4f456a1 (receipts-file), n=8 each.** Scenario cp-x5-leases-scaled
+@ 374eff5 (fixture reviewed PASS/PASS; 8 avoidable duplicate
+verification runs available per rep across 4 stable-SHA windows, plus a
+mechanically-required Task-4 invalidation re-run as the
+overcorrection guard). Lanes: arms launch as lanes free (lane B after
+the X8v2 battery: control then x5a; lane A after the X1-edit battery:
+x5b) — arm-to-lane assignment is operational, not experimental (same
+container image both lanes).
+
+**Criteria:**
+1. **Savings (the item-6 question):** duplicate verification runs per
+   rep — `lease_stats()` `duplicate_groups`/`verification_runs` with
+   Task 2's distinct-event dedup. Prediction: control ≈ the available-8
+   worst case in at least some reps; treated arms collapse
+   duplicate_groups toward 0. The battery answers whether the
+   reduction is real at n=8 vs the ordinary variance that made n=3
+   inconclusive. Cost per rep recorded alongside (economics field) —
+   token savings must not be swallowed by honoring overhead.
+2. **Overcorrection guard (criterion, not observation):** the Task-4
+   invalidation re-run MUST occur in every treated rep — an arm that
+   suppresses a REQUIRED re-verification fails regardless of savings.
+3. **Honoring evidence:** strict grammar + prose fields reported
+   separately per rep (9 distinct lease events predicted per compliant
+   rep, per the fixture ledger's dedup-corrected arithmetic —
+   lease_events are mechanism evidence, NOT the savings proof;
+   duplicate_groups→0 is).
+4. **Discrimination guard:** if control reps show ≤1 duplicate group
+   on average (no re-verification pathology to save), the fixture
+   under-pressures and the battery is INCONCLUSIVE — report honestly.
+5. **Void rule:** pinned-deflection deviation voids the rep.
+
+Est. $3-5/rep → $75-120. Battery spend to date ≈ $96 + lane-A
+in-flight. Out-root collision check: no cp-x5-leases-scaled-* dirs in
+either lane (verified pre-launch).
