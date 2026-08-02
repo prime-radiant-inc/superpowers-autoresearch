@@ -350,3 +350,51 @@ norms favor stop-and-ask in interactive work. This directive is scoped
 to autonomous SDD execution, where the human has already delegated the
 plan; the catastrophic boundary and the explicit-permission carve-outs
 (merges/pushes) preserve the norms that must survive.
+
+---
+
+## Amendment 3 (2026-08-01): X5-A's honoring channel under codex (queue-campaign item 17)
+
+The closed campaign's Task 11 battery (C1 correction,
+`logs/2026-07-31-cost-pathologies.md`) found X5-A's receipt-issuing half
+real and correctly formed but its honoring/invalidation half
+structurally invisible under codex: the design's own text routes the
+`LEASE-HONORED:`/`LEASE-INVALIDATED:` line through "the reviewer's
+dispatch itself" — codex's inter-agent dispatch payload, encrypted at
+rest (`"type": "encrypted_content"`; the same M0-documented harness fact
+that left the sidequest scope check recoverable for only 17–24% of codex
+work). X5-B's honoring/invalidation, routed instead through a plain
+`custom_tool_call_output` (its receipts file read back via `cat`), was
+hand-verified firing 3/3 in the same battery — proof the marker survives
+codex's channel, just not the one X5-A currently uses.
+
+**Mechanism.** X5-A's honoring/invalidating seat (a reviewer or
+fix-round dispatch declining to re-run a command because an existing
+receipt already covers it at the current tree_sha) additionally echoes
+its `LEASE-HONORED:`/`LEASE-INVALIDATED:` line through a plain shell
+command — e.g. `echo "LEASE-HONORED: command=<command_norm>
+tree_sha=<sha>"` — so the line lands in the rollout as an ordinary
+tool-call OUTPUT, not only inside the dispatch prompt's own encrypted
+text. This is the same channel category X5-B's design already routes
+its receipts-file reads through, and it is not speculative:
+`score_x5_leases.py`'s `_text_sources()` already scans it
+(`_collect_call_outputs()`, plus, per queue-campaign Task 2/item 10, the
+exec CALL text itself) — the scorer needs no change.
+
+**Why this doesn't change the treatment's behavior-shaping semantics.**
+X5-A's actual decision — the controller recognizing an unchanged
+tree_sha and skipping a redundant verification run — is untouched. The
+echo is one additional, read-only shell command alongside the existing
+dispatch-prose citation, not a replacement for it and not a new decision
+point. X5-A still differs from X5-B in its primary design (receipts
+carried in the report/dispatch prose, not a dedicated per-task file);
+this amendment only makes that same prose-carried decision additionally
+visible through a channel codex does not encrypt.
+
+**What the scorer picks up.** The echoed line matches `_LEASE_LINE_RE`
+directly (the strict grammar), so `_lease_events()` counts it as a real,
+distinct `(kind, command_norm, tree_sha)` event — `receipts_honored`/
+`invalidation_reruns` become non-zero under codex without relying on the
+deliberately conservative prose detector (`_lease_events_prose()`, known
+to miss 1 of 8 real exchanges by design). No battery runs this campaign;
+this is a design amendment on record for whoever revisits X5-A next.
