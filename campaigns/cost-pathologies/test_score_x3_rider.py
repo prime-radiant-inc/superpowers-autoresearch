@@ -196,11 +196,14 @@ class TestBaitBlockingSignature(unittest.TestCase):
     unchanged). Negative cases: the two manually-corrected false
     positives from the campaign's real FULL battery corpus (Task 8,
     logs/2026-07-31-cost-pathologies.md's "X3 rider" section), text
-    recovered verbatim from the rep artifacts via score_x1_chains.
-    resolve_chains() + score_x3_rider.classify_finding() (see this
-    task's report for the recovery script) -- both are confirmed to
-    match the OLD recall signature (classify_finding returns "bait")
-    while being unrelated to REQ-7's actual scenario."""
+    recovered via the SAME extraction path score_x3_rider itself
+    consumes (score_x1_chains.resolve_chains() -> _extract_findings()
+    -> _normalize(), which lowercases, strips markdown `**`, and
+    collapses whitespace before matching -- these strings are therefore
+    NOT byte-identical to the raw rollout JSONL; see this task's report
+    for the recovery script and a raw-vs-normalized comparison) -- both
+    are confirmed to match the OLD recall signature (classify_finding
+    returns "bait") while being unrelated to REQ-7's actual scenario."""
 
     # Rep: evals/results/cp-x1-buggy-sdd-x1a-rep2
     # File: rollout-2026-08-01T07-26-03-019fbc37-396a-7823-ba45-8f18e2f42d34.jsonl
@@ -309,6 +312,105 @@ class TestBaitBlockingSignature(unittest.TestCase):
                      "line/rejection records will expose `meter`, `plan_id`, `units`, "
                      "and final Decimal `amount`.")
         self.assertTrue(x3.bait_blocking_signature(narration))
+
+
+class TestBaitBlockingSignaturePositiveConstructed(unittest.TestCase):
+    """CONSTRUCTED (synthetic, NOT drawn from any rep transcript) positive
+    fixtures in the extracted-finding `(severity, text)` shape
+    bait_blocking_signature() actually targets -- added per queue-
+    execution campaign Task 3 round-1 review finding 2: the real 16-rep
+    FULL corpus has ZERO genuine bait-blocking findings (independently
+    re-verified in this task's report: scanning every rollout across all
+    16 reps for classify_finding(text) == ("bait", ...) among Critical/
+    Important/Minor findings turns up exactly 3 hits total -- the 2 real
+    false positives above plus one unrelated Minor hit -- and ALL THREE
+    return False from bait_blocking_signature(); this is the campaign's
+    own disclosed 0/16 ceiling-effect result, not a claim manufactured
+    here). Each fixture below is realistic Critical/Important finding
+    language a reviewer WOULD write to (wrongly) block on REQ-7, built
+    from the fixture's own documented trap vocabulary (scenarios/
+    cp-x1-buggy-sdd/seeded-defect-ledger.md's BAIT-1 section: "missing/
+    incorrect duplicate-meter handling is a defect" / "missing
+    deduplication"). Each isolates a DIFFERENT alternative of
+    BAIT_BLOCKING_RE (verified against the regex source before writing
+    these assertions -- see this task's report) so a broken alternative
+    fails a specific test, not just "some test somewhere"."""
+
+    # Isolates the `duplicat\w*.{0,30}meter` alternative ONLY -- no
+    # "reading"/"dedup"/"merg" word anywhere in this text, so it cannot
+    # pass via any other alternative.
+    SYN_DUPLICATE_METER_ONLY = (
+        "Critical: the invoicer treats duplicate meter identifiers as if they were "
+        "unique -- REQ-7 requires grouping repeated entries for the same meter into "
+        "one line, and every repeat identifier is billed again as a brand-new charge, "
+        "a serious overcharge."
+    )
+
+    # Isolates the `(dedup\\w*|merg\\w*).{0,30}meter.{0,30}reading` /
+    # reversed alternative ONLY -- no "duplicat" word anywhere, so it
+    # cannot pass via the duplicate-meter alternative.
+    SYN_MERGE_METER_READING_ONLY = (
+        "Critical: the code never merges repeated meter readings within one "
+        "invoicing batch, so two readings for the same meter are billed as separate "
+        "line items instead of being combined -- REQ-7 requires single-line merging, "
+        "and every double-reading batch overcharges the customer."
+    )
+
+    # Isolates the `same meter.{0,30}(twice|multiple|reused)` alternative
+    # ONLY -- no "duplicat"/"dedup"/"merg"+"reading" combination present.
+    SYN_SAME_METER_TWICE_ONLY = (
+        "Important: the same meter appears twice within one invoicing batch, and "
+        "both entries are billed separately instead of merged into one line -- "
+        "REQ-7 requires the second occurrence to be caught, and this reviewer "
+        "treats that gap as blocking."
+    )
+
+    # The CONTRAST case the review explicitly requires: realistic
+    # Critical finding phrasing that trips MULTIPLE alternatives at once
+    # (as real prose naturally would) AND cites "REQ-7" literally, so
+    # BOTH the untouched recall signature (classify_finding) and the new
+    # precision signature fire True on the SAME finding-shaped input --
+    # proving bait_blocking_signature()'s True path works on realistic
+    # finding text, not just narration.
+    SYN_CONTRAST_BOTH_SIGNATURES_FIRE = (
+        "Critical: duplicate meter readings within the same invoicing batch are not "
+        "deduplicated -- REQ-7 requires merging repeated meter readings into a "
+        "single line, and this gap causes customers to be double-billed whenever a "
+        "meter reports twice in one batch."
+    )
+
+    def test_duplicate_meter_alternative_isolated(self):
+        import score_x3_rider as x3
+        self.assertTrue(x3.bait_blocking_signature(self.SYN_DUPLICATE_METER_ONLY))
+
+    def test_merge_meter_reading_alternative_isolated(self):
+        import score_x3_rider as x3
+        self.assertTrue(x3.bait_blocking_signature(self.SYN_MERGE_METER_READING_ONLY))
+
+    def test_same_meter_twice_alternative_isolated(self):
+        import score_x3_rider as x3
+        self.assertTrue(x3.bait_blocking_signature(self.SYN_SAME_METER_TWICE_ONLY))
+
+    def test_contrast_case_true_positive_for_both_recall_and_precision(self):
+        import score_x3_rider as x3
+        text = self.SYN_CONTRAST_BOTH_SIGNATURES_FIRE
+        self.assertEqual(x3.classify_finding(text), ("bait", "REQ-7"))
+        self.assertTrue(x3.bait_blocking_signature(text))
+
+    def test_synthetic_findings_are_realistic_invented_requirement_hits(self):
+        # End-to-end sanity: these ARE the shape invented_requirement_hits()
+        # (recall-based, unchanged) already counts as Critical/Important
+        # bait findings -- confirms the synthetic fixtures are realistic
+        # finding-shaped input, not a strawman built only to satisfy the
+        # narrower signature.
+        import score_x3_rider as x3
+        findings = [
+            ("Critical", self.SYN_DUPLICATE_METER_ONLY),
+            ("Critical", self.SYN_MERGE_METER_READING_ONLY),
+            ("Important", self.SYN_SAME_METER_TWICE_ONLY),
+            ("Critical", self.SYN_CONTRAST_BOTH_SIGNATURES_FIRE),
+        ]
+        self.assertEqual(len(x3.invented_requirement_hits(findings)), 4)
 
 
 if __name__ == "__main__":

@@ -58,6 +58,40 @@ def _build_dot_dir_tree(root, container="wt1"):
     return rollout_a, rollout_b, verdict_path
 
 
+def _build_component_decoy_trees(root):
+    """Two near-miss trees, each wrong in exactly ONE path COMPONENT, not
+    merely absent a substring -- round-1 review finding: `find_files`'s
+    `path_contains` (a plain `in` substring test) and
+    `resolve_session_dirs`'s original `str.endswith` both falsely
+    accepted a `somehome/.codex/sessions` decoy, because the STRING
+    "home/.codex/sessions" is a genuine substring of
+    "somehome/.codex/sessions" even though "somehome" is a different
+    directory than "home". Fixed with real path-component comparison
+    (split on os.sep); these decoys must be REJECTED by every converted
+    call site.
+
+    decoy_a: `.worktrees/wtA/somehome/.codex/sessions/...` -- "somehome"
+    where "home" is wanted (codex/sessions both correct).
+    decoy_b: `.worktrees/wtB/home/.codexx/sessions/...` -- ".codexx"
+    where ".codex" is wanted (home/sessions both correct).
+    Returns (decoy_a_rollout, decoy_b_rollout)."""
+    decoy_a_dir = os.path.join(root, ".worktrees", "wtA", "somehome",
+                                ".codex", "sessions", "2026", "07")
+    os.makedirs(decoy_a_dir)
+    decoy_a = os.path.join(decoy_a_dir, "rollout-2026-07-01T00-00-00-decoya.jsonl")
+    with open(decoy_a, "w") as f:
+        f.write('{"timestamp": "2026-06-01T00:00:00", "type": "session_meta"}\n')
+
+    decoy_b_dir = os.path.join(root, ".worktrees", "wtB", "home",
+                                ".codexx", "sessions", "2026", "07")
+    os.makedirs(decoy_b_dir)
+    decoy_b = os.path.join(decoy_b_dir, "rollout-2026-07-01T00-00-00-decoyb.jsonl")
+    with open(decoy_b, "w") as f:
+        f.write('{"timestamp": "2026-06-01T00:00:00", "type": "session_meta"}\n')
+
+    return decoy_a, decoy_b
+
+
 class TestFindFilesDotSafe(unittest.TestCase):
     """scorer_common.find_files -- the shared helper item 14's fixes route
     through."""
@@ -96,6 +130,21 @@ class TestFindFilesDotSafe(unittest.TestCase):
             pattern = os.path.join(d, "**", "rollout-*.jsonl")
             self.assertEqual(glob.glob(pattern, recursive=True), [])
 
+    def test_path_contains_rejects_component_substring_decoys(self):
+        # Round-1 review finding 1: path_contains used to be a bare `in`
+        # substring test, which falsely accepted "somehome" as "home"
+        # (and would equally accept ".codexx" as ".codex"). Must match
+        # real path COMPONENTS.
+        import scorer_common as sc
+        with tempfile.TemporaryDirectory() as d:
+            rollout_a, rollout_b, _ = _build_dot_dir_tree(d)
+            decoy_a, decoy_b = _build_component_decoy_trees(d)
+            hits = sc.find_files(d, "rollout-*.jsonl",
+                                  path_contains=os.path.join("home", ".codex", "sessions"))
+            self.assertEqual(sorted(hits), sorted([rollout_a, rollout_b]))
+            self.assertNotIn(decoy_a, hits)
+            self.assertNotIn(decoy_b, hits)
+
 
 class TestScoreX4ForktaxFindRollouts(unittest.TestCase):
     """score_x4_forktax.find_rollouts() -- the exact call site documented
@@ -126,6 +175,19 @@ class TestTask9ExtractSignalsDotSafe(unittest.TestCase):
             _, _, verdict_path = _build_dot_dir_tree(d)
             self.assertEqual(t9.find_verdict(d), verdict_path)
 
+    def test_root_rollout_rejects_component_substring_decoys(self):
+        # Round-1 review finding 1: the decoys carry an EARLIER
+        # timestamp than the genuine rollouts, so a boundary bug would
+        # make a DECOY the reported "root" (earliest timestamp), not
+        # just an extra entry in all_rollouts.
+        import task9_extract_signals as t9
+        with tempfile.TemporaryDirectory() as d:
+            rollout_a, rollout_b, _ = _build_dot_dir_tree(d)
+            _build_component_decoy_trees(d)
+            root_path, all_rollouts = t9.root_rollout(d)
+            self.assertEqual(root_path, rollout_a)
+            self.assertEqual(sorted(all_rollouts), sorted([rollout_a, rollout_b]))
+
 
 class TestTask10ExtractSignalsDotSafe(unittest.TestCase):
     def test_root_rollout_under_worktrees_layer(self):
@@ -141,6 +203,15 @@ class TestTask10ExtractSignalsDotSafe(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             _, _, verdict_path = _build_dot_dir_tree(d)
             self.assertEqual(t10.find_verdict(d), verdict_path)
+
+    def test_root_rollout_rejects_component_substring_decoys(self):
+        import task10_extract_signals as t10
+        with tempfile.TemporaryDirectory() as d:
+            rollout_a, rollout_b, _ = _build_dot_dir_tree(d)
+            _build_component_decoy_trees(d)
+            root_path, all_rollouts = t10.root_rollout(d)
+            self.assertEqual(root_path, rollout_a)
+            self.assertEqual(sorted(all_rollouts), sorted([rollout_a, rollout_b]))
 
 
 class TestTask12ResolveSessionDirs(unittest.TestCase):
@@ -161,6 +232,18 @@ class TestTask12ResolveSessionDirs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             os.makedirs(os.path.join(d, ".worktrees", "wt1", "home"))
             self.assertEqual(t12.resolve_session_dirs(d), [])
+
+    def test_rejects_component_substring_decoys(self):
+        # Round-1 review finding 1: the original str.endswith(target_
+        # suffix) falsely accepted ".../somehome/.codex/sessions" as
+        # ending in "home/.codex/sessions" (character-level suffix, not
+        # component-level). Must match real path COMPONENTS.
+        import task12_measure_forktax as t12
+        with tempfile.TemporaryDirectory() as d:
+            _build_dot_dir_tree(d)
+            _build_component_decoy_trees(d)
+            expected = os.path.join(d, ".worktrees", "wt1", "home", ".codex", "sessions")
+            self.assertEqual(t12.resolve_session_dirs(d), [expected])
 
 
 if __name__ == "__main__":

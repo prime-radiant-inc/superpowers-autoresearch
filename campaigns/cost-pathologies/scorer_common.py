@@ -35,6 +35,17 @@ log, Task 12 entry: silently 0 children, no exception). Both
 every scorer/helper in this campaign that needs to locate files by name
 under a tree that might contain dot-prefixed directories should call
 `find_files` instead of `glob.glob(..., recursive=True)`.
+
+`path_contains_components`/`path_ends_with_components` (same task,
+ROUND-1 REVIEW FIX): `find_files`'s original `path_contains` was a bare
+`in` substring test, and `task12_measure_forktax.resolve_session_dirs()`
+originally used `str.endswith` directly -- both match on CHARACTERS, not
+path COMPONENTS, so a directory named `somehome` was falsely accepted as
+matching a wanted `home` component (the string "home/.codex/sessions" is
+a genuine substring of ".../somehome/.codex/sessions"), reintroducing
+the exact "safe only by accident" failure mode this task exists to
+eliminate. Both matchers below split on `os.sep` and compare whole
+components.
 """
 import fnmatch
 import os
@@ -72,22 +83,57 @@ def resolve_child_path(thread_id, rollout_paths):
     return None
 
 
+def _split_components(path):
+    """PATH split into its individual os.sep components, dropping the
+    empty strings a leading/trailing/doubled separator would produce."""
+    return [p for p in path.split(os.sep) if p]
+
+
+def path_contains_components(path, subsequence):
+    """Whether SUBSEQUENCE (an os.sep-joined string, e.g.
+    `"home/.codex/sessions"`) appears as a CONTIGUOUS run of WHOLE path
+    components anywhere in PATH -- component-exact, unlike a bare
+    substring test (`subsequence in path`), which would falsely match a
+    component like `"somehome"` against a wanted `"home"` (see module
+    docstring's ROUND-1 REVIEW FIX note)."""
+    want = _split_components(subsequence)
+    have = _split_components(path)
+    n = len(want)
+    if n == 0 or n > len(have):
+        return n == 0
+    return any(have[i:i + n] == want for i in range(len(have) - n + 1))
+
+
+def path_ends_with_components(path, suffix):
+    """Whether PATH's own trailing path components exactly equal SUFFIX
+    (an os.sep-joined string) -- component-exact, unlike `str.endswith`,
+    which would falsely accept a directory named `"somehome"` as ending
+    in `"home"` (see module docstring's ROUND-1 REVIEW FIX note)."""
+    want = _split_components(suffix)
+    if not want:
+        return True
+    have = _split_components(path)
+    return have[-len(want):] == want
+
+
 def find_files(root, name_pattern, path_contains=None):
     """Every file under ROOT whose basename matches NAME_PATTERN (fnmatch
     glob syntax, e.g. `"rollout-*.jsonl"`), found via `os.walk` -- unlike
     `glob.glob(pattern, recursive=True)`, `os.walk` descends into
     dot-prefixed directories (see module docstring). PATH_CONTAINS, if
-    given, restricts hits to full paths containing that substring (e.g.
-    `os.path.join("home", ".codex", "sessions")`) -- the same specificity
-    a literal-component glob pattern would have had, without the
-    dot-directory blind spot in the WILDCARD segments around it."""
+    given, restricts hits to full paths containing that CONTIGUOUS run of
+    path COMPONENTS (e.g. `os.path.join("home", ".codex", "sessions")`)
+    -- the same specificity a literal-component glob pattern would have
+    had, without either the dot-directory blind spot in the WILDCARD
+    segments around it, or a substring/component-boundary false match
+    (`path_contains_components`)."""
     hits = []
     for dirpath, _dirnames, filenames in os.walk(root):
         for fn in filenames:
             if not fnmatch.fnmatch(fn, name_pattern):
                 continue
             full = os.path.join(dirpath, fn)
-            if path_contains and path_contains not in full:
+            if path_contains and not path_contains_components(full, path_contains):
                 continue
             hits.append(full)
     return hits

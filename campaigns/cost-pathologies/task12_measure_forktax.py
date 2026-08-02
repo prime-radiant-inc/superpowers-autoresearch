@@ -54,6 +54,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from score_x4_forktax import fork_stats
+from scorer_common import path_ends_with_components as _path_ends_with_components
 
 RESULT_ROOTS = [
     "/Users/jesse/git/superpowers/superpowers/evals/results",
@@ -71,11 +72,14 @@ def resolve_session_dirs(rep_dir):
     `os.walk` (see module docstring's FOLLOW-UP note -- the prior
     glob-based version's leading `**` segment, BEFORE the literal `home`
     component, could still skip a dot-prefixed directory between rep_dir
-    and `home`)."""
+    and `home`). Uses `scorer_common.path_ends_with_components` (ROUND-1
+    REVIEW FIX) rather than `str.endswith`, which matched on characters
+    and falsely accepted a directory named `somehome` as ending in
+    `home`."""
     target_suffix = os.path.join("home", ".codex", "sessions")
     hits = []
     for dirpath, _dirnames, _filenames in os.walk(rep_dir):
-        if dirpath.endswith(target_suffix):
+        if _path_ends_with_components(dirpath, target_suffix):
             hits.append(dirpath)
     return sorted(hits)
 
