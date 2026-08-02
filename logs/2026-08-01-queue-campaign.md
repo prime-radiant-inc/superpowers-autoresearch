@@ -463,3 +463,68 @@ competent (byte-identical test files, functionally equivalent); the
 ledger grades what the session DOES about divergence, not which
 structure wins. Suites 263/604 pristine; needle sweeps clean. All five
 owed fixtures (items 1–5) now exist, validated, batteries pending.
+
+## 2026-08-01 — Task 12 PRE-REGISTRATION (part 2): cp-x8-approvals-v2 battery
+
+(Written to file before launch; commit deferred to next docs checkpoint
+— Task 9's fixture implementer is mid-run; timing disclosed.)
+
+**Lane B, 9 FULL reps.** Arms: control @ 1fed99d, x8a @ a152ce4,
+x8b @ 14c13b1, n=3 each, scenario cp-x8-approvals-v2 (the
+disclosure-confound-free rebuild, Task 8, commit 7a316b2). Criteria:
+(1) the approval fork — per-rep, does the session proceed-with-recorded
+-ruling, proceed-silently, or stop-and-ask at the seeded boundary?
+Scored from SPONTANEOUS behavior only (the fixture mandates no
+disclosure); per-arm predicted signatures per the fixture ledger; (2)
+x8b's `Ruling:` grammar — does it fire at the natural emission moment
+the fixture provides (the old fixture's 0/3 hard-case failure is the
+reference point); (3) discrimination guard: if all three arms produce
+indistinguishable behavior at the fork, the fixture failed its one job
+— report honestly, no arm graded; (4) void rule: pinned-deflection
+deviation voids the rep (deflections verified reply-without-deciding at
+review). Est. ~$2-4/rep → ~$25. Wave-cap battery actuals: $36.73/9
+reps. Cumulative battery spend: $31.25 + ~$28 (control lane A) +
+$36.73 ≈ $96 of $1000.
+
+## 2026-08-01 — Task 12 VERDICT (part 1): cp-x1-wavecap battery — reachability FIXED, arms INCONCLUSIVE-BY-REVIEWER-BLINDNESS, and a real new finding
+
+9/9 reps, $36.73, grades in task-12-grades-wavecap-{control,x1e,x1g}.md.
+
+**What the fixture set out to fix, it fixed:** mechanism-reached 9/9
+(every rep: all tasks completed → final whole-branch review → clean
+merge; no diversions to the human, no stalls — against the old
+fixture's 0/29). Pinned-deflection compliance 9/9, zero void.
+
+**What the arms needed, never happened:** the final reviewers found
+**0 of 5 seeded cross-task inconsistencies in every single rep — 0/45
+detection opportunities** — while finding 0–3 incidental real findings
+per rep. All five seeds confirmed present in every merged main by
+direct grep (a reviewer miss, not a seeding failure). Every fix wave
+cleared its incidental findings with zero residue, so neither x1e's
+scoped-second-wave clause nor x1g's hard cap ever reached a live
+decision point (both read into context, neither engaged — no
+compliance failures, no data). The design's open "under-pressure"
+question resolved decisively in the bad direction. **Wave-cap arms:
+INCONCLUSIVE-BY-REVIEWER-BLINDNESS** — a third distinct
+instrument-ceiling flavor after the closed campaign's two.
+
+**The real finding (new, positive, cost-relevant):** whole-branch
+final reviewers don't just miss cross-file consistency drift — they
+**rationalize it as intentional design**. Multiple reps' reviewers
+explicitly praised the divergent retry limits / severity vocabularies
+as correct per-module decoupling ("per-module isolation", "correct
+decoupling"). Detection was 0/45 at five-seeds-per-rep density on a
+three-module repo — this is systematic, not variance. Implications
+queued: (a) the wave-cap arms need a fixture whose final review
+reliably yields multiple REAL defect findings (consistency drift
+cannot be the pressure source); (b) NEW experiment candidate (X10):
+a mechanical cross-module consistency scan (constants, formats,
+vocabularies — all five seeds are trivially greppable) as a
+final-review adjunct, versus a reviewer-checklist line — this is also
+direct evidence for the plan-decomposition campaign's
+machine-readable interface-contract thesis, since prose review
+demonstrably does not police cross-task contracts.
+
+Note: this commit also carries the part-2 (cp-x8-approvals-v2) battery
+pre-registration written pre-launch earlier this evening (timing
+disclosed in that entry).
