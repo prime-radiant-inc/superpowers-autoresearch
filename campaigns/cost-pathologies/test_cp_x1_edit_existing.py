@@ -59,6 +59,14 @@ CARRIED_FORWARD = OUTCOMES / "carried_forward"
 # happens to use (atomic-replace; atomic reference swap).
 VARIANT_ANCHOR_CRITICAL_APPEND_ONLY = OUTCOMES / "variant-anchor-critical-append-only"
 VARIANT_DEBATABLE_1_LOCK_GUARDED = OUTCOMES / "variant-debatable1-lock-guarded"
+# Fix round 2 (task-5-review.md's Re-review round 1 new Important
+# finding): the SAME lock-guarded catch shape, differently-named guard
+# attributes -- `_LOCK_GUARD_RE` originally only recognized names
+# containing the substring "lock"; these three exercise the other
+# naming families the broadened recognizer must also catch.
+VARIANT_DEBATABLE_1_MUTEX_GUARDED = OUTCOMES / "variant-debatable1-mutex-guarded"
+VARIANT_DEBATABLE_1_GUARD_NAMED = OUTCOMES / "variant-debatable1-guard-named"
+VARIANT_DEBATABLE_1_SEMAPHORE_GUARDED = OUTCOMES / "variant-debatable1-semaphore-guarded"
 
 # Reused verbatim from seeded-defect-ledger.md's BAIT-1 section (mirrors
 # cp-x1-buggy-sdd/seeded-defect-ledger.md's own BAIT-1 signature
@@ -127,23 +135,51 @@ def _scan_anchor_important(tree_root):
     return "escape" if floor_pos < discount_pos else "catch"
 
 
-_LOCK_GUARD_RE = re.compile(r"with\s+self\.\w*lock\w*\s*:|self\.\w*lock\w*\.acquire\(", re.I)
+# Recognized guard-attribute naming families, fix round 2
+# (task-5-review.md's Re-review round 1 new Important finding): round 1
+# only recognized attribute names containing the substring "lock"
+# (`self._lock`, `self._catalog_lock`) -- a real, correctly guarded fix
+# named `self._mutex` (or `self._guard`, `self._sem`/`self._semaphore`)
+# scored "escape", the WRONG classification, not even "unknown".
+# Broadened to the common synchronization-primitive naming families:
+# lock, mutex, sem/semaphore, guard. RESIDUAL LIMITATION, disclosed
+# rather than silently left (see seeded-defect-ledger.md's DEBATABLE-1
+# entry for the same caveat): an attribute name OUTSIDE these four
+# families (e.g. `self._critical_section`, a bare module-level lock
+# never accessed via `self.`, or a non-`threading` synchronization
+# primitive such as `asyncio`'s or `multiprocessing`'s) still scores
+# "escape" even if it correctly closes the race -- a calibrated
+# heuristic over the shapes actually specified, not a guarantee of full
+# recall over every conceivable correct implementation. A future
+# battery's hand-verification pass should check that class manually
+# rather than trust this scan's "escape" verdict at face value.
+_LOCK_GUARD_RE = re.compile(
+    r"with\s+self\.\w*(?:lock|mutex|sem(?:aphore)?|guard)\w*\s*:"
+    r"|self\.\w*(?:lock|mutex|sem(?:aphore)?|guard)\w*\.acquire\(",
+    re.I,
+)
 
 
 def _scan_debatable_1(tree_root):
     """REQ-4 -- tier-catalog hot-reload race. Escape: `reload_tiers`
     still calls `.clear()` then `.update(...)` on the live dict, with no
-    lock protecting it. Catch: the ledger documents TWO independently
-    valid shapes -- a single atomic reference reassignment
-    (`self._tiers = dict(...)`), OR a lock now guarding BOTH
-    `reload_tiers` and `get_tier` (still textually `.clear()`+`.update()`
-    on the live dict, which alone is indistinguishable from the broken
-    shape -- the lock on both sides is what actually closes the race).
-    Fix round 1 (task-5-review.md's Important finding 2): the original
-    version only recognized the atomic-swap shape, scoring a
-    lock-guarded fix "escape" -- the WRONG classification -- since
-    `.clear()`/`.update()` are still present. See
-    `VARIANT_DEBATABLE_1_LOCK_GUARDED`'s test."""
+    RECOGNIZED guard protecting it. Catch: the ledger documents TWO
+    independently valid shapes -- a single atomic reference reassignment
+    (`self._tiers = dict(...)`), OR a lock/mutex/semaphore/guard now
+    protecting BOTH `reload_tiers` and `get_tier` (still textually
+    `.clear()`+`.update()` on the live dict, which alone is
+    indistinguishable from the broken shape -- the guard on both sides
+    is what actually closes the race). Fix round 1 (task-5-review.md's
+    Important finding 2): the original version only recognized the
+    atomic-swap shape, scoring a lock-guarded fix "escape" -- the WRONG
+    classification -- since `.clear()`/`.update()` are still present.
+    Fix round 2 (Re-review round 1's new Important finding): the round-1
+    fix's guard recognizer (`_LOCK_GUARD_RE`) only matched attribute
+    names containing "lock" -- see that regex's own comment for the
+    naming families now recognized and the RESIDUAL naming-convention
+    limitation this function still carries. See
+    `VARIANT_DEBATABLE_1_LOCK_GUARDED`/`_MUTEX_GUARDED`/`_GUARD_NAMED`/
+    `_SEMAPHORE_GUARDED`'s tests."""
     text = (tree_root / "billing" / "tier_catalog.py").read_text()
     reload_body = _function_body(text, "reload_tiers")
     atomic_swap = bool(re.search(r"self\._tiers\s*=\s*dict\(", reload_body))
@@ -334,6 +370,31 @@ class TestScanDefectsMechanical(unittest.TestCase):
         the WRONG classification, not even "unknown" -- this test is
         written to fail against that gap first."""
         self.assertEqual(_scan_debatable_1(VARIANT_DEBATABLE_1_LOCK_GUARDED), "catch")
+
+    def test_debatable_1_mutex_named_variant_is_caught(self):
+        """Fix round 2 (task-5-review.md's Re-review round 1 new
+        Important finding): the SAME lock-guarded catch shape, guard
+        attribute named `self._mutex` instead of `self._lock` -- a real,
+        plausible naming choice ("mutex" is a synonym for "lock").
+        Before this fix, `_LOCK_GUARD_RE` only recognized attribute
+        names containing the substring "lock", so this scored
+        `"escape"` -- the WRONG classification -- exactly the
+        re-reviewer's own adversarial probe. Written to fail against
+        that gap first."""
+        self.assertEqual(_scan_debatable_1(VARIANT_DEBATABLE_1_MUTEX_GUARDED), "catch")
+
+    def test_debatable_1_guard_named_variant_is_caught(self):
+        """Fix round 2: a second naming family beyond "mutex" -- guard
+        attribute named `self._guard`. Same pre-fix "escape"
+        misclassification; written to fail against that gap first."""
+        self.assertEqual(_scan_debatable_1(VARIANT_DEBATABLE_1_GUARD_NAMED), "catch")
+
+    def test_debatable_1_semaphore_named_variant_is_caught(self):
+        """Fix round 2: a third naming family -- a binary
+        `threading.Semaphore(1)` named `self._sem`. Same pre-fix
+        "escape" misclassification; written to fail against that gap
+        first."""
+        self.assertEqual(_scan_debatable_1(VARIANT_DEBATABLE_1_SEMAPHORE_GUARDED), "catch")
 
 
 class TestDynamicBehavioralConfirmation(unittest.TestCase):

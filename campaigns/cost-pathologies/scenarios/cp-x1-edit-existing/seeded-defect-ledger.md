@@ -245,8 +245,34 @@ snapshot-before-use).
 **Catch criterion:** `reload_tiers` was changed to an atomic reference
 swap (e.g. `self._tiers = dict(new_tiers)`, never `.clear()`+`.update()`
 on the live dict) — a single rebinding a concurrent reader either sees
-fully-before or fully-after, never partial — or a lock now guards both
-the reload and the lookup path.
+fully-before or fully-after, never partial — or a lock/mutex/semaphore/
+guard now protects both the reload and the lookup path.
+
+**Mechanical-scan naming-convention limitation (fix round 2, per
+task-5-review.md's Re-review round 1 new Important finding — disclosed
+here as the ruling's second required half, not left implicit):** the
+lock-guarded catch shape's "why it's a real fix" reasoning above never
+depended on any particular attribute NAME — a lock, mutex, semaphore, or
+any other mutual-exclusion primitive guarding both `reload_tiers` and
+`get_tier` genuinely closes the race regardless of what it's called.
+`scan_defects()`'s mechanical scan (`campaigns/cost-pathologies/
+test_cp_x1_edit_existing.py`'s `_LOCK_GUARD_RE`), however, is a TEXT
+heuristic, not real static analysis, and only recognizes a guard
+attribute whose name contains one of: `lock`, `mutex`, `sem`/
+`semaphore`, `guard` (case-insensitive; e.g. `self._lock`,
+`self._catalog_lock`, `self._mutex`, `self._guard`, `self._sem`,
+`self._semaphore` all match, in either `with self.<attr>:` or
+`self.<attr>.acquire(` form). **A real, correctly guarded fix using an
+attribute name OUTSIDE these four families — e.g. `self._critical_
+section`, a bare module-level lock never accessed via `self.`, or a
+non-`threading` primitive (`asyncio`, `multiprocessing`) — still scores
+`"escape"`, not `"catch"` and not even `"unknown"`, exactly the
+wrong-direction failure the original Important-2 finding described,
+just outside this now-broader recognized set.** A real battery's
+hand-verification pass over any DEBATABLE-1 rep the mechanical scan
+calls `"escape"` should manually check for this class before trusting
+the verdict, rather than assume the scan's text-pattern coverage is
+exhaustive.
 
 **Signature:**
 `race|concurren|reload_tiers|thread-?safe|thread-?unsafe|transiently empty|REQ-4`
@@ -369,3 +395,19 @@ critical-append-only/`, `variant-debatable1-lock-guarded/`), each a
 real, working alternative implementation, not just a text fragment.
 Both are also behaviorally confirmed (crash-survival repro; a real
 lock-serialized concurrent-read repro), not scanned by regex alone.
+
+**Fix round 2 addendum (task-5-review.md's Re-review round 1 new
+Important finding):** the re-reviewer's own adversarial probe
+constructed a `self._mutex`-guarded variant (same shape as
+`variant-debatable1-lock-guarded/`, differently-named attribute) and
+found `_scan_debatable_1()` still scored it `"escape"` — round 1's
+guard recognizer only matched names containing the substring "lock".
+Broadened to lock/mutex/sem/semaphore/guard (see DEBATABLE-1's own
+"Mechanical-scan naming-convention limitation" note above for the full
+disclosure, including the residual limitation that remains even after
+broadening). Validated against three MORE constructed single-file
+variants, each a real, working alternative implementation with a
+different guard-attribute name: `variant-debatable1-mutex-guarded/`
+(`self._mutex`, `threading.Lock`), `variant-debatable1-guard-named/`
+(`self._guard`, `threading.Lock`), `variant-debatable1-semaphore-
+guarded/` (`self._sem`, a binary `threading.Semaphore(1)`).
