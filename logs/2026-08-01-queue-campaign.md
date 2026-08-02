@@ -632,3 +632,55 @@ performed the Task 13 review directly (full evidence in
 task-13-review.md, independence break disclosed); remaining battery
 grading requires either a raised limit (CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION)
 or a fresh session — surfaced to Jesse.
+
+## 2026-08-02 — Task 12 VERDICT (part 3): cp-x1-edit-existing battery — the escape guard BINDS for the first time; arms don't move it; escapes are attention-structured
+
+16/16 reps, $110.98. Mechanical layer:
+task-12-x1edit-mechanical.jsonl (scan_defects per merged tree +
+chain_stats per rep); two pre-registered hand-checks of "unknown" cells
+performed by the controller (both resolve to CATCH: x1a-rep2's atomic
+build-then-rebind carries no lock token; x1c-rep1's compound
+RLock+snapshot+swap under-matched the recognizer — both are the
+DOCUMENTED heuristic gaps, disclosed in the fixture ledger).
+
+**The ceiling is broken.** Every rep ships 1–4 seeded defects
+(discrimination guard does not fire — control mean 2.0 escapes/rep).
+After two campaigns of INCONCLUSIVE-BY-CEILING, the X1 defect-escape
+guard finally binds on real data.
+
+**Arms: no effect at n=4.** Mean escapes/rep — control 2.0, x1a 2.0,
+x1b 2.5, x1c 2.0. Review effort doesn't buy escape reduction; the one
+outlier pairs the MOST review rounds with the most escapes (x1b-rep4:
+Σrounds 8, all 4 defects shipped) — no speed-for-quality trade
+anywhere. Same "NO ARM WINS" as the closed campaign's convergence
+metrics, but now on the guard axis that actually matters.
+
+**The per-region structure is the finding:**
+| region | caught | escaped |
+|---|---:|---:|
+| ANCHOR-CRITICAL (usage_log, Task-1-routed) | 14/16 | 2 |
+| ANCHOR-IMPORTANT (statement, Task-1-routed) | 2/16 | **14** |
+| DEBATABLE-1 (tier_catalog race, Task-2-routed) | 14/16 | 2 |
+| DEBATABLE-2 (pricing) | 0/16 | **16** |
+
+Escapes are not random and not severity-ordered: an UNAMBIGUOUS
+Important defect escapes 14/16 while the subtle judgment-case race
+gets fixed 14/16. The catch pattern tracks which regions the extension
+tasks route attention through and what kind of reasoning the routed
+work demands — not defect severity, not review-policy text. Combined
+with the wave-cap battery's 0/45 reviewer blindness, the two batteries
+converge on one thesis: **review attention follows the diff and the
+task routing, not the repo — review-policy exhortations (X1's three
+arms) do not redirect it.** Attention-routing is a designable property
+of task/file decomposition — the plan-decomposition campaign's core
+lever, now with direct evidence from two independent batteries.
+
+**Item 1 answered:** the fixture works, the guard binds, and the
+first-ever graded answer is that the X1 review-convergence arms do not
+reduce defect escapes. Residual (disclosed): per-rep review-dynamics
+narratives and broader sampled verification of scan cells await
+grading capacity (spawn limit); the mechanical layer + 2 mandated
+hand-checks + guard cross-check above carry the verdict.
+
+Battery spend to date: $31.25 + $36.73 + $34.65 + $110.98 = $213.61,
+plus X5-at-scale in flight (~$100-150 est). Envelope healthy.
