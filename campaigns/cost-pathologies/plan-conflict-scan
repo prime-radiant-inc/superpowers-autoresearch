@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+# Check an implementation plan for the conflicts a prose scan misses: a file
+# one task deletes that another task still lists, a file modified before the
+# task that creates it, a callable one task consumes that no earlier task
+# produces, and a task whose own code blocks define a function and then call
+# it with the wrong number of arguments.
+#
+# Reads each task's **Files:** and **Interfaces:** blocks and the code fences
+# inside the task, so it is silent about anything those do not state. Prose
+# contradictions, mandated rubric defects, and constraint violations are still
+# yours to find by reading.
+#
+# Interfaces are named both ways in real plans — `parse_config(path) -> dict`
+# and a bare `parse_config` — so both register. What a consumed name may NOT
+# be, because those shapes produced only noise: a language builtin, an
+# ALL_CAPS env-shaped token, a path or filename, or a single character. Prose
+# never registers, because a paren must touch the name to read as a call.
+# Arity is checked only where one task both defines and calls the same name,
+# and definitions or calls split across lines are skipped rather than guessed
+# at. A callable a task both consumes and writes itself is the known blind
+# spot — it reads as consumed with no producer.
+#
+# Prints one line per conflict, then the counts it checked. Always exits 0 —
+# the findings are the output, not the exit status.
+#
+# Usage: plan-conflict-scan PLAN_FILE
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+  echo "usage: plan-conflict-scan PLAN_FILE" >&2
+  exit 2
+fi
+
+plan=$1
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+
+echo "plan-conflict-scan: $plan"
+
+awk '
+BEGIN {
+  split("str int dict list set float bool bytes tuple object", BI, " ")
+  for (bi in BI) BUILTIN[BI[bi]] = 1
+}
+function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+function strip(s) {
+  s = trim(s)
+  gsub(/`/, "", s)
+  sub(/[.,;:]+$/, "", s)
+  sub(/:[0-9]+(-[0-9]+)?$/, "", s)   # path:12-34 line ranges
+  return s
+}
+function base(s) { sub(/^.*\./, "", s); return s }   # module.name -> name
+# Text inside a paren run; s starts just past the opening paren.
+# Sets BALANCED=0 when the run does not close on this line.
+function inparens(s,   d, i, c, out) {
+  d = 1; out = ""; BALANCED = 1
+  for (i = 1; i <= length(s); i++) {
+    c = substr(s, i, 1)
+    if (c == "(") d++
+    else if (c == ")") { d--; if (d == 0) return out }
+    out = out c
+  }
+  BALANCED = 0
+  return ""
+}
+function splitargs(s, arr,   d, i, c, cur, n) {
+  s = trim(s); n = 0; d = 0; cur = ""
+  if (s == "") return 0
+  for (i = 1; i <= length(s); i++) {
+    c = substr(s, i, 1)
+    if (c == "(" || c == "[" || c == "{") d++
+    else if (c == ")" || c == "]" || c == "}") d--
+    if (c == "," && d == 0) { arr[++n] = cur; cur = "" } else cur = cur c
+  }
+  arr[++n] = cur
+  return n
+}
+function argcount(s,   A) { s = trim(s); if (s == "") return 0; return splitargs(s, A) }
+function addfile(t, verb, line,   rest, tok, got) {
+  got = 0; rest = line
+  while (match(rest, /`[^`]+`/)) {
+    tok = strip(substr(rest, RSTART, RLENGTH))
+    rest = substr(rest, RSTART + RLENGTH)
+    if (tok != "") { nf++; ftask[nf] = t; fverb[nf] = verb; fpath[nf] = tok; got = 1 }
+  }
+  if (!got) {
+    tok = strip(line); sub(/[ \t].*$/, "", tok)
+    if (tok != "") { nf++; ftask[nf] = t; fverb[nf] = verb; fpath[nf] = tok }
+  }
+}
+# Shapes that are never an interface a task consumes. Applied to consumed
+# names only: a producer that slips through can merely silence a finding,
+# while a consumer that slips through invents one.
+function consumable(raw, name) {
+  if (index(raw, "/") > 0) return 0                  # a path
+  if (raw ~ /\.[A-Za-z]{1,4}$/) return 0             # filename.ext
+  if (length(name) < 2) return 0                     # single characters
+  if (name ~ /^[A-Z][A-Z0-9_]*$/) return 0           # ALL_CAPS env-shaped
+  if (name in BUILTIN) return 0
+  return 1
+}
+function addid(t, kind, raw,   name) {
+  name = base(raw)
+  if (name !~ /^[A-Za-z_][A-Za-z0-9_]*$/) return
+  if (kind == "consumes" && !consumable(raw, name)) return
+  if ((t, kind, name) in idseen) return
+  idseen[t, kind, name] = 1
+  ni++; itask[ni] = t; ikind[ni] = kind; iname[ni] = name
+  if (kind == "consumes") nconsumed++; else nproduced++
+}
+# Both naming conventions register: `name(args) -> type` and a bare `name`.
+# Dotted forms match on their last segment, so `parser.patch_applies` and
+# `patch_applies` are one identifier. A single backtick span may also name
+# several identifiers as one comma-separated list (`` `foo, bar` ``, a real
+# shape in Produces:/Consumes: field lists); each comma-separated piece
+# registers as its own identifier rather than being discarded as one
+# unmatched multi-word token.
+function addids(t, kind, line,   rest, tok, n, parts, p, piece) {
+  rest = line
+  while (match(rest, /[A-Za-z_][A-Za-z0-9_.]*\(/)) {
+    tok = substr(rest, RSTART, RLENGTH)
+    rest = substr(rest, RSTART + RLENGTH)
+    sub(/\($/, "", tok)
+    addid(t, kind, tok)
+  }
+  rest = line
+  while (match(rest, /`[^`]+`/)) {
+    tok = strip(substr(rest, RSTART, RLENGTH))
+    rest = substr(rest, RSTART + RLENGTH)
+    sub(/[ \t]*\(.*$/, "", tok)
+    n = split(tok, parts, /[ \t]*,[ \t]*/)
+    for (p = 1; p <= n; p++) {
+      piece = trim(parts[p])
+      if (piece != "") addid(t, kind, piece)
+    }
+  }
+}
+# Definitions and calls inside the code fences of one task.
+function scancode(t, line,   m, name, params, np, i, p, pn, minp, maxp, star, rest, argc, isdef) {
+  isdef = 0
+  if (match(line, /(def|function)[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*\(/) ||
+      match(line, /(const|let|var)[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*=[ \t]*\(/)) {
+    m = substr(line, RSTART, RLENGTH)
+    name = m
+    sub(/^[ \t]*(def|function|const|let|var)[ \t]+/, "", name)
+    sub(/[ \t]*[=(].*$/, "", name)
+    params = inparens(substr(line, RSTART + RLENGTH))
+    if (BALANCED && name ~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+      isdef = 1
+      np = splitargs(params, P); minp = 0; maxp = 0; star = 0
+      for (i = 1; i <= np; i++) {
+        p = trim(P[i])
+        if (p == "") continue
+        if (p ~ /^\*/) { star = 1; continue }        # *args / **kwargs / bare *
+        pn = p; sub(/[:=].*$/, "", pn); pn = trim(pn)
+        if (pn == "self" || pn == "cls") continue
+        maxp++
+        if (p !~ /=/) minp++
+      }
+      if (!((t, name) in defmin)) {
+        defmin[t, name] = minp; defmax[t, name] = maxp; defstar[t, name] = star
+        ndefs++
+      }
+    }
+  }
+  if (isdef) return                                  # never read a def as a call
+  rest = line
+  while (match(rest, /[A-Za-z_][A-Za-z0-9_]*\(/)) {
+    name = substr(rest, RSTART, RLENGTH)
+    rest = substr(rest, RSTART + RLENGTH)
+    sub(/\($/, "", name)
+    argc = argcount(inparens(rest))
+    if (BALANCED) { nc++; ctask[nc] = t; cname[nc] = name; cargs[nc] = argc }
+  }
+}
+/^[ \t]*```/ { infence = !infence; next }
+!infence && /^#+[ \t]+Task[ \t]+[0-9]+/ {
+  hdr = $0
+  match(hdr, /Task[ \t]+[0-9]+/)
+  hdr = substr(hdr, RSTART, RLENGTH)
+  gsub(/[^0-9]/, "", hdr)
+  task = hdr + 0
+  if (!(task in seen)) { seen[task] = 1; ntasks++ }
+  sec = ""; key = ""
+  next
+}
+task == 0 { next }
+infence { scancode(task, $0); next }
+/^[ \t]*\*\*Files:\*\*/ { sec = "files"; key = ""; next }
+/^[ \t]*\*\*Interfaces:\*\*/ { sec = "iface"; key = ""; next }
+/^[ \t]*\*\*/ || /^#/ || /^[ \t]*-[ \t]*\[/ { sec = ""; key = ""; next }
+sec == "files" && /^[ \t]*-[ \t]*[A-Za-z]+:/ {
+  v = $0; sub(/^[ \t]*-[ \t]*/, "", v); sub(/:.*$/, "", v)
+  addfile(task, tolower(v), substr($0, index($0, ":") + 1))
+  next
+}
+sec == "iface" && /^[ \t]*-[ \t]*(Consumes|Produces):/ {
+  key = ($0 ~ /Consumes/) ? "consumes" : "produces"
+  addids(task, key, substr($0, index($0, ":") + 1))
+  next
+}
+sec == "iface" && key != "" && /[^ \t]/ { addids(task, key, $0); next }
+END {
+  n = 0
+  for (i = 1; i <= nf; i++) {
+    for (j = 1; j <= nf; j++) {
+      if (ftask[i] == ftask[j] || fpath[i] != fpath[j]) continue
+      if ((fverb[i] == "delete" || fverb[i] == "remove") && fverb[j] != "delete" && fverb[j] != "remove")
+        out[++n] = sprintf("- Task %d deletes `%s`; Task %d still lists it (%s)", ftask[i], fpath[i], ftask[j], fverb[j])
+      if (fverb[i] == "modify" && fverb[j] == "create" && ftask[j] > ftask[i])
+        out[++n] = sprintf("- Task %d modifies `%s`, which Task %d creates later", ftask[i], fpath[i], ftask[j])
+    }
+  }
+  for (i = 1; i <= ni; i++) {
+    if (ikind[i] != "consumes") continue
+    first = 0
+    for (j = 1; j <= ni; j++) {
+      if (ikind[j] != "produces" || iname[j] != iname[i]) continue
+      if (first == 0 || itask[j] < first) first = itask[j]
+    }
+    if (first == 0)
+      out[++n] = sprintf("- Task %d consumes `%s`; no task produces it", itask[i], iname[i])
+    else if (first > itask[i])
+      out[++n] = sprintf("- Task %d consumes `%s`, which Task %d produces later", itask[i], iname[i], first)
+  }
+  for (i = 1; i <= nc; i++) {
+    t = ctask[i]; nm = cname[i]
+    if (!((t, nm) in defmin)) continue
+    lo = defmin[t, nm]; hi = defmax[t, nm]
+    if (cargs[i] < lo || (!defstar[t, nm] && cargs[i] > hi)) {
+      want = (lo == hi) ? sprintf("%d", lo) : sprintf("%d-%d", lo, hi)
+      if (defstar[t, nm]) want = want "+"
+      out[++n] = sprintf("- Task %d defines `%s` taking %s argument(s) but calls it with %d", t, nm, want, cargs[i])
+    }
+  }
+  seenout = ""; shown = 0
+  for (i = 1; i <= n; i++) {
+    if (index(seenout, "\n" out[i] "\n") > 0) continue
+    seenout = seenout "\n" out[i] "\n"
+    if (shown == 0) print "conflicts:"
+    print out[i]
+    shown++
+  }
+  if (shown == 0) print "no conflicts in the Files:/Interfaces: blocks or the task code"
+  printf "checked: %d tasks, %d file entries, %d consumed and %d produced interfaces, %d in-task definitions\n", ntasks, nf, nconsumed, nproduced, ndefs
+}
+' "$plan"
