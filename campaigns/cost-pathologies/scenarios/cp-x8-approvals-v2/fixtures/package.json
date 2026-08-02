@@ -1,0 +1,8 @@
+{
+  "name": "subscriptions-v2-fixture",
+  "version": "1.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
