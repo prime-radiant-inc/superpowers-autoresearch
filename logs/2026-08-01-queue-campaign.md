@@ -359,3 +359,26 @@ didn't run") is now SATISFIED for rebased cp/x9a @ 61bf701. X9-A PR
 candidacy is green pending Jesse's go; cp/x7x9a @ 5303307 is
 additionally validated as a composed treatment. Battery spend $31.25;
 campaign total $31.25 of $1000.
+
+## 2026-08-01 — Task 6 complete (item 2): cp-x1-wavecap fixture
+
+Commits 30db007 + 33e14b3 (docs round); review APPROVED (spec ✅, no
+blocking findings). The fixture: 3-task Create-only "fleet alert
+pipeline" plan, mechanically zero-conflict (plan-conflict-scan 0
+findings, reproduced by the reviewer byte-for-byte); pressure lives
+entirely at the final whole-branch review via 5 plan-mandated
+cross-task inconsistencies that per-task review structurally cannot see
+(task-brief isolation verified — no sibling values leak); per-issue
+mooting-immunity argued in the committed ledger and tested across
+incremental task-completion snapshots (7 tests/25 subtests). The
+task's named central risk — plan-mandated findings diverting to
+SKILL.md's human plan-conflict path instead of the fix-wave mechanism —
+was traced and resolved in the fixture's favor (routing diamond scoped
+to the per-task cluster; code-reviewer.md produces no plan-mandated
+label; final-review procedure is an unconditional one-fix-dispatch);
+the trace + diversion transcript signature + grading guidance now live
+in the committed seeded-truth-ledger.md. Open empirical question
+recorded for the battery: whether a real fix wave leaves residue across
+all five issues or trivially clears them (under-pressure risk). Suite
+211/552 green under both invocations. The wave-cap arms' mechanism is
+reachable-by-design for the first time; battery in plan Task 12.
