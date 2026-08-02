@@ -446,3 +446,20 @@ output median 274). The heavy tail reflects full-history duplication in
 long multi-dispatch sessions, consistent with the closed campaign's
 fork-tax measurements. The cp-x6-planframed battery's dispatch counts
 now have a real-world distribution to sit against.
+
+## 2026-08-01 — Task 8 complete (items 4, 5): cp-x8-approvals-v2 + cp-x2-consequential
+
+Commits 7a316b2 + b883cdc; review APPROVED both (spec ✅ ×2, 0
+Critical/Important, 1 Minor deferred — test-helper duplication,
+pre-existing pattern). X8 v2: every disclosure-mandating instruction
+removed (reviewer swept all agent-visible text independently); the
+approval boundary sits on the exact proceed-vs-ask fork the x8a/x8b
+texts govern, mechanically consequential (audit-trail fork reproduced
+by running node directly); deflections verified to deflect without
+deciding. X2-consequential: real reorganization with a genuinely
+contestable structure choice (reviewer judged the seeded suboptimal
+spot non-strawman on direct code reading); both outcome trees
+competent (byte-identical test files, functionally equivalent); the
+ledger grades what the session DOES about divergence, not which
+structure wins. Suites 263/604 pristine; needle sweeps clean. All five
+owed fixtures (items 1–5) now exist, validated, batteries pending.
