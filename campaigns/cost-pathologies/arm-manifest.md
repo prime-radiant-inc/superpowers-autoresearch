@@ -317,3 +317,28 @@ see run-quorum.sh's own comment at the `grep -F` call site):
 | X8-B approval-ledger discipline (rebased) | `cp/x8b` | 14c13b1 |
 | X9-A rule-log-proceed (rebased) | `cp/x9a` | 61bf701 |
 | X9-B rule-log-proceed + async surfacing (rebased) | `cp/x9b` | 85a8c90 |
+
+## 2026-08-01 composed arm — cp/x7x9a (queue campaign Task 11)
+
+The composed arm merges X7-A's evidence-bearing preflight (the scan now
+produces a table — one row per task-pair sharing a file/interface, one row
+per task's internal self-consistency — written to the ledger before any
+ruling) with X9-A's never-stall doctrine (plan conflicts, ambiguities, and
+BLOCKED-class findings are ruled on and ledgered rather than escalated to
+the human, with only four hard-stop classes — irreversible/destructive
+actions, security-sensitive actions, out-of-worktree side effects like
+merge/push/publish, and totally-broken plans — left as genuine stop
+conditions). The one textual overlap between the two arms (both rewrote
+the preflight scan's closing paragraph) was resolved by ordering rather
+than rewording: x7a's table-format mandate and ruling sentence bracket
+x9a's "rule on everything you find... if clean, proceed without comment"
+clause, so the table is established as unconditional (produced while
+scanning, before the outcome is known) and x9a's "without comment" reads
+as no extra narration needed beyond the ledgered table — not as permission
+to skip it. Verification (declared-files-only, phrase presence ×2 per
+parent, line-count reconciliation to the union, word-multiset no-stray-
+vocabulary, no upstream): task-11-arm-report.md in the campaign workspace.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/x7x9a` | X7-A preflight + X9-A never-stall composed | 5303307 |
