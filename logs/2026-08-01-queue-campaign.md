@@ -734,3 +734,40 @@ dispatch shape — an arm that skips edits to skip dispatches FAILS;
 job — STOP, report honestly; (4) void rule: pinned-deflection
 deviation voids the rep. Est. ~$3/rep → ~$36. Battery spend to date
 $213.61 + X5 in flight.
+
+## 2026-08-02 — Task 9 VERDICT (item 6): X5-at-scale — mechanisms work, savings REFUTED at n=8
+
+24/24 reps (~$192 battery). Mechanical scoring:
+task-9-x5scaled-mechanical-{laneB,laneA}.jsonl (distinct-event scorer,
+Task 2's dedup + prose fields).
+
+| arm (n=8) | verruns mean | dup-groups mean | cost mean | lease evidence |
+|---|---:|---:|---:|---|
+| control | 74.5 | 15.25 | $7.23 | none (correct) |
+| x5a report-receipts | 89.9 | 16.4 | $7.84 | receipts 6–10/rep issued; prose honorings 0–5; strict honored 0 |
+| x5b receipts-file | 105.6 | 19.75 | $8.99 | receipts 5–12/rep; **strict honored 53/58 issued**; invalidations fire; prose on top |
+
+**The mechanisms are fully confirmed** — x5b's end-to-end strict
+honoring (the closed campaign could only infer it through 8 encrypted-
+channel prose fragments) works at scale: sessions issue receipts, read
+them back, and write honor/invalidate lines exactly per the grammar.
+
+**And the savings hypothesis is REFUTED, with a consistent dose-response
+in the wrong direction:** the more lease machinery engages, the MORE
+verification runs occur. Honoring does not substitute for re-running —
+sessions honor a receipt and then re-verify anyway, and the
+receipts-file ceremony adds its own work. At n=8/arm this is no longer
+the closed campaign's "unproven at n=3": leases as designed ADD cost
+(+8–24% verruns, +$0.61–1.76/rep over control). X5-A/X5-B ship
+candidacy: CLOSED, negative.
+
+**Fixture worked:** duplicate pressure over-delivered — ~75–106
+verification runs per rep against a plan mandating ~6, dup-groups
+11–25 everywhere. The overcorrection guard binds trivially (nothing
+was suppressed; required invalidation re-runs occur wherever marked).
+The deeper cost datum: **duplicate verification is endemic in SDD
+sessions at roughly 10× the mandated rate, and neither receipt scheme
+touches it** — the re-verification impulse is behavioral, not
+informational. A treatment that works will have to change what the
+session DOES at the re-verify moment (cf. the attention-routing
+thesis), not what it KNOWS. Queued for the plan-decomposition campaign.
