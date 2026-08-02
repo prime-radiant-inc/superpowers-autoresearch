@@ -173,3 +173,24 @@ no explicit rerun-or-not language). Unchanged: the X5 savings verdict
 ("mechanisms confirmed, savings unproven at n=3") — the at-scale
 battery (plan Task 9) remains the deciding evidence; it now runs on an
 honest instrument.
+
+## 2026-08-01 — Task 3 complete (items 13, 14): hygiene sweep, one fix round
+
+Commits 4232647 + a6219c0, review APPROVED after fix round 1 (scoped
+re-review: all 3 findings RESOLVED, no new defects). Item 14: 9 glob
+sites audited — 6 real dot-directory defects fixed behind
+`scorer_common.find_files()` (os.walk-based), including a residual
+leading-`**` defect in task12's own earlier literal-`.codex` workaround;
+2 sites safe by construction. Round 1 caught the fix itself
+reintroducing the bug class via substring matching (`somehome`
+accepted as `home`) — now true path-component comparison with decoy
+tests at all 4 converted sites. All published counts reproduced
+unchanged (225 mined children; 76 reps/540 children; recall counts
+control 0/x1a 2/x1b 0/x1c 0) — behavior-preserving, no corrections
+needed. Item 13: `bait_blocking_signature()` added as a separate
+opt-in function; the two campaign false positives encoded as real-corpus
+negative cases; positive coverage is CONSTRUCTED fixtures only, clearly
+labeled, because the corpus contains zero genuine bait-blocking findings
+(independently confirmed 3 bait-classified findings total, all
+correctly rejected) — the signature's first real-corpus positive test
+arrives with the X3-B battery (plan Task 10). Suite: 153/153 pristine.
