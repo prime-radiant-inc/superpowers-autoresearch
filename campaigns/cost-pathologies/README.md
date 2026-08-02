@@ -45,9 +45,9 @@ header comment for the full contract, including its known REPS-abort
 limitation on a mid-battery fail/indeterminate verdict. Scorers import
 `campaigns/codex-efficiency/rollout_parser.py` rather than forking it.
 
-**This campaign's own scenarios** (`cp-x1-buggy-sdd`, `cp-x2-advisory`,
-`cp-x7x9-conflicts` + its `-clean`/`-prose` siblings, `cp-x8-approvals`,
-`cp-x5-leases`, `cp-x6-smalledits`) run through
+**This campaign's own scenarios** (`cp-x1-buggy-sdd`, `cp-x1-edit-existing`,
+`cp-x2-advisory`, `cp-x7x9-conflicts` + its `-clean`/`-prose` siblings,
+`cp-x8-approvals`, `cp-x5-leases`, `cp-x6-smalledits`) run through
 `campaigns/cost-pathologies/run-quorum.sh` instead — modeled on the
 codex-efficiency script but simpler (each scenario carries its own
 `fixtures/` subdirectory, so a battery syncs the whole scenario directory
