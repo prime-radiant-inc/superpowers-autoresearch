@@ -27,15 +27,22 @@
 # worktree at /tmp/cp-arm-x1a -- e.g.
 #   git -C /Users/jesse/git/superpowers/superpowers worktree add --detach \
 #     /tmp/cp-arm-x1a 1851307
-# 'control' resolves to /tmp/cp-arm-control @ 329b8f1 (codex-efficiency-
-# fixes' tip -- there is no control branch; every arm is cut from this
-# SHA). Every arm gets its OWN worktree directory (never shared/checkout-
-# switched between reps), so JOBS>1 cannot race two different arms against
-# one checkout. Before every run this script reconciles the mounted
-# worktree's actual `git rev-parse HEAD` against the manifest SHA it
-# resolved and refuses to run on a mismatch -- a battery that cannot name
-# its arm's SHA is ungraded (arm-manifest.md's own "Runner integration
-# gap" note).
+# When a branch's SHA changes (a rebase re-point, e.g. arm-manifest.md's
+# "## 2026-08-01 rebase" section), the LAST matching manifest row wins --
+# dated re-point sections are appended after the rows they supersede, never
+# edited in place, so grep's natural top-to-bottom file order is also
+# chronological order (queue-execution campaign, Task 4).
+# 'control' resolves to /tmp/cp-arm-control @ 1fed99d (sim/dev-postmerge's
+# tip, per arm-manifest.md's "2026-08-01 rebase" section -- there is no
+# control branch; every arm is cut from this SHA as of the queue-execution
+# campaign's base re-point; the original base was 329b8f1,
+# codex-efficiency-fixes' tip). Every arm gets its OWN worktree directory
+# (never shared/checkout-switched between reps), so JOBS>1 cannot race two
+# different arms against one checkout. Before every run this script
+# reconciles the mounted worktree's actual `git rev-parse HEAD` against the
+# manifest SHA it resolved and refuses to run on a mismatch -- a battery
+# that cannot name its arm's SHA is ungraded (arm-manifest.md's own "Runner
+# integration gap" note).
 #
 # Env EVALS_ROOT overrides which evals checkout (lane) is used, same
 # convention as codex-efficiency's script. Default:
@@ -80,8 +87,8 @@ MANIFEST="$CAMP/arm-manifest.md"
 
 if [[ "$ARM" == "control" ]]; then
   SP_ROOT=/tmp/cp-arm-control
-  SP_REF=329b8f1
-  ARM_DESC="control (codex-efficiency-fixes, unpatched)"
+  SP_REF=1fed99d
+  ARM_DESC="control (sim/dev-postmerge, unpatched)"
 else
   BRANCH="cp/$ARM"
   SP_ROOT="/tmp/cp-arm-$ARM"
@@ -89,7 +96,12 @@ else
     echo "run-quorum.sh: arm manifest not found: $MANIFEST" >&2
     exit 1
   }
-  row=$(grep -F "\`$BRANCH\`" "$MANIFEST" || true)
+  # A branch can appear in more than one manifest table (e.g. the original
+  # per-arm table plus a later dated re-point section such as "## 2026-08-01
+  # rebase") -- take the LAST match, i.e. whichever section sorts lowest in
+  # the file, since dated re-point sections are always appended after the
+  # rows they supersede (never inserted earlier or edited in place).
+  row=$(grep -F "\`$BRANCH\`" "$MANIFEST" | tail -n1 || true)
   [[ -n "$row" ]] || {
     echo "run-quorum.sh: unknown ARM '$ARM' -- branch \`$BRANCH\` not found in $MANIFEST" >&2
     exit 1

@@ -285,14 +285,35 @@ is exactly 433184c's 4 deleted SKILL.md lines). All rebases clean, no
 conflicts. `cp/x9a`'s rebased diff retains its original 42ins/19del shape
 in `skills/subagent-driven-development/SKILL.md`; per standing rule, its
 rebased text is UNGRADED until the X7+X9 composed battery (plan Task 11)
-runs. New SHAs:
+runs. New SHAs (one arm per row, same `| name | \`branch\` | sha |`
+column layout as the main table above, so `run-quorum.sh`'s existing
+`grep -F`/awk-field-4 arm resolution parses this section too — task 4
+of the queue-execution campaign, 2026-08-01, reformatted this table
+from a compact 3-arms-per-row layout for exactly this reason; the
+runner also prefers this section's rows over the main table's for any
+arm present in both, since they physically sort last in the file --
+see run-quorum.sh's own comment at the `grep -F` call site):
 
-| arm | SHA | | arm | SHA | | arm | SHA |
-|-----|-----|-|-----|-----|-|-----|-----|
-| cp/x1a | 89c7684 | | cp/x2c | 42ccda2 | | cp/x6b | 77f5426 |
-| cp/x1b | b618107 | | cp/x3a | b25bcd5 | | cp/x7a | ea84cf9 |
-| cp/x1c | 208dc4d | | cp/x3b | e5654c1 | | cp/x7b | 701a37d |
-| cp/x1e | 1c6db05 | | cp/x3c | 97ff02b | | cp/x8a | a152ce4 |
-| cp/x1g | a8df1ff | | cp/x5a | 6f0d340 | | cp/x8b | 14c13b1 |
-| cp/x2a | 03b8f6a | | cp/x5b | 4f456a1 | | cp/x9a | 61bf701 |
-| cp/x2b | 03a28c5 | | cp/x6a | d53436b | | cp/x9b | 85a8c90 |
+| arm | branch | sha |
+|-----|--------|-----|
+| X1-A criterion-backing (rebased) | `cp/x1a` | 89c7684 |
+| X1-B rising severity floor (rebased) | `cp/x1b` | b618107 |
+| X1-C marginal-value verdict (rebased) | `cp/x1c` | 208dc4d |
+| X1-E scoped auto second wave (rebased) | `cp/x1e` | 1c6db05 |
+| X1-G hard cap (rebased) | `cp/x1g` | a8df1ff |
+| X2-A plan-header contract (rebased) | `cp/x2a` | 03b8f6a |
+| X2-B reviewer lens (rebased) | `cp/x2b` | 03a28c5 |
+| X2-C implementer empowerment (rebased) | `cp/x2c` | 42ccda2 |
+| X3-A reviewer citation rule (rebased) | `cp/x3a` | b25bcd5 |
+| X3-B requirements inventory (rebased) | `cp/x3b` | e5654c1 |
+| X3-C adjudication default (rebased) | `cp/x3c` | 97ff02b |
+| X5-A receipts-in-report (rebased) | `cp/x5a` | 6f0d340 |
+| X5-B machine-checkable receipt file (rebased) | `cp/x5b` | 4f456a1 |
+| X6-A batching rule (rebased) | `cp/x6a` | d53436b |
+| X6-B inline-when-trivial (rebased) | `cp/x6b` | 77f5426 |
+| X7-A evidence-bearing preflight (rebased) | `cp/x7a` | ea84cf9 |
+| X7-B mechanical consistency check (rebased) | `cp/x7b` | 701a37d |
+| X8-A scope-bound approvals (rebased) | `cp/x8a` | a152ce4 |
+| X8-B approval-ledger discipline (rebased) | `cp/x8b` | 14c13b1 |
+| X9-A rule-log-proceed (rebased) | `cp/x9a` | 61bf701 |
+| X9-B rule-log-proceed + async surfacing (rebased) | `cp/x9b` | 85a8c90 |
