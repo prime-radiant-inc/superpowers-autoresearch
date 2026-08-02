@@ -1,0 +1,4 @@
+{"timestamp": "2026-08-01T00:11:00.000Z", "type": "event_msg", "payload": {"type": "task_started"}}
+{"timestamp": "2026-08-01T00:11:01.000Z", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"input_tokens": 1800, "output_tokens": 200, "total_tokens": 2000}, "last_token_usage": {"total_tokens": 2000}}}}
+{"timestamp": "2026-08-01T00:11:02.000Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "phase": "final_answer", "memory_citation": null}}
+{"timestamp": "2026-08-01T00:11:03.000Z", "type": "event_msg", "payload": {"type": "task_complete"}}

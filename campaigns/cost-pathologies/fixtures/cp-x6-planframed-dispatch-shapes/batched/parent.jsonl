@@ -1,0 +1,2 @@
+{"timestamp": "2026-08-01T00:00:00.000Z", "type": "response_item", "payload": {"type": "function_call", "name": "spawn_agent", "call_id": "call_batch_all12", "arguments": "{\"task_name\": \"task_batch_all_twelve_fixes\", \"fork_turns\": \"none\", \"model\": \"gpt-x\", \"reasoning_effort\": \"low\"}"}}
+{"timestamp": "2026-08-01T00:00:01.000Z", "type": "event_msg", "payload": {"type": "sub_agent_activity", "kind": "started", "event_id": "call_batch_all12", "agent_thread_id": "thread-planframedbatch01"}}

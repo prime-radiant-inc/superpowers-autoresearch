@@ -1,0 +1,4 @@
+{"timestamp": "2026-08-01T00:22:00.000Z", "type": "event_msg", "payload": {"type": "task_started"}}
+{"timestamp": "2026-08-01T00:22:01.000Z", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"input_tokens": 7200, "output_tokens": 800, "total_tokens": 8000}, "last_token_usage": {"total_tokens": 8000}}}}
+{"timestamp": "2026-08-01T00:22:02.000Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "Fixed capitalize in util/capitalize.js.", "phase": "final_answer", "memory_citation": null}}
+{"timestamp": "2026-08-01T00:22:03.000Z", "type": "event_msg", "payload": {"type": "task_complete"}}

@@ -1,0 +1,2 @@
+{"timestamp": "2026-08-01T00:00:00.000Z", "type": "response_item", "payload": {"type": "function_call", "name": "spawn_agent", "call_id": "call_b1", "arguments": "{\"task_name\": \"task_b1\", \"fork_turns\": \"none\", \"model\": \"gpt-x\", \"reasoning_effort\": \"low\"}"}}
+{"timestamp": "2026-08-01T00:00:01.000Z", "type": "event_msg", "payload": {"type": "sub_agent_activity", "kind": "started", "event_id": "call_b1", "agent_thread_id": "thread-mineb-child1"}}
