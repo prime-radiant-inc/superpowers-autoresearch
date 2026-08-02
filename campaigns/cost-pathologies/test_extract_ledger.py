@@ -211,9 +211,8 @@ class TestFindApplyPatchCalls(unittest.TestCase):
                 f.write(custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js) + "\n")
             calls = el.find_apply_patch_calls(path)
         self.assertEqual(len(calls), 1)
-        ts, recovered = calls[0]
-        self.assertEqual(ts, "2026-08-01T00:00:00.000Z")
-        self.assertEqual(recovered, patch_text)
+        self.assertEqual(calls[0].timestamp, "2026-08-01T00:00:00.000Z")
+        self.assertEqual(calls[0].patch_text, patch_text)
 
     def test_ignores_unrelated_exec_calls(self):
         js = 'text(await exec_command({"cmd": "npm test"}));'
@@ -223,6 +222,110 @@ class TestFindApplyPatchCalls(unittest.TestCase):
                 f.write(custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js) + "\n")
             calls = el.find_apply_patch_calls(path)
         self.assertEqual(calls, [])
+
+
+class TestFindApplyPatchCallsShapes(unittest.TestCase):
+    """Round-1 review fix: PATCH_VAR_RE originally matched ONLY the plain
+    `const patch = "...";` double-quoted shape. Independent review found
+    (and I re-verified directly against the raw corpus, see
+    task-4-report.md) at least 3 more real shapes that were silently
+    dropped with zero warning: a backtick/template-literal `const patch =
+    \\`...\\`;` (possibly with `${name}` interpolation of an earlier
+    simple `const name = "...";`), an inline literal argument with NO
+    intermediate variable at all (either quote style), a `"lit"+var+
+    "lit"`-style concatenation expression, and a genuinely dynamic
+    (loop-built, `+=`-mutated) patch variable that can't be resolved at
+    all and must WARN, never silently vanish."""
+
+    def _run(self, js, path_suffix="progress.md"):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "rollout-x.jsonl")
+            with open(path, "w") as f:
+                f.write(custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js) + "\n")
+            return el.find_apply_patch_calls(path)
+
+    def test_backtick_literal_direct_argument_with_interpolation(self):
+        # Real corpus shape (cp-x8-approvals-x8a-rep1): a template
+        # literal passed straight to apply_patch, no `patch`-named
+        # variable, interpolating a simple prior string const.
+        js = ('const p="/p/progress.md";\n'
+              'text(await tools.apply_patch(`*** Begin Patch\\n'
+              '*** Add File: ${p}\\n+# SDD ledger\\n*** End Patch`));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].patch_text,
+            "*** Begin Patch\n*** Add File: /p/progress.md\n"
+            "+# SDD ledger\n*** End Patch")
+
+    def test_backtick_literal_via_named_variable(self):
+        # Real corpus shape (cp-x8-approvals-x8a-rep2): `const patch =`
+        # assigned a BACKTICK (not double-quoted) template literal.
+        js = ('const ws="/p";\n'
+              'const patch=`*** Begin Patch\\n*** Update File: ${ws}/progress.md\\n'
+              '@@\\n Decision.\\n+Task 1: complete\\n*** End Patch`;\n'
+              'text(await tools.apply_patch(patch));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].patch_text,
+            "*** Begin Patch\n*** Update File: /p/progress.md\n"
+            "@@\n Decision.\n+Task 1: complete\n*** End Patch")
+
+    def test_direct_double_quoted_literal_no_variable(self):
+        # Real corpus shape (cp-x8-approvals-x8a-rep1): a plain
+        # double-quoted literal passed straight to apply_patch.
+        js = ('text(await tools.apply_patch('
+              '"*** Begin Patch\\n*** Delete File: /p/progress.md\\n*** End Patch"));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].patch_text,
+            "*** Begin Patch\n*** Delete File: /p/progress.md\n*** End Patch")
+
+    def test_concatenation_expression_via_named_variable(self):
+        # Real corpus shape (cp-x8-approvals-x8a-rep3): a direct argument
+        # built from "literal"+var+"literal" concatenation, no template
+        # literal and no `const patch =` at all.
+        js = ('const p="/p/progress.md";\n'
+              'text(await tools.apply_patch('
+              '"*** Begin Patch\\n*** Add File: "+p+'
+              '"\\n+# SDD ledger\\n*** End Patch"));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].patch_text,
+            "*** Begin Patch\n*** Add File: /p/progress.md\n"
+            "+# SDD ledger\n*** End Patch")
+
+    def test_dynamic_loop_built_patch_is_unresolved_not_dropped(self):
+        # Real corpus shape (cp-x8-approvals-x8a-rep1): a patch built via
+        # a loop and `+=` mutation -- genuinely not statically resolvable.
+        # Must NOT be silently dropped: still returned, patch_text=None,
+        # with the raw input preserved so a caller can decide relevance.
+        js = ('const base="/p";\n'
+              'const files=["a.md","progress.md"];\n'
+              'let patch="*** Begin Patch\\n";\n'
+              'for (const f of files) patch+=`*** Delete File: ${base}/${f}\\n`;\n'
+              'patch+="*** End Patch";\n'
+              'text(await tools.apply_patch(patch));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertIsNone(calls[0].patch_text)
+        self.assertIn("progress.md", calls[0].raw_input)
+
+    def test_unresolvable_call_still_recorded_when_irrelevant(self):
+        # An unresolvable (dynamic) call that has NOTHING to do with the
+        # recovery target must still be reported as unresolved (never
+        # silently dropped at this layer) -- relevance filtering is
+        # recover_files()'s job, not find_apply_patch_calls()'s.
+        js = ('let patch="*** Begin Patch\\n*** Delete File: /p/unrelated.json\\n";\n'
+              'patch+="*** End Patch";\n'
+              'text(await tools.apply_patch(patch));')
+        calls = self._run(js)
+        self.assertEqual(len(calls), 1)
+        self.assertIsNone(calls[0].patch_text)
+        self.assertNotIn("progress.md", calls[0].raw_input)
 
 
 class TestRecoverFiles(unittest.TestCase):
@@ -377,6 +480,175 @@ class TestRecoverFiles(unittest.TestCase):
             state, warnings = el.recover_files(tmp)
         self.assertEqual(state, {})
         self.assertEqual(warnings, [])
+
+    def test_unresolvable_relevant_apply_patch_call_warns_with_provenance(self):
+        # Round-1 review fix: an apply_patch call that mentions the
+        # target but can't be resolved (dynamic/loop-built) must produce
+        # a warning naming the rep+file provenance, not vanish silently.
+        js = ('const files=["progress.md"];\n'
+              'let patch="*** Begin Patch\\n";\n'
+              'for (const f of files) patch+=`*** Delete File: /p/${f}\\n`;\n'
+              'patch+="*** End Patch";\n'
+              'text(await tools.apply_patch(patch));')
+        with tempfile.TemporaryDirectory() as tmp:
+            rollout = os.path.join(tmp, "run1", "home", ".codex", "sessions",
+                                    "2026", "08", "01", "rollout-x.jsonl")
+            self._write_rollout(rollout, [
+                custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js),
+            ])
+            state, warnings = el.recover_files(tmp)
+        self.assertEqual(state, {})
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("could not be resolved", warnings[0])
+        self.assertIn("rollout-x.jsonl@2026-08-01T00:00:00.000Z", warnings[0])
+
+    def test_unresolvable_irrelevant_apply_patch_call_does_not_warn(self):
+        # An unresolvable call with nothing to do with the target must
+        # not spam a warning (avoid noise for every unrelated dynamic
+        # delete elsewhere in a session).
+        js = ('let patch="*** Begin Patch\\n*** Delete File: /p/unrelated.json\\n";\n'
+              'patch+="*** End Patch";\n'
+              'text(await tools.apply_patch(patch));')
+        with tempfile.TemporaryDirectory() as tmp:
+            rollout = os.path.join(tmp, "run1", "home", ".codex", "sessions",
+                                    "2026", "08", "01", "rollout-x.jsonl")
+            self._write_rollout(rollout, [
+                custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js),
+            ])
+            state, warnings = el.recover_files(tmp)
+        self.assertEqual(state, {})
+        self.assertEqual(warnings, [])
+
+
+class TestShellRedirects(unittest.TestCase):
+    """Round-1 review fix: a rep's real progress.md writes can go through
+    a plain shell `printf ... >> target` redirect (real corpus shape,
+    `cp-x8-approvals-control-rep2`: the SDD skill's own `sdd-workspace`/
+    task machinery creates and appends to progress.md via shell, never
+    apply_patch at all) -- a violation of extract_ledger's originally
+    stated assumption ("every write... went through apply_patch"), found
+    by independent review, not by this module's own original corpus
+    read."""
+
+    def test_printf_create_single_arg(self):
+        # `if [ ! -f "$ws/progress.md" ]; then printf '...\n' > "$ws/progress.md"; fi;`
+        text = ('if [ ! -f "$ws/progress.md" ]; then printf '
+                '\'# SDD ledger — plan: x\\n\' > "$ws/progress.md"; fi;')
+        hits = list(el._find_printf_redirects(text, "progress.md"))
+        self.assertEqual(len(hits), 1)
+        mode, target, lines = hits[0]
+        self.assertEqual(mode, "create")
+        self.assertEqual(target, "$ws/progress.md")
+        self.assertEqual(lines, ["# SDD ledger — plan: x"])
+
+    def test_printf_append_multi_arg(self):
+        # `printf '%s\n' 'line one' 'line two' >> target;` (already
+        # JS-de-escaped text, one backslash -- see module docstring).
+        text = ("printf '%s\\n' 'Task 1: complete (commits a..b, review clean)' "
+                "'Task 2: complete (commits b..c, review clean)' "
+                ">> .superpowers/sdd/subscriptions-plan/progress.md;")
+        hits = list(el._find_printf_redirects(text, "progress.md"))
+        self.assertEqual(len(hits), 1)
+        mode, target, lines = hits[0]
+        self.assertEqual(mode, "append")
+        self.assertEqual(target, ".superpowers/sdd/subscriptions-plan/progress.md")
+        self.assertEqual(lines, [
+            "Task 1: complete (commits a..b, review clean)",
+            "Task 2: complete (commits b..c, review clean)",
+        ])
+
+    def test_printf_unrecognized_format_yields_none_lines(self):
+        text = "printf '%d\\n' '3' >> progress.md;"
+        hits = list(el._find_printf_redirects(text, "progress.md"))
+        self.assertEqual(len(hits), 1)
+        mode, target, lines = hits[0]
+        self.assertIsNone(lines)
+
+    def test_printf_ignores_unrelated_target(self):
+        text = "printf '%s\\n' 'hi' >> other-file.txt;"
+        hits = list(el._find_printf_redirects(text, "progress.md"))
+        self.assertEqual(hits, [])
+
+    def test_find_shell_redirects_end_to_end(self):
+        js = ('const wt="/p";\n'
+              'const r=await tools.exec_command({cmd:`printf \'%s\\\\n\' '
+              "'Task 1: complete' >> .superpowers/sdd/plan/progress.md`,"
+              'workdir:wt});')
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "rollout-x.jsonl")
+            with open(path, "w") as f:
+                f.write(custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js) + "\n")
+            hits = el.find_shell_redirects(path, "progress.md")
+        self.assertEqual(len(hits), 1)
+        ts, mode, target, lines, _raw = hits[0]
+        self.assertEqual(ts, "2026-08-01T00:00:00.000Z")
+        self.assertEqual(mode, "append")
+        self.assertEqual(target, ".superpowers/sdd/plan/progress.md")
+        self.assertEqual(lines, ["Task 1: complete"])
+
+
+class TestRecoverFilesShellRedirect(unittest.TestCase):
+    def _write_rollout(self, path, records):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            for r in records:
+                f.write(r + "\n")
+
+    def test_create_then_append_recovers_full_ledger(self):
+        # Real-corpus-shaped end-to-end: `cp-x8-approvals-control-rep2`'s
+        # actual mechanism (create-if-missing, then two appends), never
+        # touching apply_patch at all.
+        create_js = ('const r=await tools.exec_command({cmd:`if [ ! -f "$ws/progress.md" ]; '
+                     "then printf '# SDD ledger\\\\n' > \"$ws/progress.md\"; fi;`});")
+        append1_js = ("const r=await tools.exec_command({cmd:`printf '%s\\\\n' "
+                      "'Task 1: complete' >> .superpowers/sdd/plan/progress.md`});")
+        append2_js = ("const r=await tools.exec_command({cmd:`printf '%s\\\\n' "
+                      "'Task 2: complete' >> .superpowers/sdd/plan/progress.md`});")
+        with tempfile.TemporaryDirectory() as tmp:
+            rollout = os.path.join(tmp, "run1", "home", ".codex", "sessions",
+                                    "2026", "08", "01", "rollout-x.jsonl")
+            self._write_rollout(rollout, [
+                custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", create_js),
+                custom_exec_cmd("2026-08-01T00:01:00.000Z", "c2", append1_js),
+                custom_exec_cmd("2026-08-01T00:02:00.000Z", "c3", append2_js),
+            ])
+            state, warnings = el.recover_files(tmp)
+        self.assertEqual(warnings, [])
+        self.assertEqual(state["$ws/progress.md"], "# SDD ledger")
+        self.assertEqual(state[".superpowers/sdd/plan/progress.md"],
+                          "Task 1: complete\nTask 2: complete")
+
+    def test_unresolved_printf_format_warns_with_provenance(self):
+        js = ("const r=await tools.exec_command({cmd:`printf '%d\\\\n' '3' "
+              ">> .superpowers/sdd/plan/progress.md`});")
+        with tempfile.TemporaryDirectory() as tmp:
+            rollout = os.path.join(tmp, "run1", "home", ".codex", "sessions",
+                                    "2026", "08", "01", "rollout-x.jsonl")
+            self._write_rollout(rollout, [
+                custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1", js),
+            ])
+            state, warnings = el.recover_files(tmp)
+        self.assertEqual(state, {})
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("printf format", warnings[0])
+        self.assertIn("rollout-x.jsonl@2026-08-01T00:00:00.000Z", warnings[0])
+
+    def test_shell_and_apply_patch_events_merge_in_global_timestamp_order(self):
+        add_patch = ("*** Begin Patch\n*** Add File: /p/progress.md\n"
+                     "+Decision.\n*** End Patch")
+        append_js = ("const r=await tools.exec_command({cmd:`printf '%s\\\\n' "
+                     "'Task 1: complete' >> /p/progress.md`});")
+        with tempfile.TemporaryDirectory() as tmp:
+            rollout = os.path.join(tmp, "run1", "home", ".codex", "sessions",
+                                    "2026", "08", "01", "rollout-x.jsonl")
+            self._write_rollout(rollout, [
+                custom_exec_cmd("2026-08-01T00:01:00.000Z", "c2", append_js),
+                custom_exec_cmd("2026-08-01T00:00:00.000Z", "c1",
+                                 apply_patch_js(add_patch)),
+            ])
+            state, warnings = el.recover_files(tmp)
+        self.assertEqual(warnings, [])
+        self.assertEqual(state["/p/progress.md"], "Decision.\nTask 1: complete")
 
 
 if __name__ == "__main__":
