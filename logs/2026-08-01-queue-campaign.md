@@ -716,3 +716,21 @@ guards against; the reachable test would be an aged-session/automation
 replay harness, which is next-campaign-class instrumentation (recorded
 as a queue candidate alongside the session-age axis the localization
 finding already implies). cp/x3b stays a verified-built, never-run arm.
+
+## 2026-08-02 — Task 12 PRE-REGISTRATION (part 4): cp-x6-planframed battery
+
+**Lane B, 12 FULL reps.** Arms: control @ 1fed99d, x6a @ d53436b
+(batching rule), x6b @ 77f5426 (inline-when-trivial), n=4 each.
+Scenario cp-x6-planframed @ 95b695c (+ exec-bit fix 3cbbb04).
+Criteria: (1) dispatch shape via score_x6_floor — count and size per
+rep; predictions per the fixture ledger: control ≈12 per-task
+dispatches, x6a few batched dispatches, x6b ≈0–few (inline-when-
+trivial); the host MINE baseline (median 2/session, mean 11.9,
+floor-ratio median 79,504×) anchors what real sessions do; (2)
+work-completion guard: all 12 plan edits must land regardless of
+dispatch shape — an arm that skips edits to skip dispatches FAILS;
+(3) discrimination guard: if control does not engage SDD at all
+(0 dispatches — the old fixture's failure), the reframe failed its one
+job — STOP, report honestly; (4) void rule: pinned-deflection
+deviation voids the rep. Est. ~$3/rep → ~$36. Battery spend to date
+$213.61 + X5 in flight.
