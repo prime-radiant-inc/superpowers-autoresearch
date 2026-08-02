@@ -820,3 +820,41 @@ the committed deviation tree (x1-review-micro.py's API pattern; no
 implementer variance, no full SDD session) — measures the
 reviewer-lens difference directly at ~1/20th the cost. The full-session
 battery was the wrong instrument for a reviewer-response question.
+
+## 2026-08-02 — Task 12 VERDICT (part 7, final): cp-x6-planframed battery — X6-A batching is the program's first clean POSITIVE cost result
+
+12/12 reps, $54.09. Mechanical layer: task-12-x6-mechanical.jsonl
+(dispatch_floor counts + verdict post-checks + economics).
+
+| arm (n=4) | dispatches/rep | cost/rep | post-checks | final |
+|---|---|---|---|---|
+| control | 25–27 | $7.20–8.46 | 3–4/4 (2 reps dropped one) | 2 pass, 2 indeterminate |
+| **x6a batching** | **3–4** | **$1.87–2.33** | **4/4 every rep** | **4/4 pass** |
+| x6b inline-when-trivial | 1 / 1 / 13 / 27 | $1.53–6.27 | 4/4 every rep | 3 pass, 1 indeterminate |
+
+**X6-A's batching rule fired exactly as designed** (12 micro-tasks →
+3–4 batched dispatches) and delivered **~73% cost reduction and ~87%
+dispatch reduction with BETTER completion than control** (4/4
+post-checks in every rep; control dropped a post-check in 2 of 4 —
+echoing the X1-edit finding that more review/dispatch effort does not
+buy correctness). Against the MINE baseline (median dispatch
+floor-ratio 79,504×), cutting dispatches is exactly where the money
+is, and this arm cuts them 7×.
+
+**X6-B is bimodal:** when its inline path engages (2/4 reps) it is the
+cheapest of all (1 dispatch, ~$1.55); when it doesn't (2/4) it reverts
+to control-shaped dispatch storms ($5.68/$6.27, 13/27 dispatches). An
+unstable boundary is not shippable text; x6a's batching subsumes its
+upside without the instability.
+
+**Item 3 answered, and X6-A enters SHIP CANDIDACY** (this battery ran
+the rebased text — standing rule satisfied) with one disclosed
+condition: this is a single micro-task-plan scenario on one harness;
+before a PR, one boundary-regression check on a NORMAL-sized plan must
+confirm the batching text does not batch tasks that deserve their own
+dispatch (the arm's own boundary language says it should not — that
+claim is untested). Queued as the pre-PR gate.
+
+Battery spend final: composed $31.25 + wave-cap $36.73 + X8v2 $34.65 +
+X1-edit $110.98 + X5 ~$192.35 + X2 $26.01 + X6 $54.09 = **$486.06** of
+$1000. Task 12 (all five fixture batteries) COMPLETE.
