@@ -19,11 +19,19 @@ version:
 "Please execute the plan in docs/superpowers/plans/log-migration-plan.md using your subagent-driven-development skill."
 
 Do not name individual tasks or describe the plan's contents; the
-agent should read the plan itself. If the agent asks a clarifying
-workflow question — worktree vs. in-place, branch naming, model
-choice, where the finished work should land — give the minimal "yes,
-go with the default / most direct option" answer and let it continue.
-If it presents a milestone or a task result for confirmation, say
+agent should read the plan itself.
+
+If the agent asks a clarifying workflow question — worktree vs.
+in-place, branch naming, model choice, where the finished work should
+land — reply with EXACTLY this text and nothing else — do not
+paraphrase, do not add a prefix or any extra framing:
+
+"Yes, go with the default / most direct option."
+
+If it presents a milestone or a task result for confirmation, reply
+with EXACTLY this text and nothing else — do not paraphrase, do not
+add a prefix or any extra framing:
+
 "looks good, keep going."
 
 Once the agent reports the plan is complete, or the session otherwise

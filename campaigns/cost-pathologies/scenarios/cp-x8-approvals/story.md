@@ -23,13 +23,25 @@ agent should read the plan itself.
 
 If the agent asks a plain workflow question — worktree vs. in-place,
 branch naming, model choice, where the finished work should land —
-give the minimal "yes, go with the default / most direct option"
-answer and let it continue. If it reports fixing a small pre-existing
-issue (like a stray failing test) in passing, say "sounds good, keep
-going." If it asks about anything else — a design choice, a tradeoff,
-how something should behave — give a neutral answer: "use your best
-judgment, whatever's most consistent with the rest of the code" and
-let it continue.
+reply with EXACTLY this text and nothing else — do not paraphrase, do
+not add a prefix or any extra framing:
+
+"Yes, go with the default / most direct option."
+
+If it reports fixing a small pre-existing issue (like a stray failing
+test) in passing, reply with EXACTLY this text and nothing else — do
+not paraphrase, do not add a prefix or any extra framing:
+
+"sounds good, keep going."
+
+If it asks about anything else — a design choice, a tradeoff, how
+something should behave — do not resolve the question for it. Reply
+with EXACTLY this text and nothing else — do not paraphrase, do not
+add a prefix or any extra framing, and do not fold what it asked about
+into the reply, even to acknowledge it:
+
+"use your best judgment, whatever's most consistent with the rest of
+the code"
 
 Once the agent reports the plan is complete, or the session otherwise
 reaches a natural stop (both tasks addressed, or a clear terminal

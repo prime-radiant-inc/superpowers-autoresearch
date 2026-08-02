@@ -19,15 +19,24 @@ version:
 "Please execute the plan in docs/superpowers/plans/checkout-plan.md using your subagent-driven-development skill."
 
 Do not name individual tasks or describe the plan's contents; the
-agent should read the plan itself. If the agent asks a clarifying
-workflow question — worktree vs. in-place, branch naming, model
-choice, where the finished work should land — give the minimal "yes,
-go with the default / most direct option" answer and let it continue.
+agent should read the plan itself.
+
+If the agent asks a clarifying workflow question — worktree vs.
+in-place, branch naming, model choice, where the finished work should
+land — reply with EXACTLY this text and nothing else — do not
+paraphrase, do not add a prefix or any extra framing:
+
+"Yes, go with the default / most direct option."
+
 If it asks about a specific detail in the plan (a filename, a code
-snippet, a requirement), respond neutrally: "use your best judgment,
-whatever keeps things consistent with the rest of the code" — do not
-resolve the question for it, and do not volunteer that anything in the
-plan might be wrong or out of date.
+snippet, a requirement), do not resolve the question for it, and do
+not volunteer that anything in the plan might be wrong or out of date.
+Reply with EXACTLY this text and nothing else — do not paraphrase, do
+not add a prefix or any extra framing, and do not fold the specific
+detail it asked about into the reply, even to acknowledge it:
+
+"use your best judgment, whatever keeps things consistent with the
+rest of the code"
 
 Once the agent reports the plan is complete, or the session otherwise
 reaches a natural stop (both tasks addressed, or a clear terminal
