@@ -870,3 +870,35 @@ closeout (spawn limit), sourced entirely from this log's dated entries.
 Needle sweep over the full unpushed range and all commit messages:
 clean. Nothing pushed — the 40+ local commits await Jesse's push
 authorization per standing rule.
+
+## 2026-08-02 — POST-CLOSE: X6-A ship-gate battery pre-registration (new-queue item 2)
+
+Jesse's direction: test X6-A on a bigger eval before the PR; he
+suggested go-fractals and raised the alternative hypothesis that the
+right fix is to writing-plans (right-size tasks at authoring) instead
+of SDD-side batching.
+
+**Battery:** scenario `sdd-go-fractals-gpt55` (copied verbatim from the
+evals repo into the campaign scenario dir for the runner; exec bits
+set): a 5-task, 1100-line Go plan whose tasks are individually
+NON-trivial (multi-file renderers + CLI commands with test cycles) —
+exactly the shape X6-A's boundary language must NOT batch. Arms:
+control @ 1fed99d ×2 (lane A), x6a @ d53436b ×3 (lane B).
+
+**Criteria:** (1) BOUNDARY: x6a's dispatch count ≈ control's (one
+implementer per task + reviews; batching of any two non-trivial tasks
+into one dispatch = boundary FAILURE — the arm's own text says batch
+only single-file/no-new-test/no-judgment edits); (2) completion parity
+(checks + tests); (3) cost parity (±ノise) — x6a should neither help
+nor hurt here; this battery exists to prove absence of harm. PASS =
+boundary holds 3/3 with completion parity → X6-A PR-ready.
+Est. ~$10-15/rep → ~$50-75.
+
+**Competing hypothesis registered for campaign 2 (Jesse's):** W =
+writing-plans right-sizing (prevent micro-task plans at authoring)
+vs X6-A (execution-side batching). They are testable as competing arms
+only on an AUTHORING+execution pipeline fixture (session writes the
+plan from a 12-small-edits spec, then executes) — new fixture, campaign
+2. Note the defense-in-depth asymmetry: SDD executes plans it did not
+author (imported/legacy/human plans), so the execution-side guard
+retains value even if W wins on authored plans. Both can ship.
