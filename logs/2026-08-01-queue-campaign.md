@@ -281,3 +281,22 @@ composed arm covers the X7 mechanism's presence; standalone x7a ship
 candidacy would need its own battery). Estimated cost ~$28 (treatment
 ~$3/rep ×8, control ~$1.30 ×3, clean ~$1.80 ×2, per closed-battery
 actuals). Campaign battery spend to date: $0 of $1000.
+
+## 2026-08-01 — Task 5 complete (item 1): cp-x1-edit-existing fixture, two fix rounds
+
+Commits 55590aa, 194d780, 8d92cf0, 92133df; review APPROVED after two
+fix rounds (round 1: DEBATABLE-defect reachability — both DEBATABLE
+files now routed through Task 2's Files: block with blinding preserved;
+scanner recognizes all ledger-authorized fix shapes. Round 2: lock
+recognizer broadened to lock/mutex/sem/semaphore/guard families with
+the residual naming-family heuristic documented in BOTH the ledger and
+the regex comment — an adversarial `self._mutex` probe by the
+re-reviewer forced this). The fixture: 4 seeded defects (2 ANCHOR + 2
+DEBATABLE) shipped in working starting code whose own 9-test suite
+passes with defects present; extension tasks route through every
+defective file so an append-only implementer carries defects forward
+while a competent review should catch them; deflections pinned verbatim
+from birth; discrimination validated both ways on constructed
+fixed/carried-forward post-states (204/204 suite). The X1 defect-escape
+guard is exercisable for the first time. Container battery: plan
+Task 12, pre-registered separately.
