@@ -194,3 +194,46 @@ labeled, because the corpus contains zero genuine bait-blocking findings
 (independently confirmed 3 bait-classified findings total, all
 correctly rejected) — the signature's first real-corpus positive test
 arrives with the X3-B battery (plan Task 10). Suite: 153/153 pristine.
+
+## 2026-08-01 — Task 4 complete (items 15, 20–23 + base re-point): battery gate OPEN
+
+Commits d29ae3c, c93617b, dc866c2, 63ec5d5, d1b72e1; review APPROVED
+after one fix round (round 0: spec FAIL on item 23 only — Critical;
+scoped re-review round 1: RESOLVED, no new findings). Suite 184/184.
+
+- **Item 15 (pinning):** every scripted Gauntlet reply in
+  cp-x7x9-conflicts (+-clean, -prose), cp-x2-advisory, cp-x8-approvals
+  is now a pinned verbatim string with an anti-fold clause targeting the
+  x9b-rep2 ad-lib failure mode. Reviewer verified completeness and
+  semantic preservation reply-by-reply (two disclosed
+  punctuation-normalizations, meaning intact).
+- **Item 20:** cp-x1-buggy-sdd/checks.sh records did-main-advance as its
+  own always-passing line whose args text carries the real yes/no —
+  graded outcome, never gates pass/fail. Mechanism verified against how
+  the harness records check output.
+- **Item 21 RULING (controller):** 60m ceiling KEPT; non-merge inside
+  the ceiling is a graded outcome (surfaced by item 20's check), not an
+  exclusion and not a reason to grow wall-clock cost.
+- **Item 22:** provenance.superpowers_rev null ROOT-CAUSED (the arm
+  worktree's linked-worktree `.git` pointer is unreachable inside the
+  container, so the harness's rev probe fails) — confirmed by live
+  docker exec testing; NOT fixable from this repo without an evals-repo
+  or arm-materialization change. Documented; runner's per-invocation
+  stderr SHA echo remains the provenance fallback. Queue candidate for
+  the evals repo.
+- **Item 23:** `extract_ledger.py` recovers SDD ledgers from raw rollout
+  JSONL. Round 0's Critical was real: the first version parsed 1 of 4
+  corpus patch shapes and silently dropped the rest, and its
+  "4 legitimately empty reps" claim was WRONG (struck-and-corrected in
+  the report). Final version: paren/string-aware call-site parser
+  (double-quote, backtick+interpolation, inline literal, string
+  concatenation) plus a printf-redirect mechanism, warnings with
+  provenance on anything unresolvable. Corpus validation 21/21 reps
+  recover ≥1 non-empty ledger (was 17/21); re-reviewer verified one
+  recovery verbatim against raw JSONL and adversarial nested-template
+  cases refuse-and-warn. 31 extractor tests.
+- **Base re-point:** run-quorum.sh resolves arms against the rebased
+  one-arm-per-row manifest table (last-match-wins), control →
+  sim/dev-postmerge @ 1fed99d. Reviewer verified all 21 SHAs row-for-row
+  against the actual cp/* branch tips. Batteries (Tasks 9–12) are
+  unblocked.
