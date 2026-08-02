@@ -858,3 +858,15 @@ claim is untested). Queued as the pre-PR gate.
 Battery spend final: composed $31.25 + wave-cap $36.73 + X8v2 $34.65 +
 X1-edit $110.98 + X5 ~$192.35 + X2 $26.01 + X6 $54.09 = **$486.06** of
 $1000. Task 12 (all five fixture batteries) COMPLETE.
+
+## 2026-08-02 — Task 14: CAMPAIGN CLOSED
+
+Closeout report: `reports/2026-08-queue-campaign.md` (23/23 items
+dispositioned: 13 fixed, 5 answered, 3 designed, 2 parked-with-evidence
+— some items carry two dispositions; see the report's table). Battery
+spend $486.06 of $1000; ~$514 remains for the plan-decomposition
+campaign. Item 18 parked unchanged (no corpus). Controller-authored
+closeout (spawn limit), sourced entirely from this log's dated entries.
+Needle sweep over the full unpushed range and all commit messages:
+clean. Nothing pushed — the 40+ local commits await Jesse's push
+authorization per standing rule.
