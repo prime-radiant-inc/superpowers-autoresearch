@@ -386,3 +386,26 @@ verification candidates. One file modified, one script added.
 |---|---|---|
 | `cp/x10a` | final-review consistency checklist line | 11b1433 |
 | `cp/x10b` | final-review mechanical consistency scan | 4447922 |
+
+## 2026-08-03 plan-decomposition campaign — pd-p1 / pd-p2 / pd-p1p2
+
+pd/p1 (alias cp/pd-p1) = sim/dev-postmerge + plan-as-directory:
+writing-plans emits `plan.md` (header + task index with Files/Depends
+columns) + `tasks/NN-<slug>.md` one per task, one write per file; SDD
+consumes task files directly as briefs and holds only plan.md in
+controller context. +40/−8 across writing-plans and SDD SKILL.md.
+
+pd/p2 (alias cp/pd-p2) = cp/x7a (evidence-bearing preflight, ea84cf9)
++ coherence extension: preflight table gains one row per shared NAME
+pinned by multiple tasks with each task's exact value; rulings applied
+as PLAN AMENDMENTS (edit the losing task's text, commit) before Task 1.
++14/−4 in SDD SKILL.md on top of x7a.
+
+pd/p1p2 (alias cp/pd-p1p2) = pd/p2 + pd/p1 cherry-picked + composition
+fix: the preflight scan is the controller's ONE pass through task files.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-p1` | plan-as-directory | ee0c6b0 |
+| `cp/pd-p2` | plan-time coherence-amendment gate (incl. x7a) | 292da9c |
+| `cp/pd-p1p2` | composed | 1a1a8fd |
