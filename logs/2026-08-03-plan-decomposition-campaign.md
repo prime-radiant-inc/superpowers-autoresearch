@@ -155,3 +155,57 @@ controller context economy (plan.md-only vs whole-monolith in
 controller context; the 2.7M-token orchestrator anchor) — was never
 scored. Next analysis (free, existing rollouts): controller input
 tokens per arm.
+
+## 2026-08-03 — Controller-economy analysis + ITERATION plan (Jesse's directive)
+
+Controller cumulative input (median, main rollout token_count):
+control 4.23M / p2 5.23M / p1 5.24M / p1p2 6.23M; peak context flat
+150-160k. **P1's context-economy hypothesis is negative at this
+scale** — dispatch count and turns dominate; plan-artifact shape is
+not the lever here. Combined with the withdrawn harm finding: P1
+delivers mechanism, no benefit, no harm, at pd-pipeline scale.
+
+**Iteration (new competing arms + re-aimed batteries):**
+- **P2-on-foreign-plan battery (pre-registered below)** — the gate's
+  discriminating scenario existed all along: cp-x10-consistency.
+- **p1b arm (new)**: single-file plan authored INCREMENTALLY (header +
+  constraints + index first; one Edit-append per task; re-read before
+  each append). Rationale: the return-window constraint binds per
+  WRITE, not per FILE — p1b keeps the monolith's whole-plan view
+  (which the withdrawn finding wrongly indicted but the analysis
+  showed is where coherence lives) while removing the single-write
+  ceiling. To battery on the EXPANDED overflow probe only (where
+  control can actually fail).
+- **Overflow probe expansion** (T3's registered path): grow the spec
+  until monolithic single-write authoring demonstrably fails in
+  control; then {control, p1, p1b} ×3.
+- Instrument fixes FIRST (required for further batteries on these
+  scenarios): checks.sh tolerant constant extraction (annotated +
+  import forms) in pd-pipeline + pd-overflow; validators exercise
+  checks.sh itself (two emit-format defects escaped it this
+  campaign).
+
+## 2026-08-03 — Pre-registration: P2-on-cp-x10 battery (the coherence gate's real test)
+
+**Scenario:** cp-x10-consistency (unchanged; 5 PLAN-INDUCED
+cross-module defects, each seeded by two task briefs pinning
+incompatible values — precisely P2's shared-name value-row class).
+**Arms:** pd-p2 @ 292da9c ×3 (lane A). **Baseline:** the backlog
+campaign's control ×3 on this scenario (0/5 final-review detection;
+all seeded defects present in final trees; plan authority dismissed
+scan candidates). No new controls (scenario + harness unchanged since;
+the X10 battery ran 2026-08-03).
+**Reachability:** p2's text binds at SDD setup preflight — the
+scenario's opening message invokes SDD on the pre-written plan;
+reachable by construction (and this time the plan is foreign, so the
+gate has real conflicts to catch).
+**Criteria:** (1) PRIMARY: seeded-defect death rate — defects
+neutralized by preflight AMENDMENT (plan diff/ledger evidence) and
+absent/consistent in the final tree, per the seeded-truth ledger's
+recipes (tolerant forms), vs baseline all-present. PASS = median ≥3/5
+neutralized. (2) Guards: completion parity (task post-checks), no
+hard stop (rulings + amendments are the non-catastrophic path — a rep
+that STOPS to ask about the conflicts fails the never-stall
+expectation), cost. (3) The amendment mechanism specifically: value
+rows in the ledger table + plan text edited before Task 1 (hand-read
+per rep, disclosed). Est. 3 reps × ~$8 ≈ $25.
