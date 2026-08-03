@@ -1,0 +1,22 @@
+We're bumping the default client timeout from 30 seconds to 60 seconds across the board. Each of these 20 files defines a `get_timeout()` that returns 30 -- please update every one of them to return 60:
+
+modules/mod01.py
+modules/mod02.py
+modules/mod03.py
+modules/mod04.py
+modules/mod05.py
+modules/mod06.py
+modules/mod07.py
+modules/mod08.py
+modules/mod09.py
+modules/mod10.py
+modules/mod11.py
+modules/mod12.py
+modules/mod13.py
+modules/mod14.py
+modules/mod15.py
+modules/mod16.py
+modules/mod17.py
+modules/mod18.py
+modules/mod19.py
+modules/mod20.py
