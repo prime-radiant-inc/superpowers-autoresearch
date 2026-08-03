@@ -101,3 +101,19 @@ reachability before spending reps.
 New standing rule from X2's finding: every future battery
 pre-registration must state HOW the arm's text is reachable from the
 scenario's execution path.
+
+## 2026-08-02 — CORRECTION: X1 FULL table under the item-8 scorer fix (T1)
+
+T1's `- None.` list-item fix (7a6af74) changes the published X1 FULL
+novel-finding-rate table (flat definition, matching the published
+means). Old → new: control 0.483 → 0.448; x1a 0.586 → 0.586
+(unchanged); x1b 0.565 → 0.435; x1c 0.538 → 0.538 (unchanged).
+Mean rounds and dispatch counts unchanged everywhere. Recomputed by
+`task1_recompute_x1_table.py 7a6af74^` over the full cp-x1-buggy-sdd
+corpus, both lanes. No verdict changes: the X1 arms remain null on
+escape reduction (that guard never keyed on these rates); the only
+ordering change is x1b now sitting marginally below control instead of
+above (0.435 vs 0.448) — within the battery's noise at n=4/arm, and no
+published claim rested on that ordering. This supersedes the
+2026-08-01 queue-campaign correction's absolute values for control and
+x1b.
