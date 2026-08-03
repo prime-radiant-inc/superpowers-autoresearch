@@ -234,3 +234,42 @@ suppression (vs downgrade-to-Minor) is the right POLICY is a design
 question for the writing-plans/SDD redo, now with clean effect-size
 evidence. Queue item 5 closed as ANSWERED. Grading by controller,
 disclosed.
+
+## 2026-08-03 — Task 6 pre-registration: X11 verification-dedupe battery
+
+**Treatment (cp/x11 @ d6cb918):** re-targeted at the CONTROLLER seat per
+T8's X5 narratives (duplicate verification concentrates there: 3-14
+controller pytest reruns/rep across all X5 arms; reviewers already
+decline). Text: "Verification is read, not re-run" — controller and
+reviewer never repeat a suite on an unchanged commit; re-running
+reserved for changed code, contested/missing claims, or a suite the
+implementer couldn't run. Placement: top of Handle-the-report + one
+rationalization row.
+
+**Reachability (standing rule):** the text sits in the SDD controller
+instructions the session loads to run the plan — reachable by
+construction in this SDD-driven scenario.
+
+**Battery:** scenario cp-x5-leases-scaled (unchanged): x11 ×4 lane B
+(reps 1-4) + contemporaneous control ×2 lane A (reps 9-10; T9's
+control ×8 remains the primary baseline; contemporaneous reps guard
+drift per T3's lesson). Lane A reps double as the live smoke test for
+T2's provenance fix (under review; unit-tested 1952-green) — an
+infra-failure there quarantines the reps and reverts the evals
+commits, and the reps re-run after.
+
+**Criteria:** (1) PRIMARY: controller duplicate-run count — pytest
+invocations by the controller on a tree-SHA already covered by
+implementer evidence; T9 baseline 3-14/rep (median ~6). PASS =
+treatment median ≤2 with the distribution visibly shifted; measured
+mechanically from rollouts (invocation extraction), controller
+hand-verifies edge cases. (2) Completion parity: verdict post-checks
+match control. (3) Review-rigor guard: substantive reviewer rejects
+still present in treatment reps (spot-read; T8 found comparable
+density across arms — a treatment rep set with ZERO substantive
+rejects fails the guard). (4) Cost: directional, expected modest
+reduction. Est. 6 reps × ~$8 ≈ $50.
+
+**Fixture caveat (registered):** dispatch-queue-plan.md's drain()
+priority gap drives cross-rep variance (T8) — outcome-variance
+comparisons use completion checks, not implementation choice.

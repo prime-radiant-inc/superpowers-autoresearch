@@ -353,3 +353,16 @@ already made are stalls. +11/−6, one file (SDD SKILL.md).
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/x9a2` | X9-A + escape-hatch tightening | f42d72a |
+
+## 2026-08-03 backlog campaign — x11 (verification dedupe, controller seat)
+
+cp/x11 = sim/dev-postmerge (1fed99d) + "Verification is read, not re-run"
+paragraph at the top of SDD's Handle-the-report section (controller and
+reviewer never repeat a suite on an unchanged commit; three re-run
+exceptions) + one rationalization-table row. +11/−0, one file.
+Motivated by T8's X5 narratives: duplicate verification concentrates at
+the controller seat (3-14 pytest reruns/rep), reviewers already decline.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/x11` | verification-dedupe (controller seat) | d6cb918 |
