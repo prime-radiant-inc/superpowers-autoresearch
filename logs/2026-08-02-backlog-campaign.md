@@ -189,3 +189,48 @@ green) with UNPROVEN incremental benefit. Not shipped as its own PR.
 Queue item 1 closed as answered-with-caveat; the tightened text is
 held as a ready follow-up for PR #2077's review thread. Grading by
 controller, disclosed.
+
+## 2026-08-03 — Task 4 VERDICT: X2-B lens fully suppresses structure-only findings (micro-battery)
+
+40 calls, MODEL=claude-opus-4-8, REPS=10/cell, ~218k tokens (~$5).
+Raw answers preserved in out/x2b-review-micro/ (gitignored, on host).
+
+**Instrument correction first (strict-grammar undercount, 4th
+occurrence):** the shipped DEVIATION_RE scored deviant--plain 1/10 —
+the raw answers show 10/10. Controller rescored ALL 40 raw answers
+with a broader detector, then hand-read every detector-positive
+conformant case (3/3 = false positives on benign uses of
+"mandates"/"deviation"), every detector-positive lens case (4/4 =
+"noted, explicitly ruled not-a-finding"), the two ⚠️-styled plain
+cases, and severity sections of all plain cases. Queued: fix the
+extraction regex against these 40 real samples.
+
+**Hand-verified results:**
+- Noise floor (conformant): **0/20** structure findings — clean floor,
+  criterion 1 satisfied.
+- deviant--plain: **10/10** raise the file-structure deviation — 8 as
+  ❌ findings with an Important-severity section, 2 as ⚠️
+  "controller should decide whether the structural mandate is
+  binding."
+- deviant--x2b-lens: **0/10** raise it as a finding. Every rep SEES
+  the merge and explicitly reasons it away, quoting the lens rubric:
+  "a different file layout is not a lost requirement when the
+  requirement is met," "the file list illustrates the change rather
+  than binding it." Substance checks stay accurate in all cells.
+
+**Verdict:** the x2b reviewer lens works exactly as designed at the
+review-judgment layer: complete suppression (10/10 → 0/10) of
+structure-only findings on a disclosed deviation, zero false-positive
+cost, substance review intact. Full sessions could not show this
+(0/9 natural deviations); the micro instrument answered it for ~$5.
+The registered ceiling conditional (silent variant) is moot — no
+ceiling; the disclosed-deviant design discriminated fully.
+
+**Implication (feeds campaign 2 review-triage design):** plain
+reviewers escalate structure conformance to the controller
+("controller should decide") — exactly the ask-class that ratholes
+task loops; the lens eliminates the escalation entirely. Whether full
+suppression (vs downgrade-to-Minor) is the right POLICY is a design
+question for the writing-plans/SDD redo, now with clean effect-size
+evidence. Queue item 5 closed as ANSWERED. Grading by controller,
+disclosed.
