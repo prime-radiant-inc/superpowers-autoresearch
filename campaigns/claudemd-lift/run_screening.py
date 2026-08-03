@@ -162,6 +162,17 @@ def read_auth():
     return None, None
 
 
+def _redact(text, secret):
+    """Replaces every occurrence of the loaded auth secret with "[REDACTED]"
+    before anything derived from a claude subprocess run (transcript, stderr,
+    error messages) is written to disk or a results row. Defensive: claude's
+    own stdout/stderr should never echo the token/key, but a crash or debug
+    dump could, and nothing here should ever end up holding the secret."""
+    if not text or not secret:
+        return text
+    return text.replace(secret, "[REDACTED]")
+
+
 def run_grader(probe_id, transcript_path, workdir):
     grade_script = os.path.join(probe_dir(probe_id), "grade.py")
     try:
@@ -217,9 +228,11 @@ def run_one(probe_id, cell, rep, out_dir, max_turns, timeout):
            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()}
     try:
         proc = subprocess.run(cmd, cwd=wd, env=env, capture_output=True, text=True, timeout=timeout)
+        stdout = _redact(proc.stdout, secret)
+        stderr = _redact(proc.stderr, secret)
         with open(transcript_path, "w") as f:
-            f.write(proc.stdout)
-        rec["stderr_tail"] = proc.stderr[-400:] if proc.stderr else ""
+            f.write(stdout)
+        rec["stderr_tail"] = stderr[-400:] if stderr else ""
         rec["launch_error"] = None
     except subprocess.TimeoutExpired:
         with open(transcript_path, "w") as f:
@@ -228,7 +241,7 @@ def run_one(probe_id, cell, rep, out_dir, max_turns, timeout):
     except OSError as e:
         with open(transcript_path, "w") as f:
             f.write("")
-        rec["launch_error"] = f"launch failed: {e}"
+        rec["launch_error"] = _redact(f"launch failed: {e}", secret)
 
     grade = run_grader(probe_id, transcript_path, wd)
     rec.update(grade)

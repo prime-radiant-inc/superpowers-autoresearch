@@ -108,6 +108,21 @@ class TestRunScreeningCellComposition(unittest.TestCase):
         empty_entry = next(m for m in manifest if m["cell"] == "empty")
         self.assertIsNone(empty_entry["claude_md_path"])
 
+    def test_redact_replaces_every_occurrence_of_the_secret(self):
+        # MINOR-1: stderr_tail/transcript persistence must never leak the
+        # loaded auth secret, even if claude's own stdout/stderr echoed it
+        # (e.g. in a crash dump or a verbose auth-error message).
+        secret = "sk-ant-oat01-super-secret-token-value"
+        text = f"connecting with token {secret}\nauth failed for {secret} at 10:02\n"
+        redacted = self.rs._redact(text, secret)
+        self.assertNotIn(secret, redacted)
+        self.assertEqual(redacted.count("[REDACTED]"), 2)
+
+    def test_redact_is_noop_for_empty_text_or_secret(self):
+        self.assertEqual(self.rs._redact("", "secret"), "")
+        self.assertIsNone(self.rs._redact(None, "secret"))
+        self.assertEqual(self.rs._redact("plain text, no secret here", ""), "plain text, no secret here")
+
     def test_unknown_probe_rejected_by_main(self):
         rc = self.rs.main(["--dry-run", "--probe", "not-a-real-probe",
                            "--dry-run-out", os.path.join(self.tmp, "x")])
