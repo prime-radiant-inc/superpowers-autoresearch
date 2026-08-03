@@ -1,0 +1,57 @@
+feature: order-fulfillment-returns
+goal: Build the multi-warehouse order fulfillment and returns service described in SPEC.md.
+tasks:
+  - id: 1
+    name: intake
+    file: task-01-intake.md
+  - id: 2
+    name: validation
+    file: task-02-validation.md
+  - id: 3
+    name: discounts
+    file: task-03-discounts.md
+  - id: 4
+    name: pricing
+    file: task-04-pricing.md
+  - id: 5
+    name: allocation
+    file: task-05-allocation.md
+  - id: 6
+    name: shipping
+    file: task-06-shipping.md
+  - id: 7
+    name: fulfillment
+    file: task-07-fulfillment.md
+  - id: 8
+    name: backorders
+    file: task-08-backorders.md
+  - id: 9
+    name: notifications
+    file: task-09-notifications.md
+  - id: 10
+    name: loyalty
+    file: task-10-loyalty.md
+  - id: 11
+    name: returns
+    file: task-11-returns.md
+  - id: 12
+    name: refunds
+    file: task-12-refunds.md
+  - id: 13
+    name: reporting
+    file: task-13-reporting.md
+  - id: 14
+    name: archiving
+    file: task-14-archiving.md
+  - id: 15
+    name: cancellation
+    file: task-15-cancellation.md
+  - id: 16
+    name: sla
+    file: task-16-sla.md
+  - id: 17
+    name: settings-report-timezone
+    file: task-17-settings-report-timezone.md
+  - id: 18
+    name: settings-archive-grace
+    file: task-18-settings-archive-grace.md
