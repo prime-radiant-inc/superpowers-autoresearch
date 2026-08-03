@@ -45,18 +45,24 @@ _pd_task_count() {
 # one task per file assumed), does that task touch settings.py alone
 # (a dedicated micro-task) or alongside another orders/*.py module file
 # (folded into that module's own task)? Prints "<total> <dedicated>".
+#
+# `have_task` gates every flush so that plan text preceding the first
+# Task header -- a Global Constraints preamble in a monolithic file, or
+# a manifest/constraints file sorted ahead of any task file in a
+# directory -- is never itself counted as a task, even if it happens to
+# mention orders/settings.py in passing.
 _pd_settings_disposition() {
     awk '
         function flush() {
-            if (touched) {
+            if (have_task && touched) {
                 total++
                 if (others == 0) dedicated++
             }
         }
         function reset() { touched = 0; others = 0; delete seen }
-        BEGIN { total = 0; dedicated = 0; reset() }
+        BEGIN { total = 0; dedicated = 0; have_task = 0; reset() }
         FNR == 1 { flush(); reset() }
-        /^#+[[:space:]]*Task[[:space:]]/ { flush(); reset() }
+        /^#+[[:space:]]*Task[[:space:]]/ { flush(); reset(); have_task = 1 }
         /orders\/settings\.py/ { touched = 1 }
         {
             line = $0

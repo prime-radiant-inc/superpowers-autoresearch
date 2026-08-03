@@ -1,0 +1,33 @@
+feature: order-fulfillment
+goal: Build the order fulfillment pipeline described in SPEC.md.
+tasks:
+  - id: 1
+    name: walking-skeleton
+    file: task-01-walking-skeleton.md
+  - id: 2
+    name: validation-widen
+    file: task-02-validation-widen.md
+  - id: 3
+    name: pricing-widen
+    file: task-03-pricing-widen.md
+  - id: 4
+    name: fulfillment-widen
+    file: task-04-fulfillment-widen.md
+  - id: 5
+    name: notifications
+    file: task-05-notifications.md
+  - id: 6
+    name: reporting
+    file: task-06-reporting.md
+  - id: 7
+    name: archiving
+    file: task-07-archiving.md
+  - id: 8
+    name: settings-notify-retries
+    file: task-08-settings-notify-retries.md
+  - id: 9
+    name: settings-report-timezone
+    file: task-09-settings-report-timezone.md
+  - id: 10
+    name: settings-archive-grace
+    file: task-10-settings-archive-grace.md
