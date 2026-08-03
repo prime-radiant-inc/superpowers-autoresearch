@@ -59,7 +59,7 @@ MODULE_FILES = (
 _TASK_HEADER_RE = re.compile(r"^#+\s*Task\s", re.M)
 _SETTINGS_REF_RE = re.compile(r"orders/settings\.py")
 _ORDERS_FILE_RE = re.compile(r"orders/[a-zA-Z_]+\.py")
-_MAX_LINE_ITEMS_RE = re.compile(r"^MAX_LINE_ITEMS\s*=\s*(\d+)", re.M)
+MAX_LINE_ITEMS_RE = re.compile(r"^MAX_LINE_ITEMS\s*=\s*(\d+)", re.M)
 _OVERBUILD_RE = re.compile(
     r"class\s+[A-Za-z]*Currency|CurrencyRegistry|SUPPORTED_CURRENCIES"
     r"|abstractmethod|Protocol\[|CurrencyConverter",
@@ -152,7 +152,12 @@ def settings_disposition(files):
 # orders/validation.py, orders/pricing.py, orders/fulfillment.py.
 # ---------------------------------------------------------------------------
 
-def _module_constant(tree_root, relpath, pattern):
+def module_constant(tree_root, relpath, pattern):
+    """Read an integer module-level constant matching `pattern` out of
+    `tree_root / relpath`. Public (no leading underscore) so sibling
+    scenarios' validate_*.py scripts -- e.g. pd-overflow's, whose
+    MAX_LINE_ITEMS coherence check spans a different, wider set of
+    consuming modules -- can reuse this instead of reimplementing it."""
     path = tree_root / relpath
     if not path.exists():
         return None
@@ -162,9 +167,9 @@ def _module_constant(tree_root, relpath, pattern):
 
 def max_line_items_values(tree_root):
     return {
-        "validation": _module_constant(tree_root, "orders/validation.py", _MAX_LINE_ITEMS_RE),
-        "pricing": _module_constant(tree_root, "orders/pricing.py", _MAX_LINE_ITEMS_RE),
-        "fulfillment": _module_constant(tree_root, "orders/fulfillment.py", _MAX_LINE_ITEMS_RE),
+        "validation": module_constant(tree_root, "orders/validation.py", MAX_LINE_ITEMS_RE),
+        "pricing": module_constant(tree_root, "orders/pricing.py", MAX_LINE_ITEMS_RE),
+        "fulfillment": module_constant(tree_root, "orders/fulfillment.py", MAX_LINE_ITEMS_RE),
     }
 
 
