@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# VENDORED COPY (backlog-campaign item 11): this file has a sibling copy on
+# arm branch `cp/x7b` of the superpowers repo
+# (skills/subagent-driven-development/scripts/plan-conflict-scan). Any
+# change here must either be mirrored there or the divergence stated in the
+# campaign log -- see test_plan_conflict_scan.py's module docstring for why
+# this campaign carries its own copy (pinning X7-B's behavior without a
+# cross-repo test dependency).
+#
 # Check an implementation plan for the conflicts a prose scan misses: a file
 # one task deletes that another task still lists, a file modified before the
 # task that creates it, a callable one task consumes that no earlier task
