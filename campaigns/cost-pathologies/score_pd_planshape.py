@@ -142,6 +142,15 @@ _SHAPE_RE = re.compile(r"^(\w+) \((\d+) " + _plural_re("file") + r"\)$")
 _PLAN_FILE_RE = re.compile(r"^(.+) \((\d+) " + _plural_re("line") + r"\)$")
 _OVERBUILD_RE = re.compile(r"^(overbuilt|simple) \((\d+) " + _plural_re("marker") + r"\)$")
 
+# **Fix round (2026-08-03 T4 correction):** checks.sh's tolerant MAX_LINE_
+# ITEMS extraction (see scenarios/pd-pipeline/checks.sh's `_pd_mli`) now
+# emits `import(<value>)` for a one-hop import-reference, alongside the
+# bare integer for a direct (or annotated) assignment. This regex accepts
+# either shape and captures just the digits, so a rep using the import
+# form doesn't degrade to None here even though checks.sh itself resolved
+# the value correctly.
+_MLI_VALUE_RE = re.compile(r"^(?:import\()?(-?\d+)\)?$")
+
 
 def observables_from_verdict(verdict_path):
     """The pd-pipeline scenario's own typed observable dict, re-derived
@@ -194,8 +203,8 @@ def observables_from_verdict(verdict_path):
         text = _one(f"max-line-items-{name}")
         if text is None or text == "absent":
             return None
-        m = re.match(r"-?\d+", text)
-        return int(m.group(0)) if m else None
+        m = _MLI_VALUE_RE.match(text)
+        return int(m.group(1)) if m else None
 
     mli = {name: _mli(name) for name in ("validation", "pricing", "fulfillment")}
 

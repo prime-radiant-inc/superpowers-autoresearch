@@ -245,6 +245,46 @@ class TestObservablesFromVerdict(unittest.TestCase):
         self.assertEqual(observables["max_line_items"], {"validation": None, "pricing": None, "fulfillment": None})
 
 
+class TestObservablesFromVerdictParsesImportForm(unittest.TestCase):
+    """Regression coverage for the plan-decomposition campaign's T4
+    correction (2026-08-03): checks.sh's tolerant MAX_LINE_ITEMS
+    extraction now emits `import(12)` for a one-hop import-reference (see
+    scenarios/pd-pipeline/checks.sh's `_pd_mli`) -- this scorer's own
+    value-parsing regex must recover the numeric value from that form,
+    not just a bare integer, or a real rep using this shape would degrade
+    to None here even though checks.sh itself resolved it correctly."""
+
+    def _write(self, lines):
+        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+        f.write(_verdict_with_checks(lines))
+        f.close()
+        return f.name
+
+    def test_import_form_parses_to_the_resolved_integer(self):
+        import score_pd_planshape as p
+        path = self._write([
+            "true # max-line-items-validation: 12",
+            "true # max-line-items-pricing: 12",
+            "true # max-line-items-fulfillment: import(12)",
+            "true # max-line-items-coherent: yes (12 across all three modules)",
+        ])
+        observables = p.observables_from_verdict(path)
+        self.assertEqual(observables["max_line_items"], {"validation": 12, "pricing": 12, "fulfillment": 12})
+        self.assertTrue(observables["max_line_items_coherent"])
+
+    def test_import_form_with_a_different_value_still_parses(self):
+        import score_pd_planshape as p
+        path = self._write(["true # max-line-items-pricing: import(10)"])
+        observables = p.observables_from_verdict(path)
+        self.assertEqual(observables["max_line_items"]["pricing"], 10)
+
+    def test_malformed_import_form_degrades_to_none_not_a_crash(self):
+        import score_pd_planshape as p
+        path = self._write(["true # max-line-items-pricing: import(not-a-number)"])
+        observables = p.observables_from_verdict(path)
+        self.assertIsNone(observables["max_line_items"]["pricing"])
+
+
 class TestObservablesFromVerdictAgainstRealBatteryReps(unittest.TestCase):
     """Regression coverage for the first real crash this scorer hit: a
     real checks.sh run emits `pricing-simplest-thing-signal: simple (0
