@@ -305,3 +305,45 @@ guard: scan findings must be VERIFIED in the final review (spot-read),
 not pasted as defects — wholesale pasting fails the guard. (4) Cost:
 directional. Est. 9 reps × ~$8 ≈ $72. Launch AFTER the X11 battery
 frees the lanes (serial per lane).
+
+## 2026-08-03 — Task 6 VERDICT: X11 verification-dedupe text FAILS (null)
+
+All 6 reps complete, 6/6 final=pass, post-checks 7/7 everywhere.
+Controller pytest invocations (mechanical count from controller
+rollouts; extraction initially missed the custom_tool_call/input
+payload shape and read all-zeros — corrected and re-run before any
+conclusion, per instrument doctrine):
+
+| rep | arm | controller pytest | all agents | cost |
+|---|---|---|---|---|
+| control-rep9 | control | 8 | 47 | $7.88 |
+| control-rep10 | control | 9 | 52 | $8.19 |
+| x11-rep1 | x11 | 5 | 46 | $6.25 |
+| x11-rep2 | x11 | 7 | 51 | $6.54 |
+| x11-rep3 | x11 | 16 | 60 | $10.25 |
+| x11-rep4 | x11 | 6 | 77 | $10.55 |
+
+Pre-registered PASS required treatment median ≤2 with a visible
+distribution shift. Result: treatment median 6.5, mean 8.5 — equal to
+control's mean; one treatment rep (16) exceeds every control rep.
+Raw counts include legitimate re-runs (fix-loop changed code), but the
+metric is arm-comparable and shows NO shift. Metric consistency:
+contemporaneous control counts (8, 9) sit inside T9's
+narrative-graded baseline (3-14, median ~6). Completion parity 7/7;
+cost parity ($8.40 vs $8.04 means). Delivery confirmed: runner
+reconciled cp/x11 @ d6cb918 fail-closed; x11-rep1's controller
+demonstrably READ the SKILL.md containing the rule, then re-ran
+anyway. Battery $49.66.
+
+**Verdict: FAIL (null).** A direct normative prohibition at the
+controller seat does not reduce re-verification. This is the THIRD
+negative for informational/normative treatments at the verify moment
+(X5-A receipts, X5-B leases, X11 prohibition text) against a
+behavioral duplication rate the narratives put at 3-14 controller
+re-runs/rep. Standing conclusion strengthened: re-verification is
+behavioral and survives instruction; the fix class must be
+STRUCTURAL — remove the redundant run from the action space (dispatch
+design, tooling, or harness), not from the instructions. Queued as a
+first-class design constraint for campaign 2 (the SDD redo's
+dedupe-verification item). Closed-arm: cp/x11 negative. Grading by
+controller, disclosed.
