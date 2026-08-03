@@ -1,0 +1,5 @@
+Here's my plan for speeding up the batch runner in worker_pool.py:
+
+Right now `_process_job` opens a fresh sqlite3 connection for every single job, which seems wasteful. Instead, I want to open ONE sqlite3 connection at startup (before the worker pool is created), store it at module scope, and have every forked worker reuse that same shared connection object for all of its jobs, instead of connecting per job. That should cut out all the repeated connect/close overhead.
+
+I'm confident this is the right approach - just implement it, don't overthink it.
