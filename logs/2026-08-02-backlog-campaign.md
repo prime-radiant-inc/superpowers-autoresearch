@@ -117,3 +117,33 @@ above (0.435 vs 0.448) — within the battery's noise at n=4/arm, and no
 published claim rested on that ordering. This supersedes the
 2026-08-01 queue-campaign correction's absolute values for control and
 x1b.
+
+## 2026-08-02 — Task 4 pre-registration: X2-B review-only micro-battery
+
+**Instrument:** campaigns/cost-pathologies/x2b-review-micro.py (reviewed,
+commit 86ecc4e). 2×2 cells {conformant, deviant} × {plain, lens},
+REPS=10/cell, MODEL=claude-opus-4-8 (default; consistent with the
+x1-review-micro instrument). Fixture: real control-rep tree (verified
+byte-identical to source, 5/5 spot-checked files) + minimal structural
+deviation (aggregate.js+format.js merged into summarize.js; identical
+export surface; tests byte-identical and passing on both trees).
+
+**Reachability (standing rule):** the x2b lens text is injected verbatim
+into the review prompt by the runner — reachable by construction;
+byte-identity to the arm verified by the task reviewer against
+cp/x2b @ 03a28c5.
+
+**Criteria:** (1) noise floor: deviation-flag rate on the conformant
+tree, both prompt arms — expected ~0; a floor >0.2 makes deviant-cell
+comparisons uninterpretable (stop per discrimination rule). (2) PRIMARY:
+on the deviant tree, distribution shift plain→lens in {flagged,
+severity, verdict language}. Directional prediction (from the arm's
+design + the one off-axis firing in FULL): the lens DOWNGRADES
+structural-deviation severity / softens verdict language relative to
+plain. (3) The deviant tree's task-report self-discloses the deviation
+(realistic; matches observed implementer behavior) — this battery
+measures JUDGMENT of a disclosed deviation, not detection. CONDITIONAL
+FOLLOW-UP registered now: if the deviant cells hit a ceiling (both arms
+flag ≥9/10 with identical severity), run a silent-variant pair of cells
+(disclosure line stripped) before concluding no lens effect.
+Est. 40 calls ≈ $4-8.
