@@ -347,3 +347,49 @@ design, tooling, or harness), not from the instructions. Queued as a
 first-class design constraint for campaign 2 (the SDD redo's
 dedupe-verification item). Closed-arm: cp/x11 negative. Grading by
 controller, disclosed.
+
+## 2026-08-03 — Task 5 battery VERDICT: X10 arms FAIL the bar; detection gap solved, AUTHORITY gap exposed
+
+9 reps, $66.56 (control $21.73 / x10a $23.78 / x10b $21.05).
+Completion: 8/9 reps 14/14 post-checks; control-rep2 incomplete
+(only config.py merged; excluded per pre-registration — its all-absent
+seed lines are never-built, verified by tree inspection).
+
+**Primary metric (seeded defects surfaced as surviving findings or
+fixed at final review):** control 0/5, 0/5; x10a 0/5, **1/5**, 0/5;
+x10b 0/5, 0/5, 0/5. Both arms FAIL the pre-registered bar (median
+≥3/5). Discrimination guard satisfied (control ≤1/5; not all-arms-
+zero).
+
+**The structure behind the numbers (hand-read of every final review):**
+- **x10b (mechanical scan): detection is SOLVED.** The controller ran
+  the bundled scanner in 3/3 reps and handed the findings to the final
+  reviewer; rep2's reviewer triaged 14/14 candidates covering all
+  seeds. Integrity guard PASS — every candidate got per-item
+  reasoning, no pasting. Then **100% of candidates were dismissed
+  under plan authority**: "the plan explicitly requires worker floor 1
+  and stricter API floor 2," "the plan independently selects notifier
+  30 and reporter 90." Each side of each seeded inconsistency is
+  individually plan-mandated — so the reviewer, correctly applying
+  spec-compliance rubric, blesses the incoherence.
+- **x10a (checklist line): attention without a verdict-frame.** 2/3
+  reviewers explicitly PRAISED the divergences as intentional
+  ("correctly kept separate," "intentionally module-local"). The one
+  catch (rep2, seed 4) is the seed that manifests as RUNTIME breakage
+  (notifier rejects the scheduler's status) — and the reviewer
+  escalated it as "cannot be corrected without a plan decision."
+- Wave-cap's "reviewer blindness" (0/45) is now decomposed into two
+  gaps: an ATTENTION gap (closed by the mechanical scan — candidates
+  reach the reviewer with file:line) and an AUTHORITY gap (untouched:
+  plan-mandated divergence is unfalsifiable at implementation review;
+  "the plan chose this" defeats every review-time consistency signal).
+
+**Disposition:** cp/x10a and cp/x10b closed as ship candidates (both
+negative as review-time treatments). The scanner retains validated
+value re-aimed at PLAN time: run it against the plan's own specified
+constants/interfaces before execution (X7-A evidence-bearing preflight
++ plan-as-directory manifest — campaign 2's derisking lane), where
+plan authority is the thing under review rather than the thing that
+dismisses the finding. Queue items 3 and 4 closed as ANSWERED.
+Grading by controller, disclosed; scoring script and hand-read
+excerpts referenced above.
