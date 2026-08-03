@@ -902,3 +902,34 @@ plan from a 12-small-edits spec, then executes) — new fixture, campaign
 2. Note the defense-in-depth asymmetry: SDD executes plans it did not
 author (imported/legacy/human plans), so the execution-side guard
 retains value even if W wins on authored plans. Both can ship.
+
+## 2026-08-02 — X6-A ship-gate battery VERDICT: PASS (boundary holds)
+
+All 5 reps complete on `sdd-go-fractals-gpt55`. Mechanical scoring
+(controller, mech_score_x6 driver: verdict.json post-checks +
+score_x6_floor dispatch counts):
+
+| rep | arm | final | post-checks | dispatches | cost |
+|---|---|---|---|---|---|
+| control-rep1 (lane A) | control @ 1fed99d | pass | 7/7 | 16 | $9.59 |
+| control-rep2 (lane A) | control @ 1fed99d | pass | 7/7 | 13 | $7.40 |
+| x6a-rep1 (lane B) | x6a @ d53436b | pass | 7/7 | 14 | $8.04 |
+| x6a-rep2 (lane B) | x6a @ d53436b | pass | 7/7 | 14 | $9.09 |
+| x6a-rep3 (lane B) | x6a @ d53436b | pass | 7/7 | 13 | $6.74 |
+
+Against pre-registered criteria: (1) BOUNDARY HOLDS 3/3 — x6a
+dispatch counts (14/14/13, mean 13.7) ≈ control (16/13, mean 14.5);
+no batching of any non-trivial task (a batch of even two of the five
+tasks would show ≤ ~11); (2) completion parity — 5/5 reps pass with
+7/7 post-checks; (3) cost parity — x6a mean $7.96 vs control $8.49,
+within noise, no harm. Battery cost: $40.86.
+
+**X6-A is PR-ready.** Combined evidence: micro-task fixture
+(cp-x6-planframed battery, Task 12) shows 73% cost / 87% dispatch
+reduction with better completion where batching SHOULD bind; this
+gate shows zero batching and full parity where it should NOT bind.
+The +8-line arm text applies to origin/dev with identical context
+(the graded base 1fed99d differs from dev only in other files'
+hunks from the open fix PRs; the inserted lines and their immediate
+context are byte-identical). Proceeding to PR mirroring #2077's
+pattern. Scoring performed by controller (disclosed).
