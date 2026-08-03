@@ -86,6 +86,199 @@ _pd_settings_disposition() {
     ' "$@" 2>/dev/null
 }
 
+# Tolerant MAX_LINE_ITEMS extraction (plan-decomposition campaign,
+# 2026-08-03 T4 correction). Adapted from scenarios/pd-pipeline/checks.sh
+# -- see that file's own docstring for the full rationale. The original
+# extraction (`^MAX_LINE_ITEMS[[:space:]]*=[[:space:]]*[0-9]+`) only saw a
+# bare assignment -- real battery reps reported the constant "absent" in
+# modules that actually wrote `MAX_LINE_ITEMS: int = 12` (a type-annotated
+# assignment), fabricating a requirement-loss finding later withdrawn once
+# the tree was hand-read. Tolerates three shapes, in order:
+#   (a) bare assignment:      MAX_LINE_ITEMS = 12
+#   (b) annotated assignment: MAX_LINE_ITEMS: int = 12
+#   (c) import-reference:     from orders.validation import MAX_LINE_ITEMS
+#       -- resolved ONE hop into the referenced module's own file (no
+#       further import chasing) and reported as "import(<value>)", e.g.
+#       "import(12)", so a scorer can tell direct-vs-inherited apart while
+#       still recovering the effective value.
+# Absent (echoes "absent") if none of the three match or FILE doesn't
+# exist -- this is an EMIT, never a pass/fail gate; see callers.
+_pd_mli_direct() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    # `|| true`: under `set -o pipefail` (this scenario's harness scripts
+    # all set it), a no-match grep anywhere in this pipe would otherwise
+    # make the WHOLE pipeline's exit status non-zero even though `head`
+    # (the last stage) itself succeeds -- "no match" is an expected,
+    # ordinary outcome here (most modules won't define MAX_LINE_ITEMS
+    # directly), never a real error worth propagating.
+    grep -oE '^MAX_LINE_ITEMS[[:space:]]*(:[[:space:]]*[^=]+)?=[[:space:]]*[0-9]+' "$file" 2>/dev/null \
+        | grep -oE '[0-9]+$' | head -1 || true
+}
+
+_pd_mli() {
+    local file="$1"
+    local val
+    val="$(_pd_mli_direct "$file")"
+    if [ -n "$val" ]; then
+        echo "$val"
+        return
+    fi
+    if [ -f "$file" ]; then
+        local import_line dotted_module target_file resolved
+        import_line="$(grep -E '^from[[:space:]]+[A-Za-z_][A-Za-z0-9_.]*[[:space:]]+import[[:space:]]+.*\bMAX_LINE_ITEMS\b' "$file" 2>/dev/null | head -1 || true)"
+        if [ -n "$import_line" ]; then
+            dotted_module="$(echo "$import_line" | sed -E 's/^from[[:space:]]+([A-Za-z_][A-Za-z0-9_.]*)[[:space:]]+import.*/\1/')"
+            target_file="$(echo "$dotted_module" | tr '.' '/').py"
+            if [ -f "$target_file" ] && [ "$target_file" != "$file" ]; then
+                resolved="$(_pd_mli_direct "$target_file")"
+                if [ -n "$resolved" ]; then
+                    echo "import($resolved)"
+                    return
+                fi
+            fi
+        fi
+    fi
+    echo absent
+}
+
+# Strip an "import(N)" wrapper down to its bare digits for coherence
+# comparison -- import(12) agrees with a direct 12 (same effective value,
+# different provenance). "absent" passes through unchanged.
+_pd_mli_numeric() {
+    local val="$1"
+    if [ "$val" = "absent" ]; then
+        echo absent
+        return
+    fi
+    if [[ "$val" =~ ^import\(([0-9]+)\)$ ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return
+    fi
+    echo "$val"
+}
+
+# Emits every plan-decomposition campaign P1/P2/P4 instrument line for the
+# CURRENT directory's tree (called by post(), against the checked-out
+# session tree). Split out of post() so it can be exercised directly --
+# e.g. by validate_pd_overflow.py's checks_sh-invoking regression tests --
+# with only the ONE harness primitive it depends on (`command-succeeds`)
+# stubbed, rather than the full quorum primitive set post() otherwise
+# needs (git-repo, file-exists, check-transcript, ...). Same rationale as
+# scenarios/pd-pipeline/checks.sh's own _pd_emit_plan_instruments; this is
+# the wider (four-module) variant.
+#
+# Every command-succeeds call below always exits 0 (grep/awk exit status
+# is deliberately discarded via `|| true` or default values); only the
+# recorded command TEXT carries the finding, for the composer's scorers
+# to parse. None of these are pass/fail gates.
+_pd_emit_plan_instruments() {
+    # -- P1 instrument: plan shape (monolithic file vs multiple files),
+    # file count, and per-file line counts. --
+    local plan_files=()
+    while IFS= read -r f; do
+        [ -n "$f" ] && plan_files+=("$f")
+    done < <(_pd_plan_files)
+
+    local file_count="${#plan_files[@]}"
+    local shape="none"
+    if [ "$file_count" -eq 1 ]; then
+        shape="monolithic"
+    elif [ "$file_count" -gt 1 ]; then
+        shape="directory"
+    fi
+    command-succeeds "true # plan-shape: $shape ($file_count file(s))"
+
+    local f
+    for f in "${plan_files[@]}"; do
+        local lines
+        lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')"
+        command-succeeds "true # plan-file: $f (${lines:-0} lines)"
+    done
+
+    # -- P4 instrument: task count, and the settings.py micro-edit
+    # disposition (four separate/dedicated tasks vs folded into their
+    # module's own task). --
+    if [ "$file_count" -gt 0 ]; then
+        local task_count
+        task_count="$(_pd_task_count "${plan_files[@]}")"
+        command-succeeds "true # plan-task-count: $task_count"
+
+        local disposition total dedicated merged
+        disposition="$(_pd_settings_disposition "${plan_files[@]}")"
+        total="$(echo "$disposition" | awk '{print $1+0}')"
+        dedicated="$(echo "$disposition" | awk '{print $2+0}')"
+        merged="$((total - dedicated))"
+        command-succeeds "true # settings-micro-edits-touching-tasks: $total"
+        command-succeeds "true # settings-micro-edits-dedicated-tasks: $dedicated"
+        command-succeeds "true # settings-micro-edits-merged-tasks: $merged"
+    else
+        command-succeeds "true # plan-task-count: 0 (no plan artifact found)"
+        command-succeeds "true # settings-micro-edits-touching-tasks: 0 (no plan artifact found)"
+        command-succeeds "true # settings-micro-edits-dedicated-tasks: 0 (no plan artifact found)"
+        command-succeeds "true # settings-micro-edits-merged-tasks: 0 (no plan artifact found)"
+    fi
+
+    # -- P2 instrument: MAX_LINE_ITEMS coherence across validation.py,
+    # pricing.py, allocation.py, and fulfillment.py. SPEC.md states this
+    # as ONE shared rule the four modules must agree on, not four
+    # independent choices -- this observes whether the session's own
+    # plan and implementation kept it that way. Widened from
+    # pd-pipeline's three consuming modules to four (allocation.py is
+    # new in this scenario's larger domain) -- see probe-design-notes.md.
+    # Tolerant to bare assignment, type-annotated assignment, and one-hop
+    # import-reference -- see _pd_mli's own docstring for why (T4
+    # correction: the original bare-assignment-only extraction
+    # fabricated a requirement-loss finding against modules that had the
+    # constant all along).
+    local v_val p_val f_val a_val
+    v_val="$(_pd_mli orders/validation.py)"
+    p_val="$(_pd_mli orders/pricing.py)"
+    f_val="$(_pd_mli orders/fulfillment.py)"
+    a_val="$(_pd_mli orders/allocation.py)"
+    command-succeeds "true # max-line-items-validation: $v_val"
+    command-succeeds "true # max-line-items-pricing: $p_val"
+    command-succeeds "true # max-line-items-fulfillment: $f_val"
+    command-succeeds "true # max-line-items-allocation: $a_val"
+    local v_num p_num f_num a_num
+    v_num="$(_pd_mli_numeric "$v_val")"
+    p_num="$(_pd_mli_numeric "$p_val")"
+    f_num="$(_pd_mli_numeric "$f_val")"
+    a_num="$(_pd_mli_numeric "$a_val")"
+    if [ "$v_num" != "absent" ] && [ "$v_num" = "$p_num" ] && [ "$v_num" = "$f_num" ] && [ "$v_num" = "$a_num" ]; then
+        command-succeeds "true # max-line-items-coherent: yes ($v_num across all four modules)"
+    else
+        command-succeeds "true # max-line-items-coherent: no (validation=$v_val pricing=$p_val fulfillment=$f_val allocation=$a_val)"
+    fi
+
+    # -- settings.py micro-edit presence (do the four constants exist
+    # at all, regardless of which task(s) added them). --
+    local d1="absent" d2="absent" d3="absent" d4="absent"
+    if [ -f orders/settings.py ]; then
+        grep -q '^DEFAULT_REPORT_TIMEZONE' orders/settings.py && d1="present"
+        grep -q '^NOTIFY_MAX_RETRIES' orders/settings.py && d2="present"
+        grep -q '^ARCHIVE_GRACE_DAYS' orders/settings.py && d3="present"
+        grep -q '^RETURN_WINDOW_DAYS' orders/settings.py && d4="present"
+    fi
+    command-succeeds "true # settings-default-report-timezone: $d1"
+    command-succeeds "true # settings-notify-max-retries: $d2"
+    command-succeeds "true # settings-archive-grace-days: $d3"
+    command-succeeds "true # settings-return-window-days: $d4"
+
+    # -- P4/YAGNI instrument: simplest-thing signal. pricing.py should
+    # not have grown a currency abstraction SPEC.md explicitly said not
+    # to build. --
+    local overbuild_hits=0
+    if [ -f orders/pricing.py ]; then
+        overbuild_hits="$(grep -icE 'class[[:space:]]+[A-Za-z]*Currency|CurrencyRegistry|SUPPORTED_CURRENCIES|abstractmethod|Protocol\[|CurrencyConverter' orders/pricing.py || true)"
+    fi
+    if [ "${overbuild_hits:-0}" -gt 0 ]; then
+        command-succeeds "true # pricing-simplest-thing-signal: overbuilt ($overbuild_hits marker(s))"
+    else
+        command-succeeds "true # pricing-simplest-thing-signal: simple (0 markers)"
+    fi
+}
+
 pre() {
     git-repo
     requires-tool python3
@@ -148,117 +341,9 @@ post() {
     fi
 
     # ---------------------------------------------------------------
-    # Plan-decomposition campaign instruments. Every command-succeeds
-    # call below always exits 0 (grep/awk exit status is deliberately
-    # discarded via `|| true` or default values); only the recorded
-    # command TEXT carries the finding, for the composer's scorers to
-    # parse. None of these are pass/fail gates.
+    # Plan-decomposition campaign instruments (P1/P2/P4). See
+    # _pd_emit_plan_instruments's own docstring for why this lives in a
+    # standalone function rather than inline here.
     # ---------------------------------------------------------------
-
-    # -- P1 instrument: plan shape (monolithic file vs multiple files),
-    # file count, and per-file line counts. --
-    local plan_files=()
-    while IFS= read -r f; do
-        [ -n "$f" ] && plan_files+=("$f")
-    done < <(_pd_plan_files)
-
-    local file_count="${#plan_files[@]}"
-    local shape="none"
-    if [ "$file_count" -eq 1 ]; then
-        shape="monolithic"
-    elif [ "$file_count" -gt 1 ]; then
-        shape="directory"
-    fi
-    command-succeeds "true # plan-shape: $shape ($file_count file(s))"
-
-    local f
-    for f in "${plan_files[@]}"; do
-        local lines
-        lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')"
-        command-succeeds "true # plan-file: $f (${lines:-0} lines)"
-    done
-
-    # -- P4 instrument: task count, and the settings.py micro-edit
-    # disposition (four separate/dedicated tasks vs folded into their
-    # module's own task). --
-    if [ "$file_count" -gt 0 ]; then
-        local task_count
-        task_count="$(_pd_task_count "${plan_files[@]}")"
-        command-succeeds "true # plan-task-count: $task_count"
-
-        local disposition total dedicated merged
-        disposition="$(_pd_settings_disposition "${plan_files[@]}")"
-        total="$(echo "$disposition" | awk '{print $1+0}')"
-        dedicated="$(echo "$disposition" | awk '{print $2+0}')"
-        merged="$((total - dedicated))"
-        command-succeeds "true # settings-micro-edits-touching-tasks: $total"
-        command-succeeds "true # settings-micro-edits-dedicated-tasks: $dedicated"
-        command-succeeds "true # settings-micro-edits-merged-tasks: $merged"
-    else
-        command-succeeds "true # plan-task-count: 0 (no plan artifact found)"
-        command-succeeds "true # settings-micro-edits-touching-tasks: 0 (no plan artifact found)"
-        command-succeeds "true # settings-micro-edits-dedicated-tasks: 0 (no plan artifact found)"
-        command-succeeds "true # settings-micro-edits-merged-tasks: 0 (no plan artifact found)"
-    fi
-
-    # -- P2 instrument: MAX_LINE_ITEMS coherence across validation.py,
-    # pricing.py, allocation.py, and fulfillment.py. SPEC.md states this
-    # as ONE shared rule the four modules must agree on, not four
-    # independent choices -- this observes whether the session's own
-    # plan and implementation kept it that way. Widened from
-    # pd-pipeline's three consuming modules to four (allocation.py is
-    # new in this scenario's larger domain) -- see probe-design-notes.md.
-    local v_val="absent" p_val="absent" f_val="absent" a_val="absent"
-    if [ -f orders/validation.py ]; then
-        v_val="$(grep -oE '^MAX_LINE_ITEMS[[:space:]]*=[[:space:]]*[0-9]+' orders/validation.py | grep -oE '[0-9]+$' || echo absent)"
-        [ -z "$v_val" ] && v_val="absent"
-    fi
-    if [ -f orders/pricing.py ]; then
-        p_val="$(grep -oE '^MAX_LINE_ITEMS[[:space:]]*=[[:space:]]*[0-9]+' orders/pricing.py | grep -oE '[0-9]+$' || echo absent)"
-        [ -z "$p_val" ] && p_val="absent"
-    fi
-    if [ -f orders/fulfillment.py ]; then
-        f_val="$(grep -oE '^MAX_LINE_ITEMS[[:space:]]*=[[:space:]]*[0-9]+' orders/fulfillment.py | grep -oE '[0-9]+$' || echo absent)"
-        [ -z "$f_val" ] && f_val="absent"
-    fi
-    if [ -f orders/allocation.py ]; then
-        a_val="$(grep -oE '^MAX_LINE_ITEMS[[:space:]]*=[[:space:]]*[0-9]+' orders/allocation.py | grep -oE '[0-9]+$' || echo absent)"
-        [ -z "$a_val" ] && a_val="absent"
-    fi
-    command-succeeds "true # max-line-items-validation: $v_val"
-    command-succeeds "true # max-line-items-pricing: $p_val"
-    command-succeeds "true # max-line-items-fulfillment: $f_val"
-    command-succeeds "true # max-line-items-allocation: $a_val"
-    if [ "$v_val" != "absent" ] && [ "$v_val" = "$p_val" ] && [ "$v_val" = "$f_val" ] && [ "$v_val" = "$a_val" ]; then
-        command-succeeds "true # max-line-items-coherent: yes ($v_val across all four modules)"
-    else
-        command-succeeds "true # max-line-items-coherent: no (validation=$v_val pricing=$p_val fulfillment=$f_val allocation=$a_val)"
-    fi
-
-    # -- settings.py micro-edit presence (do the four constants exist
-    # at all, regardless of which task(s) added them). --
-    local d1="absent" d2="absent" d3="absent" d4="absent"
-    if [ -f orders/settings.py ]; then
-        grep -q '^DEFAULT_REPORT_TIMEZONE' orders/settings.py && d1="present"
-        grep -q '^NOTIFY_MAX_RETRIES' orders/settings.py && d2="present"
-        grep -q '^ARCHIVE_GRACE_DAYS' orders/settings.py && d3="present"
-        grep -q '^RETURN_WINDOW_DAYS' orders/settings.py && d4="present"
-    fi
-    command-succeeds "true # settings-default-report-timezone: $d1"
-    command-succeeds "true # settings-notify-max-retries: $d2"
-    command-succeeds "true # settings-archive-grace-days: $d3"
-    command-succeeds "true # settings-return-window-days: $d4"
-
-    # -- P4/YAGNI instrument: simplest-thing signal. pricing.py should
-    # not have grown a currency abstraction SPEC.md explicitly said not
-    # to build. --
-    local overbuild_hits=0
-    if [ -f orders/pricing.py ]; then
-        overbuild_hits="$(grep -icE 'class[[:space:]]+[A-Za-z]*Currency|CurrencyRegistry|SUPPORTED_CURRENCIES|abstractmethod|Protocol\[|CurrencyConverter' orders/pricing.py || true)"
-    fi
-    if [ "${overbuild_hits:-0}" -gt 0 ]; then
-        command-succeeds "true # pricing-simplest-thing-signal: overbuilt ($overbuild_hits marker(s))"
-    else
-        command-succeeds "true # pricing-simplest-thing-signal: simple (0 markers)"
-    fi
+    _pd_emit_plan_instruments
 }
