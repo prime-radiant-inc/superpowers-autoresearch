@@ -1,0 +1,1 @@
+Add a function to inventory.py called low_stock_items(threshold) that returns a list of the item names in INVENTORY whose quantity is below the given threshold. That's the only thing I need right now.
