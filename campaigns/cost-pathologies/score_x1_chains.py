@@ -139,7 +139,18 @@ single line is never double-counted. A bullet/numbered list item's
 severity comes from an inline severity word within its own text if
 present, else from the most recent severity-named HEADING above it (reset
 on any OTHER heading, so a stale section's severity can never leak past
-a "### Strengths" or similar boundary). Known limitation: two findings
+a "### Strengths" or similar boundary). `NONE_VALUE_RE` is also checked
+directly against a list item's own captured content (item 8 fix,
+backlog-campaign Task 1): a bulleted `- None.` sitting directly under a
+severity heading, with no colon-label of its own, is the SAME
+zero-findings report `_bare_label_findings()` already recognizes -- the
+list-item path had simply never consulted `NONE_VALUE_RE` before this
+fix, so a bare `- None.` bullet fell through to the heading's own
+severity and was miscounted as one real finding per section. 26
+occurrences of exactly this shape were found across the archived
+cp-x1-buggy-sdd corpus (logs/2026-08-01-queue-campaign.md, "New queue
+candidate" entry) -- see this task's report for the corpus-validated
+before/after counts. Known limitation: two findings
 about the "same" underlying issue, reworded between rounds, will not be
 recognized as the same finding (identity is exact normalized-text
 equality) -- this makes `novel_finding_rate_per_round` a conservative
@@ -342,6 +353,13 @@ def _extract_findings(text):
         if not item:
             continue
         content = item.group(1)
+        if NONE_VALUE_RE.match(content):
+            # Item 8 fix: a bulleted "- None." directly under a heading,
+            # with no colon-label of its own, is the SAME "zero findings
+            # for this section" report `_bare_label_findings` already
+            # recognizes -- NONE_VALUE_RE just was never consulted on this
+            # (heading-fallback, no-colon) path. See module docstring.
+            continue
         inline = INLINE_SEVERITY_RE.search(content[:INLINE_SEVERITY_WINDOW])
         severity = inline.group(1).title() if inline else current_heading_severity
         if severity:

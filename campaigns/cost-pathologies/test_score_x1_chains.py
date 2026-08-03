@@ -221,6 +221,58 @@ class TestExtractFindings(unittest.TestCase):
         self.assertIn("none blocking", findings[0][1])
         self.assertIn("reload_plans", findings[0][1])
 
+    # -- Item 8: LIST_ITEM_RE heading-fallback `- None.` false positive --
+    # `NONE_VALUE_RE` (item 11) is only ever consulted on the bare-label
+    # path (`_bare_label_findings`) -- a bulleted `- None.` directly under
+    # a `#### <Severity>` heading, with no colon-label at all, falls
+    # through to `LIST_ITEM_RE` instead, which has never checked its
+    # captured content against `NONE_VALUE_RE`. 26 occurrences of exactly
+    # this shape were found across the archived cp-x1-buggy-sdd corpus
+    # (logs/2026-08-01-queue-campaign.md, "New queue candidate" entry).
+
+    def test_heading_fallback_bare_none_bullet_excludes_zero_findings(self):
+        # The exact shape named in the log entry: a heading, then a lone
+        # "- None." bullet with no severity word or colon label of its own
+        # -- must not be counted as a real Critical finding.
+        import score_x1_chains as sx1
+        text = "#### Critical (Must Fix)\n- None.\n"
+        self.assertEqual(sx1._extract_findings(text), [])
+
+    def test_heading_fallback_bare_none_bullet_no_period_excludes_zero_findings(self):
+        # Same shape without the trailing period -- NONE_VALUE_RE's `\.?`
+        # already covers this on the bare-label path; must hold here too.
+        import score_x1_chains as sx1
+        text = "#### Minor (Nice to Have)\n- None\n"
+        self.assertEqual(sx1._extract_findings(text), [])
+
+    def test_heading_fallback_none_bullet_does_not_swallow_other_findings(self):
+        # A none-bullet section alongside a real one -- only the real
+        # finding should survive.
+        import score_x1_chains as sx1
+        text = (
+            "#### Critical (Must Fix)\n"
+            "- None.\n\n"
+            "#### Important (Should Fix)\n"
+            "- **Missing null check** — file.py:20\n"
+        )
+        findings = sx1._extract_findings(text)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "Important")
+
+    def test_heading_fallback_none_blocking_bullet_is_a_real_finding_not_swallowed(self):
+        # Boundary case mirroring test_bare_label_none_blocking_is_a_real_
+        # finding_not_swallowed above, but as a genuine list-item bullet
+        # (no colon label) starting with "None" -- must NOT be swallowed.
+        import score_x1_chains as sx1
+        text = (
+            "#### Minor (Nice to Have)\n"
+            "- None blocking. A direct unit test would strengthen coverage.\n"
+        )
+        findings = sx1._extract_findings(text)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "Minor")
+        self.assertIn("none blocking", findings[0][1])
+
     def test_bare_label_real_minor_finding_unrelated_to_none_not_swallowed(self):
         # Verbatim line from cp-x1-buggy-sdd-x1b-rep4's reviewer round
         # (rollout for the x1b-rep4 review chain): an ordinary real
