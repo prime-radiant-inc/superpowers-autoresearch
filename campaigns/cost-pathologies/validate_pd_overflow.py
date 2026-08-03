@@ -23,11 +23,21 @@ needing two full 16-module trees.
 
 Reuses validate_pd_pipeline.py's module-agnostic helpers (plan_files,
 plan_shape, task_count, settings_disposition, module_constant,
-pricing_overbuild_hits, MAX_LINE_ITEMS_RE) via import rather than
-reimplementing them -- only the P2 coherence check needed a thin
-generalization to four module paths instead of three (max_line_items_
-values/max_line_items_coherent below), since pd-pipeline's own
-versions of those two are hardcoded to its three consuming modules.
+pricing_overbuild_hits, MAX_LINE_ITEMS_RE, run_checks_sh_instruments,
+parse_emit_lines) via import rather than reimplementing them -- only the
+P2 coherence check needed a thin generalization to four module paths
+instead of three (max_line_items_values/max_line_items_coherent below),
+since pd-pipeline's own versions of those two are hardcoded to its three
+consuming modules.
+
+**Fix round (2026-08-03 T4 correction).** Same gap as pd-pipeline's own
+validator (see validate_pd_pipeline.py's module docstring): nothing here
+previously ever ran `scenarios/pd-overflow/checks.sh` for real, only this
+file's own Python reimplementation of it -- which let checks.sh's
+MAX_LINE_ITEMS extraction miss annotated/import-reference forms
+undetected. `pd_pipeline.run_checks_sh_instruments(tree, CHECKS_SH)`
+(imported, not reimplemented -- it's tree-agnostic) exercises this
+scenario's own checks.sh the same way.
 
 Usage: python3 validate_pd_overflow.py [-v]
 
@@ -44,8 +54,19 @@ sys.path.insert(0, str(HERE))
 import validate_pd_pipeline as pd_pipeline  # noqa: E402
 
 SCENARIO_FIXTURES = HERE / "scenarios" / "pd-overflow" / "fixtures"
+CHECKS_SH = HERE / "scenarios" / "pd-overflow" / "checks.sh"
 OUTCOMES = HERE / "fixtures" / "pd-overflow-outcomes"
 DIRECTORY_TASKS = OUTCOMES / "directory-tasks"
+
+parse_emit_lines = pd_pipeline.parse_emit_lines
+
+
+def run_checks_sh_instruments(tree_root, checks_sh_path=CHECKS_SH):
+    """Thin wrapper around `pd_pipeline.run_checks_sh_instruments` that
+    defaults `checks_sh_path` to THIS scenario's own checks.sh (pd-overflow,
+    not pd-pipeline) -- the underlying function is tree/script-agnostic, so
+    reusing it directly is correct; only the default needed overriding."""
+    return pd_pipeline.run_checks_sh_instruments(tree_root, checks_sh_path)
 
 MODULE_FILES = (
     "orders/intake.py",
@@ -205,6 +226,22 @@ def main(argv):
     for line in format_lines(observables):
         print(f"  {line}")
     ok = ok and (observables["plan_file_count"] > 0)
+
+    # Actually RUN checks.sh's own emit logic against this tree (see
+    # module docstring / T4 correction) -- the two lines above only ever
+    # prove this file's OWN Python reimplementation is internally
+    # consistent; this proves checks.sh itself agrees.
+    checks_sh_lines = run_checks_sh_instruments(DIRECTORY_TASKS)
+    print("directory-tasks checks.sh real emitted lines:")
+    for line in checks_sh_lines:
+        print(f"  {line}")
+    parsed = parse_emit_lines(checks_sh_lines)
+    for name in ("validation", "pricing", "fulfillment", "allocation"):
+        values = parsed.get(f"max-line-items-{name}")
+        mli_ok = bool(values) and values[0] != "absent"
+        if not mli_ok:
+            print(f"  FAIL: max-line-items-{name} missing or absent in checks.sh's real output")
+        ok = ok and mli_ok
 
     print("\nRESULT:", "PASS" if ok else "FAIL")
     return 0 if ok else 1

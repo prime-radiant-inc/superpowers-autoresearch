@@ -14,6 +14,7 @@ agent session; everything here is synthetic.
 """
 import filecmp
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -219,6 +220,106 @@ echo "DISPOSITION $(_pd_settings_disposition "${{files[@]}}")"
         total, dedicated = (int(x) for x in bash_values["DISPOSITION"].split())
         self.assertEqual(total, observables["settings_touching_tasks"])
         self.assertEqual(dedicated, observables["settings_dedicated_tasks"])
+
+
+class TestChecksShInstrumentsRunForReal(unittest.TestCase):
+    """Runs checks.sh's OWN `_pd_emit_plan_instruments` (via
+    `v.run_checks_sh_instruments`) against the materialized tree and
+    asserts on the REAL emitted lines -- not a Python reimplementation,
+    not a hand-formatted string. Same rationale as
+    test_pd_pipeline_fixture.py's equivalent class -- see this project's
+    2026-08-03 T4 correction fix round."""
+
+    def test_directory_tasks_real_emitted_lines(self):
+        lines = v.run_checks_sh_instruments(DIRECTORY_TASKS)
+        parsed = _parse_lines(lines)
+        self.assertEqual(parsed["plan-shape"], ["directory (20 file(s))"])
+        self.assertEqual(parsed["plan-task-count"], ["18"])
+        self.assertEqual(parsed["max-line-items-validation"], ["12"])
+        self.assertEqual(parsed["max-line-items-pricing"], ["12"])
+        self.assertEqual(parsed["max-line-items-fulfillment"], ["12"])
+        self.assertEqual(parsed["max-line-items-allocation"], ["12"])
+        self.assertEqual(parsed["max-line-items-coherent"], ["yes (12 across all four modules)"])
+        self.assertEqual(parsed["settings-return-window-days"], ["present"])
+
+
+class TestMaxLineItemsToleratesAnnotatedAndImportForms(unittest.TestCase):
+    """Regression coverage for the exact T4 defect (plan-decomposition
+    campaign, 2026-08-03), widened to this scenario's four-module
+    coherence check -- see test_pd_pipeline_fixture.py's equivalent class
+    for the full defect history. Proven by running checks.sh ITSELF (via
+    `v.run_checks_sh_instruments`), never a Python reimplementation that
+    would carry the identical blind spot."""
+
+    def _tree_with(self, module_texts):
+        tmp = tempfile.mkdtemp()
+        tree = Path(tmp) / "tree"
+        shutil.copytree(DIRECTORY_TASKS, tree)
+        for relpath, text in module_texts.items():
+            (tree / relpath).write_text(text)
+        return tree
+
+    def test_annotated_assignment_is_not_absent(self):
+        tree = self._tree_with({"orders/allocation.py": "MAX_LINE_ITEMS: int = 12\n"})
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-allocation"], ["12"])
+
+    def test_import_reference_resolves_one_hop(self):
+        tree = self._tree_with({
+            "orders/validation.py": "MAX_LINE_ITEMS = 12\n",
+            "orders/allocation.py": "from orders.validation import MAX_LINE_ITEMS\n",
+        })
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-allocation"], ["import(12)"])
+
+    def test_annotated_and_import_forms_still_count_as_coherent_across_all_four(self):
+        tree = self._tree_with({
+            "orders/validation.py": "MAX_LINE_ITEMS = 12\n",
+            "orders/pricing.py": "MAX_LINE_ITEMS: int = 12\n",
+            "orders/fulfillment.py": "from orders.validation import MAX_LINE_ITEMS\n",
+            "orders/allocation.py": "MAX_LINE_ITEMS: int = 12\n",
+        })
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-coherent"], ["yes (12 across all four modules)"])
+
+
+class TestGroundTruthMliExtraction(unittest.TestCase):
+    """Ground-truth regression test for the tolerant extraction itself
+    (`_pd_mli`/`_pd_mli_direct`), isolated from the rest of
+    `_pd_emit_plan_instruments` and from any committed outcome tree.
+    Same rationale as test_pd_pipeline_fixture.py's equivalent class."""
+
+    CHECKS_SH = HERE / "scenarios" / "pd-overflow" / "checks.sh"
+
+    def _pd_mli(self, tree_root, relpath):
+        script = f"""
+set -euo pipefail
+cd {shlex.quote(str(tree_root))}
+source {shlex.quote(str(self.CHECKS_SH))}
+_pd_mli {shlex.quote(relpath)}
+"""
+        result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result.stdout.strip()
+
+    def test_annotated_assignment_reads_as_the_bare_value(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "allocation.py").write_text("MAX_LINE_ITEMS: int = 12\n")
+            self.assertEqual(self._pd_mli(tree, "orders/allocation.py"), "12")
+
+    def test_import_reference_reads_as_import_wrapped_value(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "validation.py").write_text("MAX_LINE_ITEMS = 12\n")
+            (tree / "orders" / "allocation.py").write_text("from orders.validation import MAX_LINE_ITEMS\n")
+            self.assertEqual(self._pd_mli(tree, "orders/allocation.py"), "import(12)")
+
+    def test_missing_module_reads_as_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self._pd_mli(Path(tmp), "orders/allocation.py"), "absent")
 
 
 class TestValidateScriptExitsCleanly(unittest.TestCase):
