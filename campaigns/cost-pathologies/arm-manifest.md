@@ -366,3 +366,23 @@ the controller seat (3-14 pytest reruns/rep), reviewers already decline.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/x11` | verification-dedupe (controller seat) | d6cb918 |
+
+## 2026-08-03 backlog campaign — x10a/x10b (final-review consistency)
+
+cp/x10a = sim/dev-postmerge + one checklist sentence in the Final Review
+dispatch guidance (cross-module consistency lens: one name per concept,
+single-definition constants, uniform error formats, symmetric shared
+value sets). +4/−1 lines, one file.
+
+cp/x10b = sim/dev-postmerge + bundled
+skills/subagent-driven-development/scripts/consistency-scan (vendored
+from campaigns/cost-pathologies/x10-consistency-scan.py @ 53722a5 with
+the header/usage strings sanitized of campaign vocabulary — drift rule:
+logic changes must touch both copies or state why not) + Final Review
+instruction to run it and hand the output file to the final reviewer as
+verification candidates. One file modified, one script added.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/x10a` | final-review consistency checklist line | 11b1433 |
+| `cp/x10b` | final-review mechanical consistency scan | 4447922 |

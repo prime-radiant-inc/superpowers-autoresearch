@@ -273,3 +273,35 @@ reduction. Est. 6 reps × ~$8 ≈ $50.
 **Fixture caveat (registered):** dispatch-queue-plan.md's drain()
 priority gap drives cross-rep variance (T8) — outcome-variance
 comparisons use completion checks, not implementation choice.
+
+## 2026-08-03 — Task 5 arms + battery pre-registration: X10 (checklist vs mechanical scan)
+
+**Fixture:** cp-x10-consistency (reviewed, 5 plan-induced cross-module
+defects, MICRO-validated; scanner detects 5/5 post-state, 0 FP
+pre-state; blinding verified by reviewer).
+
+**Arms:** control @ 1fed99d ×3; x10a (checklist line) @ 11b1433 ×3;
+x10b (bundled scanner + run-at-final-review instruction) @ 4447922 ×3.
+Nine reps. Vendored-scanner sanitization: campaign vocabulary stripped
+from the in-arm copy (verified 0 leak-term hits; smoke-ran clean).
+
+**Reachability:** x10a's sentence sits in the Final Review section the
+controller reads before the final dispatch; x10b additionally bundles
+the script inside the skill's own scripts/ dir — both reachable by
+construction in an SDD run that reaches final review. Sessions that
+never reach final review cannot exercise either arm — reps that stop
+before final review are graded incomplete-for-arm-purposes, not
+arm failures (registered now).
+
+**Criteria:** (1) PRIMARY: seeded-defect detection at final review —
+count of the 5 seeded defects surfaced as findings (or fixed) by the
+final review wave, measured per rep from checks.sh presence lines +
+final-review content; baseline expectation from wave-cap: ~0/5 for
+control. PASS for an arm = median ≥3/5 detected with control ≤1/5.
+Discrimination guard: if control detects ≥3/5 (fixture too easy) or
+all arms 0/5 (unreachable/too hard), INCONCLUSIVE — stop. (2)
+Completion parity: task post-checks match control. (3) x10b integrity
+guard: scan findings must be VERIFIED in the final review (spot-read),
+not pasted as defects — wholesale pasting fails the guard. (4) Cost:
+directional. Est. 9 reps × ~$8 ≈ $72. Launch AFTER the X11 battery
+frees the lanes (serial per lane).
