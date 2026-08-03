@@ -53,3 +53,51 @@ convert hard stops into rulings); (4) all rulings ledgered. FAIL on
 consumption from verdict/rollouts), controller reads turn-1 content of
 every rep for the bundled-ask judgment (disclosed), same closed
 operationalization as Task 11.
+
+## 2026-08-02 — Task 8 COMPLETE: review-dynamics narratives (X5/X6/X2)
+
+Three read-only grader subagents (sonnet), outputs in the campaign
+workspace (task-8-narratives-{x5,x6,x2}.md; 24+17+9 = 50 reps).
+Controller transcription of the syntheses:
+
+**X5 (24 reps):** duplicate verification concentrates at the
+CONTROLLER seat — 3-14 pytest reruns per rep on already-reviewed work;
+reviewers mostly decline in ALL arms (control by convention, treatment
+by citing the lease). Lease treatments leak: ~1/3 of treatment reps
+had a reviewer rerun anyway. Review rigor NOT weakened by treatments.
+Dominant outcome-variance source is a fixture plan gap (drain()
+priority not exposed by pop()/assign_next()), independent of arm.
+→ T6's arm re-targeted at the controller seat (ledger, task list).
+
+**X6 (17 reps):** where batching fired (4/4 planframed x6a reps) it
+was clean — all 12 tasks in one dispatch, every edit landed, reviews
+cited per-file evidence; zero batching on the real go-fractals plan
+(5/5). Across all 17 reps NO task/file was silently dropped in a
+batched or inlined dispatch — the measurable batching risk is review
+depth, not lost work. The thinning risk sits in x6b
+(inline-when-trivial; not shipped): 2/4 reps inlined all 12 edits with
+only one after-the-fact review. INSTRUMENT CAVEAT (verified against
+verdict.json by controller): `final` labels are noisy — 2 planframed
+control reps with 4/4 post-checks are labeled indeterminate by the
+external grader's own time budget; published X6 claims rest on
+post-checks + dispatch counts + cost, which are unaffected. Control's
+completion deficit (14/16 vs 16/16 post-checks) stands; its mechanism
+is partly runtime overrun from dispatch overhead rather than in-session
+edit drops — same class as the 60m-ceiling ruling (grade, don't
+exclude).
+
+**X2 (9 reps):** zero deviation/hesitation anywhere, all arms. x2a's
+patch is UNREACHABLE in plan-execution fixtures (writing-plans fires
+only at authoring) — its null was partly structural; arm-reachability
+check added to battery preflight discipline going forward. x2b's
+reviewer lens fired once, off-axis: a severity downgrade
+(Minor/"ready" vs Important elsewhere) with the shipped diff
+unchanged — behavior-only grading would have missed it. → T4 (X2-B
+micro) design: grade severity/verdict LANGUAGE against the controls'
+own noise floor (controls already disagree on the same gap); build the
+deviation into the committed tree structurally; verify arm
+reachability before spending reps.
+
+New standing rule from X2's finding: every future battery
+pre-registration must state HOW the arm's text is reachable from the
+scenario's execution path.
