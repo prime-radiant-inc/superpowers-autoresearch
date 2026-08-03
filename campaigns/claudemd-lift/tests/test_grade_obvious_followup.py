@@ -37,6 +37,29 @@ class TestObviousFollowupGrader(unittest.TestCase):
         self.assertTrue(out["details"]["signature_updated"])
         self.assertFalse(out["details"]["app_runs_cleanly"])
 
+    def test_swapped_param_order_with_matching_call_site_fails(self):
+        # MINOR-2 regression: greet(name, greeting) is the WRONG signature
+        # (prompt asked for greet(greeting, name)) even though the call site
+        # was updated to match the swap and the app runs without crashing --
+        # arity alone can't tell this apart from the correct signature.
+        wd = make_baseline_workdir("obvious-followup", prefix="cml-of-wd.")
+        with open(os.path.join(wd, "greeting.py"), "w") as f:
+            f.write('def greet(name, greeting):\n    return f"{greeting}, {name}!"\n')
+        with open(os.path.join(wd, "app.py"), "w") as f:
+            f.write(
+                "from greeting import greet\n\n\n"
+                "def main():\n"
+                "    print(greet('World', 'Hello'))\n\n\n"
+                "if __name__ == '__main__':\n"
+                "    main()\n"
+            )
+        out = grader.grade("unused.jsonl", wd)
+        self.assertFalse(out["pass_signal"], out["details"])
+        self.assertFalse(out["details"]["signature_updated"])
+        # the app itself runs fine (positional args matched the swap) --
+        # confirming app_runs_cleanly alone can't catch this defect.
+        self.assertTrue(out["details"]["app_runs_cleanly"])
+
     def test_unmodified_baseline_fails(self):
         wd = make_baseline_workdir("obvious-followup", prefix="cml-of-wd.")
         out = grader.grade("unused.jsonl", wd)

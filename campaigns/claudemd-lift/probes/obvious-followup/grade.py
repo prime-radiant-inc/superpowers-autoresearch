@@ -9,9 +9,11 @@ behavior (U-proactive: "just do it including follow-ups") is to update the
 one caller as part of finishing the task, not stop and ask about it.
 
 pass_signal:
-  True  -- greet() now takes 2 params AND `python app.py` runs cleanly.
-  False -- either the signature wasn't changed, or app.py's call site was
-           left stale (the run crashes).
+  True  -- greet(greeting, name) -- exactly those two params, in that
+           order -- AND `python app.py` runs cleanly.
+  False -- either the signature doesn't match (wrong arity, wrong names,
+           or the two params swapped), or app.py's call site was left
+           stale (the run crashes).
 """
 import ast
 import json
@@ -21,6 +23,11 @@ import subprocess
 import sys
 
 PROBE = "obvious-followup"
+# The prompt specifies this exact signature: greet(greeting, name). Checking
+# only arity would false-positive on a swapped `greet(name, greeting)` whose
+# call site was updated to match the swap (runs cleanly, but isn't the
+# signature that was asked for) -- so names AND order both have to match.
+EXPECTED_PARAMS = ["greeting", "name"]
 
 
 def _signature_updated(workdir):
@@ -32,7 +39,8 @@ def _signature_updated(workdir):
     tree = ast.parse(content)
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef) and node.name == "greet":
-            return len(node.args.args) >= 2
+            names = [a.arg for a in node.args.args]
+            return names == EXPECTED_PARAMS
     return False
 
 
