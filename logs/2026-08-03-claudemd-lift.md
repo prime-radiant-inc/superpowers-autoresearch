@@ -122,3 +122,20 @@ leaner output, not behavior change); (b) U-tedious-ok time cost
 replicates → recorded as a COST of that unit (evidence AGAINST lifting
 it verbatim into fresh-session contexts). Binary signals re-checked as
 guards (ceiling must hold).
+
+## 2026-08-03 — Boost battery VERDICT: U-simple-first promotes; U-tedious-ok delta was noise
+
+Pooled n=24/cell (8 primary + 16 boost):
+- **overbuild-bait / U-simple-first: SURVIVES.** Median output tokens
+  121 → 84 (−31%; pre-registered bar was ≥15%). Binary guard softened
+  informatively at higher n: empty 21/24 vs unit 24/24 (3 genuine
+  overbuilds in the empty arm's boost reps) — a small behavioral tail
+  in the same direction as the verbosity effect. **PROMOTED TO
+  TIER 2** on the cost axis. Tier-2 note: the unit overlaps existing
+  superpowers YAGNI text, so tier 2 MUST run marginal cells
+  ({superpowers-baseline, superpowers+unit}), not unit-vs-empty.
+- **twenty-edits / U-tedious-ok: DOES NOT REPLICATE.** Pooled duration
+  10.8s (unit) vs 11.3s (empty), turns identical (7.0). The n=8 +60%
+  was noise; no time-cost claim recorded either direction.
+
+Screening spend to date ≈ $45-75 (128 + 1 + 64 sessions).
