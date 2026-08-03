@@ -59,3 +59,63 @@ P4's later design (not criteria here).
 return_window_failures meet their first real reps in this battery —
 scorer-vs-reality discrepancies are instrument findings first, data
 second (T2 ⚠️ carried).
+
+## 2026-08-03 — Task 4 VERDICT: P1 delivers its mechanism and INTRODUCES cross-cutting requirement loss; P2 inert on self-authored plans; overflow unconfirmed
+
+17 reps (16 + 1 backfill after an infra death, quarantined; tolerant
+chains; only final post-chain verdicts scored — a mid-run verdict
+read taught the rule). Battery ≈ $118.
+
+**Per pre-registered criteria:**
+
+1. **P1 plan-shape: the arm DELIVERS.** 6/6 directory-arm pipeline
+   reps authored genuine plan directories (plan.md + task files,
+   sizes 5-9 tasks); 6/6 monolithic-arm reps stayed monolithic.
+   Task-count granularity: control 4/7/6, p2 6/8/8, p1 8/5/6, p1p2
+   9/8/8 — directional toward the spec's 6-10 grain under treatment
+   arms but overlapping; no clean claim. **Return-window/overflow:
+   INCONCLUSIVE-BY-INSUFFICIENT-SIZE** as pre-committed: both
+   monolithic overflow controls completed their large plans
+   (36/36 checks; repeat-write candidates 1/1 unconfirmed as
+   truncations) — the T3 size model's honest shortfall was borne
+   out; the probe expands before any P1-overflow claim.
+2. **P2 coherence: INCONCLUSIVE-BY-CEILING on self-authored plans.**
+   All monolithic cells (control + p2) coherent — a session that
+   authors its own plan rarely plants cross-task contradictions for
+   the gate to catch. FIXTURE-ARM MISMATCH recorded: P2's
+   discriminating scenario class is a PRE-WRITTEN incoherent plan
+   (exactly cp-x10-consistency's shape — reusable as-is for a P2
+   follow-up battery). The p2 controller rollouts do engage the
+   constant family at preflight (value-table text active), with
+   nothing to amend.
+3. **NEW FINDING (exploratory-flagged, the battery's headline): P1
+   INDUCES cross-cutting requirement loss.** The spec's shared
+   constant family landed incompletely in 2/6 directory-arm pipeline
+   reps (p1-rep3: absent from ALL three modules + failing suite,
+   final=fail; p1p2-rep1: present in 1/3 modules, masked by green
+   self-authored tests) vs 0/6 monolithic reps. Mechanism: per-task
+   files are written one response at a time; a requirement spanning
+   several tasks must be re-carried into each file, and without the
+   whole plan in one view it lands in some and not others — the
+   return-window fix recreates, at authoring, the same
+   cross-cutting-attention failure the campaign found at review
+   (wave-cap) and adjudication (authority gap). The composed p2 gate
+   did NOT reliably rescue it (its scan reads what the files say;
+   an absent requirement produces no divergent value-pair to flag).
+4. **Guards:** completion — monolithic 6/6 pass; directory 5/6
+   (p1-rep3 fail, the requirement-loss rep). Dispatch counts within
+   range (arm means 13.7-17.3 vs control 15.3; tracks task counts).
+   Costs: control mean $6.13, p1 $6.24, p2 $6.69, p1p2 $7.48 — no
+   treatment cost win; composed +22%.
+
+**Dispositions:** pd/p1 NOT ship-eligible as drafted — its central
+risk (requirement loss) now has direct evidence; the fix shape is
+known (the cross-cutting family must live in plan.md's Global
+Constraints/index as the single source, with task files REFERENCING
+not restating it — plus a completeness row in the p2 table: every
+spec requirement maps to a task file). pd/p2 unproven here, correct
+test queued on the existing incoherent-plan fixture. Overflow probe
+expansion queued. The requirement-loss finding graduates to a
+pre-registered confirmatory battery before any revised-P1 ships.
+Grading by controller, disclosed; scorer stack validated in
+production this battery.
