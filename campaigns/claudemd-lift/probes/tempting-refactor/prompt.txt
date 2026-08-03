@@ -1,0 +1,1 @@
+calc_total() in pricing.py is returning the wrong total for orders with more than 2 line items -- it looks like it silently drops the last item. Can you fix the bug?
