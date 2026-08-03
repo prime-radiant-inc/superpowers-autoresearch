@@ -30,18 +30,39 @@ Python (mirroring `validate_x10_fixture.py`'s approach for its own
 scenario), proving each observable fires correctly on both trees and
 that the two trees differ exactly as designed.
 
+**Fix round (2026-08-03 T4 correction).** Two emit-format defects escaped
+this campaign's MICRO validation because everything above only ever
+compared this file's own Python reimplementation against itself (or
+against hand-formatted strings in `format_lines()`) -- never against
+`checks.sh` actually running. The most consequential instance: `checks.sh`'s
+original MAX_LINE_ITEMS extraction (bare-assignment-only) reported
+"absent" for a real rep whose module wrote `MAX_LINE_ITEMS: int = 12` (a
+type-annotated assignment), fabricating a requirement-loss finding later
+withdrawn once the tree was hand-read. `run_checks_sh_instruments()` below
+closes that gap: it actually EXECUTES `checks.sh`'s own
+`_pd_emit_plan_instruments` (extracted out of `post()` specifically so it
+can run outside a real quorum battery) against a tree, stubbing the one
+harness primitive it depends on (`command-succeeds`), and returns the
+REAL emitted lines -- see `test_pd_pipeline_fixture.py`'s
+`TestChecksShInstrumentsRunForReal` and
+`TestMaxLineItemsToleratesAnnotatedAndImportForms` for the validation
+built on top of it.
+
 Usage: python3 validate_pd_pipeline.py [-v]
 
 Exits 0 if every property holds, 1 otherwise. Everything here is
 synthetic; no real system, no real orders.
 """
 import re
+import shlex
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).parent
 SCENARIO_FIXTURES = HERE / "scenarios" / "pd-pipeline" / "fixtures"
+CHECKS_SH = HERE / "scenarios" / "pd-pipeline" / "checks.sh"
 OUTCOMES = HERE / "fixtures" / "pd-pipeline-outcomes"
 MONOLITHIC_LAYERED = OUTCOMES / "monolithic-layered"
 DIRECTORY_SKELETON = OUTCOMES / "directory-skeleton"
@@ -265,6 +286,76 @@ def format_lines(observables):
     return lines
 
 
+# ---------------------------------------------------------------------------
+# Actually EXERCISING checks.sh (2026-08-03 T4 correction fix round). See
+# module docstring for why this exists: everything above only ever
+# compared this file's own Python port against itself, which let a real
+# checks.sh regex defect (MAX_LINE_ITEMS extraction missing annotated/
+# import-reference forms) escape validation entirely.
+# ---------------------------------------------------------------------------
+
+_EMIT_LINE_RE = re.compile(r"^true # ([a-zA-Z0-9_.\-/ ]+?): (.*)$")
+
+
+def parse_emit_lines(lines):
+    """{label: [value, ...]} for every `true # label: value` entry in
+    LINES, in order -- identical shape/regex to
+    `score_pd_planshape.parse_emit_lines` (verdict.json-sourced) and
+    `test_pd_pipeline_fixture._parse_lines`, so a caller of any of the
+    three never has to translate between formats. Non-matching lines are
+    silently skipped (LINES here comes from `run_checks_sh_instruments`,
+    which only ever emits this shape, but a defensive caller should still
+    survive a stray line)."""
+    parsed = {}
+    for line in lines:
+        m = _EMIT_LINE_RE.match(line)
+        if not m:
+            continue
+        label, value = m.groups()
+        parsed.setdefault(label, []).append(value)
+    return parsed
+
+
+def run_checks_sh_instruments(tree_root, checks_sh_path=CHECKS_SH):
+    """Actually RUNS `checks_sh_path`'s own `_pd_emit_plan_instruments`
+    function (the P1/P2/P4 plan-decomposition instrument block, extracted
+    out of `post()` in both scenarios' checks.sh specifically so it can be
+    exercised like this) against TREE_ROOT, and returns the real emitted
+    `true # label: value` lines in call order -- instead of recomputing
+    the same numbers independently in Python (`compute_observables()`
+    above) and formatting matching strings by hand (`format_lines()`
+    above). See module docstring for why this distinction matters: it's
+    the fix for the exact defect that escaped this campaign's MICRO
+    validation.
+
+    Stubs the ONE harness primitive `_pd_emit_plan_instruments` depends on
+    (`command-succeeds`) as a shell function that appends its first
+    argument to a temp file, one line per call -- the same text a real
+    quorum run records as that check's own `args[0]` in verdict.json (see
+    `score_pd_planshape.parse_emit_lines`). No other harness primitive
+    (`file-exists`, `git-repo`, `check-transcript`, ...) is needed because
+    `_pd_emit_plan_instruments` doesn't call any of them.
+
+    Raises RuntimeError if checks.sh itself errors out (a real defect in
+    the script, not a case to swallow silently)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        record_path = Path(tmp) / "emitted.txt"
+        script = f"""
+set -euo pipefail
+command-succeeds() {{ printf '%s\\n' "$1" >> {shlex.quote(str(record_path))}; }}
+cd {shlex.quote(str(tree_root))}
+source {shlex.quote(str(checks_sh_path))}
+_pd_emit_plan_instruments
+"""
+        result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"checks.sh instrument block failed (exit {result.returncode}): "
+                f"{result.stdout}{result.stderr}"
+            )
+        return record_path.read_text().splitlines() if record_path.exists() else []
+
+
 def run_pytest(tree_root):
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-q"],
@@ -299,6 +390,24 @@ def main(argv):
         for line in format_lines(observables):
             print(f"  {line}")
         ok = ok and (observables["plan_file_count"] > 0)
+
+        # Actually RUN checks.sh's own emit logic against this tree (see
+        # module docstring / T4 correction) -- the two lines above only
+        # ever prove this file's OWN Python reimplementation is internally
+        # consistent; this proves checks.sh itself agrees, catching the
+        # exact class of defect (a checks.sh regex too narrow to see a
+        # real shape) that a self-only comparison cannot.
+        checks_sh_lines = run_checks_sh_instruments(tree)
+        print(f"{label} checks.sh real emitted lines:")
+        for line in checks_sh_lines:
+            print(f"  {line}")
+        parsed = parse_emit_lines(checks_sh_lines)
+        for name in ("validation", "pricing", "fulfillment"):
+            values = parsed.get(f"max-line-items-{name}")
+            mli_ok = bool(values) and values[0] != "absent"
+            if not mli_ok:
+                print(f"  FAIL: max-line-items-{name} missing or absent in checks.sh's real output")
+            ok = ok and mli_ok
 
     print("\nRESULT:", "PASS" if ok else "FAIL")
     return 0 if ok else 1

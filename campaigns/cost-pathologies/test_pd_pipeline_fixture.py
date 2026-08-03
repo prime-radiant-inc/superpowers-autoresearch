@@ -13,6 +13,7 @@ synthetic.
 """
 import filecmp
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -259,6 +260,164 @@ echo "DISPOSITION $(_pd_settings_disposition "${{files[@]}}")"
         total, dedicated = (int(x) for x in bash_values["DISPOSITION"].split())
         self.assertEqual(total, observables["settings_touching_tasks"])
         self.assertEqual(dedicated, observables["settings_dedicated_tasks"])
+
+
+class TestChecksShInstrumentsRunForReal(unittest.TestCase):
+    """Runs checks.sh's OWN `_pd_emit_plan_instruments` (via
+    `v.run_checks_sh_instruments`) against the materialized trees and
+    asserts on the REAL emitted lines -- not a Python reimplementation,
+    not a hand-formatted string. This is the harness the 2026-08-03 T4
+    correction fix round added specifically because nothing in this file
+    previously ever ran checks.sh's own emit logic at all (see module
+    docstring / `TestBashChecksShAgreesWithThePythonPort`, which only
+    ever covered `_pd_task_count`/`_pd_settings_disposition`, never the
+    MAX_LINE_ITEMS extraction where the real defect lived)."""
+
+    def test_monolithic_layered_real_emitted_lines(self):
+        lines = v.run_checks_sh_instruments(MONOLITHIC_LAYERED)
+        parsed = _parse_lines(lines)
+        self.assertEqual(parsed["plan-shape"], ["monolithic (1 file(s))"])
+        self.assertEqual(parsed["plan-task-count"], ["7"])
+        self.assertEqual(parsed["max-line-items-validation"], ["12"])
+        self.assertEqual(parsed["max-line-items-pricing"], ["12"])
+        self.assertEqual(parsed["max-line-items-fulfillment"], ["12"])
+        self.assertEqual(parsed["max-line-items-coherent"], ["yes (12 across all three modules)"])
+        self.assertEqual(parsed["pricing-simplest-thing-signal"], ["simple (0 markers)"])
+
+    def test_directory_skeleton_real_emitted_lines(self):
+        lines = v.run_checks_sh_instruments(DIRECTORY_SKELETON)
+        parsed = _parse_lines(lines)
+        self.assertEqual(parsed["plan-shape"], ["directory (12 file(s))"])
+        self.assertEqual(parsed["plan-task-count"], ["10"])
+        self.assertEqual(parsed["max-line-items-validation"], ["12"])
+        self.assertEqual(parsed["max-line-items-pricing"], ["12"])
+        self.assertEqual(parsed["max-line-items-fulfillment"], ["10"])
+        self.assertEqual(parsed["max-line-items-coherent"], ["no (validation=12 pricing=12 fulfillment=10)"])
+        self.assertTrue(parsed["pricing-simplest-thing-signal"][0].startswith("overbuilt"))
+
+    def test_real_emitted_lines_match_this_files_own_python_port(self):
+        # The two read paths (real checks.sh vs this file's Python port)
+        # should still agree on both trees -- they diverging would itself
+        # be a signal something just broke, on either side.
+        for tree in (MONOLITHIC_LAYERED, DIRECTORY_SKELETON):
+            lines = v.run_checks_sh_instruments(tree)
+            parsed = _parse_lines(lines)
+            observables = v.compute_observables(tree)
+            self.assertEqual(parsed["plan-shape"], [f"{observables['plan_shape']} ({observables['plan_file_count']} file(s))"])
+            self.assertEqual(parsed["plan-task-count"], [str(observables["plan_task_count"])])
+
+
+class TestMaxLineItemsToleratesAnnotatedAndImportForms(unittest.TestCase):
+    """Regression coverage for the exact T4 defect (plan-decomposition
+    campaign, 2026-08-03): a real rep's orders/pricing.py started with
+    `MAX_LINE_ITEMS: int = 12` -- a type-annotated assignment -- and
+    checks.sh's original bare-assignment-only regex reported it "absent",
+    fabricating a requirement-loss finding later withdrawn once the tree
+    was hand-read. These post-states construct that exact shape (plus a
+    one-hop import-reference, checks.sh's other new tolerated form) and
+    prove checks.sh ITSELF -- run for real via
+    `v.run_checks_sh_instruments`, never a Python reimplementation that
+    would carry the identical blind spot -- now reports both as present."""
+
+    def _tree_with(self, module_texts):
+        tmp = tempfile.mkdtemp()
+        tree = Path(tmp) / "tree"
+        shutil.copytree(MONOLITHIC_LAYERED, tree)
+        for relpath, text in module_texts.items():
+            (tree / relpath).write_text(text)
+        return tree
+
+    def test_annotated_assignment_is_not_absent(self):
+        tree = self._tree_with({"orders/pricing.py": "MAX_LINE_ITEMS: int = 12\n"})
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-pricing"], ["12"])
+
+    def test_import_reference_resolves_one_hop_and_reports_provenance(self):
+        tree = self._tree_with({
+            "orders/validation.py": "MAX_LINE_ITEMS = 12\n",
+            "orders/pricing.py": "from orders.validation import MAX_LINE_ITEMS\n",
+        })
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-pricing"], ["import(12)"])
+
+    def test_annotated_and_import_forms_still_count_as_coherent(self):
+        tree = self._tree_with({
+            "orders/validation.py": "MAX_LINE_ITEMS = 12\n",
+            "orders/pricing.py": "from orders.validation import MAX_LINE_ITEMS\n",
+            "orders/fulfillment.py": "MAX_LINE_ITEMS: int = 12\n",
+        })
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-coherent"], ["yes (12 across all three modules)"])
+
+    def test_a_genuinely_diverging_annotated_value_is_still_incoherent(self):
+        # The tolerant extraction must not paper over a REAL divergence --
+        # only the direct-vs-import presentation is normalized, not the
+        # underlying value comparison.
+        tree = self._tree_with({
+            "orders/validation.py": "MAX_LINE_ITEMS = 12\n",
+            "orders/pricing.py": "MAX_LINE_ITEMS: int = 12\n",
+            "orders/fulfillment.py": "MAX_LINE_ITEMS: int = 10\n",
+        })
+        parsed = _parse_lines(v.run_checks_sh_instruments(tree))
+        self.assertEqual(parsed["max-line-items-coherent"], ["no (validation=12 pricing=12 fulfillment=10)"])
+
+
+class TestGroundTruthMliExtraction(unittest.TestCase):
+    """Ground-truth regression test for the tolerant extraction itself
+    (`_pd_mli`/`_pd_mli_direct`), isolated from the rest of
+    `_pd_emit_plan_instruments` and from any committed outcome tree --
+    a minimal from-scratch fixture directory, sourcing checks.sh and
+    calling `_pd_mli` directly, the same pattern
+    `TestBashChecksShAgreesWithThePythonPort` already uses for
+    `_pd_task_count`/`_pd_settings_disposition`. Proves the annotated-
+    assignment and import-reference forms both read as non-absent at the
+    lowest level, independent of the emit-line plumbing above."""
+
+    CHECKS_SH = HERE / "scenarios" / "pd-pipeline" / "checks.sh"
+
+    def _pd_mli(self, tree_root, relpath):
+        script = f"""
+set -euo pipefail
+cd {shlex.quote(str(tree_root))}
+source {shlex.quote(str(self.CHECKS_SH))}
+_pd_mli {shlex.quote(relpath)}
+"""
+        result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result.stdout.strip()
+
+    def test_annotated_assignment_reads_as_the_bare_value(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "pricing.py").write_text("MAX_LINE_ITEMS: int = 12\n")
+            self.assertEqual(self._pd_mli(tree, "orders/pricing.py"), "12")
+
+    def test_import_reference_reads_as_import_wrapped_value(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "validation.py").write_text("MAX_LINE_ITEMS = 12\n")
+            (tree / "orders" / "pricing.py").write_text("from orders.validation import MAX_LINE_ITEMS\n")
+            self.assertEqual(self._pd_mli(tree, "orders/pricing.py"), "import(12)")
+
+    def test_bare_assignment_still_reads_correctly(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "pricing.py").write_text("MAX_LINE_ITEMS = 12\n")
+            self.assertEqual(self._pd_mli(tree, "orders/pricing.py"), "12")
+
+    def test_missing_module_reads_as_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self._pd_mli(Path(tmp), "orders/pricing.py"), "absent")
+
+    def test_unrelated_content_reads_as_absent_not_a_false_positive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            (tree / "orders").mkdir()
+            (tree / "orders" / "pricing.py").write_text("CURRENCY = 'USD'\n")
+            self.assertEqual(self._pd_mli(tree, "orders/pricing.py"), "absent")
 
 
 class TestValidateScriptExitsCleanly(unittest.TestCase):
