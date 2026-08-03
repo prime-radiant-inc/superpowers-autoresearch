@@ -91,3 +91,34 @@ pressured, cluttered contexts, which is where the corpus pathologies
 live too; (c) marginal-effect cells for class-A units on top of the
 superpowers baseline (the U-pushback README obligation). Sweep cost
 ≈$30-60 (128 short isolated sessions).
+
+## 2026-08-03 — CORRECTION-IN-SCOPE + secondary analysis: continuous axes show movement the binary graders missed
+
+Jesse challenged the tier-1 conclusion's breadth; the challenge is
+valid on two counts, recorded here:
+
+1. **Scope overstatement risk:** tier 1 probed 8/19 units, one model,
+   fresh sessions capped at 15 turns, ambient channel only, BINARY
+   pass-signals only. It measured discriminating behaviors, NOT
+   quality/time/cost as continuous outcomes. Eleven units were never
+   probed (style-concise, loc-estimates, vcs, automation, comments,
+   yagni, tdd, root-cause, ask-vs-assume, noglaze,
+   no-trivial-exception).
+2. **Secondary analysis of the sweep transcripts** (tokens/turns/
+   duration per cell, medians, n=8): movement exists inside the
+   passing region — U-simple-first: output tokens 124→82 (−34%) on
+   overbuild-bait; U-smallest-change: 138→118 on tempting-refactor;
+   U-tedious-ok: duration 10s→16s (+60%), turns 7→8.5 on twenty-edits
+   (slower with identical completion — the unit's "not in a rush"
+   text costing literal time); U-pushback: +21% duration. All
+   n=8/medians/multiple-comparisons — suggestive, not established.
+
+**Boost battery pre-registration:** overbuild-bait and twenty-edits
+re-run at n=16/cell into out/screening-boost (separate from the
+primary sweep rows). Criteria: (a) U-simple-first output-token
+reduction survives at n=24 pooled (direction + magnitude ≥15%) →
+tier-2 candidate on the COST axis (a lift candidate whose value is
+leaner output, not behavior change); (b) U-tedious-ok time cost
+replicates → recorded as a COST of that unit (evidence AGAINST lifting
+it verbatim into fresh-session contexts). Binary signals re-checked as
+guards (ceiling must hold).
