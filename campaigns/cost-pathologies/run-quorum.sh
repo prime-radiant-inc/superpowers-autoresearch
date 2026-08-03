@@ -20,6 +20,23 @@
 # never run -- the caller must diff the requested rep range against what
 # landed on disk and backfill with a separate REPS=1 call per missing rep.
 #
+# TOLERANT CHAINING (required calling convention, backlog-campaign item 10 --
+# a rule, not a suggestion). A measured fail/indeterminate verdict is DATA,
+# never an infra failure -- see the KNOWN LIMITATION above for why THIS
+# script's own exit code cannot be trusted to mean "something crashed."
+# Corollary for CALLERS chaining multiple invocations of this script (e.g.
+# separate arms, or separate rep ranges of the same arm) in one shell
+# command: NEVER join them with `&&` -- that gates every later invocation on
+# every earlier one's reps all measuring `pass`, silently dropping legitimate
+# fail/indeterminate reps from the battery. Chain independent invocations
+# with `;` instead, so every arm/range actually launches regardless of any
+# other's verdicts:
+#   ./run-quorum.sh control cp-x1-buggy-sdd 4 ; ./run-quorum.sh x1a cp-x1-buggy-sdd 4
+# Each invocation still aborts ITS OWN remaining reps on a non-pass verdict
+# per the KNOWN LIMITATION above -- `;`-chaining only prevents one
+# invocation's non-pass verdict from also cancelling a SIBLING invocation's
+# reps. Diff requested vs. landed rep ranges per invocation, same as always.
+#
 # ARM SELECTION (Task 8 -- closes the gap Task 6 disclosed). Any ARM other
 # than 'control' is resolved against campaigns/cost-pathologies/
 # arm-manifest.md: ARM 'x1a' looks up branch `cp/x1a`'s manifest row and
@@ -136,6 +153,24 @@ echo "run-quorum.sh: arm '$ARM' resolved to $ARM_DESC, mounted at $SP_ROOT (HEAD
   echo "run-quorum.sh: no such scenario: $CAMP/scenarios/$SCEN" >&2
   exit 1
 }
+
+# Preflight (item 10): setup.sh MUST carry its executable bit. The evals
+# repo's runner (src/setup-step.ts's runSetup()) spawns it directly --
+# `spawnSync(script, [])`, never `bash script` -- so a setup.sh that lost
+# its exec bit (an editor save, a non-preserving copy/rsync source, ...)
+# fails at the OS level with ENOEXEC/EACCES before the script ever runs,
+# which that spawn-error guard re-raises as a hard SetupError: this killed
+# 16 reps outright in the previous campaign, discovered only after the
+# fact. That runner lives in the evals repo (out of scope for this
+# campaign -- see this script's own header) so it cannot be changed to
+# `bash`-invoke setup.sh explicitly; the fix has to live here instead, on
+# the SOURCE copy, since `rsync -a` below preserves permission bits
+# through to the synced copy the container actually executes.
+setup_script="$CAMP/scenarios/$SCEN/setup.sh"
+if [[ -f "$setup_script" && ! -x "$setup_script" ]]; then
+  echo "run-quorum.sh: WARNING: $setup_script lacks its executable bit -- chmod +x'ing it (a missing exec bit here silently kills the rep at the container's runSetup() call; see item 10)" >&2
+  chmod +x "$setup_script"
+fi
 
 cd "$EVALS"
 
