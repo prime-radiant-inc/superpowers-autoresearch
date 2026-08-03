@@ -119,3 +119,39 @@ expansion queued. The requirement-loss finding graduates to a
 pre-registered confirmatory battery before any revised-P1 ships.
 Grading by controller, disclosed; scorer stack validated in
 production this battery.
+
+## 2026-08-03 — CORRECTION: T4's requirement-loss headline was an instrument artifact (6th strict-instrument case)
+
+Jesse's iterate-on-this directive prompted a mechanism chase that
+overturned the verdict's headline in three steps, each documented:
+(1) the "lost" requirement was present in BOTH losing reps' plan
+text (so not an authoring-attention failure as published); (2) the
+task files contained complete code with the constant (so not an
+execution drop); (3) the BUILT MODULES contain it — p1p2-rep1's
+orders/pricing.py line 1 is `MAX_LINE_ITEMS: int = 12`. checks.sh's
+extraction regex (`^MAX_LINE_ITEMS[[:space:]]*=`) cannot see
+annotated assignments or import-references. Tolerant re-derivation
+over ALL 12 pipeline reps: **12/12 carry the constant at value 12 in
+all three modules — every arm, ceiling everywhere. P1 does NOT
+induce requirement loss.** The false negatives clustered in
+directory arms only because their implementers used type
+annotations — style variance, not substance.
+
+Standing: the published T4 headline (finding 3) is WITHDRAWN. What
+survives of T4: arm delivery (6/6 directories), task-count direction
+(overlapping), P2 ceiling on self-authored plans (unchanged — but
+now for coherence AND presence), overflow inconclusive (unchanged),
+p1-rep3's completion failure (1/6 guard hit — pytest collection
+error, requires separate classification; its constants are present),
+cost parity. P1's disposition improves from
+harmful-as-drafted to DELIVERS-MECHANISM / NO-DEMONSTRATED-HARM /
+NO-DEMONSTRATED-BENEFIT-YET. Queued fixes: checks.sh tolerant
+extraction (annotated + import forms) in both pd scenarios +
+scorer alignment + validator exercising checks.sh itself (the gap
+that let two emit-format defects through in one campaign).
+
+**The unmeasured objective:** P1's core payoff hypothesis —
+controller context economy (plan.md-only vs whole-monolith in
+controller context; the 2.7M-token orchestrator anchor) — was never
+scored. Next analysis (free, existing rollouts): controller input
+tokens per arm.
