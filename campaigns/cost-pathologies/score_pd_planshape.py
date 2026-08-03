@@ -120,9 +120,27 @@ def parse_emit_lines(verdict_path):
 # vocabulary (scenarios/pd-pipeline/checks.sh). See module docstring for
 # why this interpreter is scenario-specific while parse_emit_lines()
 # above is not.
-_SHAPE_RE = re.compile(r"^(\w+) \((\d+) file\(s\)\)$")
-_PLAN_FILE_RE = re.compile(r"^(.+) \((\d+) lines\)$")
-_OVERBUILD_RE = re.compile(r"^(overbuilt|simple) \((\d+) marker\(s\)\)$")
+#
+# **Fix round (real battery reps pd-pipeline-control-rep1/pd-pipeline-
+# pd-p1-rep1, first real reps this scorer ever saw): every regex below is
+# now tolerant of BOTH a parenthesized-optional-plural suffix
+# ("marker(s)"/"file(s)") AND a bare plural with no parens ("markers"/
+# "files") -- checks.sh's own two `pricing-simplest-thing-signal` branches
+# use DIFFERENT literal templates for the same word (the `overbuilt`
+# branch's f-string-style "marker(s)" vs the `simple` branch's hardcoded
+# literal "markers"), a real format divergence the synthetic validator
+# (which constructed its own emit-line strings rather than exercising
+# checks.sh) never caught. `_PLURAL_RE(word)` builds one pattern per word
+# that accepts `word`, `words`, or `word(s)`, so this class of divergence
+# can't recur even if a future checks.sh edit introduces a third
+# variant of the same idea for a different label.
+def _plural_re(word):
+    return word + r"(?:\(s\)|s)?"
+
+
+_SHAPE_RE = re.compile(r"^(\w+) \((\d+) " + _plural_re("file") + r"\)$")
+_PLAN_FILE_RE = re.compile(r"^(.+) \((\d+) " + _plural_re("line") + r"\)$")
+_OVERBUILD_RE = re.compile(r"^(overbuilt|simple) \((\d+) " + _plural_re("marker") + r"\)$")
 
 
 def observables_from_verdict(verdict_path):
@@ -132,15 +150,39 @@ def observables_from_verdict(verdict_path):
     exactly (a DIFFERENT source for the SAME numbers: that module reads a
     checked-out tree directly; this one reads the composer's recorded
     check text), so a caller comparing the two never has to translate
-    between two field-naming schemes."""
+    between two field-naming schemes.
+
+    **Never raises on a malformed or missing line.** Every field below
+    degrades to `None` (or, for the two list-shaped fields, `[]`) rather
+    than crashing when its own label is absent from VERDICT_PATH's checks
+    entirely, or present but in a shape none of the tolerant regexes
+    above recognize -- a scorer must survive a rep whose checks.sh
+    version omitted a line, emitted a not-yet-seen format, or whose post()
+    crashed partway through, exactly as it must survive a rep with no
+    plan artifact at all. `None` here always means "not observed," never
+    a guessed/fabricated value."""
     lines = parse_emit_lines(verdict_path)
 
-    def _one(label, default=None):
+    def _one(label):
         vals = lines.get(label)
-        return vals[0] if vals else default
+        return vals[0] if vals else None
 
-    shape_m = _SHAPE_RE.match(_one("plan-shape", "none (0 file(s))"))
-    shape, file_count = shape_m.group(1), int(shape_m.group(2))
+    def _int_or_none(label):
+        # checks.sh's own "no plan artifact found" branch appends a
+        # trailing annotation after the number (e.g. "0 (no plan
+        # artifact found)") -- only the LEADING integer is the value.
+        text = _one(label)
+        if text is None:
+            return None
+        m = re.match(r"-?\d+", text)
+        return int(m.group(0)) if m else None
+
+    shape, file_count = None, None
+    shape_text = _one("plan-shape")
+    if shape_text is not None:
+        m = _SHAPE_RE.match(shape_text)
+        if m:
+            shape, file_count = m.group(1), int(m.group(2))
 
     plan_files_out = []
     for entry in lines.get("plan-file", []):
@@ -148,38 +190,37 @@ def observables_from_verdict(verdict_path):
         if m:
             plan_files_out.append((m.group(1), int(m.group(2))))
 
-    def _int(label, default=0):
-        # checks.sh's own "no plan artifact found" branch appends a
-        # trailing annotation after the number (e.g. "0 (no plan
-        # artifact found)") -- only the LEADING integer is the value.
-        v = _one(label)
-        if v is None:
-            return default
-        m = re.match(r"-?\d+", v)
-        return int(m.group(0)) if m else default
-
-    def _mli(label):
-        v = _one(f"max-line-items-{label}", "absent")
-        return int(v) if v != "absent" else None
+    def _mli(name):
+        text = _one(f"max-line-items-{name}")
+        if text is None or text == "absent":
+            return None
+        m = re.match(r"-?\d+", text)
+        return int(m.group(0)) if m else None
 
     mli = {name: _mli(name) for name in ("validation", "pricing", "fulfillment")}
-    coherent_text = _one("max-line-items-coherent", "")
-    coherent = coherent_text.startswith("yes")
+
+    coherent_text = _one("max-line-items-coherent")
+    coherent = coherent_text.startswith("yes") if coherent_text is not None else None
 
     def _presence(label):
-        return _one(label) == "present"
+        text = _one(label)
+        return None if text is None else text == "present"
 
-    overbuild_m = _OVERBUILD_RE.match(_one("pricing-simplest-thing-signal", "simple (0 marker(s))"))
-    overbuild_signal, overbuild_hits = overbuild_m.group(1), int(overbuild_m.group(2))
+    overbuild_signal, overbuild_hit_count = None, None
+    overbuild_text = _one("pricing-simplest-thing-signal")
+    if overbuild_text is not None:
+        m = _OVERBUILD_RE.match(overbuild_text)
+        if m:
+            overbuild_signal, overbuild_hit_count = m.group(1), int(m.group(2))
 
     return {
         "plan_shape": shape,
         "plan_file_count": file_count,
         "plan_files": plan_files_out,
-        "plan_task_count": _int("plan-task-count"),
-        "settings_touching_tasks": _int("settings-micro-edits-touching-tasks"),
-        "settings_dedicated_tasks": _int("settings-micro-edits-dedicated-tasks"),
-        "settings_merged_tasks": _int("settings-micro-edits-merged-tasks"),
+        "plan_task_count": _int_or_none("plan-task-count"),
+        "settings_touching_tasks": _int_or_none("settings-micro-edits-touching-tasks"),
+        "settings_dedicated_tasks": _int_or_none("settings-micro-edits-dedicated-tasks"),
+        "settings_merged_tasks": _int_or_none("settings-micro-edits-merged-tasks"),
         "max_line_items": mli,
         "max_line_items_coherent": coherent,
         "settings_constants_present": {
@@ -187,7 +228,7 @@ def observables_from_verdict(verdict_path):
             "NOTIFY_MAX_RETRIES": _presence("settings-notify-max-retries"),
             "ARCHIVE_GRACE_DAYS": _presence("settings-archive-grace-days"),
         },
-        "pricing_overbuild_hits": overbuild_hits,
+        "pricing_overbuild_hits": overbuild_hit_count,
         "pricing_simplest_thing_signal": overbuild_signal,
     }
 

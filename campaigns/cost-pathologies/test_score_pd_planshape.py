@@ -245,6 +245,124 @@ class TestObservablesFromVerdict(unittest.TestCase):
         self.assertEqual(observables["max_line_items"], {"validation": None, "pricing": None, "fulfillment": None})
 
 
+class TestObservablesFromVerdictAgainstRealBatteryReps(unittest.TestCase):
+    """Regression coverage for the first real crash this scorer hit: a
+    real checks.sh run emits `pricing-simplest-thing-signal: simple (0
+    markers)` (no parens around the "s") while the `overbuilt` branch
+    emits `... (N marker(s))` -- two different literal templates for the
+    same word. The lines below are copied VERBATIM from
+    /Users/jesse/git/superpowers/superpowers/evals/results/
+    pd-pipeline-control-rep1's and evals-lane-b/results/
+    pd-pipeline-pd-p1-rep1's own verdict.json (not reconstructed by hand),
+    so this test would have caught the exact divergence the synthetic-only
+    validator missed."""
+
+    def _write(self, lines):
+        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+        f.write(_verdict_with_checks(lines))
+        f.close()
+        return f.name
+
+    def test_real_control_rep1_verdict_lines_parse_without_crashing(self):
+        import score_pd_planshape as p
+        path = self._write([
+            "true # plan-shape: monolithic (1 file(s))",
+            "true # plan-file: docs/superpowers/plans/2026-08-03-order-fulfillment-service.md (566 lines)",
+            "true # plan-task-count: 4",
+            "true # settings-micro-edits-touching-tasks: 1",
+            "true # settings-micro-edits-dedicated-tasks: 0",
+            "true # settings-micro-edits-merged-tasks: 1",
+            "true # max-line-items-validation: 12",
+            "true # max-line-items-pricing: 12",
+            "true # max-line-items-fulfillment: 12",
+            "true # max-line-items-coherent: yes (12 across all three modules)",
+            "true # settings-default-report-timezone: present",
+            "true # settings-notify-max-retries: present",
+            "true # settings-archive-grace-days: present",
+            "true # pricing-simplest-thing-signal: simple (0 markers)",
+        ])
+        observables = p.observables_from_verdict(path)
+        self.assertEqual(observables["plan_shape"], "monolithic")
+        self.assertEqual(observables["plan_file_count"], 1)
+        self.assertEqual(observables["plan_files"],
+                          [("docs/superpowers/plans/2026-08-03-order-fulfillment-service.md", 566)])
+        self.assertEqual(observables["plan_task_count"], 4)
+        self.assertTrue(observables["max_line_items_coherent"])
+        self.assertEqual(observables["pricing_simplest_thing_signal"], "simple")
+        self.assertEqual(observables["pricing_overbuild_hits"], 0)
+
+    def test_real_p1_rep1_verdict_lines_parse_without_crashing(self):
+        import score_pd_planshape as p
+        path = self._write([
+            "true # plan-shape: directory (8 file(s))",
+            "true # plan-file: docs/superpowers/plans/2026-08-03-order-fulfillment-service/plan.md (33 lines)",
+            "true # plan-file: docs/superpowers/plans/2026-08-03-order-fulfillment-service/tasks/01-validation-and-settings.md (107 lines)",
+            "true # plan-file: docs/superpowers/plans/2026-08-03-order-fulfillment-service/tasks/07-archiving-and-report.md (84 lines)",
+            "true # plan-task-count: 8",
+            "true # settings-micro-edits-touching-tasks: 2",
+            "true # settings-micro-edits-dedicated-tasks: 0",
+            "true # settings-micro-edits-merged-tasks: 2",
+            "true # max-line-items-validation: 12",
+            "true # max-line-items-pricing: 12",
+            "true # max-line-items-fulfillment: 12",
+            "true # max-line-items-coherent: yes (12 across all three modules)",
+            "true # settings-default-report-timezone: present",
+            "true # settings-notify-max-retries: present",
+            "true # settings-archive-grace-days: present",
+            "true # pricing-simplest-thing-signal: simple (0 markers)",
+        ])
+        observables = p.observables_from_verdict(path)
+        self.assertEqual(observables["plan_shape"], "directory")
+        self.assertEqual(observables["plan_file_count"], 8)
+        self.assertEqual(observables["plan_task_count"], 8)
+        self.assertEqual(observables["pricing_simplest_thing_signal"], "simple")
+
+    def test_overbuilt_marker_s_form_still_parses(self):
+        # The OTHER real literal template (the overbuilt branch) --
+        # confirms both forms of the same word are tolerated, not just
+        # whichever one happened to crash first.
+        import score_pd_planshape as p
+        path = self._write(["true # pricing-simplest-thing-signal: overbuilt (3 marker(s))"])
+        observables = p.observables_from_verdict(path)
+        self.assertEqual(observables["pricing_simplest_thing_signal"], "overbuilt")
+        self.assertEqual(observables["pricing_overbuild_hits"], 3)
+
+    def test_missing_optional_line_degrades_to_none_never_crashes(self):
+        # A verdict entirely missing a label this scorer looks for (a
+        # crashed post(), or a future checks.sh that drops a line) must
+        # degrade that field to None, never raise.
+        import score_pd_planshape as p
+        path = self._write([
+            "true # plan-shape: monolithic (1 file(s))",
+            # pricing-simplest-thing-signal deliberately omitted
+        ])
+        observables = p.observables_from_verdict(path)
+        self.assertIsNone(observables["pricing_simplest_thing_signal"])
+        self.assertIsNone(observables["pricing_overbuild_hits"])
+        self.assertIsNone(observables["max_line_items_coherent"])
+        self.assertIsNone(observables["plan_task_count"])
+        self.assertEqual(observables["settings_constants_present"],
+                          {"DEFAULT_REPORT_TIMEZONE": None, "NOTIFY_MAX_RETRIES": None, "ARCHIVE_GRACE_DAYS": None})
+
+    def test_completely_empty_verdict_degrades_fully_never_crashes(self):
+        import score_pd_planshape as p
+        path = self._write([])
+        observables = p.observables_from_verdict(path)
+        self.assertIsNone(observables["plan_shape"])
+        self.assertIsNone(observables["plan_file_count"])
+        self.assertEqual(observables["plan_files"], [])
+        self.assertIsNone(observables["plan_task_count"])
+
+    def test_unrecognized_shape_format_degrades_to_none_not_a_crash(self):
+        # A hypothetical future checks.sh format change this scorer
+        # doesn't yet recognize -- must degrade, not raise.
+        import score_pd_planshape as p
+        path = self._write(["true # plan-shape: some-brand-new-shape-format"])
+        observables = p.observables_from_verdict(path)
+        self.assertIsNone(observables["plan_shape"])
+        self.assertIsNone(observables["plan_file_count"])
+
+
 # ---------------------------------------------------------------------------
 # Return-window failure detection.
 # ---------------------------------------------------------------------------
