@@ -342,3 +342,14 @@ vocabulary, no upstream): task-11-arm-report.md in the campaign workspace.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/x7x9a` | X7-A preflight + X9-A never-stall composed | 5303307 |
+
+## 2026-08-02 backlog campaign — x9a2 (escape-hatch tightening)
+
+cp/x9a2 = cp/x9a (61bf701) + tightened escape-hatch clause at its three
+sites (stop-list paragraph, process-digraph node, adjudication paragraph):
+a ruling you can write down is not a guess; confirm-asks on rulings
+already made are stalls. +11/−6, one file (SDD SKILL.md).
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/x9a2` | X9-A + escape-hatch tightening | f42d72a |
