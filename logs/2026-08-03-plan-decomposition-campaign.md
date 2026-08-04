@@ -935,3 +935,35 @@ directive's remaining live lever is the REVIEWER seat: x13's
 illegibility class (6/16 treatment reps) stands unaffected. The
 controller-side cost story routes to dispatch/batching lines (X6
 class), not verification dedupe.
+
+## 2026-08-04 — VERDICT: p2g FAILS (0/5 × 3) — the METHOD-SCOPE result lands; the specless wall is text-proof
+
+Battery: cp-x10-consistency (specless) × pd-p2g @ c5fd8ba × 3 reps.
+Scored by the fixed tree-resolving scan (all three reps merged back;
+scan-tree = root; no not-built cells). **0/5, 0/5, 0/5.**
+
+Four texts have now failed the specless wall: no-text control, P2's
+value-table, p2s's spec-anchored rows, and p2g — the dismissing
+sessions' own elicited counter. Spec presence with NO special text
+remains the only thing that ever moved this fixture (4-5/5).
+
+**Pre-registered method-scope conclusion:** interrogate-then-fix
+repairs mis-specified triggers and missing procedures (d1p's class was
+correctly diagnosed; x12 tests the procedure case) — it does NOT
+substitute for missing authority. The authority gap is closed by
+artifacts, not language. This is the strongest evidence yet behind
+PR #2086's mechanism.
+
+**Uptake nuance (hand-read, disclosed):** in all 3 reps the
+scan/value-table step never ran at all — zero shared-name tables, zero
+coherence rulings (rep2's single "Ruling:" was a test-coverage note).
+The elicited counter never even reached its moment. So the precise
+statement is: specless, the whole coherence-gate complex (P2 family)
+deploys unreliably or dismisses what it finds; spec-present, the SAME
+skill base gets enumeration + correct resolution for free. The spec is
+not just the authority — its presence is what makes the process text
+bind at all.
+
+**Campaign consequence:** the P2-family axis is now CLOSED end to end.
+No further specless text arms. Ship path unchanged: #2086 (Spec:
+header + SDD preflight reads it).
