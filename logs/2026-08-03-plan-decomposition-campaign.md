@@ -889,7 +889,7 @@ post-checks 7/7, cost.
 **pd/x13 @ 24da35d** (illegibility row). Battery: cp-x5-leases-scaled
 × 4 reps. PRIMARY — reviewer-child pytest runs: baseline 6/16 reps
 (3/8 per arm variant); PASS = 0-1/8 reviewer-rerun reps across 4 reps'
-reviewer children with the руле present (hand-read each rerun's
+reviewer children with the rule present (hand-read each rerun's
 stated reason; a rerun WITH a named code doubt and focused scope is
 compliant, not a bypass). SECONDARY — gap-reports appearing in review
 output where evidence was illegible (the desired replacement
