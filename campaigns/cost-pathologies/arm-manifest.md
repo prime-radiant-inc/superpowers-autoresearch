@@ -423,3 +423,16 @@ single-write ceiling. +15/−0, one file.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-p1b` | incremental-monolith plan authoring | 831fbfd |
+
+## 2026-08-03 plan-decomposition iteration — pd-p2s (spec-anchored coherence)
+
+pd/p2s (alias cp/pd-p2s) = pd/p2 (292da9c) + spec-anchored value rows:
+each shared-name row starts from the SPEC's value when one exists (plan
+majority otherwise); spec divergence is a defect regardless of the
+task's own argument; specless coherence rulings declared provisional in
+ledger + finish report. Direct counter to the ground-truth gap
+(P2-on-cp-x10 verdict).
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-p2s` | spec-anchored coherence gate | 1937691 |
