@@ -1,0 +1,108 @@
+feature: order-fulfillment-ops-reconciliation
+goal: Build the multi-warehouse order fulfillment, operations, and import/export-reconciliation service described in SPEC.md.
+tasks:
+  - id: 1
+    name: intake
+    file: task-01-intake.md
+  - id: 2
+    name: validation
+    file: task-02-validation.md
+  - id: 3
+    name: discounts
+    file: task-03-discounts.md
+  - id: 4
+    name: pricing
+    file: task-04-pricing.md
+  - id: 5
+    name: allocation
+    file: task-05-allocation.md
+  - id: 6
+    name: shipping
+    file: task-06-shipping.md
+  - id: 7
+    name: fulfillment
+    file: task-07-fulfillment.md
+  - id: 8
+    name: backorders
+    file: task-08-backorders.md
+  - id: 9
+    name: notifications
+    file: task-09-notifications.md
+  - id: 10
+    name: loyalty
+    file: task-10-loyalty.md
+  - id: 11
+    name: returns
+    file: task-11-returns.md
+  - id: 12
+    name: refunds
+    file: task-12-refunds.md
+  - id: 13
+    name: reporting
+    file: task-13-reporting.md
+  - id: 14
+    name: archiving
+    file: task-14-archiving.md
+  - id: 15
+    name: cancellation
+    file: task-15-cancellation.md
+  - id: 16
+    name: sla
+    file: task-16-sla.md
+  - id: 17
+    name: staff-roles
+    file: task-17-staff-roles.md
+  - id: 18
+    name: audit-log
+    file: task-18-audit-log.md
+  - id: 19
+    name: inventory-adjustments
+    file: task-19-inventory-adjustments.md
+  - id: 20
+    name: support-tickets
+    file: task-20-support-tickets.md
+  - id: 21
+    name: rate-limits
+    file: task-21-rate-limits.md
+  - id: 22
+    name: shift-coverage
+    file: task-22-shift-coverage.md
+  - id: 23
+    name: manual-override
+    file: task-23-manual-override.md
+  - id: 24
+    name: ops-dashboard
+    file: task-24-ops-dashboard.md
+  - id: 25
+    name: csv-import
+    file: task-25-csv-import.md
+  - id: 26
+    name: export-feed
+    file: task-26-export-feed.md
+  - id: 27
+    name: reconciliation
+    file: task-27-reconciliation.md
+  - id: 28
+    name: ledger-sync
+    file: task-28-ledger-sync.md
+  - id: 29
+    name: carrier-manifest
+    file: task-29-carrier-manifest.md
+  - id: 30
+    name: duplicate-detection
+    file: task-30-duplicate-detection.md
+  - id: 31
+    name: vendor-feed
+    file: task-31-vendor-feed.md
+  - id: 32
+    name: vendor-lead-times
+    file: task-32-vendor-lead-times.md
+  - id: 33
+    name: settings-report-timezone
+    file: task-33-settings-report-timezone.md
+  - id: 34
+    name: settings-archive-grace
+    file: task-34-settings-archive-grace.md
+  - id: 35
+    name: settings-reconciliation-tolerance
+    file: task-35-settings-reconciliation-tolerance.md
