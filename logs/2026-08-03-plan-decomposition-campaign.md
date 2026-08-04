@@ -235,3 +235,42 @@ coherence family (6 modules, tolerant extraction), micro-edit
 disposition. (4) Costs + controller economy (same rollout analysis as
 T4). PASS for an arm = complete plan authored + executed with
 completion ≥ control and no coherence regression.
+
+## 2026-08-03 — P2-on-cp-x10 VERDICT: FAIL — the authority gap survives the preflight value-table; it is a GROUND-TRUTH gap
+
+3/3 reps pass 14/14 post-checks (~$6.9 each; battery $20.76). Seeded
+defects neutralized: rep1 1/5 (seed 4 — the runtime-breakage class,
+the ONLY class any instrument in this program has ever caught),
+reps 2-3 0/5. Pre-registered bar (median ≥3/5): **FAIL.**
+
+Behavioral layer (controller rollouts, hand-read): the p2 mechanism
+EXECUTED — the controller ran the "required cross-task consistency
+scan before any implementation dispatch," enumerated the exact seeded
+divergences by name (MIN_PRIORITY, timeouts, status scope), and ruled
+them "deliberate module-local differences... internally explained. No
+plan amendment is needed."
+
+**Refinement of the authority gap:** it is not an attention gap
+(X10's scanner closed that), and not a table gap (P2's value rows
+closed that). It is a GROUND-TRUTH gap: when the plan is the only
+authority in scope, plan-internal justification ("each task explains
+its value") is unfalsifiable at every layer — final review, scan
+adjudication, and now preflight-with-amendment-power all reach the
+same "intentional per-module policy" conclusion. P2's own ruling
+clause ("the spec is the binding authority, the plan is its
+argument") had nothing to bind to: cp-x10's scenario ships a plan
+with NO independent spec above it.
+
+**Iteration (P2'):** anchor the gate to an EXTERNAL ground truth —
+when a spec exists, the preflight's shared-name rows compare each
+task's pinned value against THE SPEC's value, and divergence from
+spec (not from sibling tasks) is the amendment trigger. Fixture
+follow-up: cp-x10-spec variant = cp-x10-consistency + a SPEC.md
+stating the true shared values (small edit, high discriminating
+power: same plan, now falsifiable). Real-world reading: a plan
+executed without its spec is unauditable for coherence — an argument
+for SDD carrying spec access into preflight, and for the
+plan-as-directory manifest bundling the spec. Seed-4's uniqueness
+(runtime breakage outranks text) also suggests executable
+contracts/cross-module tests as the coherence mechanism of last
+resort.
