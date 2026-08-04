@@ -501,3 +501,33 @@ PASS: controller duplicate-run count median ≤2 (X11's original bar),
 with the post-merge run specifically absent or preceded by the
 tree-identity check. Method credit: Jesse's interrogate-then-fix
 directive, first application.
+
+## 2026-08-04 — Method doc + interrogation candidate inventory (Jesse's ask)
+
+Method documented: docs/rationalization-interrogation-method.md;
+instrument promoted: campaigns/cost-pathologies/interrogate-rollout.py.
+NEW STANDING RULE (in the method doc): every behavioral-null verdict
+gets an interrogation pass before its successor arm is designed.
+
+**Failed/null experiments eligible for the method (queued, priority
+order):**
+1. **X1-edit attention escapes** (14/16 reviewers missed the
+   unambiguous Important defect; the attention-routing thesis has NO
+   elicited mechanism) — interrogate the missing reviewers: what were
+   they attending to; what would have routed them. Feeds any future
+   review-attention arm; also wave-cap's 0/45 (same class).
+2. **Authority-gap dismissers** (x10b scan-adjudicators + P2-x10
+   "internally explained" controllers) — elicit THEIR counters; if
+   p2s-specless fails, elicited counters replace my hand-written
+   anti-rationalization line.
+3. **X5 reviewer lease-bypasses** (~1/3 of treatment reps reran
+   "sometimes with no stated reason") + X5 controller reruns beyond
+   the post-merge class — does the d1p row generalize or are there
+   more classes?
+4. **T11 turn-1 bundlers** (3/4) — confirm the escape-hatch reading
+   behind x9a2's tightening before it goes to #2077's thread.
+5. **Campaign 3 adjacent-breakage floor** (0/16 with U-broken-windows
+   in context) — elicit why the directive never bound; likely yields
+   a trigger clause ("nothing made the session LOOK") rather than a
+   table row.
+6. **Campaign 3 U-honesty misses** (1/arm fabrications) — n=2, cheap.
