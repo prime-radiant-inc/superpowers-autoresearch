@@ -894,3 +894,44 @@ stated reason; a rerun WITH a named code doubt and focused scope is
 compliant, not a bypass). SECONDARY — gap-reports appearing in review
 output where evidence was illegible (the desired replacement
 behavior).
+
+## 2026-08-04 — REFRAME from the pre-registered split scorer: the same-tree redundant class is ~1 run/rep in EVERY arm; d1s battery PARKED; d1p claim corrected
+
+Per the d1s pre-registration (scorer first, baselines before battery):
+`score_d1_split.py` built and hand-validated (classifier replay of
+d1p-rep2 spot-checked: its REDUNDANT calls follow pure reads or
+`git add` — the literal add/commit-then-rerun habit; its FRESH calls
+follow Add/Update File patches). Classification doctrine, encoded and
+commented: `git commit`/`git add` are NOT tree changes (the post-commit
+rerun is the target class); ledger/doc writes are NOT tree changes;
+`git merge` is evidence-CARRYING (the merged branch was just
+implementer-tested on exactly the adopted tree — post-merge reruns are
+the X11 class); cherry-pick/rebase invalidate.
+
+**Baselines (redundant / fresh / focused per rep):**
+- control: 1/1/5, 1/2/6
+- x11: 1/2/2, 1/2/4, 0/7/9, 1/5/0
+- d1p: 1/1/3, 3/5/8, 0/4/13, 1/4/0
+
+**The reframe:** the truly-redundant same-tree class is ~1 run/rep
+everywhere — the raw "3-14 controller reruns/rep" that anchored the
+X5/X11 duplication narrative was mostly FRESH runs (controller
+inline-fix TDD loops, post-patch verification) plus focused runs.
+Controller-seat same-tree duplication on this fixture is ≈$0.10-0.30
+of waste per rep. There is no headroom for d1s to buy.
+
+**CORRECTION to the d1p verdict entry above:** its "conditional
+efficacy — uptake reps drop below control" sentence was based on RAW
+counts (5 vs 8/9). Under the split, uptake reps' redundant class is 1
+vs control's 1 — no difference in the target class; the raw-count gap
+was composition (fewer inline-fix loops), not dedupe. d1p's mechanism
+remains correct in principle and confirmed by elicitation, but the
+class it prevents is already rare.
+
+**Dispositions:** pd/d1s battery PARKED (arm registered @ f4af30b,
+not run — no measurable headroom at this fixture scale; revisit only
+if a scenario shows a redundant class worth buying). The dedupe
+directive's remaining live lever is the REVIEWER seat: x13's
+illegibility class (6/16 treatment reps) stands unaffected. The
+controller-side cost story routes to dispatch/batching lines (X6
+class), not verification dedupe.
