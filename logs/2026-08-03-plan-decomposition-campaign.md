@@ -563,3 +563,37 @@ validation ledger.
 **Instrument gap found:** interrogate-rollout.py selects the largest
 (controller) rollout; reviewer-seat interrogations (X1-edit escapes,
 inventory item 1) need rollout selection by seat — follow-up queued.
+
+## 2026-08-04 — X1-edit reviewer interrogation: the attention escapes have a mechanism — single-instance generalization
+
+Reviewer-seat elicitation (scratch wrapper over interrogate-rollout;
+reviewer rollout selected by verdict-markers; 4 control reps; gpt-5;
+confabulation caveat standing). **4/4 convergent:**
+
+- RATIONALIZATION class: verified the REQ-2 invariant in ONE path
+  (apply_adjustment — which was correct), then generalized: familiar
+  pattern + green suite → "holds everywhere"; skimmed past
+  generate_statement.
+- TRIGGER class: green tests + a MIN_LINE_CHARGE check NEAR discount
+  code (proximity read as correctness) + confirmation priming from
+  the one verified path.
+- COUNTER class (4/4, directly encodable): enumerate EVERY instance
+  of the requirement's anchor (grep the constant/guard), verify each
+  with file:line evidence before any verdict — one verified instance
+  is not evidence for its siblings.
+
+**New arm candidate (pd/x12, "invariant-instance enumeration"):** a
+task-reviewer/final-reviewer instruction row from the elicited
+counter. Battery-ready scenario exists with a binding baseline:
+cp-x1-edit-existing, control 2.0 escapes/rep, ANCHOR-IMPORTANT escape
+rate 14/16. Queued behind the running lanes.
+
+**Cross-seat meta-pattern (three interrogations, one day):** GREEN
+TESTS AS UNIVERSAL WAIVER — reviewers skip line-verification (this
+entry), preflight controllers skip amendment rulings (green-as-waiver
+entry), post-merge controllers justify redundant re-runs (X11 entry).
+Opposite behaviors, same miscalibration: green proves code behavior
+on that tree — not plan coherence, not requirement coverage the tests
+don't encode, not the need to re-verify identical trees. Candidate
+shared-doctrine text for the synthesis ("what green tests prove"),
+applicable across writing-plans/SDD/review templates.
