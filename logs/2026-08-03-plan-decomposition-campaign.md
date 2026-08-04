@@ -344,3 +344,37 @@ ceiling effects in fresh sessions for the same reason.
 R1 review-triage micro-instruments, D1 structural dedupe, K1
 knowledge-forwarding, T9 tooling-ask, synthesis. Grading by
 controller, disclosed.
+
+## 2026-08-04 — P2' battery VERDICT: ground truth in the room closes the gap; gate text buys autonomy and the last point
+
+9/9 reps final=pass 19/19 post-checks; battery $69.76.
+Spec-resolution scores: control 4/5, 5/5, 4/5 (median 4/5 — both
+misses are partial resolutions of seed 5); pd-p2 5/5 ×3; pd-p2s
+5/5 ×3.
+
+Per the pre-registered discrimination clause (control ≥3/5 → "spec
+availability alone suffices" is the recorded, shippable answer):
+**the authority gap is closed by PUTTING THE SPEC IN THE ROOM.** The
+specless baseline on the same plan was 0-1/5 with "internally
+explained" rulings at every layer; the identical plan plus its spec
+yields 4-5/5 even with NO gate text. The gap was never attention,
+tables, or wording — it was ground-truth availability.
+
+Behavioral differential (hand-read): the ungated control DETECTED all
+five conflicts immediately ("The implementation plan directly
+conflicts with the product specification in five places," enumerated
+exactly) but then used the base skill's batched-question path —
+resolved only by the pinned "The spec is authoritative" reply. The
+gate arms ruled and amended autonomously, zero asks. So in unattended
+sessions the gate text's value is AUTONOMY (composing with the
+never-stall thread / PR #2077) plus uniform 5/5; p2-vs-p2s wording
+made no difference once the spec existed.
+
+**Ship implications (for synthesis + Jesse's review):** (1)
+writing-plans: the plan header carries a `**Spec:**` pointer to the
+spec it was derived from; (2) SDD setup/preflight: locate and read
+the plan's spec — coherence rows then anchor to it naturally (p2's
+existing clause suffices; p2s's extra wording unnecessary); (3) the
+composition with #2077 converts the residual ask into a ruling.
+Smallest evidence-backed text change of the campaign, largest
+measured effect (0-1/5 → 4-5/5). Grading by controller, disclosed.
