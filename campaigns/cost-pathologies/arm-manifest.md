@@ -468,3 +468,20 @@ so the battery doubles as a test of the interrogation method.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-x12` | invariant-instance enumeration (task-reviewer seat) | ae2b457 |
+
+## 2026-08-04 plan-decomposition iteration — pd-p2g (green-as-waiver counter, p2s')
+
+pd/p2g (alias cp/pd-p2g) = cp/pd-p2s (1937691) + the elicited
+green-as-waiver counter, in the dismissing sessions' own terms: a clean
+merge and green suite close no coherence rows (no test asserts
+cross-module agreement); "intentional"/"inconsequential" are rulings
+you WRITE, never impressions a passing suite hands you; diverging rows
+stay open until a written ruling resolves them. One scan-block
+paragraph + one rationalization row. The method-scope test: three
+hand-written texts failed specless (control, P2, p2s) — does the
+sessions' own elicited counter do better, or is missing authority
+beyond any text's reach?
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-p2g` | green-as-waiver counter (specless coherence) | c5fd8ba |

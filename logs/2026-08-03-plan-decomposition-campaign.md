@@ -780,3 +780,28 @@ counters fix mis-specified triggers and missing procedures (d1p, x12
 classes), not missing authority. Paired with x12 (elicited counter
 where ground truth IS reachable in-repo), the two batteries bracket
 the method's domain.
+
+## 2026-08-04 — PRE-REGISTRATION: pd/p2g battery (green-as-waiver counter, specless)
+
+Arm `cp/pd-p2g` @ c5fd8ba (see arm-manifest): pd/p2s + the P2-x10
+dismissers' elicited counter verbatim in mechanism ("green closes no
+coherence rows; intentional/inconsequential are rulings you write").
+
+**Battery:** cp-x10-consistency (specless) × pd-p2g × 3 reps, next
+free lane (behind d1p on B / x12 on A). Scored by the FIXED
+tree-resolving seeded-defect scan + mandatory hand-check of any rep
+whose scan tree is a worktree or whose cells read not-built, +
+hand-read of the preflight table/rulings.
+
+**Endpoints:** PRIMARY — seeded defects neutralized per rep vs the
+0-1/5 specless wall (control 0/5×3, P2 1/5-0/5-0/5, p2s 0/5×3).
+≥3/5 in ≥2 reps = the elicited counter breaks the wall →
+interrogate-then-fix reaches even authority-gap classes, and p2g's
+text becomes ship-candidate alongside #2086. 0-1/5 = the wall stands
+= METHOD-SCOPE RESULT: elicited counters repair mis-specified
+triggers and missing procedures, not missing ground truth — the
+authority gap is closed by artifacts (the spec), not text, which is
+PR #2086's thesis with the strongest possible evidence behind it.
+Secondary: rulings actually WRITTEN for divergent rows (hand-count) —
+the counter could move ruling-writing without moving resolution
+correctness (partial mechanism uptake, worth knowing either way).
