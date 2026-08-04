@@ -209,3 +209,29 @@ that STOPS to ask about the conflicts fails the never-stall
 expectation), cost. (3) The amendment mechanism specifically: value
 rows in the ledger table + plan text edited before Task 1 (hand-read
 per rep, disclosed). Est. 3 reps × ~$8 ≈ $25.
+
+## 2026-08-03 — Pre-registration: certified-overflow battery (pd-overflow-xl)
+
+**Scenario:** pd-overflow-xl (reviewed; size model independently
+recomputed: ≈48.6k-token faithful monolithic plan vs ~32k single-write
+budget — overflow certified by arithmetic with 1.5× margin; 32 tasks,
+3 subsystems).
+**Arms:** control @ 1fed99d ×3; pd-p1 @ ee0c6b0 (plan-as-directory)
+×3; pd-p1b @ 831fbfd (incremental single-file) ×3. Lane B chain:
+control ×3 then p1b ×3; p1 ×3 appended to lane A after the P2-x10
+chain exits. Est. 9 reps × ~$12-18 ≈ $120.
+**Reachability:** all arm text in writing-plans, invoked by the
+scenario's authoring step — reachable by construction; p1b's
+mechanism binds exactly at the write that overflow breaks.
+**Criteria:** (1) PRIMARY — authoring survival: control's monolithic
+single-write plan should now FAIL or truncate (return_window_failures
+confirmed events + plan completeness vs the 32-task spec). If control
+completes cleanly 3/3 ANYWAY, the size model is refuted empirically —
+INCONCLUSIVE-BY-MODEL-FAILURE, recorded as such (this battery is
+falsifiable in both directions). (2) Plan completeness per arm: task
+count vs spec's 32 sections; index↔section reconciliation (p1b) and
+directory file-count (p1). (3) Execution: completion post-checks,
+coherence family (6 modules, tolerant extraction), micro-edit
+disposition. (4) Costs + controller economy (same rollout analysis as
+T4). PASS for an arm = complete plan authored + executed with
+completion ≥ control and no coherence regression.
