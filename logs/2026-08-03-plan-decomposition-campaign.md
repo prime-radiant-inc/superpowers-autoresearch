@@ -832,3 +832,40 @@ Validated at PRESENCE level against all 104 answers:
   mechanical layer screens, hand-rescore carries verdicts. Corpus
   regression tests added (skip when the gitignored corpus is absent):
   conformant-zero, deviant-presence floors. 38/38 tests pass.
+
+## 2026-08-04 — VERDICT: d1p FAILS the bar on uptake, mechanism CONFIRMED — the fourth informational null at the verify moment
+
+Battery: cp-x5-leases-scaled × pd-d1p @ f2c425c × 4 reps ($33.80).
+Controller pytest counts: **5, 18, 17, 5** (median 11) vs bar ≤2;
+baselines control 8/9, X11-null 5/7/16/6. FAIL as pre-registered.
+
+**But the structure is the finding (mechanical + hand-read):**
+- Uptake is bimodal and perfectly correlated: reps 1/4 ran the
+  mandated identity check (3× and 7× `git diff --quiet`) and landed
+  at 5 runs each — BELOW both control reps (8, 9). Reps 2/3 never ran
+  it (0×) and landed at 17-18, in X11-null territory.
+- Reachability confirmed: reps 2/3 controllers READ SKILL.md (2 refs
+  each) — behavioral, not reachability.
+- Hand-read of the high reps: a large share of their runs are the
+  controller doing implementer-style inline fix loops (per-test TDD
+  cadence, Add File patches) — the metric conflates redundant
+  re-verification with controller-inline-implementation, a distinct
+  class the arm never addressed.
+- Standing-rule interrogation of both no-uptake controllers (gpt-5,
+  --seat controller): both elicit the exact class d1p targets ("fresh
+  commit ID → rerun to be safe before handoff") and both produce
+  d1p's own sentence as the COUNTER that would have stopped them.
+  Content correct; binding absent.
+
+**Reading:** the fourth informational treatment at the verify moment
+fails on UPTAKE (X5-A, X5-B, X11, now d1p) — but d1p is the first
+with conditional efficacy: when the check happens, counts drop below
+control. This sharpens the campaign-2 structural-dedupe constraint:
+the identity check must live in the PROCESS (e.g., emitted by the
+review-package/dispatch step itself, where the controller cannot not
+see it), not in prose the controller may or may not recall at the
+moment. Successor candidate (d1s, structural): review-package script
+prints the tree-identity line for the range it packaged; the dispatch
+template carries it. No new battery until designed and the metric is
+split (post-report full-suite reruns vs inline-fix-loop runs counted
+separately).
