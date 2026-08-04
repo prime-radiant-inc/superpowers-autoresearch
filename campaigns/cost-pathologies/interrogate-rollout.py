@@ -11,13 +11,24 @@ Usage:
   interrogate-rollout.py --rule "the instruction that was in force" \\
       --act "what the wrong act was, one sentence" \\
       (--exec-match REGEX | --message-match REGEX) [--nth -1] \\
-      [--model gpt-5] [--window 6] REP_DIR [REP_DIR ...]
+      [--seat controller] [--model gpt-5] [--window 6] REP_DIR [REP_DIR ...]
 
 Event selection: --exec-match finds exec (command) events whose text
 matches REGEX; --message-match finds agent messages matching REGEX.
 --nth picks which match (default -1, the last). The elicitation prompt
 carries the --rule text verbatim as "the instruction in force" and
 --act as the description of the divergent act.
+
+Seat selection (--seat, default controller):
+  controller   the largest rollout in the rep (the orchestrating session)
+  reviewer     child threads (session_meta.parent_thread_id set) with ZERO
+               patch_apply_end events (read-only seat); every matching
+               reviewer child is scanned, first event match wins
+  implementer  child threads WITH patch_apply_end events
+Seat misattribution poisons elicitations silently — verdict-marker text
+appears in the controller's dispatch prompts too, so text-matching alone
+selects the wrong seat (this bit the X5 interrogation once: controller
+setup habits were elicited under a reviewer framing).
 
 Auth: OPENAI_API_KEY from env (never printed). Post-hoc-confabulation
 caveat: outputs are hypotheses for battery testing, not verdicts.
@@ -61,6 +72,36 @@ def events_of(path):
                 out = " ".join(x.get("text", "") for x in out if isinstance(x, dict))
             events.append(("output", (out or "")[:600]))
     return events
+
+
+def seat_of(path):
+    """controller / reviewer / implementer, from thread parentage and
+    patch activity. Child threads carry session_meta.parent_thread_id;
+    implementer children apply patches, reviewer children never do."""
+    parent = False
+    patch = 0
+    for line in open(path, errors="replace"):
+        try:
+            j = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if j.get("type") == "session_meta":
+            parent = bool((j.get("payload") or {}).get("parent_thread_id"))
+        p = j.get("payload") or {}
+        if j.get("type") == "patch_apply_end" or p.get("type") == "patch_apply_end":
+            patch += 1
+    if not parent:
+        return "controller"
+    return "implementer" if patch else "reviewer"
+
+
+def seat_rollouts(rep, seat):
+    rolls = rollouts(rep)
+    if not rolls:
+        return []
+    if seat == "controller":
+        return [max(rolls, key=os.path.getsize)]
+    return [r for r in rolls if seat_of(r) == seat]
 
 
 def select(events, kind, rx, nth):
@@ -120,6 +161,8 @@ def main():
     ap.add_argument("--nth", type=int, default=-1)
     ap.add_argument("--window", type=int, default=6)
     ap.add_argument("--model", default="gpt-5")
+    ap.add_argument("--seat", default="controller",
+                    choices=["controller", "reviewer", "implementer"])
     a = ap.parse_args()
     if bool(a.exec_match) == bool(a.message_match):
         ap.error("exactly one of --exec-match / --message-match")
@@ -127,17 +170,23 @@ def main():
                 else ("message", re.compile(a.message_match)))
     for rep in a.reps:
         name = os.path.basename(rep.rstrip("/"))
-        rolls = rollouts(rep)
+        rolls = seat_rollouts(rep, a.seat)
         if not rolls:
-            print(f"{name}: no rollouts")
+            print(f"{name}: no {a.seat} rollouts")
             continue
-        events = events_of(max(rolls, key=os.path.getsize))
-        i = select(events, kind, rx, a.nth)
-        if i is None:
-            print(f"{name}: no matching event")
+        hit = None
+        for r in sorted(rolls):
+            events = events_of(r)
+            i = select(events, kind, rx, a.nth)
+            if i is not None:
+                hit = (r, events, i)
+                break
+        if hit is None:
+            print(f"{name}: no matching event in {len(rolls)} {a.seat} rollout(s)")
             continue
+        r, events, i = hit
         ctx = events[max(0, i - a.window):i + 1]
-        print(f"===== {name} =====")
+        print(f"===== {name} ({os.path.basename(r)[:44]}) =====")
         try:
             print(elicit(a.model, a.rule, a.act, ctx))
         except Exception as e:

@@ -640,3 +640,64 @@ compound lock patterns).
    construction; hand-confirm one rep's reviewer rollout actually
    enumerates (quotes anchor instances) to verify uptake, not just
    presence.
+
+## 2026-08-04 — X5 reviewer lease-bypass interrogation: a FOURTH class — evidence illegibility — plus a seat-misattribution instrument artifact
+
+Question on the table: does d1p's tree-identity row cover the ~1/3 of
+X5 treatment reps where a reviewer reran anyway (T8 narrative), or is
+that a distinct class? Answer: distinct.
+
+**Instrument artifact first (disclosed; the 8th-class: SEAT
+MISATTRIBUTION).** The first wrapper selected "reviewer" rollouts by
+verdict-marker text — but the controller's rollout contains every
+dispatch prompt it composes, so verdict/template text matches the
+CONTROLLER too, and the wrapper's first hit was the controller in all
+6 reps. Tell-tale in the elicitations themselves: ".gitignore tweaks,"
+"creating a worktree/branch" — mutations a read-only reviewer never
+performs. Those 6 answers are struck as reviewer evidence. (Kept as a
+WEAK controller-seat hypothesis: bootstrap-habit reruns — "my setup
+snippet ends with pytest" — consistent with the 3-14 controller
+reruns/rep finding, but elicited under a wrong-seat RULE framing, so
+hypothesis only, would need re-elicitation under a controller RULE.)
+
+**Correct seat selection (now IN the promoted instrument as --seat
+reviewer/implementer/controller):** child threads carry
+session_meta.parent_thread_id; implementer children have
+patch_apply_end events; reviewer children have none. Validated: the
+promoted mode selects the identical rollout the corrected wrapper
+found.
+
+**Corrected count: 6/16 treatment reps (x5a 3/8, x5b 3/8) had a
+reviewer-child pytest run** — matches T8's ~1/3 narrative estimate
+independently.
+
+**Elicitations (5 reps, gpt-5, confabulation caveat standing): 5/5
+convergent on EVIDENCE ILLEGIBILITY.** The reviewer re-runs because
+the evidence artifact is illegible from its seat — "report output
+appeared truncated," "couldn't locate the explicit reported results
+for this commit," "artifacts looked incomplete," "absence of visible
+prior test outputs" — so regenerating the evidence feels cheaper and
+more reliable than re-reading it. Trigger class: truncated/missing
+evidence views + pytest ready at hand. Elicited counter class (5/5):
+the receipt is honored for this exact tree; resolve doubt by
+re-reading the report/receipt, not re-running; illegibility of the
+evidence is not invalidation of it.
+
+**Class map after four interrogations:** (1) controller post-merge
+new-HEAD habit → d1p; (2) preflight green-as-waiver → p2s' candidate;
+(3) reviewer single-instance generalization → x12; (4) reviewer
+evidence-illegibility → NEW arm candidate. Note classes 1 and 4 share
+a shape: when in doubt, agents REGENERATE evidence rather than READ
+it; the fix each time is making the read path mechanical and cheap
+(identity check; legible receipt).
+
+**Arm candidate (pd/x13, "illegibility is not invalidation"):** two
+halves — (a) legibility: the reviewer dispatch quotes the receipt
+line verbatim (x5a already does; check whether the 3 x5a bypass reps'
+dispatches actually carried it — if not, the leak is the controller
+omitting the citation, a different fix); (b) the elicited row in the
+reviewer template: "Evidence you cannot see is not evidence that
+doesn't exist: if the report or receipt looks truncated, re-read the
+file at its stated path or report the gap — do not re-run the suite
+to regenerate what you failed to read." Battery on cp-x5-leases-scaled
+vs the 6/16 baseline. Queued behind x12.
