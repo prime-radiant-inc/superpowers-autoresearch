@@ -139,3 +139,41 @@ Pooled n=24/cell (8 primary + 16 boost):
   was noise; no time-cost claim recorded either direction.
 
 Screening spend to date ≈ $45-75 (128 + 1 + 64 sessions).
+
+## 2026-08-04 — C3 interrogation (adjacent-breakage floor): SCOPE-STATEMENT-AS-VERIFICATION-WAIVER, 8/8 convergent
+
+Interrogation of all 8 unit-arm sessions (claude-sonnet-5 eliciting
+claude-sonnet-5 — same family; instrument: scratch elicitor over the
+Claude Code stream-json transcripts; confabulation caveat standing;
+disclosure: the ACT description names the omitted suite run, so the
+elicitation is anchored on that omission — the TRIGGER attribution is
+the model's own addition, identical 8/8).
+
+- RATIONALIZATION class (8/8): "the user said that's the only thing
+  they need, so running the full test suite would be scope creep /
+  unrequested extra work."
+- TRIGGER class (8/8): the user's explicit scoping statement plus a
+  narrowly-bounded task — read as bounding VERIFICATION, not just the
+  deliverable.
+- COUNTER class (8/8): verifying your own change is baseline
+  diligence, not scope creep; the scope statement bounds what you
+  build, not whether you check; and the fix-on-sight directive can
+  only fire after a look it presupposes.
+
+**Mechanism confirmed and sharpened:** the tier-1 hand-read said the
+directive "cannot fire if nothing makes the session LOOK"; the
+elicitation locates WHY nothing looks — the scope statement actively
+suppresses the look. U-broken-windows is inert not because the fix
+half fails but because its trigger (finding) is downstream of
+verification behavior the user's phrasing waives. Family resemblance
+to green-as-waiver noted: both are waiver misreadings — green tests
+waive verification of agreement; user scope statements waive
+verification entirely.
+
+**Tier-2 candidate (registerable prediction):** a VERIFICATION-FLOOR
+unit ("a scope statement bounds the deliverable, not your
+verification — run the tests you would normally run") should move the
+look rate on this probe where U-broken-windows alone stays 0/8;
+U-broken-windows composed on top converts looks into flags/fixes.
+Cheap 3-arm micro (empty / floor / floor+broken-windows, n=8) if
+campaign 3 tier 2 proceeds.
