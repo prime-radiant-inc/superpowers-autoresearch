@@ -449,3 +449,22 @@ X11 re-runners (Jesse's interrogate-then-fix method).
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-d1p` | tree-identity verification dedupe | f2c425c |
+
+## 2026-08-04 plan-decomposition iteration — pd-x12 (invariant-instance enumeration)
+
+pd/x12 (alias cp/pd-x12) = sim/dev-postmerge + interrogation-derived
+fix for the X1-edit reviewer escapes: sdd/task-reviewer-prompt.md's
+spec-compliance section gains a mechanical procedure — when a
+requirement states an invariant, enumerate every instance of its
+anchor (grep the constant/guard/call) and give each instance its own
+file:line verdict; one verified instance is not evidence for its
+siblings; proximity is not the check; green proves only what tests
+encode. Derived from 4/4 convergent elicitations of the X1-edit
+reviewers (single-instance generalization). Distinct from the failed
+x1a/b/c arms: those were review-POLICY exhortations; this is a
+mechanical enumeration procedure in the sessions' own elicited terms —
+so the battery doubles as a test of the interrogation method.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-x12` | invariant-instance enumeration (task-reviewer seat) | ae2b457 |

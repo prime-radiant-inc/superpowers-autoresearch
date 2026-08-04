@@ -597,3 +597,46 @@ on that tree — not plan coherence, not requirement coverage the tests
 don't encode, not the need to re-verify identical trees. Candidate
 shared-doctrine text for the synthesis ("what green tests prove"),
 applicable across writing-plans/SDD/review templates.
+
+## 2026-08-04 — PRE-REGISTRATION: pd/x12 battery (invariant-instance enumeration on cp-x1-edit-existing)
+
+Arm built: `cp/pd-x12` @ ae2b457 (see arm-manifest). Text = the 4/4
+elicited counter, verbatim in mechanism: enumerate every instance of
+an invariant's anchor, per-instance file:line verdicts, one instance
+≠ siblings, proximity ≠ the check, green proves only what tests
+encode. Task-reviewer seat only (the seat that failed); re-review and
+final-review seats untouched.
+
+**What this tests beyond the arm:** x1a/x1b/x1c (review-policy
+exhortations) all scored NO EFFECT on this exact fixture — the
+queue-campaign verdict was "review-policy exhortations do not redirect
+attention." x12 is the first attention-redirect attempt whose text is
+(a) a mechanical procedure rather than a policy, and (b) written from
+the failing sessions' own elicited rationalization. If it moves
+ANCHOR-IMPORTANT where x1a/b/c did not, that is evidence for the
+interrogate-then-fix method as an arm-design discipline, not just for
+this row. If it fails identically, the attention-routing thesis
+(decomposition is the only lever) strengthens and the method's scope
+narrows to controller-seat habits (d1p's class).
+
+**Battery:** scenario cp-x1-edit-existing, arm pd-x12, 4 reps, next
+free lane. Scored by the existing x1-edit mechanical scan (signature
+regexes in the seeded-defect ledger) + mandatory hand-check of every
+ANCHOR-IMPORTANT cell and any "unknown" (documented recognizer gaps:
+compound lock patterns).
+
+**Endpoints (registered before launch):**
+1. PRIMARY — ANCHOR-IMPORTANT catch count: pooled baseline 2/16
+   (12.5%). PASS = ≥3/4 reps catch (binomial p≈0.007 at base rate);
+   1-2/4 = MOVEMENT, rerun 4 more reps before verdict; 0/4 = FAIL
+   identical to x1a/b/c.
+2. SECONDARY — mean escapes/rep vs control 2.0 (x1 arms: 2.0-2.5).
+3. GUARD — DEBATABLE-2 (0/16 baseline) reported but not load-bearing;
+   review-effort cost (reviewer turns/tokens vs control) reported —
+   enumeration mandates grep passes, so a cost delta is expected and
+   the question is size, not sign.
+4. Reachability (standing rule): the arm text sits in the task-reviewer
+   template's Part 1, which every task review reads — reachable by
+   construction; hand-confirm one rep's reviewer rollout actually
+   enumerates (quotes anchor instances) to verify uptake, not just
+   presence.
