@@ -531,3 +531,35 @@ order):**
    a trigger clause ("nothing made the session LOOK") rather than a
    table row.
 6. **Campaign 3 U-honesty misses** (1/arm fabrications) — n=2, cheap.
+
+## 2026-08-04 — Authority-gap dismisser interrogation: the elicited mechanism is GREEN-AS-WAIVER, not intentionality
+
+Interrogation of the 3 P2-x10 controllers (interrogate-rollout.py,
+gpt-5, confabulation caveat standing). 3/3 convergent:
+
+- RATIONALIZATION class: the divergences felt inconsequential/
+  intentional BECAUSE everything was green — "clean merge + 27
+  passing tests," "internal justifications and passing tests made
+  the preflight feel clean," "no explicit error felt like permission
+  to proceed" — and momentum did the rest.
+- TRIGGER class: green signals (tests, clean merge, error-free scan)
+  read as evidence that plan-text divergences don't matter.
+- COUNTER class (convergent, and DIFFERENT from p2s's hand-authored
+  line): green doesn't waive the gate — every divergence row is
+  closed only by a WRITTEN ruling amended into the plan;
+  "intentional" and "inconsequential" are themselves rulings to
+  record, not exemptions from ruling.
+
+**Analysis:** my p2s text attacked the intentionality inference
+("'each module explains its choice' is how incoherence defends
+itself"); elicitation says the operative driver is
+tests-pass-so-proceed. If the running p2s-specless cell FAILS, the
+successor arm (p2s') encodes the elicited counter instead:
+green-signals-don't-close-rows + written-ruling-or-amend for every
+row including "intentional" calls. If p2s-specless PASSES, the
+distinction is moot for shipping but stays recorded for the method's
+validation ledger.
+
+**Instrument gap found:** interrogate-rollout.py selects the largest
+(controller) rollout; reviewer-seat interrogations (X1-edit escapes,
+inventory item 1) need rollout selection by seat — follow-up queued.
