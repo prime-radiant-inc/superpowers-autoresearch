@@ -378,3 +378,27 @@ existing clause suffices; p2s's extra wording unnecessary); (3) the
 composition with #2077 converts the residual ask into a ruling.
 Smallest evidence-backed text change of the campaign, largest
 measured effect (0-1/5 → 4-5/5). Grading by controller, disclosed.
+
+## 2026-08-04 — R1 micro-battery pre-registration (review-triage policies)
+
+**Instrument:** r1-review-micro.py (reviewed; one Important fixed —
+7th strict-extraction case, caught pre-spend; three-state extraction
+sectioned/unsectioned/absent with unsectioned counts surfaced).
+**Cells:** {deviant, mixed} × {plain, lens-suppress, lens-downgrade,
+cleanup-wave}, REPS=8/cell = 64 calls, MODEL=claude-opus-4-8
+(instrument default, consistent with x2b/x1 micro precedent).
+**Reachability:** policies injected verbatim into the review prompt —
+by construction.
+**Criteria:** (1) GUARD (decisive): in mixed cells, the seeded
+Important CSV bug must be reported at BLOCKING severity — per policy
+arm, bug-blocking rate ≥7/8 to remain shippable; a policy that
+relegates or suppresses the real bug FAILS regardless of its
+structure-noise handling. Unsectioned hits are hand-classified before
+any verdict (never counted as missed). (2) PRIMARY: structure-only
+finding handling per policy — expected: plain=blocking-noise
+(rathole-feeding), suppress=absent (x2b's 10/10→0/10 precedent),
+downgrade=present-at-Minor/deferred, cleanup=present-in-cleanup
+section. A policy passes when it does what it says ≥6/8 AND holds the
+guard. (3) Noise floor: deviant cells re-confirm x2b's suppression
+baseline; conformant floor not re-run (x2b's 0/20 stands, same tree).
+Est. 64 calls ≈ $8-12.
