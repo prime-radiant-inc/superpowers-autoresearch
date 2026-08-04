@@ -274,3 +274,31 @@ plan-as-directory manifest bundling the spec. Seed-4's uniqueness
 (runtime breakage outranks text) also suggests executable
 contracts/cross-module tests as the coherence mechanism of last
 resort.
+
+## 2026-08-03 — Pre-registration: P2' battery (cp-x10-spec, three arms)
+
+**Scenario:** cp-x10-spec (reviewed; same seeded plan as
+cp-x10-consistency plus the product spec it derives from; 5/5
+resolutions spec-derivable, hand-verified; new spec-resolution-N
+emit lines).
+**Arms ×3 each:** control @ 1fed99d (does spec availability alone fix
+coherence with no gate?); pd-p2 @ 292da9c (does p2's existing
+"spec is binding" clause activate once a spec exists?); pd-p2s @
+1937691 (the spec-anchored rows + provisional-ruling clause). The
+triple isolates ground-truth availability from gate wording.
+**Baseline:** P2-on-cp-x10 (specless): 0-1/5 neutralized, "internally
+explained" ruling.
+**Reachability:** arms in SDD SKILL.md, bound at preflight; the spec
+is named in the opening message; the plan/spec-disagreement deflection
+is pinned verbatim.
+**Criteria:** (1) PRIMARY: spec-resolution score (median of the 5
+spec-resolution-N lines = yes) per arm; PASS for an arm = median ≥3/5
+with control's median strictly lower (discrimination guard: if
+control ≥3/5, spec availability alone suffices and gate text adds
+nothing — a REAL and shippable answer, recorded as such, not a
+failure). (2) Preflight behavior (hand-read): value table built,
+amendments committed pre-Task-1, "internally explained"-class
+rationalization present/absent. (3) Guards: completion post-checks,
+no human-stall (pinned deflections consumed at most), cost. Est. 9
+reps × ~$7 ≈ $65. Queue: launches on first freed lane behind the XL
+battery.
