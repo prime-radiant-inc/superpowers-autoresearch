@@ -302,3 +302,45 @@ rationalization present/absent. (3) Guards: completion post-checks,
 no human-stall (pinned deflections consumed at most), cost. Est. 9
 reps × ~$7 ≈ $65. Queue: launches on first freed lane behind the XL
 battery.
+
+## 2026-08-04 — Certified-overflow battery VERDICT: size model empirically refuted by GRANULARITY ADAPTATION; the plan-artifact-shape axis closes negative
+
+9/9 reps final=pass with full post-checks (56-63), coherence 9/9,
+and — decisive — FULL SCOPE in every arm: 34/34 service modules
+implemented per rep (venv-excluded count), verified directly in the
+trees. Battery ≈ $108.
+
+**The refutation mechanism (the finding):** nobody overflowed because
+NOBODY WROTE THE 32-TASK PLAN. Control authored 6/8/7-task monolithic
+plans; p1 directories held 7/8/7 task files; p1b's incremental method
+produced 12/7/8. Authors COMPRESS plan granularity to fit the writing
+budget — bundling ~4-5 spec modules per task — while execution
+preserves full scope. The size model's premise (faithful
+maximal-granularity authoring per the skill's bite-sized-step
+mandate) is what sessions abandon under size pressure, and they
+abandon it SAFELY. Return-window overflow does not arise from spec
+size with this model + skill text; it is self-preventing at
+authoring. Jesse's observed real-world overflow failures must arise
+elsewhere (different model/harness bundling behavior, mandated
+granularity, or revision/append contexts) — recorded as an open
+localization question, NOT reproducible by scale alone.
+
+**Costs:** control $11.38 mean, p1 $10.24, p1b $14.29 — p1b's
+spine-re-read ceremony costs ~26% over control for zero measured
+benefit.
+
+**Axis disposition — plan-artifact shape CLOSED NEGATIVE:** across
+two scenarios, three arms, and every measured axis (overflow
+robustness, coherence, scope completeness, completion, dispatch
+counts, controller economy, cost), monolith vs directory vs
+incremental authoring is a matter of indifference: the model
+self-regulates granularity and cross-module coherence at authoring.
+cp/pd-p1, cp/pd-p1b closed as ship candidates. Corollary
+(feeds the W-hypothesis ledger): bundling-at-authoring is the
+DEFAULT behavior at scale — right-sizing text (P4) should expect
+ceiling effects in fresh sessions for the same reason.
+
+**Still live in this campaign:** P2' ground-truth battery (running),
+R1 review-triage micro-instruments, D1 structural dedupe, K1
+knowledge-forwarding, T9 tooling-ask, synthesis. Grading by
+controller, disclosed.
