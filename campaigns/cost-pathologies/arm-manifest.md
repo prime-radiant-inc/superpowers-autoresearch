@@ -436,3 +436,16 @@ ledger + finish report. Direct counter to the ground-truth gap
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-p2s` | spec-anchored coherence gate | 1937691 |
+
+## 2026-08-04 plan-decomposition iteration — pd-d1p (tree-identity dedupe)
+
+pd/d1p (alias cp/pd-d1p) = sim/dev-postmerge + interrogation-derived
+fix for the X11 null: evidence follows the TREE not the commit ID;
+mechanical identity check (`git diff --quiet <tested-commit> HEAD`)
+before any re-run; post-merge habit named verbatim in the
+rationalization table. Derived from 4/4 convergent elicitations of the
+X11 re-runners (Jesse's interrogate-then-fix method).
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-d1p` | tree-identity verification dedupe | f2c425c |
