@@ -467,3 +467,37 @@ either answer feeds the synthesis's mechanism ranking. Reachability:
 same as pd-p2. Provisional-rulings clause gives a secondary
 observable: does the ledger DECLARE speclessness (the clause's
 literal instruction)?
+
+## 2026-08-04 — X11 interrogation RESULTS: one rationalization class, and X11's text mis-specified the trigger
+
+Elicitation (gpt-5, same family as the sessions; gpt-5-codex not
+servable on this key; post-hoc-confabulation caveat stands; script in
+session scratch, outputs transcribed verbatim-in-substance here):
+4/4 reps elicit the SAME class —
+
+- RATIONALIZATION: "after the merge/commit I should re-run the suite
+  to verify the merged tree" (belt-and-suspenders post-merge habit).
+- TRIGGER: a NEW HEAD (merge or commit) without confirming the tree
+  is content-identical to the tested commit.
+- COUNTER (elicited, all four convergent): verify the merged/new HEAD
+  is tree-identical to the tested commit; identical tree = the
+  report's evidence stands; only a changed tree earns a run.
+
+**Reframing of the X11 null:** the prohibition said "same COMMIT" —
+but the re-runs cluster at the post-merge moment where the commit ID
+legitimately changes over an identical TREE. The sessions' reasoning
+("different commit now") passes the text's own letter. X11 didn't
+fail because text can't move behavior; it failed because it
+mis-specified the trigger condition. This also retro-explains the
+X5-era controller re-runs (3-14/rep) clustering late-session.
+
+**D1' arm (pd/d1p):** the read-not-rerun rule re-keyed to TREE
+identity with a mechanical check ("`git diff --quiet <tested-commit>
+HEAD` — empty diff means the evidence stands") + a rationalization-
+table row naming the post-merge habit verbatim. Battery: pd/d1p ×4 on
+cp-x5-leases-scaled vs the X11 arm's own results as the
+failed-predecessor baseline (control 8/9 unchanged). Pre-registered
+PASS: controller duplicate-run count median ≤2 (X11's original bar),
+with the post-merge run specifically absent or preceded by the
+tree-identity check. Method credit: Jesse's interrogate-then-fix
+directive, first application.
