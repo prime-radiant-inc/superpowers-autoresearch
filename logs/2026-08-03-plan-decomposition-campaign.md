@@ -738,3 +738,45 @@ CONFIRMS x9a2's mechanism from the failure side; no text change
 sharpening if a future arm is needed: name the trigger — "a stop for
 one of the four reasons carries only that question; made rulings ride
 in the ledger, not in the stop message."
+
+## 2026-08-04 — VERDICT: p2s-specless FAILS (0/5 × 3) — ground truth was the active ingredient, confirmed from the ablation side
+
+Battery: cp-x10-consistency (specless) × pd-p2s @ 1937691 × 3 reps,
+$8.78/rep avg. Pre-registered bar: ≥3/5 neutralized = rationalization-
+repair works standalone.
+
+**Result: 0/5, 0/5, 0/5 neutralized** — indistinguishable from
+specless control (0/5×3) and specless P2 (1/5, 0/5, 0/5). The
+spec-anchored coherence gate contributes NOTHING without a spec to
+anchor to. Combined with the P2' battery (spec present: control 4-5/5
+free, gated arms 5/5 + autonomy), the ablation is now two-sided:
+text without ground truth 0-1/5 everywhere (three different texts:
+none, P2 value-table, p2s anchor-rows); ground truth without special
+text 4-5/5. The active ingredient is THE SPEC IN THE ROOM, full stop.
+PR #2086's mechanism claim is confirmed at both ends.
+
+**Instrument artifact #10 (STALE-TREE VACUITY), caught by the
+mandatory hand-check:** the mechanical scan initially scored
+p2s-rep1 as 5/5 "absent" — but rep1 was cut mid-final-re-review, its
+modules never merged back from .worktrees/job-queue/, and the scan
+grepped the empty root tree. Absence of the CODE read as absence of
+the DEFECT. Hand-check of the worktree found all 5 present.
+checks.sh fixed: the scan now resolves the tree it scans (root if
+modules present, else the SDD worktree), emits the chosen tree as its
+own line, and labels missing-module cells "not-built" instead of
+"absent". Validated by stub-harness against all 3 new reps (matches
+hand-score) and ALL 15 prior cp-x10-consistency/cp-x10-spec reps:
+zero verdict flips (specless 4-5 present everywhere incl. the one
+prior unmerged-worktree rep, control-rep2; spec arms 0-1 present).
+Published P2/P2' verdicts stand.
+
+**p2s' decision (per pre-registration):** the successor arm from the
+green-as-waiver elicited counter gets built and run — not because a
+text win is likely (three texts have now failed specless; the
+ground-truth-gap theory predicts failure), but as the method-scope
+test: if the SESSIONS' OWN elicited counter also fails where the spec
+succeeds, that cleanly bounds interrogate-then-fix — elicited
+counters fix mis-specified triggers and missing procedures (d1p, x12
+classes), not missing authority. Paired with x12 (elicited counter
+where ground truth IS reachable in-repo), the two batteries bracket
+the method's domain.

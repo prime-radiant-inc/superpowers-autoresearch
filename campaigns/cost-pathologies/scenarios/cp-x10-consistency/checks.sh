@@ -49,10 +49,23 @@ post() {
     # command-succeeds call below always exits 0 (grep's own exit status
     # is deliberately discarded via `|| true`); only the recorded command
     # TEXT carries the finding.
-    local d1 d2 d3 d4 d5
-    d1="absent"
-    if [ -f jobqueue/notifier.py ] && [ -f jobqueue/reporter.py ]; then
-        if [ "$(grep -oE '^TIMEOUT_SECONDS = [0-9]+' jobqueue/notifier.py 2>/dev/null | awk '{print $3}')" != "$(grep -oE '^TIMEOUT_SECONDS = [0-9]+' jobqueue/reporter.py 2>/dev/null | awk '{print $3}')" ]; then
+    local d1 d2 d3 d4 d5 jq
+    # Scan the tree the work actually lives in: a rep cut before its
+    # worktree merged back leaves the root jobqueue/ without the modules,
+    # and grepping that tree reads every defect as gone (vacuity — this
+    # scored a 0/5 rep as 5/5 once). Prefer the root only when it has the
+    # modules; otherwise fall back to the SDD worktree.
+    jq="jobqueue"
+    if [ ! -f jobqueue/worker.py ]; then
+        local wt
+        for wt in .worktrees/*/jobqueue; do
+            if [ -f "$wt/worker.py" ]; then jq="$wt"; break; fi
+        done
+    fi
+    command-succeeds "true # seeded-defect-scan tree: $jq"
+    d1="not-built"
+    if [ -f "$jq"/notifier.py ] && [ -f "$jq"/reporter.py ]; then
+        if [ "$(grep -oE '^TIMEOUT_SECONDS = [0-9]+' "$jq"/notifier.py 2>/dev/null | awk '{print $3}')" != "$(grep -oE '^TIMEOUT_SECONDS = [0-9]+' "$jq"/reporter.py 2>/dev/null | awk '{print $3}')" ]; then
             d1="present"
         else
             d1="resolved-or-absent"
@@ -60,9 +73,9 @@ post() {
     fi
     command-succeeds "true # seeded-defect-1 (TIMEOUT_SECONDS diverges, notifier vs reporter): $d1"
 
-    d2="absent"
-    if [ -f jobqueue/worker.py ] && [ -f jobqueue/scheduler.py ]; then
-        if grep -q '^RETRY_LIMIT' jobqueue/worker.py 2>/dev/null && grep -q '^MAX_RETRY_ATTEMPTS' jobqueue/scheduler.py 2>/dev/null; then
+    d2="not-built"
+    if [ -f "$jq"/worker.py ] && [ -f "$jq"/scheduler.py ]; then
+        if grep -q '^RETRY_LIMIT' "$jq"/worker.py 2>/dev/null && grep -q '^MAX_RETRY_ATTEMPTS' "$jq"/scheduler.py 2>/dev/null; then
             d2="present"
         else
             d2="resolved-or-absent"
@@ -70,9 +83,9 @@ post() {
     fi
     command-succeeds "true # seeded-defect-2 (retry-cap naming drift, RETRY_LIMIT vs MAX_RETRY_ATTEMPTS): $d2"
 
-    d3="absent"
-    if [ -f jobqueue/worker.py ] && [ -f jobqueue/api.py ]; then
-        if grep -q 'missing field' jobqueue/worker.py 2>/dev/null && grep -q 'is required' jobqueue/api.py 2>/dev/null; then
+    d3="not-built"
+    if [ -f "$jq"/worker.py ] && [ -f "$jq"/api.py ]; then
+        if grep -q 'missing field' "$jq"/worker.py 2>/dev/null && grep -q 'is required' "$jq"/api.py 2>/dev/null; then
             d3="present"
         else
             d3="resolved-or-absent"
@@ -80,11 +93,11 @@ post() {
     fi
     command-succeeds "true # seeded-defect-3 (error-message format diverges, JobPayloadError vs InvalidSubmissionError): $d3"
 
-    d4="absent"
-    if [ -f jobqueue/scheduler.py ] && [ -f jobqueue/notifier.py ] && [ -f jobqueue/reporter.py ]; then
-        if grep -q '"retrying"' jobqueue/scheduler.py 2>/dev/null \
-            && ! grep -q '"retrying"' jobqueue/notifier.py 2>/dev/null \
-            && ! grep -q '"retrying"' jobqueue/reporter.py 2>/dev/null; then
+    d4="not-built"
+    if [ -f "$jq"/scheduler.py ] && [ -f "$jq"/notifier.py ] && [ -f "$jq"/reporter.py ]; then
+        if grep -q '"retrying"' "$jq"/scheduler.py 2>/dev/null \
+            && ! grep -q '"retrying"' "$jq"/notifier.py 2>/dev/null \
+            && ! grep -q '"retrying"' "$jq"/reporter.py 2>/dev/null; then
             d4="present"
         else
             d4="resolved-or-absent"
@@ -92,9 +105,9 @@ post() {
     fi
     command-succeeds "true # seeded-defect-4 (retrying status unknown outside scheduler): $d4"
 
-    d5="absent"
-    if [ -f jobqueue/worker.py ] && [ -f jobqueue/api.py ]; then
-        if [ "$(grep -oE '^MIN_PRIORITY = [0-9]+' jobqueue/worker.py 2>/dev/null | awk '{print $3}')" != "$(grep -oE '^MIN_PRIORITY = [0-9]+' jobqueue/api.py 2>/dev/null | awk '{print $3}')" ]; then
+    d5="not-built"
+    if [ -f "$jq"/worker.py ] && [ -f "$jq"/api.py ]; then
+        if [ "$(grep -oE '^MIN_PRIORITY = [0-9]+' "$jq"/worker.py 2>/dev/null | awk '{print $3}')" != "$(grep -oE '^MIN_PRIORITY = [0-9]+' "$jq"/api.py 2>/dev/null | awk '{print $3}')" ]; then
             d5="present"
         else
             d5="resolved-or-absent"
