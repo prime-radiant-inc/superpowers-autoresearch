@@ -967,3 +967,34 @@ bind at all.
 **Campaign consequence:** the P2-family axis is now CLOSED end to end.
 No further specless text arms. Ship path unchanged: #2086 (Spec:
 header + SDD preflight reads it).
+
+## 2026-08-04 — x12 INTERIM (pre-registered movement rule fires): 1/4 ANCHOR-IMPORTANT catches WITH a verified causal pathway; reps 5-8 launched
+
+First 4 reps scored (mechanical scan + mandatory hand-check of every
+ANCHOR-IMPORTANT cell and both unknowns):
+
+- ANCHOR-IMPORTANT: **catch in rep3** (hand-verified: discounting
+  centralized into a shared `_apply_volume_discount` applied BEFORE
+  the floor in BOTH paths); escapes in reps 1/2/4 (pre-discount check
+  survives verbatim). rep3's scan "unknown" resolved to CATCH by hand;
+  its DEBATABLE-1 "unknown" also resolves to catch (atomic
+  build-then-rebind under lock — the documented recognizer gap).
+- ANCHOR-CRITICAL 4/4 catch, DEBATABLE-2 4/4 escape (fixture's stable
+  pattern).
+
+**The causal pathway in rep3 is the arm's mechanism, verified in the
+transcripts:** a read-only reviewer child flagged the sibling
+instance explicitly ("Regular statement lines still check the floor
+before applying the discount, whereas `apply_adjustment()` checks the
+discounted amount — a $2.10 regular line with a 10%…"), the fix round
+centralized the discount ordering, and the re-review marked
+"IMPORTANT generate_statement floors before discount — ADDRESSED."
+This is the first treatment-mediated ANCHOR-IMPORTANT catch on this
+fixture (x1a/b/c: 0 net effect; pooled baseline 2/16).
+
+**Per pre-registration:** 1/4 = MOVEMENT band → 4 more reps before
+any verdict (reps 5-8 launched, lane A). No verdict is claimed here.
+Uptake note (disclosed): reps 1/2/4 reviewers saw MIN_LINE_CHARGE
+only in the diff they read — no instance grep, no sibling comparison;
+uptake of the enumeration procedure looks partial, same
+prose-uptake pathology the d1 family shows. First-4 cost $34.03.
