@@ -485,3 +485,25 @@ beyond any text's reach?
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-p2g` | green-as-waiver counter (specless coherence) | c5fd8ba |
+
+## 2026-08-04 plan-decomposition iteration — pd-d1s (structural evidence lease) and pd-x13 (illegibility row)
+
+pd/d1s (alias cp/pd-d1s) = sim/dev-postmerge + d1p's successor per its
+uptake verdict (2/4): the identity check moves from prose into the
+process artifact — scripts/review-package prints a `TEST-EVIDENCE:`
+lease (tree sha + the exact `git diff --quiet <head> HEAD -- .`
+command) after every package; SKILL.md's DONE step and a
+rationalization row point at the lease instead of restating the
+doctrine. Files: sdd/scripts/review-package, sdd/SKILL.md.
+
+pd/x13 (alias cp/pd-x13) = sim/dev-postmerge + the 5/5 elicited
+counter from the X5 evidence-illegibility class, in
+sdd/task-reviewer-prompt.md's Tests block: evidence you cannot see is
+not evidence that doesn't exist — re-read at the stated path or report
+the gap; re-running to regenerate what you failed to read is not
+verification.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-d1s` | structural evidence lease (review-package emits) | f4af30b |
+| `cp/pd-x13` | illegibility is not invalidation (reviewer seat) | 24da35d |

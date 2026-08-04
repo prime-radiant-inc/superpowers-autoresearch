@@ -869,3 +869,28 @@ prints the tree-identity line for the range it packaged; the dispatch
 template carries it. No new battery until designed and the metric is
 split (post-report full-suite reruns vs inline-fix-loop runs counted
 separately).
+
+## 2026-08-04 — PRE-REGISTRATION: pd/d1s and pd/x13 batteries (queued behind x12/p2g)
+
+**pd/d1s @ f4af30b** (structural evidence lease; see arm-manifest).
+Battery: cp-x5-leases-scaled × 4 reps. METRIC SPLIT (per the d1p
+verdict): (a) redundant-verification runs = controller full-suite runs
+with no code-path tree change since the last green full run (scored by
+walking exec events against commit/tree state, hand-checked); (b)
+inline-fix-loop runs reported separately and NOT counted against the
+bar. Endpoints: PRIMARY — class-(a) runs/rep, bar: median ≤1 (the
+lease line makes the check unmissable; one slip tolerated), against
+d1p's class-(a) baseline to be derived from its 4 reps with the same
+split scorer before launch (scorer first, then battery — no metric
+derived after seeing treatment data). SECONDARY — lease-check usage
+(`git diff --quiet` count ≥1 per rep = uptake; d1p 2/4). GUARD —
+post-checks 7/7, cost.
+
+**pd/x13 @ 24da35d** (illegibility row). Battery: cp-x5-leases-scaled
+× 4 reps. PRIMARY — reviewer-child pytest runs: baseline 6/16 reps
+(3/8 per arm variant); PASS = 0-1/8 reviewer-rerun reps across 4 reps'
+reviewer children with the руле present (hand-read each rerun's
+stated reason; a rerun WITH a named code doubt and focused scope is
+compliant, not a bypass). SECONDARY — gap-reports appearing in review
+output where evidence was illegible (the desired replacement
+behavior).
