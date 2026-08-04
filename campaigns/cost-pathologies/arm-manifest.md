@@ -409,3 +409,17 @@ fix: the preflight scan is the controller's ONE pass through task files.
 | `cp/pd-p1` | plan-as-directory | ee0c6b0 |
 | `cp/pd-p2` | plan-time coherence-amendment gate (incl. x7a) | 292da9c |
 | `cp/pd-p1p2` | composed | 1a1a8fd |
+
+## 2026-08-03 plan-decomposition iteration — pd-p1b
+
+pd/p1b (alias cp/pd-p1b) = sim/dev-postmerge + incremental single-file
+plan authoring in writing-plans: spine (header + constraints + full
+task index) written first, then one task-section append per response
+with a spine re-read before each, index↔section reconciliation at the
+end. Rationale: the return-window constraint binds per WRITE, not per
+FILE — this keeps the monolith's whole-plan view while removing the
+single-write ceiling. +15/−0, one file.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-p1b` | incremental-monolith plan authoring | 831fbfd |
