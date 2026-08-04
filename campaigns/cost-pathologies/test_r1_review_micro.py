@@ -28,10 +28,24 @@ policy arm contains the text that makes it that arm and not another, and
 the packed tree contents differ between `deviant` and `mixed` in exactly
 the one file the seeded bug touches.
 
+`TestUnsectionedFallback` covers the strict-extraction failure class code
+review flagged (the 7th occurrence in this program): a real answer that
+reports a real signal under an off-canonical heading, or no heading at
+all, must never read as absent. Four samples: the reviewer's two named
+adversarial phrasings verbatim (the CSV bug under an invented
+"### Behavioral Findings" heading; the structure deviation under a bare
+"### Cleanup" heading that must NOT swallow-and-discard via the
+preceding "(none)" bucket's shortcut), plus two more constructed here
+(the bug stated in a heading-less prose paragraph; the bug stated in a
+markdown table row under a third off-canonical heading). All four must
+extract as present (`*_flagged=True`), with `*_unsectioned=True` and
+`*_section="none"` -- ambiguous, not absent.
+
 Everything here is synthetic; no real system.
 """
 import importlib.util
 import pathlib
+import re
 import sys
 import unittest
 
@@ -393,6 +407,119 @@ Solid overall.
 """
 
 
+# ---------------------------------------------------------------------------
+# Unsectioned-fallback samples (code review's Important finding: a real
+# signal reported under an off-canonical heading, or no heading at all,
+# must never extract as absent). Two are the reviewer's own named
+# phrasings; two are constructed here per the reviewer's "e.g." examples.
+# ---------------------------------------------------------------------------
+
+# Reviewer's adversarial phrasing 1: the CSV bug under an invented
+# "### Behavioral Findings" heading -- never prompted for by any arm, so
+# no bucket in SECTION_RE/_BUCKET_NAMES recognizes it.
+SAMPLE_BUG_UNRECOGNIZED_HEADING = """### Spec Compliance
+
+- ✅ Spec compliant
+
+### Strengths
+
+Otherwise solid, well tested.
+
+### Behavioral Findings
+
+- `formatSummaryCsv` silently drops zero-total categories
+  (`src/reports/summarize.js`'s `.filter(([, amount]) => amount !== 0)`),
+  unlike `formatSummary` which keeps them -- breaks the plan's "same
+  category/amount pairs" parity requirement for any category netting to
+  zero.
+
+### Assessment
+
+**Task quality:** Needs fixes
+
+**Reasoning:** Functional defect in the CSV path.
+"""
+
+# Reviewer's adversarial phrasing 2: the structure deviation under a bare
+# "### Cleanup" heading (missing "Wave (non-blocking)"). This is the
+# exact shape that broke the OLD lookahead-based SECTION_RE: "#### Important
+# (Should Fix)" is immediately followed by "(none)", and the old design's
+# lookahead only stopped at a RECOGNIZED heading -- so "### Cleanup"'s
+# body got absorbed into Important's captured text, where split_findings'
+# leading-"(none)" shortcut then discarded it. The new heading-position
+# split stops Important's block at "### Cleanup" (any heading, recognized
+# or not), so "### Cleanup"'s own body is available to the full-text
+# fallback.
+SAMPLE_STRUCTURE_UNRECOGNIZED_HEADING = """### Spec Compliance
+
+- ✅ Spec compliant
+
+### Strengths
+
+Reasonable split; parse.js stays independent.
+
+### Issues
+
+#### Critical (Must Fix)
+
+(none)
+
+#### Important (Should Fix)
+
+(none)
+
+### Cleanup
+
+- File organization diverges from the plan: three files ship instead of
+  the plan's four (aggregate.js and format.js merged into summarize.js).
+  All requirements are met; deferred, non-blocking.
+
+### Assessment
+
+**Task quality:** Approved
+"""
+
+# Constructed here (reviewer's own "e.g."): the bug stated in a
+# heading-less prose paragraph -- the model didn't follow Output Format
+# at all, so `_heading_blocks` finds zero headings and the entire answer
+# is available to the fallback.
+SAMPLE_BUG_NO_HEADINGS_PROSE = """This implementation looks solid overall, with a clean split between
+parsing and formatting. One thing worth flagging: formatSummaryCsv
+filters out any category with a zero amount total before writing CSV
+rows, so those categories silently vanish from the CSV export even
+though the plain-text summary still lists them -- the plan calls for the
+CSV to use the same category/amount pairs the text summary uses, so this
+is a real gap, not a style question. Everything else checks out and the
+tests pass.
+
+**Task quality:** Needs fixes
+"""
+
+# Constructed here (reviewer's own "e.g."): the bug stated in a markdown
+# table row, under a third off-canonical heading ("### Comparison") so
+# this exercises both "table, not a bullet/paragraph" AND "unrecognized
+# heading" at once.
+SAMPLE_BUG_TABLE_ROW = """### Spec Compliance
+
+- ✅ Spec compliant
+
+### Strengths
+
+Nice decomposition overall.
+
+### Comparison
+
+| Renderer | Zero-amount categories |
+| --- | --- |
+| formatSummary | included |
+| formatSummaryCsv | dropped (`.filter()` in summarize.js) |
+
+### Assessment
+
+**Task quality:** Needs fixes
+"""
+
+
 class TestStructureExtraction(unittest.TestCase):
     def test_control_minor_flags_structure_at_minor(self):
         fields = r1.extract_review_fields(SAMPLE_STRUCTURE_MINOR)
@@ -461,6 +588,65 @@ class TestVerdictLanguage(unittest.TestCase):
     def test_no_task_quality_line_returns_none_verdict_language(self):
         fields = r1.extract_review_fields("### Issues\n\n#### Critical (Must Fix)\n\n(none)\n")
         self.assertIsNone(fields["verdict_language"])
+
+
+class TestUnsectionedFallback(unittest.TestCase):
+    """A real signal reported outside every recognized bucket -- an
+    off-canonical heading, or no heading at all -- must read as present
+    (unsectioned) not absent. Covers code review's Important finding: the
+    old lookahead-based SECTION_RE let an unrecognized heading's body get
+    absorbed into a preceding empty ("(none)") recognized bucket and then
+    discarded by split_findings' leading-"(none)" shortcut."""
+
+    def test_bug_under_invented_heading_reads_present_not_absent(self):
+        fields = r1.extract_review_fields(SAMPLE_BUG_UNRECOGNIZED_HEADING)
+        self.assertTrue(fields["real_bug_flagged"])
+        self.assertEqual(fields["real_bug_section"], "none")
+        self.assertTrue(fields["real_bug_unsectioned"])
+        self.assertFalse(fields["real_bug_blocking"])
+
+    def test_structure_under_bare_cleanup_heading_reads_present_not_absent(self):
+        fields = r1.extract_review_fields(SAMPLE_STRUCTURE_UNRECOGNIZED_HEADING)
+        self.assertTrue(fields["structure_flagged"])
+        self.assertEqual(fields["structure_section"], "none")
+        self.assertTrue(fields["structure_unsectioned"])
+        # The regression this guards: with the old lookahead design, this
+        # sample's deviation text was absorbed into Important's "(none)"
+        # body and discarded, so both structure_flagged and
+        # structure_section silently read as absent/"none". Also confirm
+        # Important itself still reads correctly as empty, proving the
+        # fix didn't just stop looking at Important at all.
+        sections = r1.extract_sections(SAMPLE_STRUCTURE_UNRECOGNIZED_HEADING)
+        self.assertTrue(
+            re.match(r"^\(none\)$", sections["Important"].strip(), re.I),
+            f"Important section body corrupted: {sections['Important']!r}",
+        )
+
+    def test_bug_in_heading_less_prose_reads_present_not_absent(self):
+        fields = r1.extract_review_fields(SAMPLE_BUG_NO_HEADINGS_PROSE)
+        self.assertTrue(fields["real_bug_flagged"])
+        self.assertEqual(fields["real_bug_section"], "none")
+        self.assertTrue(fields["real_bug_unsectioned"])
+        self.assertFalse(fields["real_bug_blocking"])
+
+    def test_bug_in_table_row_reads_present_not_absent(self):
+        fields = r1.extract_review_fields(SAMPLE_BUG_TABLE_ROW)
+        self.assertTrue(fields["real_bug_flagged"])
+        self.assertEqual(fields["real_bug_section"], "none")
+        self.assertTrue(fields["real_bug_unsectioned"])
+        self.assertFalse(fields["real_bug_blocking"])
+
+    def test_sectioned_hits_never_also_set_unsectioned(self):
+        # A signal correctly found in a recognized bucket is certain, not
+        # ambiguous -- *_unsectioned must stay False so the two states
+        # never overlap on the same field.
+        fields = r1.extract_review_fields(SAMPLE_BUG_IMPORTANT_A)
+        self.assertEqual(fields["real_bug_section"], "Important")
+        self.assertFalse(fields["real_bug_unsectioned"])
+
+        fields = r1.extract_review_fields(SAMPLE_STRUCTURE_MINOR)
+        self.assertEqual(fields["structure_section"], "Minor")
+        self.assertFalse(fields["structure_unsectioned"])
 
 
 class TestPromptAssembly(unittest.TestCase):

@@ -127,18 +127,39 @@ the same discipline as x2b/x1/x1b -- tolerant of multiple phrasings (see
 raw answer is saved to `out/r1-review-micro/answers/` for hand-rescoring
 regardless of what the extractor decides.
 
-  - `structure_flagged` / `structure_section`: does any finding match the
-    plan-file-structure deviation signature (x2b's `DEVIATION_RE`,
-    reused verbatim), and in which section (`Critical` / `Important` /
-    `Minor` / `Cleanup Wave` / `none`) did the FIRST match land?
-  - `real_bug_flagged` / `real_bug_section` / `real_bug_blocking`: does
-    any finding match the seeded zero-amount-CSV bug signature
-    (`REAL_BUG_RE`), which section did it land in, and is that section
-    one this cell's own policy treats as blocking (`Critical` or
+Section extraction is heading-position-based (`_heading_blocks`), not the
+lookahead-regex design x2b's `SECTION_RE` uses: a recognized section's
+body is cut off at the NEXT markdown heading of any kind, not just the
+next RECOGNIZED one, so an off-canonical heading a model might emit
+(a shortened `### Cleanup` instead of the prompted `### Cleanup Wave
+(non-blocking)`, an invented `### Behavioral Findings`, or no heading at
+all) never gets silently absorbed into -- and then discarded by -- the
+preceding known bucket's "(none)" placeholder. Every signal below is
+therefore reported in three states, not two: sectioned (found in a
+recognized bucket, severity known), unsectioned-but-present (found
+somewhere in the answer outside every recognized bucket's span --
+severity ambiguous, flagged for hand review), or absent (no match
+anywhere). The summary table prints unsectioned counts alongside
+sectioned/blocking counts so the controller sees this ambiguity
+directly instead of a fabricated "missed."
+
+  - `structure_flagged` / `structure_section` / `structure_unsectioned`:
+    does any finding match the plan-file-structure deviation signature
+    (x2b's `DEVIATION_RE`, reused verbatim) inside a recognized bucket
+    (`Critical` / `Important` / `Minor` / `Cleanup Wave`, first match by
+    that severity order), or -- only checked when no sectioned match
+    exists -- anywhere else in the answer text?
+  - `real_bug_flagged` / `real_bug_section` / `real_bug_unsectioned` /
+    `real_bug_blocking`: does any finding match the seeded zero-amount-
+    CSV bug signature (`REAL_BUG_RE`), sectioned or unsectioned per the
+    same rule, and -- only meaningful when sectioned, since an
+    unsectioned match's severity is exactly what's ambiguous -- is that
+    section one this cell's own policy treats as blocking (`Critical` or
     `Important`)? THE critical metric for `mixed--*` cells: does the
     real bug survive triage at blocking severity under every policy, or
     does some policy's machinery catch it in the same net as the
-    structural finding?
+    structural finding -- or bury it somewhere the extractor can only
+    mark ambiguous, never silently absent?
   - `verdict_language`: the `**Task quality:** ...` line verbatim, if
     present (x2b's `extract_verdict_language`, reused).
 
@@ -354,18 +375,28 @@ def run_sample(cell, rep):
 # ---------------------------------------------------------------------------
 # Extraction heuristics. TDD'd against handwritten sample reviews in
 # test_r1_review_micro.py.
+#
+# Section splitting is heading-POSITION-based (`_heading_blocks`), not the
+# lookahead-regex design x2b's SECTION_RE uses (match up to the next
+# RECOGNIZED bucket heading). That lookahead design has a silent failure
+# mode: an unrecognized heading in between (a shortened "### Cleanup"
+# instead of the prompted "### Cleanup Wave (non-blocking)", an invented
+# "### Behavioral Findings") gets absorbed into the PRECEDING recognized
+# section's captured body instead of ending it -- and if that preceding
+# section is an empty "(none)" bucket, split_findings' leading-"(none)"
+# shortcut then discards everything after it, including the absorbed
+# heading's real content. `_heading_blocks` splits at every heading
+# (recognized or not), so an unrecognized heading's body is simply never
+# "covered" by a known bucket and falls through to the full-text fallback
+# search in `extract_review_fields` below instead of being swallowed.
 # ---------------------------------------------------------------------------
 
-# Extends x2b's SECTION_RE with the fourth, R1-only bucket name ("Cleanup
-# Wave", used only by the cleanup-wave arm's Output Format). #{2,4} still
-# matches both x2b's #### sub-headings and cleanup-wave's ### section.
-SECTION_RE = re.compile(
-    r"#{2,4}\s*(Critical|Important|Minor|Cleanup Wave)\b[^\n]*\n(.*?)"
-    r"(?=\n#{2,4}\s*(?:Critical|Important|Minor|Cleanup Wave)\b|\n#{2,3}\s*Assessment|\Z)",
-    re.I | re.S,
-)
+_ANY_HEADING_RE = re.compile(r"^#{2,4}[ \t]*(.+?)[ \t]*$", re.M)
 _BUCKET_NAMES = {"critical": "Critical", "important": "Important", "minor": "Minor",
                   "cleanup wave": "Cleanup Wave"}
+# Longest name first: cheap insurance against a future bucket name that is
+# itself a prefix of another (none collide today).
+_BUCKET_NAME_ORDER = sorted(_BUCKET_NAMES, key=len, reverse=True)
 SEVERITY_ORDER = ["Critical", "Important", "Minor", "Cleanup Wave"]
 BLOCKING_SECTIONS = {"Critical", "Important"}
 
@@ -390,13 +421,59 @@ split_findings = X2B.split_findings
 extract_verdict_language = X2B.extract_verdict_language
 
 
+def _bucket_name(heading_title):
+    """Map a heading's title text to a known bucket name, or None if it
+    doesn't start with one of the four recognized names (a model-invented
+    "Behavioral Findings", a shortened "Cleanup", "Assessment", "Issues",
+    "Strengths", etc. all correctly map to None here)."""
+    t = heading_title.strip().lower()
+    for name in _BUCKET_NAME_ORDER:
+        if t.startswith(name):
+            return _BUCKET_NAMES[name]
+    return None
+
+
+def _heading_blocks(answer_text):
+    """Split answer_text at every markdown heading (## through ####,
+    recognized bucket name or not). Returns (bucket_or_None, start, end,
+    body_start) per heading, each block running from its heading to the
+    START of the next heading of ANY kind (or end of text) -- this is
+    what stops a recognized section's body from swallowing an
+    unrecognized heading placed after it."""
+    headings = list(_ANY_HEADING_RE.finditer(answer_text))
+    blocks = []
+    for i, m in enumerate(headings):
+        end = headings[i + 1].start() if i + 1 < len(headings) else len(answer_text)
+        blocks.append((_bucket_name(m.group(1)), m.start(), end, m.end() + 1))
+    return blocks
+
+
 def extract_sections(answer_text):
     out = {}
-    for m in SECTION_RE.finditer(answer_text):
-        key = _BUCKET_NAMES[m.group(1).lower()]
-        body = m.group(2).strip()
-        out[key] = (out[key] + "\n\n" + body) if key in out else body
+    for bucket, _start, end, body_start in _heading_blocks(answer_text):
+        if bucket is None:
+            continue
+        body = answer_text[body_start:end].strip()
+        out[bucket] = (out[bucket] + "\n\n" + body) if bucket in out else body
     return out
+
+
+def _covered_spans(answer_text):
+    """Character spans of every RECOGNIZED bucket's block -- the region
+    the sectioned path (extract_sections + split_findings) already
+    scanned. Anything outside these spans (an unrecognized heading's
+    body, a table under a custom heading, bare prose with no heading at
+    all, or text before the first heading) is what the full-text
+    fallback in extract_review_fields checks."""
+    return [(start, end) for bucket, start, end, _body_start in _heading_blocks(answer_text)
+            if bucket is not None]
+
+
+def _matches_outside_spans(pattern, answer_text, covered_spans):
+    return any(
+        not any(s <= m.start() < e for s, e in covered_spans)
+        for m in pattern.finditer(answer_text)
+    )
 
 
 def _first_match(sections, pattern):
@@ -409,15 +486,27 @@ def _first_match(sections, pattern):
 
 def extract_review_fields(answer_text):
     sections = extract_sections(answer_text)
+    covered = _covered_spans(answer_text)
 
     structure_section = _first_match(sections, DEVIATION_RE)
     real_bug_section = _first_match(sections, REAL_BUG_RE)
 
+    # Three states per signal: sectioned (a section name below), absent
+    # (neither field set), or unsectioned-but-present -- only checked
+    # when the sectioned path found nothing, since a sectioned match
+    # already proves presence.
+    structure_unsectioned = structure_section is None and _matches_outside_spans(
+        DEVIATION_RE, answer_text, covered)
+    real_bug_unsectioned = real_bug_section is None and _matches_outside_spans(
+        REAL_BUG_RE, answer_text, covered)
+
     return {
-        "structure_flagged": structure_section is not None,
+        "structure_flagged": structure_section is not None or structure_unsectioned,
         "structure_section": structure_section or "none",
-        "real_bug_flagged": real_bug_section is not None,
+        "structure_unsectioned": structure_unsectioned,
+        "real_bug_flagged": real_bug_section is not None or real_bug_unsectioned,
         "real_bug_section": real_bug_section or "none",
+        "real_bug_unsectioned": real_bug_unsectioned,
         "real_bug_blocking": real_bug_section in BLOCKING_SECTIONS if real_bug_section else False,
         "verdict_language": extract_verdict_language(answer_text),
     }
@@ -456,15 +545,21 @@ def main():
     counts = {}
     with jsonl_path.open("w") as jsonl_f:
         for cell in cells:
-            n_structure = 0
+            n_structure_sectioned = 0
+            n_structure_unsectioned = 0
             n_bug_blocking = 0
+            n_bug_unsectioned = 0
             for rep in range(REPS):
                 raw_review, usage = run_sample(cell, rep)
                 fields = extract_review_fields(raw_review)
-                if fields["structure_flagged"]:
-                    n_structure += 1
+                if fields["structure_section"] != "none":
+                    n_structure_sectioned += 1
+                if fields["structure_unsectioned"]:
+                    n_structure_unsectioned += 1
                 if fields["real_bug_blocking"]:
                     n_bug_blocking += 1
+                if fields["real_bug_unsectioned"]:
+                    n_bug_unsectioned += 1
                 total_input_tokens += usage.get("input_tokens", 0) + usage.get(
                     "cache_creation_input_tokens", 0)
                 total_output_tokens += usage.get("output_tokens", 0)
@@ -474,16 +569,24 @@ def main():
                     "raw_review": raw_review,
                     **fields,
                 }) + "\n")
-            counts[cell] = (n_structure, n_bug_blocking)
+            counts[cell] = (n_structure_sectioned, n_structure_unsectioned, n_bug_blocking, n_bug_unsectioned)
 
+    # Unsectioned counts are printed alongside sectioned/blocking counts,
+    # not folded into "flagged" totals -- an unsectioned hit means
+    # "present, severity ambiguous, go read the raw answer," which the
+    # controller needs to see as its own number, not a rounding error.
     print()
-    header = f"{'cell':<28}{'structure-flagged':>19}{'bug-blocking':>15}{'n':>6}"
+    header = (f"{'cell':<28}{'struct-sectioned':>17}{'struct-unsect':>15}"
+              f"{'bug-blocking':>14}{'bug-unsect':>12}{'n':>5}")
     print(header)
     print("-" * len(header))
     for cell in cells:
-        n_structure, n_bug_blocking = counts[cell]
-        print(f"{cell:<28}{n_structure:>18}/{REPS:<1}{n_bug_blocking:>14}/{REPS:<1}{REPS:>6}")
+        n_ss, n_su, n_bb, n_bu = counts[cell]
+        print(f"{cell:<28}{n_ss:>13}/{REPS:<3}{n_su:>10}/{REPS:<3}"
+              f"{n_bb:>9}/{REPS:<3}{n_bu:>7}/{REPS:<3}{REPS:>5}")
     print()
+    print("(*-unsect counts are present-but-ambiguous, not absent -- see", file=sys.stderr)
+    print(" raw_review in results.jsonl for hand-rescoring.)", file=sys.stderr)
     print(f"wrote {jsonl_path}", file=sys.stderr)
     print(f"usage: {total_input_tokens} input tokens (incl. cache-creation), "
           f"{total_output_tokens} output tokens", file=sys.stderr)
