@@ -701,3 +701,8 @@ doesn't exist: if the report or receipt looks truncated, re-read the
 file at its stated path or report the gap — do not re-run the suite
 to regenerate what you failed to read." Battery on cp-x5-leases-scaled
 vs the 6/16 baseline. Queued behind x12.
+
+**x13 half-(a) resolved by inspection (no spend):** the LEASE text is
+present in all 3 x5a bypassing reviewers' rollouts — the citation
+reached the seat and was bypassed there. x13 is the reviewer-row fix
+alone; no controller plumbing change.
