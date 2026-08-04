@@ -16,12 +16,13 @@ regional warehouses. Three cohesive areas:
   intake, refund processing, a daily operations report, archiving, order
   cancellation, and delivery SLA estimation.
 - **Operations & administration:** staff roles and permissions, an audit
-  log, inventory adjustments, support tickets, API rate limits, manual
-  order overrides, and an operations dashboard.
+  log, inventory adjustments, support tickets, API rate limits,
+  warehouse shift coverage, manual order overrides, and an operations
+  dashboard.
 - **Import/export & reconciliation:** bulk CSV order import, marketplace
   export feeds, warehouse count reconciliation, accounting ledger sync,
-  carrier manifests, duplicate order detection, and a vendor restock
-  feed.
+  carrier manifests, duplicate order detection, a vendor restock feed,
+  and vendor restock lead times.
 
 ## Pre-existing code
 

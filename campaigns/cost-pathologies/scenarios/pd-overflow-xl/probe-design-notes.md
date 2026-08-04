@@ -56,7 +56,7 @@ an order; `csv_import.py` (import) mirrors `intake.py`'s
 `MAX_LINE_ITEMS` on a bulk-imported order; `reconciliation.py` and
 `carrier_manifest.py` and `shift_coverage.py` all validate against
 `orders.settings.WAREHOUSES` (already consumed by `reporting.py` in the
-base pipeline — now five consumers of that one list, not one);
+base pipeline — now four consumers of that one list, not one);
 `shift_coverage.py`'s staffed-hours table and `carrier_manifest.py`'s
 cutoff table describe the same three warehouses and SPEC.md states they
 must stay consistent; `vendor_lead_times.py` (import) is the estimate
