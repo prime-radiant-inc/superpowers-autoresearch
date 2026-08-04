@@ -467,7 +467,28 @@ DEVIATION_RE = re.compile(
     r"|(?:four|4)[- ]file\s+split"
     r"|(?:combin|merg)(?:e|es|ed|ing)\s+aggregate\.js\s+and\s+format\.js"
     r"|plan'?s?\s+(?:named\s+)?file\s+structure"
-    r"|specified\s+structure",
+    r"|specified\s+structure"
+    # 2026-08-04 expansion, calibrated against the 104-answer corpus
+    # (8th undercount instance): the phrasings real reviewers used that
+    # the original alternations missed. Still plan-relative by design --
+    # every branch carries a deviation/mandate signal, never a bare
+    # aggregate.js/format.js mention (those appear in praise contexts in
+    # conformant-tree answers).
+    r"|file[- ]?(?:structure|layout|split)\s+deviation"
+    r"|structur(?:e|al)\s+deviation"
+    r"|\[structure\]"
+    r"|merged?\s+into\s+(?:a\s+)?(?:single|one)\b"
+    r"|deviation\s*\((?:file|structure|layout)"
+    r"|plan[- ]mandated\s+file\s+(?:split|layout|structure)"
+    r"|(?:file\s+)?(?:split|layout|structure)\s+(?:was\s+|is\s+)?not\s+followed"
+    r"|departs?\s+from\s+the\s+plan"
+    r"|ignores?\s+the\s+plan'?s"
+    r"|instead\s+of\s+the\s+plan'?s"
+    r"|plan(?:'s)?\s+(?:explicit\s+)?`?files?:?`?\s+list"
+    r"|plan\s+(?:explicitly\s+)?(?:mandates?|names?|named|specifie[sd]|requires?|calls?\s+for)\s+(?:separate|two|the\s+separate)\s+(?:files?|`?aggregate)"
+    r"|(?:file\s+)?consolidat(?:e|es|ed|ion|ing)\s+(?:of\s+|into\s+)?(?:`?aggregate|`?summarize|one\s+file|a\s+single)"
+    r"|(?:ships?|shipped|has|contains?|uses?)\s+a\s+(?:single|combined)\s+`?summarize\.js"
+    r"|merge[sd]?\s+(?:of\s+)?`?aggregate(?:\.js)?`?\s+and\s+`?format",
     re.I,
 )
 

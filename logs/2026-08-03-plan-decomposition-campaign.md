@@ -805,3 +805,30 @@ PR #2086's thesis with the strongest possible evidence behind it.
 Secondary: rulings actually WRITTEN for divergent rows (hand-count) —
 the counter could move ruling-writing without moving resolution
 correctness (partial mechanism uptake, worth knowing either way).
+
+## 2026-08-04 — Instrument fix: DEVIATION_RE expansion calibrated on the 104-answer corpus (queued r1/x2b grader fix, delivered with scoped honesty)
+
+DEVIATION_RE (x2b, reused by r1) expanded with the phrasings real
+reviewers used ("file-structure deviation", "structural deviation",
+"plan-mandated file split not followed", "[structure]" tags,
+"merged into a single", "departs from the plan", "consolidation",
+"ships a combined summarize.js", "plan's explicit Files: list").
+Validated at PRESENCE level against all 104 answers:
+- Precision: conformant x2b cells 0/20 whole-text matches (noise
+  floor intact).
+- Recall: x2b deviant-plain 10/10; r1 deviant cells flag 7-8/8
+  (vs 0-4/8 before the fix).
+- SECTION_RE/#9: not a regex defect — "#### Important (Should Fix)"
+  matches; the real gap was answers raising the deviation as a Spec
+  Compliance ❌ line, which is not a severity bucket. New
+  `structure_raised` extractor (list-item line outside
+  Strengths/Assessment) approximates the hand "raised" semantics.
+- SCOPE LIMIT, disclosed: per-answer hand labels from the R1 rescore
+  were not persisted (only cell aggregates), so exact mechanical
+  reproduction of raised-vs-reasoned-away is not verifiable and was
+  NOT forced (risk: overfitting to aggregates via compensating
+  errors — e.g. mixed--lens-suppress raised=1/8 vs hand 8/8 shows
+  the semantic split still needs eyes). Standing rule unchanged:
+  mechanical layer screens, hand-rescore carries verdicts. Corpus
+  regression tests added (skip when the gitignored corpus is absent):
+  conformant-zero, deviant-presence floors. 38/38 tests pass.

@@ -484,6 +484,35 @@ def _first_match(sections, pattern):
     return None
 
 
+_LIST_LINE_RE = re.compile(r"^\s*(?:[-*•]|\d+\.)\s")
+_TOP_SECTION_RE = re.compile(r"^#{2,4}\s*(.+?)\s*$")
+_PROSE_SECTIONS = ("strength", "assessment", "reasoning")
+
+
+def _structure_raised(answer_text):
+    """Hand-rescore semantics for 'the structure issue was RAISED': a
+    DEVIATION_RE match on a finding line (list item) in any section
+    except Strengths/Assessment. This is what the bucket model misses --
+    reviewers using the task-reviewer layout raise the deviation as a
+    Spec Compliance ❌ line, which is a raise even though Spec Compliance
+    is not a severity bucket. Prose mentions in Assessment/Reasoning
+    ('the only deviation is disclosed...') and 'None.'-lead bucket
+    explanations are reasoned-away, not raised -- they are list-item-less
+    or live in prose sections, so they stay excluded. Calibrated against
+    the 104-answer corpus (2026-08-04)."""
+    section = ""
+    for line in answer_text.splitlines():
+        m = _TOP_SECTION_RE.match(line)
+        if m:
+            section = m.group(1).lower()
+            continue
+        if any(p in section for p in _PROSE_SECTIONS):
+            continue
+        if _LIST_LINE_RE.match(line) and DEVIATION_RE.search(line):
+            return True
+    return False
+
+
 def extract_review_fields(answer_text):
     sections = extract_sections(answer_text)
     covered = _covered_spans(answer_text)
@@ -502,6 +531,7 @@ def extract_review_fields(answer_text):
 
     return {
         "structure_flagged": structure_section is not None or structure_unsectioned,
+        "structure_raised": structure_section is not None or _structure_raised(answer_text),
         "structure_section": structure_section or "none",
         "structure_unsectioned": structure_unsectioned,
         "real_bug_flagged": real_bug_section is not None or real_bug_unsectioned,

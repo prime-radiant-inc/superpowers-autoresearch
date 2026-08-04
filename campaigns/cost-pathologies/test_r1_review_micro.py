@@ -714,3 +714,48 @@ class TestPromptAssembly(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# Corpus regression (local-only: out/ is gitignored, so these skip on a
+# fresh clone). Locks the 2026-08-04 DEVIATION_RE expansion to the
+# 104-answer corpus at PRESENCE level: conformant answers stay at zero
+# (precision), deviant-tree answers are detected (recall). The
+# raised-vs-reasoned-away SEMANTIC split is deliberately not asserted --
+# per-answer hand labels were not persisted, and the standing rule keeps
+# hand-rescore mandatory for verdicts.
+# ---------------------------------------------------------------------------
+
+import glob
+
+_CORPUS_X2B = HERE / "out" / "x2b-review-micro" / "answers"
+_CORPUS_R1 = HERE / "out" / "r1-review-micro" / "answers"
+
+
+@unittest.skipUnless(_CORPUS_X2B.is_dir(), "local corpus absent")
+class TestCorpusX2B(unittest.TestCase):
+    def test_conformant_noise_floor(self):
+        for f in glob.glob(str(_CORPUS_X2B / "conformant--*.txt")):
+            self.assertIsNone(r1.DEVIATION_RE.search(open(f).read()),
+                              f"false positive: {f}")
+
+    def test_deviant_plain_presence(self):
+        hits = [bool(r1.DEVIATION_RE.search(open(f).read()))
+                for f in glob.glob(str(_CORPUS_X2B / "deviant--plain-*.txt"))]
+        self.assertTrue(hits and all(hits),
+                        f"presence recall regressed: {sum(hits)}/{len(hits)}")
+
+
+@unittest.skipUnless(_CORPUS_R1.is_dir(), "local corpus absent")
+class TestCorpusR1(unittest.TestCase):
+    def test_deviant_presence_floor(self):
+        for cell, floor in [("deviant--plain", 8), ("deviant--lens-downgrade", 8),
+                            ("deviant--cleanup-wave", 8), ("deviant--lens-suppress", 7)]:
+            n = sum(r1.extract_review_fields(open(f).read())["structure_flagged"]
+                    for f in glob.glob(str(_CORPUS_R1 / f"{cell}-*.txt")))
+            self.assertGreaterEqual(n, floor,
+                                    f"{cell}: presence {n} below corpus floor {floor}")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()
