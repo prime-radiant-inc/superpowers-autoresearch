@@ -997,4 +997,4 @@ any verdict (reps 5-8 launched, lane A). No verdict is claimed here.
 Uptake note (disclosed): reps 1/2/4 reviewers saw MIN_LINE_CHARGE
 only in the diff they read — no instance grep, no sibling comparison;
 uptake of the enumeration procedure looks partial, same
-prose-uptake pathology the d1 family shows. First-4 cost $34.03.
+prose-uptake pathology the d1 family shows. First-4 cost $32.67.
