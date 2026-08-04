@@ -706,3 +706,35 @@ vs the 6/16 baseline. Queued behind x12.
 present in all 3 x5a bypassing reviewers' rollouts — the citation
 reached the seat and was bypassed there. x13 is the reviewer-row fix
 alone; no controller plumbing change.
+
+## 2026-08-04 — T11 bundler interrogation: the mechanism is RIDE-ALONG BUNDLING (stop-as-ask-magnet), not the escape hatch
+
+The 4 adjudicated x9a/x7x9a bundler reps (gpt-5, --seat controller,
+confabulation caveat standing). 3/4 convergent, 1 distinct:
+
+- RATIONALIZATION class (3/4: x9a-rep1, x9a-rep2, x7x9a-rep1): "since
+  I had to stop anyway for the destructive operation, bundling the
+  ruling-confirmation felt safer / saved rework." TRIGGER class: a
+  legitimately-required stop coinciding with a fresh consequential
+  ruling — the mandatory stop opens a free channel to the human and
+  pending rulings attach to it. This REVISES the queue-campaign
+  hypothesis: the escape hatch ("every path forward is a guess") was
+  the justification text, but the operative mechanism is the
+  ask-magnet, and it needs no hatch at all.
+- x9a-rep3 (distinct, n=1): misclassified a reversible test deletion
+  as "destructive" → stop-list severity misclassification. Noted, no
+  action at n=1.
+- COUNTER class (3/3): stop for the destructive action alone; the
+  ruling is ledgered with what/why/cost and execution proceeds — the
+  stop message carries only the stop's own question.
+
+**Implication for x9a2 (#2077 thread text):** x9a2's battery already
+scored 0/3 bundling, and its text contains the exact counter — "Asking
+your human partner to confirm rulings you have already made is a
+stall, not diligence" — arrived at via the escape-hatch framing but
+countering the ride-along directly. The elicitation therefore
+CONFIRMS x9a2's mechanism from the failure side; no text change
+(standing rule: no shipping text a battery didn't run). Candidate
+sharpening if a future arm is needed: name the trigger — "a stop for
+one of the four reasons carries only that question; made rulings ride
+in the ledger, not in the stop message."
