@@ -402,3 +402,39 @@ section. A policy passes when it does what it says ≥6/8 AND holds the
 guard. (3) Noise floor: deviant cells re-confirm x2b's suppression
 baseline; conformant floor not re-run (x2b's 0/20 stands, same tree).
 Est. 64 calls ≈ $8-12.
+
+## 2026-08-04 — R1 micro-battery VERDICT: all four triage policies hold the guard; the rathole fix is free
+
+64 calls, ~$8. Scoring per pre-registration: mechanical first, then
+controller hand-rescore (the shipped struct columns used the
+still-unfixed DEVIATION_RE — 8th undercount instance — and SECTION_RE
+missed the "#### Important (Should Fix)" heading variant — 9th; all
+four borderline guard cases hand-read; verdict basis is the
+hand-verified layer, raw answers preserved).
+
+**GUARD (the decisive metric): 8/8 in ALL FOUR arms.** Every
+borderline case reports the seeded zero-amount CSV bug under an
+explicit Important/Should-Fix section with correct analysis and fix.
+No triage policy — including full suppression — masked a real
+behavioral defect at this tier.
+
+**Structure-noise handling (deviant cells, hand-rescored):** plain
+raises it 8/8 (the rathole-feeding baseline, replicating x2b's
+10/10); lens-suppress 3/8 raised / 5/8 explicitly reasoned away
+(direction holds, weaker draw than x2b's 0/10); lens-downgrade 6/8
+raised at deferred severity; cleanup-wave 7/8 raised in the cleanup
+section. **Mixed cells: ALL arms raise the structure issue 8/8
+alongside the bug** — the presence of a genuine defect flips the
+review's posture; suppression only fully binds on otherwise-clean
+reviews.
+
+**Verdict:** the review-rathole fix is effectively free at the
+judgment layer — policies that keep structure noise visible but
+non-blocking (downgrade-to-deferred, cleanup-wave) achieve the
+desired shape with zero measured guard cost, and even suppression
+does not endanger real defects. Synthesis recommendation:
+cleanup-wave/downgrade class text (formalizing SDD's existing
+deferred-minor ledger into explicit triage classes) is the ship
+candidate; suppression buys nothing further and destroys
+information. Queued: r1/x2b grader fixes against the now-104-answer
+real corpus (both regex classes). Grading by controller, disclosed.
