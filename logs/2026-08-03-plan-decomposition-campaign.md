@@ -438,3 +438,32 @@ deferred-minor ledger into explicit triage classes) is the ship
 candidate; suppression buys nothing further and destroys
 information. Queued: r1/x2b grader fixes against the now-104-answer
 real corpus (both regex classes). Grading by controller, disclosed.
+
+## 2026-08-04 — Pre-registration: rationalization-interrogation pass + p2s-specless cell (Jesse's method)
+
+Jesse's directive: bad agentic behavior is often fixed by
+interrogating the session that did the wrong thing, extracting its
+rationalization, and closing it in the skill's rationalization table.
+Two applications:
+
+**A. X11 re-runner interrogation (API, ~$2):** for each of the 4 x11
+reps, extract the controller's transcript context surrounding its
+redundant pytest invocations (implementer report with test evidence
+already in context), replay it to the same model class with an
+elicitation prompt ("what reasoning led to running the suite here?"),
+and classify the elicited rationalizations. Output: a candidate
+rationalization-table row set for the verification-dedupe seam.
+Post-hoc-confabulation caveat disclosed: elicited reasons are
+hypotheses to encode as table rows and re-test, not ground truth.
+
+**B. p2s-on-specless cell (3 reps, ~$21):** pd-p2s @ 1937691 on
+cp-x10-consistency (NO spec). Tests whether the anti-rationalization
+line alone ("'each module explains its choice' is how incoherence
+defends itself" + provisional-ruling clause) moves the 0-1/5 specless
+baseline. Criteria: seeded-defect neutralization vs the pd-p2
+specless baseline (0-1/5); ≥3/5 = rationalization-repair works
+standalone; 0-1/5 = information (spec) was the active ingredient —
+either answer feeds the synthesis's mechanism ranking. Reachability:
+same as pd-p2. Provisional-rulings clause gives a secondary
+observable: does the ledger DECLARE speclessness (the clause's
+literal instruction)?
