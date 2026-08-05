@@ -1071,4 +1071,4 @@ input, not procedure. Candidate only — queued behind the campaign's
 remaining tasks, given three structural-arm slots already parked or
 shipped elsewhere.
 
-Extension cost $36.79; x12 total $69.46.
+Extension cost $28.46; x12 total $61.13.
