@@ -77,7 +77,9 @@ import units
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_OUT_DIR = os.path.join(HERE, "out", "tier2")
 DEFAULT_DRY_RUN_DIR = os.path.join(tempfile.gettempdir(), "claudemd-lift-tier2-dryrun")
-REPO_PARENT = os.path.dirname(os.path.dirname(HERE))  # .../git/superpowers
+# HERE = <repo>/campaigns/claudemd-lift; three levels up is the checkout's
+# parent dir (/Users/jesse/git/superpowers), where the plugin repo lives.
+REPO_PARENT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 DEFAULT_SUPERPOWERS_ROOT = os.path.join(REPO_PARENT, "superpowers")
 CODEX_BIN = shutil.which("codex") or "codex"
 

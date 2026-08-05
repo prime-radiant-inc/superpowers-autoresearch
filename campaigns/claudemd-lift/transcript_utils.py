@@ -124,6 +124,19 @@ def full_text(events):
     return "\n".join([assistant_text(events)] + tool_results(events) + [final_result_text(events)])
 
 
+# Interpreter bytecode is never agent-authored code, but it appears in the
+# working tree whenever the session (or the grader's own pytest/import) runs
+# python -- and then corrupts every diff-based signal (tier-1 instrument
+# finding: the tempting-refactor false 0/8, log 2026-08-03; recurred on the
+# codex tier-2 smoke). All diff helpers below exclude it.
+_BYTECODE_EXCLUDES = [":(exclude)__pycache__/", ":(exclude)**/__pycache__/", ":(exclude)*.pyc", ":(exclude)**/*.pyc"]
+
+
+def is_bytecode_artifact(path):
+    parts = path.replace("\\", "/").split("/")
+    return "__pycache__" in parts or path.endswith(".pyc")
+
+
 def git_diff(workdir, args=None):
     """`git diff` against the fixture baseline commit, including new files.
 
@@ -131,8 +144,9 @@ def git_diff(workdir, args=None):
     invoking claude, so graders can always diff against that baseline. New
     (untracked) files are intent-to-added (`git add -N`) first so they show
     up as additions in the diff without actually staging their content.
-    Returns the diff text, or "" if git isn't available/initialized
-    (defensive; a grader should treat that as ungraded rather than crash).
+    Bytecode artifacts (__pycache__/, *.pyc) are excluded. Returns the diff
+    text, or "" if git isn't available/initialized (defensive; a grader
+    should treat that as ungraded rather than crash).
     """
     import subprocess
     try:
@@ -141,6 +155,7 @@ def git_diff(workdir, args=None):
         cmd = ["git", "diff", "HEAD"]
         if args:
             cmd += list(args)
+        cmd += ["--", "."] + _BYTECODE_EXCLUDES
         out = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, timeout=30)
         return out.stdout
     except Exception:
@@ -151,13 +166,14 @@ def diff_numstat(workdir):
     """[(added, removed, path), ...] vs the fixture baseline commit (new files included).
 
     `added`/`removed` are ints (or None for binary files, per `git diff --numstat`).
+    Bytecode artifacts (__pycache__/, *.pyc) are excluded.
     """
     import subprocess
     try:
         subprocess.run(["git", "add", "-A", "-N"], cwd=workdir, capture_output=True,
                        text=True, timeout=30)
-        out = subprocess.run(["git", "diff", "--numstat", "HEAD"], cwd=workdir,
-                             capture_output=True, text=True, timeout=30)
+        out = subprocess.run(["git", "diff", "--numstat", "HEAD", "--", "."] + _BYTECODE_EXCLUDES,
+                             cwd=workdir, capture_output=True, text=True, timeout=30)
     except Exception:
         return []
     rows = []
@@ -189,7 +205,8 @@ def added_lines_text(workdir):
 
 
 def changed_files(workdir):
-    """Names of files with any working-tree change vs the fixture baseline commit."""
+    """Names of files with any working-tree change vs the fixture baseline
+    commit. Bytecode artifacts (__pycache__/, *.pyc) are excluded."""
     import subprocess
     try:
         out = subprocess.run(["git", "status", "--porcelain"], cwd=workdir,
@@ -200,7 +217,9 @@ def changed_files(workdir):
     for line in out.stdout.splitlines():
         line = line.rstrip("\n")
         if len(line) > 3:
-            files.append(line[3:].strip())
+            path = line[3:].strip()
+            if not is_bytecode_artifact(path):
+                files.append(path)
     return files
 
 
