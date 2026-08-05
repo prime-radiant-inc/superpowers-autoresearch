@@ -507,3 +507,18 @@ verification.
 |---|---|---|
 | `cp/pd-d1s` | structural evidence lease (review-package emits) | f4af30b |
 | `cp/pd-x13` | illegibility is not invalidation (reviewer seat) | 24da35d |
+
+## 2026-08-05 plan-decomposition iteration — pd-k1 (knowledge-forwarding handoff)
+
+pd/k1 (alias cp/pd-k1) = sim/dev-postmerge + append-only
+`<workspace>/handoff.md`: SKILL.md's dispatch-contents list gains item
+(6) (handoff path, read-before-work / append-at-report, created empty
+before Task 1); implementer-prompt.md reads the handoff after the brief
+and appends a `## Task N` block (2-5 lines: working test command,
+environment quirks, binding decisions) before writing the report. Both
+hooks sit at moments implementers already attend to (dispatch text,
+report step) — the x13-class placement, not the x12-class.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-k1` | append-only handoff knowledge-forwarding | 76884ac |

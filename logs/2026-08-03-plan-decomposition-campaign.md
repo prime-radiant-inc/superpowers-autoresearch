@@ -1072,3 +1072,33 @@ remaining tasks, given three structural-arm slots already parked or
 shipped elsewhere.
 
 Extension cost $28.46; x12 total $61.13.
+
+## 2026-08-05 — PRE-REGISTRATION: pd/k1 battery (re-sited to cp-x5-leases-scaled after headroom scan)
+
+**Headroom scan first (per the d1s/K1 discipline):** the plan's
+registered site (pd-pipeline) and metric (cross-agent duplicate
+commands) have NO headroom — pd-pipeline controls 0/1/0 duplicates,
+cp-x5 controls 0-1 — identical-command dedupe is not where
+rediscovery cost lives. The honest metric is CROSS-IMPLEMENTER FILE
+RE-READS: cp-x5 controls rep1-3 measure 51/46/41 re-reads per rep
+(15-17 files read by ≥2 of 6 implementers; process/environment files
+— SKILL.md, plan.md, tests.md, pyproject — read by 5-6 of 6). Battery
+re-sited to cp-x5-leases-scaled with this metric; amendment reason
+recorded here before launch.
+
+**Arm:** cp/pd-k1 @ 76884ac (see manifest). Battery ×3, lane B.
+
+**Endpoints:**
+1. PRIMARY — cross-implementer re-reads (same READ_RX classifier as
+   the baseline scan, applied identically): control 41-51/rep; PASS =
+   all 3 k1 reps below the control MINIMUM (≤40) with median ≤30
+   (≥~30% reduction); the process-file class (SKILL/plan/tests/
+   pyproject/brief) is where the drop should concentrate — reported
+   split by class. Code-interface re-reads are partially legitimate
+   (each implementer SHOULD read what it consumes) — a drop there is
+   welcome but not required.
+2. MECHANISM — handoff.md exists, has ≥1 appended block per completed
+   task in ≥2/3 reps (uptake check, hand-read one file).
+3. GUARD — post-checks pass; quality metrics not degraded (verdict
+   status); cost/rep reported (handoff reading adds tokens; the
+   question is net).
