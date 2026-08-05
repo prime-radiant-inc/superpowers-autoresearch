@@ -425,3 +425,54 @@ the tier's standing guard for any new harness; (5) an isolation note:
 this tier is host-side throwaway-HOME isolation, NOT container
 isolation — the CLAUDE.md-leak class stays a live risk and the
 canary/isolation discipline is load-bearing.
+
+## 2026-08-05 — TIER-2 CLAUDE MATRIX VERDICTS (168 reps, $≈22)
+
+### (b) verification-floor: PREDICTION CONFIRMED — the C3-derived unit is a real lever, capability-graded
+
+LOOK rate (finalized operationalization) → FLAG/FIX rate:
+
+| model | empty | floor alone | floor+broken-windows |
+|---|---|---|---|
+| opus-4-8 | 0/8 → 0/8 | 8/8 → 8/8 | 8/8 → 8/8 |
+| sonnet-5 | 0/8 → 0/8 | 4/8 → 2/8 | 7/8 → 7/8 |
+| haiku-4.5 | 0/8 → 0/8 | 0/8 → 0/8 | 5/8 → 1/8 |
+
+The registered prediction held in its exact shape on sonnet: the floor
+unit moves LOOKING (0→4/8), and composing it with fix-on-sight converts
+looks into flags/fixes (2/8→7/8). Opus saturates on the floor alone
+(8/8 both, flag-not-fix per details — flagging passes by design).
+Haiku shows the capability gradient: composed gets it looking (5/8)
+but rarely acting (1/8). Hand-checked reps confirm grader details
+(task_done + shipping_flagged/fixed). Empty replicates the tier-1
+floor at 0/8 everywhere. **This is the interrogation method's first
+prediction-confirmed positive lever, on the user-base-majority model
+family.** Promotion question (for Jesse): where the text should live
+in superpowers (it targets casual-ask sessions, not skill-invoked
+flows — candidate: bootstrap-adjacent or verification-before-
+completion).
+
+### (a) U-simple-first marginal: NO PROMOTION — superpowers saturates it
+
+Median output-token delta (unit vs empty), within model×loading:
+
+| model | bare | superpowers-loaded |
+|---|---|---|
+| sonnet-5 | −8.8% | **+26.7%** |
+| haiku-4.5 | −4.8% | −3.5% |
+| opus-4-8 | −9.6% | −3.8% |
+
+Bare replicates the direction of the tier-1 anchor at a fraction of
+the size (−5..−10% vs −31%; the anchor pooled multiple probes at
+n=24 — probe-mix likely explains the gap; disclosed, not resolved).
+The tier-2 question is answered decisively: the marginal effect over
+superpowers is ≈0 (haiku/opus) or reversed (sonnet +27%). U-simple-
+first does NOT get lifted — the plugin already carries its content.
+
+**Instrument note (pass_signal, non-load-bearing for (a)):** bare-cell
+pass rates dropped vs tier-1 ceilings (e.g. sonnet bare-empty 3/8 vs
+8/8) — hand-read shows 26-32 added LOC with zero abstraction hits,
+i.e. clean small functions tripping the ~15-LOC threshold, a grader
+calibration artifact, not overbuilding. The (a) primary is tokens and
+unaffected; threshold recalibration queued before any future use of
+overbuild-bait pass rates across runner generations.
