@@ -535,3 +535,38 @@ glue text + co-presence regression check.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-ship` | composed ship texts (#2086 + x13) | 1c95520 |
+
+## 2026-08-05 adjudication battery — NEW BASE sim/dev2 + r1t/rebut/composed
+
+**Base retarget:** `sim/dev2` @ fb518ed = current origin/dev with the
+merged 2026-08-04 stack (#2059-2062, #2077, #2078, #2080) + #2090.
+Prior baselines (1fed99d era) do NOT transfer — the stack changes SDD
+behavior (batching, evidence-bearing preflight, rule-and-continue);
+this battery carries its own base2 controls.
+
+pd/r1t (alias cp/r1t) = sim/dev2 + one Calibration sentence in
+sdd/task-reviewer-prompt.md: structure-conformance divergences
+(behavior preserved) are Minor with file:line, ride the ledger to
+final-review cleanup triage, never block the loop alone. From the R1
+micro (guard 8/8 under every policy; downgrade 6/8 compliance).
+
+cp/rebut = sim/dev2 + the serf after-action package in sdd/SKILL.md
+(REAL-SESSION provenance, ~/after-action-rebut-with-evidence.md):
+(a) breaker's contestable-finding bullet — runtime claims are ruled by
+RUNS (falsifiability statement first, the finding's own proposed test
+preferred, hostile execution on unmodified code, expected-green guard
+commit, discriminating observable in the ledger entry, re-flag of an
+evidence-parked class = hard stop to human); (b) per-round ledger
+class/severity tags + convergence guidance (decay = keep going, flat
+3-round repetition = structural-dedupe mandate or early
+evidence-adjudication; early adjudication without the run stays
+forbidden).
+
+cp/r1t-rebut = both.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `sim/dev2` | new base (origin/dev fb518ed) | fb518ed |
+| `cp/r1t` | structure-conformance triage sentence | 08972e6 |
+| `cp/rebut` | evidence-adjudication package | 52df997 |
+| `cp/r1t-rebut` | composed | 77ec054 |
