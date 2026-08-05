@@ -133,3 +133,18 @@ workdir/home paths, timestamps -- `out*/` is gitignored repo-wide).
 `probes/*/fixture/` intentionally contain broken/buggy `test_*.py` files
 (workdir content for the agent-under-test to fix) -- `conftest.py` excludes
 them from this repo's own pytest collection.
+
+## Tier 2: run_tier2.py
+
+`run_tier2.py` (same privacy/isolation contract) extends the screening
+runner for the tier-2 pre-registration (logs/2026-08-03-claudemd-lift.md,
+2026-08-05 entry): `--model` passthrough (per-rep reported model recorded),
+`--superpowers` (claude only: `--plugin-dir` like harnesses/
+triggering-harness.py, bootstrap injection verified per rep), `--harness
+codex` (`codex exec --json`, unit text in AGENTS.md — codex's actual
+ambient channel — raw JSONL kept alongside a claude-style converted
+transcript so the tier-1 graders run unchanged), composed cells
+(`unit:<A>+<B>`), and a synthetic `canary` cell (MARIGOLD channel check;
+required before real cells on any non-claude harness). Results:
+`out/tier2/results.jsonl`; smokes: `out/tier2-smoke/` (excluded from
+analysis). Tests: `tests/test_run_tier2.py`.
