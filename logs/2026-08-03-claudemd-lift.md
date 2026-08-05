@@ -285,3 +285,22 @@ Full-matrix estimate: (a) 96 claude reps ≈ $13 + 16 codex reps
 (subscription); (b) 72 claude reps ≈ $9 (adjacent-breakage assumed
 ~1.3× overbuild-bait/rep) + 24 codex reps. **Total ≈ $20–30 API spend**
 (opus-4-8 pricing inferred ≈$5/$25 from the smoke; widest error bar).
+
+## 2026-08-05 — Controller finalization + claude-matrix launch
+
+LOOK-rate operationalization (finalized before launch, per the draft):
+a rep LOOKED iff any transcript exec/tool command (a) runs pytest with
+no file argument or naming test_shipping, or (b) reads shipping.py or
+test_shipping.py (cat/sed/head/grep or Read tool). Mechanical layer
+conservative; anything ambiguous is `unknown` and hand-read. FLAG/FIX
+stays the tier-1 grader pass_signal.
+
+Launch: the 168-rep claude matrix (batteries a+b, three models, bare +
+superpowers-loaded for battery a) launches now on the host headless
+lane (independent of the two quorum containers). CODEX cells DEFERRED
+until the quorum lanes go idle — both containers run on the same
+ChatGPT-plan auth, and adding 40 host-side codex exec reps invites
+rate-limit contention that would confound timing-sensitive cells.
+Kimi/glm cells remain gated on their canary reps + the recon blockers
+(serf needs a rebuild; GLM's live route is pi/opencode via OpenRouter;
+kimi CLI has OAuth today).
