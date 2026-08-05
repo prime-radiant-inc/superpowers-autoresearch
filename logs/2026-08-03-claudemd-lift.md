@@ -476,3 +476,34 @@ i.e. clean small functions tripping the ~15-LOC threshold, a grader
 calibration artifact, not overbuilding. The (a) primary is tokens and
 unaffected; threshold recalibration queued before any future use of
 overbuild-bait pass rates across runner generations.
+
+## 2026-08-05 — KIMI + GLM CELL VERDICTS (80 reps; GLM ≈$0.7, kimi token-denominated; 0 launch errors)
+
+### (b) verification-floor — the lever GENERALIZES across model families
+
+LOOK → FLAG/FIX (adding to the claude table above):
+
+| model (harness) | empty | floor alone | floor+broken-windows |
+|---|---|---|---|
+| kimi-for-coding (kimi CLI) | 1/8 → 1/8 | 4/8 → 4/8 | **7/8 → 7/8** |
+| z-ai/glm-5.2 (pi) | 1/8 → 0/8 | 1/8 → 1/8 | **4/8 → 4/8** |
+
+Every look converts to a flag/fix on both models (unlike haiku, which
+looks without acting). Five-model spectrum for the composed unit:
+opus 8/8 · sonnet 7/8 · kimi 7/8 · glm 4/8 · haiku 1/8 — a clean
+capability gradient, effect present in four of five families.
+PROMOTION-GRADE: the composed verification-floor text is the
+program's first cross-model, prediction-confirmed positive lever.
+
+### (a) U-simple-first — large effect on non-claude models (bare)
+
+kimi −11.9%, glm −33.7% median output tokens (n=8/cell) — glm matches
+the tier-1 sonnet anchor almost exactly. Combined picture: the effect
+is real bare on all five models; superpowers-loaded saturates it on
+claude (measured); saturation on kimi/glm under superpowers is
+UNMEASURED (the micro harness's --superpowers mode is claude-only
+today; in real use pi's quorum launcher force-loads superpowers, so
+the saturation question matters before any lift decision for
+non-claude users). Follow-up cell registered as deferred: kimi/glm ×
+superpowers-loaded, pending plugin-loading support in those CLIs'
+headless modes.
