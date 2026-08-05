@@ -139,18 +139,20 @@ verdict flips). Standing disciplines added: validators exercise the real
 checks.sh; headroom scans before arm-build; scorers built and baselined
 before their battery launches.
 
-## Composed ship battery
+## Composed ship battery: PASS
 
-PENDING at report time: `cp/pd-ship` (the exact #2086 + #2089 texts
-co-present) ×3 on cp-x10-spec; bar = no regression from the 4-5/5
-stock-with-spec baseline. Verdict will be appended to the log; a
-regression blocks the PR set.
+`cp/pd-ship` (the exact #2086 + #2089 texts co-present) ×3 on
+cp-x10-spec: **5/5 seeded conflicts resolved in every rep**
+(hand-verified non-vacuous), post-checks 19/19 ×3, gauntlet pass ×3,
+$20.24. No regression from the 4-5/5 stock-with-spec baseline —
+matches the gated arms' uniform 5/5. #2086's SDD sentence is thereby
+battery-run verbatim, co-present with #2089's paragraph.
 
 ## Ship state
 
 | item | status |
 |---|---|
-| PR #2086 spec-travels-with-plan | draft, evidence complete + composed battery pending |
+| PR #2086 spec-travels-with-plan | draft, evidence complete + composed battery PASS (5/5 ×3) |
 | PR #2089 x13 illegibility row | draft, battery PASS |
 | PR #2080 X7-A evidence-bearing preflight | draft (earlier) |
 | PR #2077 / x9a2 thread text | x9a2 mechanism now confirmed from the failure side (ride-along interrogation); text held for the thread |

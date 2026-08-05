@@ -1239,3 +1239,29 @@ here by construction. (4) Guards: post-checks, cost.
 Outcome upgrades #2086's disclosure from "glue text, not
 battery-graded verbatim" to "battery-run verbatim, no regression" if
 (1) holds; any regression blocks the PR set and reopens the text.
+
+## 2026-08-05 — VERDICT: composed ship battery PASSES (5/5 × 3) — CAMPAIGN CLOSED
+
+cp/pd-ship @ 1c95520 × 3 on cp-x10-spec ($20.24). Post-checks 19/19
+×3, gauntlet pass ×3. Seeded conflicts: **5/5 resolved in every rep**
+— hand-verified non-vacuous (full module trees in the root; rep1
+values spot-checked converged: TIMEOUT_SECONDS 30 both files, one
+retry name, MIN_PRIORITY 1 both sites). Note: cp-x10-spec/checks.sh
+still carries the pre-fix fallthrough (only cp-x10-consistency was
+patched) — hand verification substituted; port of the tree-resolving
+scan to this scenario queued as hygiene.
+
+No regression from the 4-5/5 stock-with-spec baseline — the composed
+texts match the gated arms' uniform 5/5. #2086's disclosure upgrades:
+its SDD sentence is now battery-run verbatim, co-present with #2089's
+paragraph, no interaction regression.
+
+Reviewer-runs observation (report-not-gate endpoint, no control base
+rate on this scenario): reps 1/3 zero; rep2 two reviewer runs — one
+focused named-scope run (compliant per the x13 text's own carve-out),
+one chained into a bare full-suite run (bypass-shaped). Logged as an
+observation for any future x13 follow-up; the x13 verdict rests on
+its own controlled battery.
+
+**CAMPAIGN CLOSED 2026-08-05.** Report finalized:
+reports/2026-08-plan-decomposition-campaign.md.
