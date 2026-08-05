@@ -1176,3 +1176,8 @@ comparison therefore needs the quorum interactive path, est. ~$40-60.
 Given placement A is already indicated by the campaign's own ask-class
 evidence, the recommendation ships as analysis; the probe is queued as
 optional validation if Jesse wants the empirical cell before adopting.
+
+**x13 ship action:** draft PR #2089 opened against dev (branch
+fix/x13-illegibility @ 80b82ab, the battery-run paragraph verbatim;
+full template; DRAFT pending Jesse's review, per the established
+draft-PR pattern). Noted: #2078 merged into dev upstream.
