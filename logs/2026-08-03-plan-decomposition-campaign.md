@@ -1181,3 +1181,42 @@ optional validation if Jesse wants the empirical cell before adopting.
 fix/x13-illegibility @ 80b82ab, the battery-run paragraph verbatim;
 full template; DRAFT pending Jesse's review, per the established
 draft-PR pattern). Noted: #2078 merged into dev upstream.
+
+## 2026-08-05 — VERDICT: K1 mechanism binds fully, outcome NULL — the handoff supplements primary sources instead of displacing them
+
+Battery: cp-x5-leases-scaled × pd-k1 @ 76884ac × 3 reps ($28.79).
+Guards: rep1 7/7, rep3 7/7 pass; **rep2 truncated at time budget**
+(modules stranded in the worktree, 3/7 post-checks — the known
+stale-tree shape, disclosed; its primary number is kept but flagged:
+truncation biases re-read counts DOWN, i.e. toward the arm).
+
+**MECHANISM (the doctrine test): FULL UPTAKE.** handoff.md was read
+by 5-6 of 6 implementers per rep and appended via patch every task
+(6/7/10 patch-writes per rep; real content — "## Task 5 integration
+decisions", fix-round addenda). The attended-moment placement bound
+exactly as the reclassify-vs-new-procedure doctrine predicts. (The
+file is absent from the final trees because SDD deletes the plan
+workspace at finish — verified via rollout patch events, not disk.)
+
+**PRIMARY: FAIL.** Cross-implementer re-reads, handoff.md itself
+excluded as the arm's own artifact: 32 / 38* / 44 vs control
+41 / 46 / 51 (*truncated rep). Bar was all ≤40 + median ≤30; rep3
+alone breaks it, and excluding rep2 the remaining pair straddles the
+control minimum. Mean shift ≈ −18% with overlapping ranges at n=3 —
+not distinguishable from noise, and far from the displacement the
+mechanism was built to buy. Process-class re-reads (SKILL/plan/brief/
+tests/pyproject) persist at 18-21 per rep: implementers read the
+handoff AND then re-read every primary source anyway.
+
+**Reading:** knowledge-forwarding as a prose contract produces
+supplementary reading, not substituted reading — trust-but-verify is
+the implementers' default and arguably correct. Cost is net-neutral
+($6.73-12.62/rep vs comparable controls). What the battery did NOT
+measure — and where the Task-5-decisions blocks hint real value
+lives — is decision-consistency across tasks (later implementers
+honoring earlier binding choices), a correctness axis, not an
+efficiency axis. A future K1' would seed a cross-task binding
+decision and measure whether it survives into later tasks with and
+without the handoff. Not run now (campaign closing).
+
+Battery queue COMPLETE. Synthesis next.
