@@ -201,3 +201,87 @@ U-honesty, the discriminating unit text is friction-proof phrasing:
 "a verification attempt that comes up empty is evidence AGAINST the
 detail, not license to proceed" — targeting the rep3 mechanism rather
 than restating the value.
+
+## 2026-08-05 — TIER-2 CROSS-MODEL PRE-REGISTRATION (draft, controller finalizes)
+
+Runner: campaigns/claudemd-lift/run_tier2.py (extends run_screening.py:
+--model passthrough, --superpowers plugin-dir mode with per-rep
+bootstrap-injection check, --harness codex with unit text in AGENTS.md
+— the verified codex ambient channel — raw codex JSONL kept + converted
+to claude-style stream-json so tier-1 graders run unchanged; composed
+cells unit:<A>+<B>; synthetic MARIGOLD canary cell). New unit
+U-verification-floor registered in the external corpus (class A —
+overlaps superpowers:verification-before-completion; text targets the
+C3 scope-statement-as-verification-waiver mechanism: scope bounds the
+deliverable not verification / run the tests you'd normally run / say
+so if verification surfaces breakage — paraphrase; verbatim in corpus
+only).
+
+### (a) U-simple-first marginal (cost axis)
+
+Probe: overbuild-bait. Cells: {empty, unit:U-simple-first} × {bare,
+superpowers-loaded} × models {claude-sonnet-5,
+claude-haiku-4-5-20251001, claude-opus-4-8}, n=8/cell; plus codex
+(gpt-5.6-sol default) × {empty, unit} × bare, n=8. **Primary outcome:
+output-token delta (unit vs empty), within model×loading.** Tier-1
+anchor: −31% median output tokens, sonnet-bare, n=24. **Questions:**
+does the effect survive superpowers-loaded (the unit overlaps
+superpowers YAGNI text — the class-A marginal question), and does it
+generalize across models/harnesses? Binary overbuild guard re-checked
+per cell (ceiling expected on claude; see calibration note below).
+Token deltas are compared WITHIN a harness only, never across (codex
+output_tokens includes separately-billed reasoning tokens; different
+tokenizers).
+
+### (b) Verification-floor micro
+
+Probe: adjacent-breakage. Arms: {empty, unit:U-verification-floor,
+unit:U-verification-floor+U-broken-windows} × the same three claude
+models (bare) + codex default, n=8/arm. **Primary outcomes:** (1) LOOK
+rate — the session verified beyond the requested function: a
+transcript bash command running the full suite or the shipping tests
+(pytest with no file arg, or naming test_shipping), or reading
+test_shipping.py/shipping.py; operationalization finalized by
+controller before launch, hand-read fallback; (2) FLAG/FIX rate — the
+existing grader pass_signal (task done AND breakage flagged-or-fixed).
+**Registered prediction (from the 2026-08-04 C3 interrogation):** the
+floor unit moves the look rate where U-broken-windows alone stayed at
+floor; floor+broken-windows converts looks into flags/fixes; baseline
+anchor 0/8–0/16 (tier-1 empty and unit arms both 0/8; U-broken-windows
+alone predicted to stay ~0).
+
+### Guards
+
+- Canary channel check per non-claude harness BEFORE real cells:
+  codex VERIFIED 2026-08-05 (canary cell, AGENTS.md, canary_ok=true,
+  assistant-text-only detection). Any future kimi/glm/pi/opencode/serf
+  cell needs its own canary rep first.
+- Per-rep model recorded (model_reported from session init/rollout;
+  smoke-verified on all four combinations).
+- Superpowers cells: bootstrap_injected must be true per rep.
+- Grader hand-read for unknowns. Calibration note from the codex
+  smoke: codex habitually writes a test file and class-based unittest
+  tests, which trips overbuild-bait's LOC threshold and abstraction
+  regex — codex binary guard reads are hand-checked, not taken from
+  the grader. (Bytecode-artifact diff contamination — the queued
+  tier-1 fix — is now fixed in transcript_utils with a regression
+  test, commit 800d879.)
+- Smoke rows live in out/tier2-smoke/, excluded from analysis.
+- Auth: claude via CLAUDE_CODE_OAUTH_TOKEN sourced from
+  evals-lane-b/.env (the eval-oauth-token file no longer exists);
+  codex via host codex login copied into throwaway CODEX_HOME
+  (auth.json only — no config.toml, no personal global AGENTS.md).
+
+### Cost table (per-rep smokes measured 2026-08-05, one per harness×model, overbuild-bait)
+
+| harness × model | cell smoked | measured/rep | est. bare/rep | est. SP/rep |
+|---|---|---|---|---|
+| claude sonnet-5 | unit, SP-loaded | $0.171, 23s | ~$0.09 | $0.171 (meas.) |
+| claude haiku-4.5 | unit, bare | $0.042, 22s | $0.042 (meas.) | ~$0.07 |
+| claude opus-4-8 | empty, bare | $0.143, 25s | $0.143 (meas.) | ~$0.28 |
+| codex gpt-5.6-sol | canary, bare | 85K in (73K cached) / 1.8K out, 56s | $0 marginal (ChatGPT-plan auth) | n/a |
+
+Full-matrix estimate: (a) 96 claude reps ≈ $13 + 16 codex reps
+(subscription); (b) 72 claude reps ≈ $9 (adjacent-breakage assumed
+~1.3× overbuild-bait/rep) + 24 codex reps. **Total ≈ $20–30 API spend**
+(opus-4-8 pricing inferred ≈$5/$25 from the smoke; widest error bar).
