@@ -304,3 +304,124 @@ rate-limit contention that would confound timing-sensitive cells.
 Kimi/glm cells remain gated on their canary reps + the recon blockers
 (serf needs a rebuild; GLM's live route is pi/opencode via OpenRouter;
 kimi CLI has OAuth today).
+
+## 2026-08-05 — Kimi + GLM harness adapters via the quorum seam (canaries VERIFIED, cells planned)
+
+### Seam approach: consumed definitions, documented launcher fallback
+
+run_tier2 gained `--harness kimi` and `--harness pi` (+ `--credential`,
+default `openrouter_glm_5_2` — the only live GLM route) wired through a
+new adapter seam module, campaigns/claudemd-lift/quorum_seam.py, that
+CONSUMES the evals framework's checked-in definitions at runtime:
+coding-agents/<name>.yaml (binary, home_config_subdir, session log
+dir/glob, default_credential), credentials.yaml (model, base_url,
+api_key_env, compat), and the .env credential bundle. Nothing from
+those files is copied into this repo; drift flows in automatically and
+an offline test class asserts the live evals-lane-b definitions still
+parse to what the adapters expect.
+
+The quorum launch scripts themselves could NOT be invoked directly
+(the documented fallback case): coding-agents/*-context/launch-agent
+are quorum-generated templates requiring substitutions only quorum's
+provision() produces ($QUORUM_HOME_ENV, $QUORUM_AGENT_CWD, and the
+mode-0600 $KIMI_ENV_FILE/$PI_ENV_FILE secret env files that the
+launcher deletes after sourcing), and the pi launcher hard-requires
+`npm -g pi-subagents` and unconditionally loads the Superpowers
+extension — wrong for bare cells. So quorum_seam reproduces only the
+minimal provisioning FILE SHAPES, mirroring src/agents/kimi.ts and
+src/agents/pi.ts: kimi's env-model path (DEFAULT_KIMI_MODEL_ENV +
+runtime flags + KIMI_MODEL_API_KEY) and pi's api-key trio
+(models.json/settings.json/auth.json under the fixed provider name
+'quorum', openai-chat → openai-completions, compat thinkingFormat).
+
+Kimi auth finding: credentials.yaml's kimi_default OAuth path is DEAD
+— the host ~/.kimi-code login returns auth.login_required even against
+the real $HOME (token expired 2026-06-22; `kimi login` needs a human).
+The env api-key path (KIMI_MODEL_API_KEY from the quorum .env bundle)
+works against the same endpoint and is what the adapter uses; per-rep
+rows record auth_path accordingly. Restoring OAuth is a human task,
+not a blocker.
+
+Headless modes probed live 2026-08-05 (kimi-code 0.15.0, pi 0.80.1):
+`kimi -p <prompt> --output-format stream-json` (print mode runs with
+auto permissions; `--yolo` is interactive-only — "Cannot combine
+--prompt with --yolo") and `pi --provider quorum --model <m>
+--no-extensions --no-skills --mode json -p <prompt>` (context-file
+discovery deliberately left on — that IS the AGENTS.md channel under
+test). opencode was inspected but not adopted: pi's --mode json
+message_end stream is the cleaner transcript (complete typed messages
+with per-call model+usage), and pi is quorum's designated GLM path.
+Isolation matches the codex adapter: throwaway $HOME per rep, KIMI_*/
+PI_* env scrubbed, API keys popped from the inherited env (pi reads
+its key from the seeded auth.json), telemetry off. Raw output is kept
+verbatim (<row>.kimi.jsonl / <row>.pi.jsonl) beside a claude-style
+converted transcript so tier-1 graders run unchanged; kimi usage comes
+from the session wire.jsonl (located via the yaml's session_log_dir/
+glob); pi tool names are mapped (bash→Bash etc). Known grading
+limitation: pi's edit tool uses oldText/newText, so
+file_write_contents misses edit payloads — diff-based graders (the
+primary signal for both probes) read the workdir tree and are
+unaffected.
+
+### Canaries (MARIGOLD, AGENTS.md channel) — both VERIFIED
+
+| harness | canary_ok | model_reported | duration | notes |
+|---|---|---|---|---|
+| kimi | true | kimi-for-coding (source: env KIMI_MODEL_NAME; wire alias is the __kimi_env_model__ placeholder) | 17.5s | assistant-text-only detection |
+| pi/GLM | true | z-ai/glm-5.2 (assistant message.model) | 26.1s | probe-grader fail on the canary cell is expected/irrelevant |
+
+### Smokes (overbuild-bait, unit:U-simple-first, 1 rep each, out/tier2-smoke/)
+
+| harness | pass_signal | duration | usage | est. cost/rep |
+|---|---|---|---|---|
+| kimi | PASS (12 added lines, reports.py only, no abstraction hits) | 19.9s | 4,514 in + 59,648 cache-read + 477 out | tokens only — the CLI reports no dollars and no public per-token rate for kimi-for-coding is known here; not estimated |
+| pi/GLM | PASS (11 added lines, reports.py only) | 11.3s | 1,374 in + 9,680 cache-read + 703 out (11,757 total) | ≈$0.004 (OpenRouter z-ai/glm-5.2: $0.76/$2.42 per MTok, $0.14 cache-read; canary rep ≈$0.01) |
+
+Converted transcripts verified end-to-end: tool calls present
+(pi: Bash/Read/Edit mapped; kimi: claude-native names), bash_commands
+and diffs extracted, grader consumed them unchanged.
+
+### Kimi/GLM cell plan (controller launches; NOT run here)
+
+Same two batteries, n=8, bare only, both harnesses (80 reps total):
+
+    # (a) U-simple-first marginal
+    python3 run_tier2.py --harness kimi --probe overbuild-bait \
+        --cell empty --cell unit:U-simple-first --reps 8 --timeout 600
+    python3 run_tier2.py --harness pi --probe overbuild-bait \
+        --cell empty --cell unit:U-simple-first --reps 8 --timeout 600
+    # (b) verification-floor micro
+    python3 run_tier2.py --harness kimi --probe adjacent-breakage \
+        --cell empty --cell unit:U-verification-floor \
+        --cell unit:U-verification-floor+U-broken-windows --reps 8 --timeout 600
+    python3 run_tier2.py --harness pi --probe adjacent-breakage \
+        --cell empty --cell unit:U-verification-floor \
+        --cell unit:U-verification-floor+U-broken-windows --reps 8 --timeout 600
+
+Est. GLM spend ≈$0.5–1 total; kimi is token-billed on the Moonshot
+key (~65K in/rep, mostly cache-read). Token deltas compared WITHIN a
+harness only, as pre-registered. Serf stays out of scope (needs a
+rebuild); opencode-GLM available as a fallback route if pi regresses.
+
+### MICRO-tier assessment (evals framework)
+
+The portfolio doc (evals-lane-b/docs/eval-harness-portfolio.md)
+defines MICRO as "one API call per sample, ~$1–5, no agent CLI",
+homed in autoresearch harnesses/ — run_tier2/run_screening are NOT
+that. They are headless multi-turn agent-CLI sessions on real
+fixtures with mechanical graders: more real than MICRO, ~30–2000×
+cheaper than FULL ($0.004–0.17/rep vs $7–15/run). Quorum itself has
+no MICRO tier to slot into; its contribution to this layer is exactly
+what the seam now consumes (agent/credential definitions +
+provisioning shapes). Recommendation: name this layer as its own tier
+(HEADLESS or MESO) between MICRO and FULL in the portfolio doc.
+What it would take: (1) a portfolio-doc row + boundary statement
+(single-prompt, single-session, mechanical grading — no multi-agent
+scenarios, no LLM judge); (2) promote the runner out of
+campaigns/claudemd-lift/ into harnesses/ with probes as the
+per-campaign payload; (3) keep the quorum seam as the single source
+of agent/credential truth (done here); (4) make the MARIGOLD canary
+the tier's standing guard for any new harness; (5) an isolation note:
+this tier is host-side throwaway-HOME isolation, NOT container
+isolation — the CLAUDE.md-leak class stays a live risk and the
+canary/isolation discipline is load-bearing.
