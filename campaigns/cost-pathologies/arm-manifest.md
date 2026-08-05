@@ -567,6 +567,7 @@ cp/r1t-rebut = both.
 | Branch | Description | SHA |
 |---|---|---|
 | `sim/dev2` | new base (origin/dev fb518ed) | fb518ed |
+| `cp/base2` | base2 control (sim/dev2 unpatched) | fb518ed |
 | `cp/r1t` | structure-conformance triage sentence | 08972e6 |
 | `cp/rebut` | evidence-adjudication package | 52df997 |
 | `cp/r1t-rebut` | composed | 77ec054 |
