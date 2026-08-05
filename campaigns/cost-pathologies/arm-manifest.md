@@ -609,3 +609,44 @@ other branch (checked via `git grep` across skills/ on both).
 |-----|--------|-----|
 | T9-A brainstorming tooling-ask (design-presentation bullet) | `cp/t9a` | c02e67b |
 | T9-B writing-plans tooling gate (pre-File-Structure section) | `cp/t9b` | f242ae6 |
+
+## 2026-08-05 verification-floor arm — vfloor (base sim/dev2 fb518ed)
+
+cp/vfloor = sim/dev2 @ fb518ed + one "## Scope and Verification"
+section appended to `skills/using-superpowers/SKILL.md` after its
+"## User Instructions" section (so it rides the SessionStart bootstrap
+injection on every harness): a scope statement ("that's the only thing
+I need right now") bounds the deliverable, never verification — run the
+tests you would normally run; flag anything broken that verification
+surfaces, even unrelated, and fix broken things rather than asking
+permission. Ported from the claudemd-lift U-broken-windows
+composed-unit finding (micro screening gradient opus 8/8, sonnet 7/8,
+kimi 7/8, glm 4/8, haiku 1/8 as CLAUDE.md text — expectation only; the
+treatment is now plugin bootstrap text). 1 file, +4/−0; bootstrap
+token delta ~+99 tokens (chars/3.7 estimate, no-API-key mode of
+harnesses/measure-bootstrap-tokens.py).
+
+One commit, verified present after worktree removal (`git log
+cp/vfloor` shows it; `git show cp/vfloor:skills/using-superpowers/
+SKILL.md` contains "Scope and Verification") — re-done after a prior
+attempt lost the commit to worktree churn.
+
+Scenarios registered for this arm (quorum-static ports of the
+claudemd-lift micro probes, campaigns/cost-pathologies/scenarios/):
+`sp-adjacent-breakage` (adjacent-breakage probe; instruments
+sp-ab-served-model / sp-ab-scan-tree / sp-ab-task-done / sp-ab-look /
+sp-ab-shipping-flagged / sp-ab-shipping-fixed / sp-ab-code-files) and
+`sp-overbuild-bait` (overbuild-bait probe; instruments
+sp-ob-served-model / sp-ob-added-loc / sp-ob-abstraction-hits /
+sp-ob-files-touched / sp-ob-output-tokens / sp-ob-worktrees-present).
+Both gate `# coding-agents: codex, claude, kimi, pi` (all four resolve
+to coding-agents/<name>.yaml in the evals repo; the directive is a
+plain CSV membership check in src/runner/index.ts). All instruments are
+emit-only `command-succeeds "true # …"` lines; transcript signals read
+the cross-harness ATIF trajectory.json, never per-harness session
+logs. sp-overbuild-bait's battery is DEFERRED (see the 2026-08-05
+pre-registration in logs/2026-08-05-adjudication-battery.md).
+
+| arm | branch | sha |
+|-----|--------|-----|
+| VFLOOR using-superpowers scope-and-verification section | `cp/vfloor` | c31d4e2 |
