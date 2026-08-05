@@ -19,6 +19,15 @@ reuses) along three axes the tier-2 pre-registration needs
     Codex raw JSONL is kept verbatim (<row>.codex.jsonl) and also converted to
     a claude-style stream-json transcript so each probe's unmodified grade.py
     (via transcript_utils) can grade it.
+    `--harness kimi` (kimi-code CLI, `kimi -p --output-format stream-json`)
+    and `--harness pi` (pi CLI, `pi -p --mode json`, default credential
+    openrouter_glm_5_2 = GLM 5.2 via OpenRouter) are wired through the QUORUM
+    ADAPTER SEAM: agent/credential definitions are consumed at runtime from
+    the evals-lane-b checkout (see quorum_seam.py for what is consumed and
+    why the quorum launch scripts can't be invoked directly). Both write the
+    cell text to AGENTS.md (their ambient channel per source inspection;
+    canary-verified before any real cell). Raw output is kept verbatim
+    (<row>.kimi.jsonl / <row>.pi.jsonl) next to the converted transcript.
 
 Cells (repeatable --cell):
   empty            no ambient file at all
@@ -70,6 +79,7 @@ import sys
 import tempfile
 import time
 
+import quorum_seam as qs
 import run_screening as rs
 import transcript_utils as tu
 import units
@@ -83,8 +93,14 @@ REPO_PARENT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 DEFAULT_SUPERPOWERS_ROOT = os.path.join(REPO_PARENT, "superpowers")
 CODEX_BIN = shutil.which("codex") or "codex"
 
-HARNESSES = ("claude", "codex")
-AMBIENT_FILE = {"claude": "CLAUDE.md", "codex": "AGENTS.md"}
+HARNESSES = ("claude", "codex", "kimi", "pi")
+AMBIENT_FILE = {"claude": "CLAUDE.md", "codex": "AGENTS.md",
+                "kimi": "AGENTS.md", "pi": "AGENTS.md"}
+# Default quorum credential per seam harness (pi's yaml default_credential is
+# pi_default = OAuth/gpt-5.5; the tier-2 GLM cells pin the campaign's GLM route
+# instead -- the only live one, per recon: OpenRouter z-ai/glm-5.2).
+DEFAULT_CREDENTIAL = {"kimi": None,  # kimi.yaml default_credential
+                      "pi": "openrouter_glm_5_2"}
 
 # Channel canary: synthetic, committable (NOT corpus text). If a harness's
 # ambient file actually reaches the model, the reply starts with MARIGOLD.
@@ -166,6 +182,24 @@ def build_codex_cmd(prompt, model):
         cmd += ["-m", model]
     cmd += [prompt]
     return cmd
+
+
+def build_kimi_cmd(kimi_bin, prompt):
+    # Print mode runs with auto permission handling (probed 2026-08-05: the
+    # launcher's --yolo is interactive-only -- `kimi` errors "Cannot combine
+    # --prompt with --yolo"; a -p session's wire log shows permission mode
+    # auto). Model selection rides on KIMI_MODEL_* env, not a flag.
+    return [kimi_bin, "-p", prompt, "--output-format", "stream-json"]
+
+
+def build_pi_cmd(pi_bin, provider, model, prompt):
+    # Mirrors the quorum pi launcher minus its Superpowers extension +
+    # pi-subagents loading (wrong for bare cells): explicit provider/model
+    # (registered in the throwaway home by quorum_seam.seed_pi_home),
+    # ambient context-file discovery deliberately LEFT ON (the AGENTS.md
+    # channel under test), extension/skill discovery off.
+    return [pi_bin, "--provider", provider, "--model", model,
+            "--no-extensions", "--no-skills", "--mode", "json", "-p", prompt]
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +327,194 @@ def codex_jsonl_to_claude_events(raw_text):
 
 
 # ---------------------------------------------------------------------------
+# Kimi stream-json -> claude-style events
+# ---------------------------------------------------------------------------
+def kimi_stream_to_claude_events(raw_text):
+    """Convert `kimi -p --output-format stream-json` rows (shapes probed
+    2026-08-05 on kimi-code 0.15.0) to claude-style events:
+
+      {"role":"assistant","content":"..."}                     text
+      {"role":"assistant","tool_calls":[{"type":"function","id":...,
+          "function":{"name":"Bash","arguments":"{...json...}"}}]}
+      {"role":"tool","tool_call_id":...,"content":"..."}       tool result
+      {"role":"meta",...}                                      ignored
+
+    Tool names are already claude-style (Bash/Read/Write/Edit/Grep/Glob...)
+    and Write/Edit args use "content", so transcript_utils helpers work
+    unchanged. `arguments` is a JSON-encoded string. Usage is NOT in stdout;
+    the caller fills it from the session wire.jsonl. Unknown lines counted,
+    never fatal."""
+    events = []
+    last_text = ""
+    unknown = 0
+    for line in raw_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            unknown += 1
+            continue
+        if not isinstance(row, dict):
+            unknown += 1
+            continue
+        role = row.get("role")
+        if role == "assistant":
+            content = row.get("content")
+            if isinstance(content, str) and content:
+                events.append(_assistant_text_event(content))
+                last_text = content
+            for call in row.get("tool_calls") or []:
+                fn = (call or {}).get("function") or {}
+                name = fn.get("name") or "UnknownTool"
+                args_raw = fn.get("arguments")
+                try:
+                    args = json.loads(args_raw) if isinstance(args_raw, str) else (args_raw or {})
+                except json.JSONDecodeError:
+                    args = {"raw_arguments": args_raw}
+                if not isinstance(args, dict):
+                    args = {"raw_arguments": args}
+                events.append(_tool_use_event(name, args))
+        elif role == "tool":
+            content = row.get("content")
+            events.append(_tool_result_event(content if isinstance(content, str)
+                                             else json.dumps(content)))
+        elif role == "meta":
+            pass
+        else:
+            unknown += 1
+    events.append({"type": "result", "result": last_text, "usage": {},
+                   "converted_from": "kimi", "unknown_lines": unknown})
+    return events
+
+
+def kimi_wire_summary(agent, home):
+    """Best-effort usage + model from the run's session wire.jsonl (located via
+    the kimi.yaml session_log_dir/glob consumed through the quorum seam).
+    Returns (usage_totals, model_alias). In env-model auth the alias is the
+    placeholder "__kimi_env_model__" -- the caller then reports the env
+    KIMI_MODEL_NAME and labels the source honestly."""
+    usage = {}
+    alias = None
+    for path in qs.session_log_paths(agent, home):
+        try:
+            with open(path) as f:
+                for line in f:
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if rec.get("type") == "usage.record":
+                        for k, v in (rec.get("usage") or {}).items():
+                            if isinstance(v, (int, float)):
+                                usage[k] = usage.get(k, 0) + v
+                        alias = rec.get("model") or alias
+                    elif rec.get("type") == "config.update" and rec.get("modelAlias"):
+                        alias = rec.get("modelAlias")
+        except OSError:
+            continue
+    return usage, alias
+
+
+# ---------------------------------------------------------------------------
+# Pi --mode json -> claude-style events
+# ---------------------------------------------------------------------------
+# pi's builtin tool names are lowercase; map to the claude-style names the
+# tier-1 graders (transcript_utils.bash_commands etc.) match on.
+PI_TOOL_NAMES = {"bash": "Bash", "read": "Read", "write": "Write",
+                 "edit": "Edit", "grep": "Grep", "find": "Find", "ls": "LS"}
+
+
+def pi_json_to_claude_events(raw_text):
+    """Convert `pi -p --mode json` stdout (typed event stream; shapes probed
+    2026-08-05 on pi 0.80.1 + confirmed against evals-lane-b
+    src/normalize/pi.ts) to claude-style events.
+
+    Complete messages arrive as {"type":"message_end","message":{...}} (the
+    session file uses {"type":"message",...}; both accepted). message.role:
+      assistant  content blocks {type: text|thinking|toolCall}; toolCall =
+                 {type,id,name,arguments} with arguments already an object;
+                 carries model + per-call usage {input,output,cacheRead,...}
+      toolResult content = [{type:"text",text}] blocks or a string
+      user       skipped (the prompt)
+    Thinking blocks are excluded (parity with claude transcripts). Grading
+    caveat: pi's edit tool uses oldText/newText, so
+    transcript_utils.file_write_contents sees writes but not edit payloads --
+    diff-based graders read the workdir tree and are unaffected."""
+    events = []
+    usage = {}
+    cost_total = 0.0
+    last_text = ""
+    model = None
+    unknown = 0
+    for line in raw_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            unknown += 1
+            continue
+        if not isinstance(ev, dict):
+            unknown += 1
+            continue
+        if ev.get("type") not in ("message_end", "message"):
+            continue
+        msg = ev.get("message") or {}
+        role = msg.get("role")
+        if role == "assistant":
+            model = msg.get("model") or model
+            for k, v in (msg.get("usage") or {}).items():
+                if isinstance(v, (int, float)):
+                    usage[k] = usage.get(k, 0) + v
+                elif k == "cost" and isinstance(v, dict):
+                    total = v.get("total")
+                    if isinstance(total, (int, float)):
+                        cost_total += total
+            content = msg.get("content")
+            if isinstance(content, str):
+                if content:
+                    events.append(_assistant_text_event(content))
+                    last_text = content
+                continue
+            for block in content or []:
+                if not isinstance(block, dict):
+                    continue
+                btype = block.get("type")
+                if btype == "text":
+                    text = block.get("text") or ""
+                    if text:
+                        events.append(_assistant_text_event(text))
+                        last_text = text
+                elif btype == "toolCall":
+                    name = str(block.get("name") or "UnknownTool")
+                    args = block.get("arguments")
+                    if not isinstance(args, dict):
+                        args = {"raw_arguments": args}
+                    events.append(_tool_use_event(PI_TOOL_NAMES.get(name, name), args))
+                elif btype == "thinking":
+                    pass
+        elif role == "toolResult":
+            content = msg.get("content")
+            if isinstance(content, str):
+                events.append(_tool_result_event(content))
+            else:
+                parts = [b.get("text", "") for b in content or []
+                         if isinstance(b, dict) and b.get("type") == "text"]
+                events.append(_tool_result_event("\n".join(parts)))
+    result = {"type": "result", "result": last_text, "usage": usage,
+              "converted_from": "pi", "unknown_lines": unknown}
+    if model:
+        result["model"] = model
+    if cost_total:
+        result["cost_usd"] = cost_total
+    events.append(result)
+    return events
+
+
+# ---------------------------------------------------------------------------
 # Per-rep helpers
 # ---------------------------------------------------------------------------
 def canary_passed(events):
@@ -358,9 +580,21 @@ def codex_model_from_rollout(codex_home):
 # Run one rep
 # ---------------------------------------------------------------------------
 def run_one(harness, probe_id, cell, rep, out_dir, model, superpowers_root,
-            max_turns, timeout):
+            max_turns, timeout, credential=None):
+    # Seam harnesses: resolve the quorum agent/credential definitions up front
+    # (they determine the effective model, which names the row).
+    agent = cred = None
+    if harness in ("kimi", "pi"):
+        agent = qs.agent_def(harness)
+        cred_name = credential or DEFAULT_CREDENTIAL[harness] \
+            or agent.get("default_credential")
+        cred = dict(qs.credential(cred_name))
+        if model:
+            cred["model"] = model
+
+    effective_model = model or (cred or {}).get("model")
     safe_cell = cell.replace(":", "_").replace("+", "-")
-    tag = model or "default"
+    tag = (effective_model or "default").replace("/", "-")
     row_id = f"{harness}__{tag}__{probe_id}__{safe_cell}__rep{rep}"
     transcripts_dir = os.path.join(out_dir, "transcripts")
     os.makedirs(transcripts_dir, exist_ok=True)
@@ -372,12 +606,15 @@ def run_one(harness, probe_id, cell, rep, out_dir, model, superpowers_root,
 
     env = dict(os.environ)
     for k in ("CLAUDECODE", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_ENTRYPOINT",
-              "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "OPENAI_API_KEY"):
+              "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "OPENAI_API_KEY",
+              "OPENROUTER_API_KEY"):
         env.pop(k, None)
     env["HOME"] = home
     env["DISABLE_AUTOUPDATER"] = "1"
 
     secret = None
+    auth_path = None
+    codex_home = None
     if harness == "claude":
         env_name, secret = rs.read_auth()
         if not secret:
@@ -388,17 +625,53 @@ def run_one(harness, probe_id, cell, rep, out_dir, model, superpowers_root,
         if superpowers_root:
             env["CLAUDE_CODE_FORCE_SESSION_PERSISTENCE"] = "1"
         cmd = build_claude_cmd(prompt, model, superpowers_root, max_turns)
-        codex_home = None
-    else:
+    elif harness == "codex":
         codex_home = tempfile.mkdtemp(prefix="cml-t2-codexhome.")
         seed_codex_home(codex_home)
         env["CODEX_HOME"] = codex_home
         cmd = build_codex_cmd(prompt, model)
+    elif harness == "kimi":
+        # Env-model auth path (see quorum_seam docstring: the credentials.yaml
+        # kimi_default OAuth path is dead -- host login expired 2026-06-22,
+        # verified login_required against the real $HOME).
+        secret = qs.resolve_api_key("KIMI_MODEL_API_KEY")
+        if not secret:
+            raise RuntimeError("No kimi auth: KIMI_MODEL_API_KEY not in env or quorum .env")
+        for k in [k for k in env if k.startswith("KIMI_")]:
+            env.pop(k)
+        env.update(qs.kimi_model_env(cred.get("model"), secret))
+        # The kimi engine binary lives under ~/.kimi-code/bin, not on PATH
+        # (kimi.yaml comment); prepend like the quorum launcher's env file.
+        env["PATH"] = qs.kimi_bin_dir() + os.pathsep + env.get("PATH", "")
+        auth_path = "kimi-env-api-key"
+        cmd = build_kimi_cmd(str(agent.get("binary", "kimi")), prompt)
+    elif harness == "pi":
+        if cred.get("auth") == "oauth":
+            raise RuntimeError(
+                "pi oauth credentials (e.g. pi_default) are not supported by the "
+                "micro adapter -- use an api-key credential like openrouter_glm_5_2")
+        secret = qs.resolve_api_key(cred.get("api_key_env", ""))
+        if not secret:
+            raise RuntimeError(f"No pi auth: {cred.get('api_key_env')} not in env or quorum .env")
+        for k in [k for k in env if k.startswith("PI_")]:
+            env.pop(k)
+        env["PI_TELEMETRY"] = "0"
+        env["PI_OFFLINE"] = "1"
+        provider, pi_model = qs.seed_pi_home(home, cred, secret)
+        auth_path = f"api-key({cred.get('api_key_env')})"
+        cmd = build_pi_cmd(str(agent.get("binary", "pi")), provider, pi_model, prompt)
+    else:
+        raise ValueError(f"unknown harness {harness!r}")
 
     rec = {"harness": harness, "probe": probe_id, "cell": cell, "rep": rep,
-           "model_requested": model, "superpowers": bool(superpowers_root),
+           "model_requested": effective_model, "superpowers": bool(superpowers_root),
            "workdir": wd, "home": home, "transcript_path": transcript_path,
            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    if cred is not None:
+        rec["credential"] = credential or DEFAULT_CREDENTIAL[harness] \
+            or agent.get("default_credential")
+    if auth_path:
+        rec["auth_path"] = auth_path
 
     t0 = time.monotonic()
     stdout = ""
@@ -429,6 +702,46 @@ def run_one(harness, probe_id, cell, rep, out_dir, model, superpowers_root,
         rec["unknown_transcript_lines"] = result_ev.get("unknown_lines", 0)
         rec["model_reported"] = result_ev.get("model") or codex_model_from_rollout(codex_home)
         rec["cost_usd"] = None  # codex CLI reports tokens, not dollars
+    elif harness == "kimi":
+        raw_path = os.path.join(transcripts_dir, f"{row_id}.kimi.jsonl")
+        with open(raw_path, "w") as f:
+            f.write(stdout)
+        rec["raw_transcript_path"] = raw_path
+        events = kimi_stream_to_claude_events(stdout)
+        usage, alias = kimi_wire_summary(agent, home)
+        events[-1]["usage"] = usage
+        with open(transcript_path, "w") as f:
+            for ev in events:
+                f.write(json.dumps(ev) + "\n")
+        rec["usage"] = usage
+        rec["unknown_transcript_lines"] = events[-1].get("unknown_lines", 0)
+        # In env-model auth kimi's wire log carries only the placeholder alias
+        # __kimi_env_model__; the true requested id is KIMI_MODEL_NAME. Report
+        # honestly which source the value came from.
+        if alias and alias != "__kimi_env_model__":
+            rec["model_reported"] = alias
+            rec["model_reported_source"] = "session-wire modelAlias"
+        else:
+            rec["model_reported"] = env.get("KIMI_MODEL_NAME")
+            rec["model_reported_source"] = "env KIMI_MODEL_NAME (wire alias __kimi_env_model__)"
+        rec["cost_usd"] = None  # kimi CLI reports tokens, not dollars
+    elif harness == "pi":
+        raw_path = os.path.join(transcripts_dir, f"{row_id}.pi.jsonl")
+        with open(raw_path, "w") as f:
+            f.write(stdout)
+        rec["raw_transcript_path"] = raw_path
+        events = pi_json_to_claude_events(stdout)
+        with open(transcript_path, "w") as f:
+            for ev in events:
+                f.write(json.dumps(ev) + "\n")
+        result_ev = events[-1]
+        rec["usage"] = result_ev.get("usage", {})
+        rec["unknown_transcript_lines"] = result_ev.get("unknown_lines", 0)
+        rec["model_reported"] = result_ev.get("model")
+        rec["model_reported_source"] = "assistant message.model"
+        # pi self-computes cost only for providers with known pricing; the
+        # custom 'quorum' provider prices at 0 -> record None, not $0.
+        rec["cost_usd"] = result_ev.get("cost_usd") or None
     else:
         with open(transcript_path, "w") as f:
             f.write(stdout)
@@ -495,7 +808,12 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--harness", choices=HARNESSES, default="claude")
     ap.add_argument("--model", default=None,
-                    help="model passthrough (claude --model / codex -m); default: CLI default")
+                    help="model passthrough (claude --model / codex -m; for kimi/pi it "
+                         "overrides the quorum credential's model); default: CLI default")
+    ap.add_argument("--credential", default=None,
+                    help="kimi/pi only: quorum credentials.yaml entry to use "
+                         "(default: kimi -> kimi.yaml default_credential; "
+                         "pi -> openrouter_glm_5_2, the campaign's GLM route)")
     ap.add_argument("--superpowers", action="store_true",
                     help="claude only: load the superpowers plugin via --plugin-dir")
     ap.add_argument("--superpowers-root", default=os.environ.get("SUPERPOWERS_ROOT",
@@ -514,9 +832,12 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     if args.superpowers and args.harness != "claude":
-        sys.stderr.write("--superpowers is claude-only (codex has no --plugin-dir equivalent; "
-                         "a codex-superpowers cell would need its own integration and evidence "
-                         "that the bootstrap loads).\n")
+        sys.stderr.write("--superpowers is claude-only (no other harness has a --plugin-dir "
+                         "equivalent here; a superpowers cell on codex/kimi/pi would need its "
+                         "own integration and evidence that the bootstrap loads).\n")
+        return 2
+    if args.credential and args.harness not in ("kimi", "pi"):
+        sys.stderr.write("--credential applies to the quorum-seam harnesses (kimi, pi) only.\n")
         return 2
 
     probes = args.probes or rs.all_probes()
@@ -542,7 +863,8 @@ def main(argv=None):
         for cell in cells_for_run(probe_id, args.cells):
             for rep in range(args.reps):
                 rec = run_one(args.harness, probe_id, cell, rep, args.out_dir,
-                              args.model, superpowers_root, args.max_turns, args.timeout)
+                              args.model, superpowers_root, args.max_turns, args.timeout,
+                              credential=args.credential)
                 append_result(args.out_dir, rec)
                 results.append(rec)
                 flag = {True: "PASS", False: "fail", None: "ambiguous"}[rec.get("pass_signal")]
