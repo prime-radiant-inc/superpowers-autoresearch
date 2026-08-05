@@ -998,3 +998,36 @@ Uptake note (disclosed): reps 1/2/4 reviewers saw MIN_LINE_CHARGE
 only in the diff they read — no instance grep, no sibling comparison;
 uptake of the enumeration procedure looks partial, same
 prose-uptake pathology the d1 family shows. First-4 cost $32.67.
+
+## 2026-08-05 — VERDICT: x13 PASSES at n=4 — zero reviewer re-runs; the illegibility row closes the last live dedupe leak
+
+Battery: cp-x5-leases-scaled × pd-x13 @ 24da35d × 4 reps ($30.99).
+Guards: post-checks 7/7 ×4, gauntlet pass ×4.
+
+**PRIMARY: 0/4 reps with a real reviewer pytest run** (0 of 31
+reviewer children) vs same-scenario control 5/8 reps (7 of ~59
+reviewer children), measured with one classifier applied identically
+to both arms. Under rep-level independence the zero has p ≈ 0.02
+against the control rate — solid for a screening battery, and the bar
+("0-1 rerun reps") is met at its strict end.
+
+**Scoring hygiene note (two classifier iterations, disclosed):** the
+raw "pytest"-substring count first flagged one x13 reviewer — hand-
+read showed it was an `rg` over the reports for test evidence, i.e.
+the DESIRED re-read behavior, not a run; conversely the stricter
+run-pattern initially missed control runs invoked via
+`../../.venv/bin/pytest` relative paths. Final classifier separates
+invocations from evidence-greps and handles path prefixes; control
+spot-checks hand-verified.
+
+**SECONDARY:** zero gap-reports — no reviewer encountered evidence
+illegible enough to report; one evidence-grep observed (rep3),
+consistent with re-read-first behavior. The row's counter path
+(re-read, then report) wasn't stress-tested by these draws; the
+verdict rests on the primary.
+
+**Disposition:** x13 joins the synthesis ship list as the
+reviewer-seat dedupe fix (the controller seat was closed as
+no-headroom by the d1 reframe). Ship list now: #2086 spec plumbing,
+R1 cleanup/downgrade triage text, x13 illegibility row, x12 pending
+reps 5-8, green-as-waiver doctrine candidate.
