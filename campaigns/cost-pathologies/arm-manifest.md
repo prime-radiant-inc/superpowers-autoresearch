@@ -571,3 +571,41 @@ cp/r1t-rebut = both.
 | `cp/r1t` | structure-conformance triage sentence | 08972e6 |
 | `cp/rebut` | evidence-adjudication package | 52df997 |
 | `cp/r1t-rebut` | composed | 77ec054 |
+
+## 2026-08-05 T9 interactive tooling-ask cell — t9a/t9b (base sim/dev2 fb518ed)
+
+Two placements of the Jesse-approved project-quality-tooling ask
+(linting/auto-formatting, unit-test infrastructure, e2e test
+infrastructure, possibly fuzz/mutation — always an ask-the-user
+question, never decided silently), cut from `sim/dev2` @ fb518ed, one
+commit each, local-only, authored in a temporary detached worktree
+(removed after; the existing worktrees were not touched):
+
+cp/t9a = Draft A, brainstorming placement: one bullet added to
+`skills/brainstorming/SKILL.md`'s "Presenting the design" list (after
+the "Cover: architecture, …" bullet) — the design presentation for a
+new/untooled project batches the tooling question alongside the
+architecture; selections land in the spec's Global Constraints. NOT a
+new standalone interrupt. 1 file, +1/−0.
+
+cp/t9b = Draft B, writing-plans placement: new `## Tooling Check`
+section in `skills/writing-plans/SKILL.md` between Scope Check and File
+Structure — if the spec names no lint/format or test-infrastructure
+tooling and the codebase has none configured, ask one question before
+any task is written; chosen items become a Task 0; answers recorded in
+Global Constraints either way. 1 file, +4/−0.
+
+Control is cp/base2 (sim/dev2 unpatched, fb518ed — its row is in the
+adjudication-battery section above; no backticks here on purpose — the
+runner's grep -F arm resolution takes the LAST backticked-branch match
+in this file, and a prose mention below that row would shadow it).
+Verification: per-arm diff vs fb518ed touches only the declared file
+with one commit; each arm's distinctive phrase greps on its own branch
+("design presentation includes a short tooling question" for t9a,
+"## Tooling Check" for t9b); neither phrase appears anywhere on the
+other branch (checked via `git grep` across skills/ on both).
+
+| arm | branch | sha |
+|-----|--------|-----|
+| T9-A brainstorming tooling-ask (design-presentation bullet) | `cp/t9a` | c02e67b |
+| T9-B writing-plans tooling gate (pre-File-Structure section) | `cp/t9b` | f242ae6 |
