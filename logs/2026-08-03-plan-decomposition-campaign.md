@@ -1031,3 +1031,44 @@ reviewer-seat dedupe fix (the controller seat was closed as
 no-headroom by the d1 reframe). Ship list now: #2086 spec plumbing,
 R1 cleanup/downgrade triage text, x13 illegibility row, x12 pending
 reps 5-8, green-as-waiver doctrine candidate.
+
+## 2026-08-05 — VERDICT: x12 NULL at n=8 (1/8 = baseline rate) — enumeration doesn't survive prose; the arm-design doctrine crystallizes
+
+Extension reps 5-8 scored (mechanical scan + hand-check of every
+ANCHOR-IMPORTANT cell and all unknowns): ANCHOR-IMPORTANT escape ×4
+(hand-verified: floor precedes discount in generate_statement in each;
+the new apply_adjustment is correct in each — same partial-treatment
+shape as the baseline). rep5 DEBATABLE-1 and rep8 ANCHOR-CRITICAL
+unknowns hand-resolve to catch (atomic rebind; mkstemp+os.replace).
+
+**Final: ANCHOR-IMPORTANT 1/8 catches — exactly the 2/16 pooled
+baseline rate.** rep3's reviewer-mediated pathway was real but is
+indistinguishable from the base rate at this n. Detection attribution
+hygiene note: a phrase-grep for "floor before discount" showed 9-22
+hits in EVERY rep including controls — requirement-text echoes, not
+flags (discarded); the precise reviewer-message check shows 0/4
+extension reps flagged the sibling. Uptake again: reviewers with the
+enumeration text in their template did not grep the anchor or compare
+siblings in 7/8 reps.
+
+**Doctrine synthesis (three elicited-counter arms, three outcomes):**
+- x13 PASS: the counter RECLASSIFIES an act at a moment the seat
+  already attends to (about to re-run → "that's regeneration, re-read
+  instead"). Prose binds when it meets the agent at its moment.
+- x12 NULL: the counter requires a NEW procedure at an unprompted
+  moment (grep the anchor before verdict). Prose does not create
+  moments. Same class as d1p (identity check) and the x1a/b/c policy
+  arms.
+- p2g FAIL: no text substitutes for missing authority (spec).
+The attention-routing thesis survives its strongest challenger: even
+mechanically-phrased, session-elicited procedure text does not
+redirect review attention. Attention is routed by artifacts and task
+structure (what the diff contains, what the dispatch names, what a
+script prints), not by instructions about where to look. x12's
+successor, if any, is STRUCTURAL: the review-package or brief carries
+a pre-computed anchor-instance list (grep output) so enumeration is
+input, not procedure. Candidate only — queued behind the campaign's
+remaining tasks, given three structural-arm slots already parked or
+shipped elsewhere.
+
+Extension cost $36.79; x12 total $69.46.
