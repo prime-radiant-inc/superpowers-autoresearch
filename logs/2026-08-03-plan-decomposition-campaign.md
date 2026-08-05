@@ -1124,3 +1124,55 @@ commits/tokens after first integration failure. Est. fixture build:
 one focused session, cp-x10-class effort. Queued as a candidate, not
 built — campaign budget is better spent on the synthesis and the
 running K1/x13-class arms with live headroom.
+
+## 2026-08-05 — T9 delivered as drafts + evidence-based placement analysis (tooling-setup ask)
+
+Reference point: the "ask about git init" pattern the directive cites
+lives in the operator's personal CLAUDE.md (Version Control section),
+not in any superpowers skill — the tooling ask would be net-new to the
+plugin.
+
+**Draft A — brainstorming placement (recommended).** In brainstorming
+SKILL.md, batched INTO the existing design-presentation moment (not a
+new interrupt), appended to the "Presenting the design" bullets:
+
+> For a new project (or one with no configured tooling), the design
+> presentation includes a one-line tooling question alongside the
+> architecture: "Set up aggressive linting and auto-formatting from
+> the start (recommended — cheapest now, before any code exists)?
+> I'd use <the stack's standard: e.g. ruff+format, eslint+prettier,
+> clippy+rustfmt>." The user's answer lands in the spec's Global
+> Constraints so every later plan and task inherits it.
+
+**Draft B — writing-plans placement.** In writing-plans SKILL.md,
+before File Structure:
+
+> If the spec names no linting/formatting tooling and the codebase has
+> none configured, ask now — one question, before any task is written:
+> "Add a Task 0 that sets up linting and auto-formatting (<stack
+> standard>)? Cheapest before code exists." Record the answer in
+> Global Constraints either way.
+
+**Placement recommendation: A (brainstorming), on this campaign's own
+evidence.** (1) The user is interactively present during brainstorming
+by construction; writing-plans and execution sessions are increasingly
+autonomous, and X9/T11 showed execution-seat asks become stalls or
+ride-along bundles — an ask class we just spent a campaign
+suppressing. Adding a mandated ask to the autonomous side works
+against x9a2's doctrine. (2) The answer is a spec-level Global
+Constraint (it binds every task), and the spec is authored in
+brainstorming — the same authority-gap logic behind #2086 says
+decisions belong in the artifact executors already read. (3) Batching
+into the design presentation avoids the one-more-interrupt cost;
+brainstorming already batches approval there.
+
+**Probe design + reachability asymmetry (disclosed, why no battery
+ran):** headless single-turn triggering probes can reach Draft B's
+moment (plan-authoring sessions start at the skill) but NOT Draft A's
+(brainstorming's ask fires several interactive turns in, past
+clarifying questions — unreachable without scripted-turn machinery;
+the aged-session replay design covers this class). A fair A-vs-B
+comparison therefore needs the quorum interactive path, est. ~$40-60.
+Given placement A is already indicated by the campaign's own ask-class
+evidence, the recommendation ships as analysis; the probe is queued as
+optional validation if Jesse wants the empirical cell before adopting.
