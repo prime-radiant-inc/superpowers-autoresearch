@@ -1102,3 +1102,25 @@ recorded here before launch.
 3. GUARD — post-checks pass; quality metrics not degraded (verdict
    status); cost/rep reported (handoff reading adds tokens; the
    question is net).
+
+## 2026-08-05 — P3/P4 DISPOSITION: parked at the outcome ceiling; discriminating fixture specified for a future battery
+
+Headroom scan before arm-build (the d1s/K1 discipline): every
+pd-pipeline and certified-overflow cell completes with full scope,
+coherence, and passing post-checks regardless of plan shape — there is
+no outcome variance on these fixtures for a walking-skeleton ordering
+rule (P3) or right-sizing rule (P4) to reduce. A battery would measure
+plan-artifact aesthetics only and land INCONCLUSIVE-BY-CEILING by
+construction (the registered expectation, now measured rather than
+presumed).
+
+**What a discriminating P3 fixture needs (specified for the future):**
+a spec with a seeded INTEGRATION TRAP — two subsystems whose contract
+looks compatible layer-by-layer but fails when composed (e.g. a
+protocol/format mismatch only an end-to-end slice exposes), so
+horizontal-layer plans discover it at the final task (rework) and
+walking-skeleton plans at slice one (cheap). Outcome metric: rework
+commits/tokens after first integration failure. Est. fixture build:
+one focused session, cp-x10-class effort. Queued as a candidate, not
+built — campaign budget is better spent on the synthesis and the
+running K1/x13-class arms with live headroom.
