@@ -5,6 +5,10 @@ reps + micro-batteries + elicitations (per-battery figures in the log).
 **Log:** `logs/2026-08-03-plan-decomposition-campaign.md` (append-only;
 every battery pre-registered before launch; corrections published in
 place). **Arms:** `campaigns/cost-pathologies/arm-manifest.md`.
+**Model:** the `codex_sub` lane never pinned a model — recorded served
+models were gpt-5.6-terra (146 reps) and gpt-5.6-sol (81 reps); see the
+2026-08-05 served-model census CORRECTION entry in the log (per-rep
+model is now a mandatory scoring covariate).
 
 The campaign set out to redo writing-plans/SDD in the direction of radical
 decomposition, walking-skeleton ordering, knowledge-forwarding,

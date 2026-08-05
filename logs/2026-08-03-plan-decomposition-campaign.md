@@ -1265,3 +1265,70 @@ its own controlled battery.
 
 **CAMPAIGN CLOSED 2026-08-05.** Report finalized:
 reports/2026-08-plan-decomposition-campaign.md.
+
+## 2026-08-05 — CORRECTION: served-model census — the codex_sub lane never pinned a model
+
+Every battery in this campaign ran through the quorum `codex_sub`
+lane, whose adapter passes NO `--model` flag — model selection is
+subscription-driven (the CONCERN note at evals-lane-b
+credentials.yaml ~line 126 flagged exactly this). Published artifacts
+that say "GPT-5.6-Codex" as if pinned are wrong. The
+rollout-recorded served models across all campaign reps:
+**gpt-5.6-terra (146 reps)** and **gpt-5.6-sol (81 reps)**. Which
+marketing-name codex variants these slugs map to is unknown and not
+guessed here.
+
+**x10 family (the #2086 authority-gap batteries), per-rep census:**
+30 reps, 28 terra. The only sol reps are
+cp-x10-consistency-pd-p2g-rep3 and cp-x10-spec-pd-p2-rep3; every
+control, p2s, x10a, x10b, and pd-ship rep — and thus the decisive
+spec-vs-specless contrast — is gpt-5.6-terra-uniform. (An earlier
+informal summary said "all terra except one p2g rep"; the census
+shows the second sol rep in pd-p2 on the spec side, disclosed here.)
+
+**x12 vs its x1-edit-existing baselines, per-rep census** (this
+corrects the informal "x12 ran sol, baseline ran terra" summary —
+the truth is a mix on both sides, leaning sol):
+- pd-x12 (n=8): sol reps 1,3,4,6,8; terra reps 2,5,7 (5 sol / 3 terra)
+- control (n=4): sol reps 1,2,3; terra rep 4 (3 sol / 1 terra)
+- x1a (n=4): sol reps 1,2; terra reps 3,4
+- x1b (n=4): sol reps 1,2,4; terra rep 3
+- x1c (n=4): terra reps 1,2; sol reps 3,4
+
+**Standing rule (minted here):** the per-rep recorded served model is
+a mandatory scoring covariate. Cross-arm comparisons must be
+within-model, or must disclose the model mix in the same breath as
+the result.
+
+## 2026-08-05 — x13 within-model re-derivation (terra-only)
+
+Re-derivation of the x13 primary within gpt-5.6-terra, using the
+promoted reviewer-seat classifier (seat_rollouts(rep, "reviewer") +
+the run-vs-evidence-grep regex from interrogate-rollout.py's
+methodology; real pytest RUN = exec segment matching the run pattern,
+excluding `--version` and rg/grep pattern-matches). Counts reconcile
+exactly with the published pooled numbers (control reps 1-8: 7 of 59
+reviewer children, 5/8 reps).
+
+**Terra cells:**
+- Treatment pd-x13 terra (reps 2-4 per census): **0 runs, 0 of 23
+  reviewer children, 0/3 reps.**
+- Control terra, lane B (reps 1-7 per census): 7 run segments, 6 of
+  52 reviewer children, 4/7 reps affected (reps 2, 3, 6, 7).
+- Control rep10 (other root, evals/results; terra per census): 2 run
+  segments, 1 of 8 children. Including it: terra control = 9 runs,
+  8 of 60 children, 5/8 reps affected.
+
+**Sol cells (small, reported not pooled):** treatment rep1: 0 runs
+(8 children). Control rep8 (lane B): 1 run (1 of 7 children).
+Control rep9 (other root): 0 runs (8 children).
+
+**Verdict (honest):** 0-runs-in-treatment HOLDS within terra — the
+zero is not an artifact of the model mix, and the terra control base
+rate is real (4/7 reps lane-B-only; 5/8 with rep10). Significance is
+weaker than the pooled p≈0.02 at n=3 terra treatment reps: under the
+terra control rep rate (4/7), three zero reps gives p ≈ (3/7)^3 ≈
+0.08 lane-B-only (≈(3/8)^3 ≈ 0.05 with rep10). Directionally intact,
+same conclusion, thinner treatment n; the pooled result stands with
+the mix disclosed (treatment 3/4 terra vs control 7/8 terra in
+lane B).
