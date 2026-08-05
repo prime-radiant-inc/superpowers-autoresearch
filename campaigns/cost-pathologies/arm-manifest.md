@@ -522,3 +522,16 @@ report step) — the x13-class placement, not the x12-class.
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/pd-k1` | append-only handoff knowledge-forwarding | 76884ac |
+
+## 2026-08-05 plan-decomposition synthesis — pd-ship (composed ship texts)
+
+pd/ship (alias cp/pd-ship) = sim/dev-postmerge + the campaign's ship
+set verbatim: #2086's two texts (writing-plans `**Spec:**` header line;
+SDD setup "If the plan names a Spec, read that too… rulings without one
+are provisional") + PR #2089's x13 paragraph (task-reviewer
+illegibility row). Purpose: battery-run-verbatim status for #2086's
+glue text + co-presence regression check.
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/pd-ship` | composed ship texts (#2086 + x13) | 1c95520 |

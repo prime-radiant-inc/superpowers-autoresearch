@@ -1220,3 +1220,22 @@ decision and measure whether it survives into later tasks with and
 without the handoff. Not run now (campaign closing).
 
 Battery queue COMPLETE. Synthesis next.
+
+## 2026-08-05 — PRE-REGISTRATION: composed ship battery (pd-ship on cp-x10-spec)
+
+Arm `cp/pd-ship` @ 1c95520 (manifest). Battery ×3, lane B,
+cp-x10-spec (spec present and named in kickoff — the P2' scenario).
+
+**Endpoints:** (1) PRIMARY — seeded-defect neutralization by the fixed
+tree-resolving scan + hand-check: bar ≥4/5 per rep (stock-with-spec
+baseline 4-5/5; the composed texts must not REGRESS the free
+spec effect). (2) Reviewer re-runs: 0 expected (x13 text present;
+control reviewer-rerun base rate on this scenario unmeasured — report,
+don't gate). (3) Exercise notes (hand-read one rep): does the SDD
+spec sentence visibly bind (controller reads the spec; conflicts
+resolved against it); the writing-plans header line is NOT exercised
+by this executing-only scenario — disclosed, its channel is inert
+here by construction. (4) Guards: post-checks, cost.
+Outcome upgrades #2086's disclosure from "glue text, not
+battery-graded verbatim" to "battery-run verbatim, no regression" if
+(1) holds; any regression blocks the PR set and reopens the text.
