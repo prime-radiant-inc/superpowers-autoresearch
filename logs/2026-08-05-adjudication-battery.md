@@ -389,3 +389,28 @@ is real, cheap to measure, and now has a clean baseline.
 Note: narration-mention calls are mechanically-assisted hand-reads
 (regex over trajectories, spot-verified); full quotes live in the rep
 trajectories for audit.
+
+## 2026-08-06 — vfloor battery COMPLETED (post-OrbStack): final table
+
+GLM treatment cells completed (n=6/6) and a fresh kimi-via-OpenRouter
+column added (moonshotai/kimi-k2.7-code, openrouter_kimi_k27_code —
+NOT poolable with the kimi-CLI column; Moonshot direct credits died
+mid-battery, disclosed).
+
+| config | arm | n | look-yes | look-unk | flagged | fixed |
+|---|---|---|---|---|---|---|
+| sonnet | base2/vfloor | 6/6 | 0/1 | 3/4 | 0/1 | 0/0 |
+| haiku | base2/vfloor | 6/5 | 0/0 | 0/0 | 0/0 | 0/0 |
+| kimi-cli | base2/vfloor | 6/3 | 0/1 | 1/1 | 1/1 | 0/0 |
+| glm | base2/vfloor | 6/6 | 0/0 | 2/1 | 0/0 | 0/0 |
+| kimi-or | base2/vfloor | 6/6 | 1/2 | 1/2 | 0/2 | **0/2** |
+
+The kimi-k2.7-code column is the only cell pair with movement — the
+battery's only FIXES (2/6 vfloor vs 0/6 base2; Fisher p≈0.23 at n=6,
+suggestive not significant). Everything else confirms the earlier
+verdict: the bootstrap placement is inert-to-marginal in-plugin, and
+the saw-and-stayed-silent class persists in the new cells too
+(base2-rep45 and vfloor-rep44 both watched the shipping test fail and
+shipped without a word). VERDICT UNCHANGED: no promotion for the
+bootstrap placement; the report-moment successor remains the
+candidate, now with a five-column in-plugin baseline.
