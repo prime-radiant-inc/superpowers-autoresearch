@@ -779,3 +779,66 @@ stripped from 14 fixture plans (the diagnosed 10 plus 4 more the
 sweep found, including the new k1p fixture which had inherited the
 template line). Batteries from this point run without the noise
 class; earlier batteries carried it symmetrically in all arms.
+
+## 2026-08-06 — VERDICT: T9 tooling-ask placement cell (9/9 scored)
+
+All 9 reps served gpt-5.6-sol (t9-served-model instrument; uniform —
+within-model comparison, no census caveat).
+
+**PRIMARY — tooling-ask-fired:**
+- base2 control: **0/3.** All three mechanical `unknown`s hand-read to
+  NO: rep1's candidate was the spec-committed boilerplate ("review it
+  … before I create the implementation plan"), rep2's were TDD
+  narration uses of "formatting" (RED-phase prose), rep3's was a
+  patch-formatting error note. No control session ever asked the user
+  about tooling; none configured lint/format infra.
+- t9a: **3/3 fired**, every ask BEFORE spec write, batched into the
+  design presentation exactly as drafted ("I'd include strict
+  formatting/linting with Ruff and unit tests with pytest, but skip
+  end-to-end and fuzz testing … Does this design and tooling scope
+  look right?"). ask-before-code 3/3.
+- t9b: **3/3 fired**, every ask AFTER spec / BEFORE plan writing,
+  exactly at the drafted Tooling Check moment ("Before I write the
+  tasks, which tooling should the plan include: aggressive
+  linting/formatting, unit tests, end-to-end tests, or fuzz/mutation
+  testing?"). ask-before-code 3/3.
+
+**constraints-landed:** control 0/3 (Global Constraints sections are
+purely domain constraints); treatment **6/6**, and all six honor the
+pinned answer's shape — lint/format tool named, unit-test framework
+named, fuzz/mutation explicitly excluded ("Do not add fuzz or
+mutation testing" or equivalent in every treatment plan).
+
+**GUARD:** 9/9 sessions completed the full brainstorm → spec → plan →
+SDD implementation → merge flow; gauntlet 8/9 pass + t9a-rep1
+"investigate" HAND-RESOLVED TO PASS — the verifier's own time budget
+expired ~2s into the final merge action; the rep's final tree shows
+the merge completed on main (worktree branch gone, 6-commit history,
+full src/ + tests/). No derailment in any arm. The reachability
+caveat did NOT trigger: the scripted replies carried every session
+through design presentation and beyond, so the cell is conclusive,
+not INCONCLUSIVE-BY-FIXTURE.
+
+**Economics:** no interpretable arm difference at n=3 — within-arm
+spread (1.9–10.6 Mtok in control alone) dwarfs the arm means (base2
+$5.00 / t9a $6.87 / t9b $5.36 mean per rep). No cost claim.
+
+**INTERPRETATION:** both placements bind, mechanically
+indistinguishable on every endpoint (fire 3/3, before code 3/3,
+constraints 6/6, guard clean). The remaining difference is
+qualitative, not empirical: t9a folds the ask into an existing
+approval gate (zero extra turns; the option menu is abbreviated —
+the agent pre-recommends and asks "look right?"), t9b spends a
+dedicated turn but enumerates the full option menu closer to Jesse's
+directive wording. A single pinned answer cannot separate real-user
+comprehension of the two shapes. Placement choice goes to Jesse as a
+UX preference with an empirical tie on binding; the analysis-time
+recommendation (Draft A, brainstorming-batched) stands unrefuted.
+Per the ship gate, whichever draft is chosen still needs its verbatim
+text run as the shipped PR text if it differs from the arm text.
+
+**Scoring note (recurring trap):** python glob `**` does not traverse
+hidden dirs — rollouts under `home/.codex/sessions` are invisible to
+it; two sweeps came back silently empty before os.walk found the
+records. os.walk is mandatory for codex rep dirs (already in memory;
+recurred in this session's own scoring scripts).
