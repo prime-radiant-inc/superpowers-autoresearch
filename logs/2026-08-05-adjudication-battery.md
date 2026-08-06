@@ -414,3 +414,28 @@ the saw-and-stayed-silent class persists in the new cells too
 shipped without a word). VERDICT UNCHANGED: no promotion for the
 bootstrap placement; the report-moment successor remains the
 candidate, now with a five-column in-plugin baseline.
+
+## 2026-08-06 — kimi-CLI column completed (OAuth restored by Jesse): the kimi family RESPONDS to the bootstrap placement
+
+Final kimi-cli cells (n=6/6): vfloor **flagged 4/6, fixed 2/6** vs
+base2 flagged 1/6, fixed 0/6. Combined with kimi-or (flagged 2/6,
+fixed 2/6 vs 0/0), the kimi family shows consistent movement on BOTH
+harness routes while claude/haiku/glm stay flat.
+Revised reading: the bootstrap placement is not universally inert —
+it is **model-family-dependent**: kimi models attend to bootstrap
+directives that claude-family models (and glm) sail past. Per-cell ns
+are 6 (each column individually suggestive, p≈0.12-0.24; the
+cross-route consistency is the persuasive part).
+
+Disclosures: (a) the 3 fill reps ran the OAuth auth path where the
+earlier 3 vfloor + all base2 kimi-cli reps ran the env-key path —
+auth-path mix within the column, and the fill reps' served-model
+recorded as the `__kimi_env_model__` placeholder (instrument gap on
+the OAuth path; queued); (b) rep26 gauntlet=indeterminate, checks
+intact (kept, disclosed).
+
+Standing conclusion updated: NO universal promotion; the
+report-moment successor remains the candidate for claude-family
+users; for kimi-family users the bootstrap placement itself shows
+promise and a confirmatory n-boost (12 more kimi reps, ~$2-4) would
+settle it if wanted.
