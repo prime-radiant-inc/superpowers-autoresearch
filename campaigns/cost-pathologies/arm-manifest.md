@@ -693,3 +693,35 @@ decision-consistency battery").
 | arm | branch | sha |
 |-----|--------|-----|
 | K1' handoff rebuilt on sim/dev2 | `cp/k1b` | 17eeb53 |
+
+## 2026-08-06 P3 walking-skeleton — p3ws
+
+cp/p3ws = sim/dev2 @ fb518ed + a walking-skeleton ordering rule in
+`skills/writing-plans/SKILL.md`'s File Structure section (appended
+after "This structure informs the task decomposition…"), one commit
+`arm(p3ws): …`, 2 added lines, no other file touched. The rule:
+"**Walking skeleton first:** When the spec composes more than one
+subsystem, Task 1 builds the thinnest end-to-end slice through every
+subsystem the spec composes — real input to real output — before any
+task deepens a single layer; later tasks widen the skeleton."
+Verified twice after worktree removal: `git log cp/p3ws` shows the
+one commit atop fb518ed, and `git show
+cp/p3ws:skills/writing-plans/SKILL.md` greps "Walking skeleton
+first"; added lines carry no measurement vocabulary (grep for
+rework/integration-trap/measure/instrument/battery: 0 hits).
+
+Scenario registered for this arm
+(campaigns/cost-pathologies/scenarios/): `p3-integration-trap` — the
+P3 disposition's owed discriminating fixture (two-subsystem metrics
+pipeline whose stream contract fails only when composed; seeded
+mechanics + worked repro in that scenario's SEEDED-TRAP-LEDGER.md,
+never surfaced to the agents). Gates `# coding-agents: codex, claude,
+kimi, pi`. All instruments are emit-only `command-succeeds "true #
+p3-…"` lines; tree + git + trajectory.json extraction in the
+scenario's instruments.py. Battery pre-registered in
+logs/2026-08-05-adjudication-battery.md ("PRE-REGISTRATION: P3
+integration-trap battery").
+
+| arm | branch | sha |
+|-----|--------|-----|
+| P3 walking-skeleton ordering rule | `cp/p3ws` | 496303c |

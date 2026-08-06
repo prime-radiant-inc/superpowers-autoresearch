@@ -610,3 +610,118 @@ resolve, mixed → mixed-markers (hand-read), bare code → no-markers.
 
 Built and registered this session; NO reps launched (controller
 audits and launches).
+
+## 2026-08-06 — PRE-REGISTRATION: P3 integration-trap battery
+
+Slate item E's fixture is built; this is its battery
+pre-registration. Successor to the P3/P4 disposition
+(plan-decomposition log, 2026-08-05): walking-skeleton was parked
+INCONCLUSIVE-BY-CEILING because pd-pipeline/pd-overflow complete
+cleanly under any plan shape; the owed discriminating fixture needed
+a seeded INTEGRATION TRAP — two subsystems individually green
+layer-by-layer, loudly failing when composed — so plan ORDER
+determines when the failure is discovered and how much finished work
+gets reopened.
+
+**Scenario `p3-integration-trap`** (campaigns/cost-pathologies/
+scenarios/; pd-pipeline's plan-AUTHORING shape — the session gets a
+spec, writes its own plan with writing-plans, executes with SDD in
+the same session; pinned class-routed replies never resolve or
+acknowledge the inconsistency). Two-subsystem metrics pipeline
+(COLLECTOR writes a JSONL sample stream; REPORTER validates and
+aggregates it). Two deterministic tripwires in the stream contract,
+each side locally sensible and unit-testable in isolation:
+TRIPWIRE-TS (collector stamps `ts` as a strftime string for operator
+readability; reporter demands integer epoch seconds ≥ 1577836800,
+raising SampleStreamError) and TRIPWIRE-SEQ (collector counts `seq`
+per metric name; reporter demands strictly-increasing seq across the
+stream). The spec's mandated e2e test (real Collector, alternating
+cpu/mem, through generate_report) makes composition unavoidable and
+trips SEQ even if TS was independently harmonized. NOTE the
+disposition's sketch trap (naive-local vs UTC wall-clock) was
+REFINED: the evals container sets no TZ, so local==UTC and that trap
+is inert in the battery environment — mechanics, worked repro (9
+layer-local tests green; composed run fails `line 1: invalid
+timestamp '2026-08-06T…'`; shallow ts-only fix still fails `line 2:
+sequence regression`; full harmonization completes), resolution
+taxonomy, and instrument map live in the scenario's
+SEEDED-TRAP-LEDGER.md (never surfaced to the agents).
+
+**Arms:** {`base2` @ fb518ed, `p3ws` @ 496303c} × p3-integration-trap
+× n=4 each (8 reps). `cp/p3ws` = sim/dev2 @ fb518ed + one commit
+(`arm(p3ws): …`, 2 lines, writing-plans SKILL.md File Structure
+section only, verified twice after worktree removal — manifest
+section "2026-08-06 P3 walking-skeleton"): "Task 1 builds the
+thinnest end-to-end slice through every subsystem the spec composes —
+real input to real output — before any task deepens a single layer;
+later tasks widen the skeleton." Runner:
+`campaigns/cost-pathologies/run-quorum.sh {base2|p3ws}
+p3-integration-trap 4` (codex lane; `;`-chained, backfill per the
+tolerant-chaining rule). The scenario also gates claude/kimi/pi, so
+other-model cells are pure config later; this battery pre-registers
+the codex cell only.
+
+**Endpoints:**
+1. PRIMARY — rework after the first integration failure: per rep, the
+   trajectory hand-read anchored by p3-trap-sighting-step (first
+   SampleStreamError sighting; innocent mentions excluded by hand)
+   plus the git ingredients (p3-commit-timeline,
+   p3-collector-commits/p3-reporter-commits re-touch counts after
+   p3-first-e2e-commit-ordinal) → rework commits, and output tokens
+   spent after the failure moment (trajectory step metrics) →
+   rework tokens. Mechanically-assisted hand-read, never a gate; git
+   alone cannot distinguish skeleton-widening from rework, which is
+   why the sighting anchor rules.
+2. PRIMARY — first-e2e task index: p3-first-e2e-task-index (plan
+   text) and p3-first-e2e-run-step / p3-first-e2e-commit-ordinal
+   (when composition actually happened). p3ws expectation: index ≈ 1.
+3. SECONDARY — p3-first-task-shape (slice vs layer), p3-trap-in-plan
+   (plan-time discovery), p3-trap-resolved + p3-ts-convention /
+   p3-seq-convention / p3-validation-retained (resolution quality;
+   a validation-dropped resolution is disclosed, not gated).
+4. GUARD — completion ACs (gauntlet verdict + module/pytest post
+   gates, arm-neutral by construction): the arm must not depress
+   completion.
+5. Per-rep served model (p3-served-model; census rule per this log's
+   header). Hand-read every `unknown` before any rate is computed.
+
+**Expectation registered honestly (the ceiling risk this fixture was
+built to escape can recur one level up):** granularity-adaptation may
+defeat this too — base2 sessions may write skeleton-ish plans
+unprompted, or harmonize the contract AT PLAN TIME (writing-plans'
+self-review + SDD preflight both read the whole spec; pd-pipeline
+sessions routinely cross-read). The base2 cells measure that base
+rate FIRST: if base2's first-e2e index is already ~1, or
+p3-trap-in-plan is predominantly yes with no composed failure ever
+occurring, the battery is INCONCLUSIVE-BY-CEILING and the verdict
+must say so — that outcome would still be informative (plan-time
+discovery is the cheap path by a different mechanism than task
+ordering), but it is NOT a walking-skeleton win and may not be
+claimed as one.
+
+**Instrument validation (no spend):** bash -n clean on checks.sh +
+setup.sh; py_compile clean on instruments.py; `bun run quorum check`
+reports `ok p3-integration-trap` (rsynced into the evals checkout's
+scenarios/ with the run-quorum.sh .git/info/exclude discipline; the 4
+pre-existing FAILs — cp-x10-spec, pd-overflow, pd-overflow-xl,
+pd-pipeline — unchanged). Stub-harness post() dry-runs (prelude verbs
+stubbed): (1) constructed HORIZONTAL end-state (layer commits, e2e
+test at commit 4, two collector fix commits after) + UNRELATED real
+codex rep's trajectory (pd-pipeline-control-rep1, gpt-5.6-sol) →
+first-task-shape layer(collector), first-e2e-task-index 3,
+first-e2e-commit-ordinal 4, collector retouches-after-e2e 2 (the
+rework), served-model resolves, dispatches 9 (matches the rollout's
+9 Agent calls), first-e2e-run-step correctly `unknown` on the
+unrelated trajectory, trap-resolved ok + epoch-int/global; (2)
+constructed SKELETON end-state → first-task-shape slice,
+first-e2e-task-index 1, no false rework (file-born-after-e2e
+marking); (3) UNRESOLVED naive-layered tree → trap-resolved
+compose-error:SampleStreamError line 1, ts-convention string,
+seq-convention per-metric; (4) bare non-git dir + missing run dir →
+all 20 emit lines, everything `unknown`, no crash. All instruments
+are emit-only `command-succeeds "true # p3-…"` lines; the only post
+gates are the arm-neutral completion ACs (collector.py, reporter.py,
+pytest), same as pd-pipeline's.
+
+Fixture + arm built this session (no launches — controller audits and
+launches).
