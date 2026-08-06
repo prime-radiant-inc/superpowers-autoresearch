@@ -656,3 +656,40 @@ pre-registration in logs/2026-08-05-adjudication-battery.md).
 | Branch | Description | SHA |
 |---|---|---|
 | `cp/vfinish` | finish-anchored say-so (bootstrap; moment-anchor variable vs vfloor) | b870fb6 |
+
+## 2026-08-06 K1' decision-consistency — k1b (k1 rebuilt on sim/dev2)
+
+cp/k1b = sim/dev2 @ fb518ed + cp/pd-k1's two edits re-applied
+(`git cherry-pick -n 76884ac`, one commit `arm(k1b): …`): SKILL.md's
+dispatch-contents item (6) handoff path + implementer-prompt.md's
+read-then-append blocks. Rebuilt because pd-k1 @ 76884ac was cut from
+the OLD base 1fed99d and is not comparable against base2 @ fb518ed;
+the added/removed lines are textually identical to pd-k1's (verified:
+`diff <(git diff 1fed99d..cp/pd-k1) <(git diff sim/dev2..cp/k1b)`
+differs only in index lines and hunk offsets). Verified twice after
+worktree removal: `git log cp/k1b` shows the commit atop fb518ed
+(merge-base = fb518ed), and the committed blobs grep for
+"handoff-file path" (SKILL.md) and "Then read the handoff file"
+(implementer-prompt.md).
+
+Scenario registered for this arm
+(campaigns/cost-pathologies/scenarios/): `k1p-decision-consistency` —
+the K1 verdict's unmeasured axis (decision consistency, not
+efficiency). Six-task SDD plan on a dispatchqueue-style fixture whose
+Task 1 CHOOSES between two named envelope wire formats (JSONL vs
+LP32, both genuinely workable, recorded as a `WIRE_FORMAT` constant);
+the plan binds later tasks to the choice (REQ-E) but deliberately
+does NOT restate it in Task 3's (eventlog) or Task 5's (replay) own
+text — the seeded gap the handoff would bridge. Gates
+`# coding-agents: codex, claude`. All instruments are emit-only
+`command-succeeds "true # …"` lines (k1p-served-model,
+k1p-task1/3/5-format, k1p-consistency-t3/t5, k1p-handoff-writes,
+k1p-handoff-in-tree, k1p-decision-in-handoff); tree + trajectory.json
+extraction in the scenario's instruments.py; consistency is NEVER an
+AC. Battery pre-registered in
+logs/2026-08-05-adjudication-battery.md ("PRE-REGISTRATION: K1'
+decision-consistency battery").
+
+| arm | branch | sha |
+|-----|--------|-----|
+| K1' handoff rebuilt on sim/dev2 | `cp/k1b` | 17eeb53 |

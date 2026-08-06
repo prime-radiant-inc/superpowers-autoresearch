@@ -512,3 +512,101 @@ exits — changing fixtures mid-chain would make later reps
 incomparable with earlier ones. Until then, adjudication discounts
 missing-task-report.md findings as deterministic fixture noise (per
 the diagnosis above).
+
+## 2026-08-06 — PRE-REGISTRATION: K1' decision-consistency battery
+
+Slate item D's fixture is built; this is its battery pre-registration.
+Successor to the K1 verdict (2026-08-05, plan-decomposition log):
+mechanism bound fully (handoff read 5-6/6, appended every task),
+efficiency null — the unmeasured axis is DECISION CONSISTENCY: does a
+binding cross-task decision made by an early implementer survive into
+later tasks' implementations, with vs without the handoff?
+
+**Scenario `k1p-decision-consistency`** (campaigns/cost-pathologies/
+scenarios/, cp-x5-leases-scaled's conventions): six-task SDD plan,
+dispatchqueue fixture with an event trail. Task 1 CHOOSES between two
+named queue-event envelope wire formats — JSONL (json.dumps +
+b"\n" framing) vs LP32 (4-byte big-endian length prefix) — both
+genuinely workable, neither preferred, choice recorded as
+`WIRE_FORMAT = "jsonl"|"lp32"` in dispatchqueue/envelope.py. The plan
+says the choice is BINDING (REQ-E: "every later component … MUST
+match Task 1's choice exactly") but deliberately does NOT restate the
+chosen format in Task 3's (eventlog.py, on-disk consumer) or Task 5's
+(replay.py, batch export/import producer) own task text — the seeded
+gap the handoff would bridge. Task 6 wires queue+workers+eventlog but
+never cross-checks eventlog against replay, so a Task 3/Task 5
+divergence stays silent by construction. Tasks 3/5 may either
+implement framing locally (their briefs name both candidates, not the
+answer) or import envelope's helpers — delegation counts as
+consistent. Story ACs are ARM-NEUTRAL (plan attempted, ≥1 dispatch,
+no unrecoverable error, six real modules); consistency is
+instrumented, never judged.
+
+**Arms:** {`base2` @ fb518ed, `k1b` @ 17eeb53} ×
+k1p-decision-consistency × n=4 each (8 reps). NOTE pd-k1 @ 76884ac is
+NOT an arm here — it was cut from the old base 1fed99d; `cp/k1b`
+rebuilds the same two edits on sim/dev2 (cherry-pick -n 76884ac, one
+commit, verified twice after worktree removal; added lines textually
+identical to pd-k1's — manifest section "2026-08-06 K1'
+decision-consistency"). Runner:
+`campaigns/cost-pathologies/run-quorum.sh {base2|k1b}
+k1p-decision-consistency 4` (codex lane; `;`-chained, backfill per
+the tolerant-chaining rule). The scenario also gates `claude`, so a
+sonnet cell is pure config later; this battery pre-registers the
+codex cell only, for K1 lineage comparability.
+
+**Endpoints:**
+1. PRIMARY — decision-consistency rate: per rep, k1p-consistency-t3
+   and k1p-consistency-t5 (yes = Task 3/5 matches Task 1's format or
+   delegates to envelope's helpers; classification from the final
+   tree, worktree copies included). Compare the per-pair yes rate
+   k1b vs base2. `unknown`/`mixed-markers` lines are hand-read before
+   any rate is computed — the mechanical layer never guesses.
+2. SECONDARY (mechanism) — decision-recorded-in-handoff rate:
+   k1p-decision-in-handoff (yes = a handoff.md write blob in
+   trajectory.json carries a format token jsonl/lp32/json-lines/
+   length-prefix; n-a on base2 by construction, since no handoff
+   exists). Hand-read the write blobs before crediting a contested
+   yes (a ledger edit merely mentioning handoff.md can overcount).
+3. GUARD — completion ACs (gauntlet verdict + the six file-exists
+   post gates): the arm must not depress completion. A truncated rep
+   keeps its instruments (emit-only) but its completion-gate failures
+   are disclosed with the K1-rep2 stale-tree caveat.
+4. Per-rep served model (k1p-served-model; census rule per this log's
+   header — cross-arm comparison within-model or model mix disclosed).
+
+**Disclosed confound (base mechanism):** stock SDD's dispatch item
+(3) already instructs the controller to forward "interfaces and
+decisions from earlier tasks" in the dispatch text itself, so base2
+controllers CAN carry the format forward without any handoff; and
+implementers in both arms can read envelope.py from the tree
+(trust-but-verify was exactly K1's outcome). A null here is therefore
+a real result about redundancy, not a broken fixture — but hand-read
+the Task 3/5 dispatch texts in a sample of reps to record WHICH
+channel carried the decision (dispatch text, handoff, tree read,
+or nothing) before writing the verdict.
+
+**Instrument validation (no spend):** bash -n clean on checks.sh;
+py_compile clean on instruments.py; `bun run quorum check` reports
+`ok k1p-decision-consistency` (rsynced into the evals checkout's
+scenarios/ with the run-quorum.sh .git/info/exclude discipline; the
+4 pre-existing FAILs — cp-x10-spec, pd-overflow, pd-overflow-xl,
+pd-pipeline — unchanged). Stub-harness post() dry-runs (prelude verbs
+stubbed): (1) UNRELATED real codex rep WITH handoff writes
+(cp-x5-leases-scaled-pd-k1-rep1, gpt-5.6-sol) → served-model
+resolves, formats `missing`, consistency `n-a`, handoff writes=7
+reads=8, decision-in-handoff **no** (writes exist, no format token —
+the unknown-not-yes rule holds on unrelated content); (2) UNRELATED
+real claude rep, no handoff (cp-x10-consistency-control-rep20,
+claude-sonnet-5) → writes=0, decision-in-handoff n-a — the base2
+shape; (3) synthetic consistent tree (jsonl constant + local-jsonl
+eventlog + delegating replay) + synthetic decision-bearing handoff
+transcript → yes/yes consistency, decision-in-handoff yes;
+(4) synthetic divergent tree (lp32 envelope, jsonl eventlog, lp32
+replay) → consist-t3 **no**, consist-t5 yes; (5) worktree-stranded
+copy of the tree → classified from .worktrees with source noted;
+(6) marker-fallback unit checks (constant stripped): lp32/jsonl
+resolve, mixed → mixed-markers (hand-read), bare code → no-markers.
+
+Built and registered this session; NO reps launched (controller
+audits and launches).
