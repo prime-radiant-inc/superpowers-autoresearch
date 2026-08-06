@@ -725,3 +725,13 @@ pytest), same as pd-pipeline's.
 
 Fixture + arm built this session (no launches — controller audits and
 launches).
+
+## 2026-08-06 — Second half mechanical interim (rebut ×3, r1t-rebut ×3; all gpt-5.6-sol, battery now sol-uniform across all 13 reps)
+
+GUARD HOLDS in all four arms: escapes/rep = 2.0 (base2) / 2.0 (r1t) /
+2.0 (rebut) / 2.0 (r1t-rebut); every DEB-1 unknown hand-resolves to
+the atomic-rebind catch; ANCHOR-CRITICAL 6/6 caught in the second
+half. Rounds flat: rebut 4.7, composed 5.3 vs base2 ~5.25 — no
+rathole inflation from the added text. Adjudication-quality and
+convergence-tagging extraction dispatched (quotation-grounded, vs the
+first-half baseline of 0 runs-cited); verdict follows it.
