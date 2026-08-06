@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: superpowers-autoresearch
+  description: Autoresearch lab for superpowers skill behavior — hypothesis logs, micro-test harnesses, transcript mining, and report generators
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    prime-radiant.com/repo-map-rev: "8083a29917f8b2e2add662364606b458b508c0ee"
+  tags: [python, evals, research]
+spec:
+  type: tool
+  lifecycle: experimental
+  owner: user:obra
+  system: superpowers
+  dependsOn:
+    - component:superpowers-evals
