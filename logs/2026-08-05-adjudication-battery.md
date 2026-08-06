@@ -308,3 +308,28 @@ scratchpad/adjud-dynamics-firsthalf.md):**
   template loads, absent in base2) — reachable, untriggered.
 
 Second half (rebut ×3, composed ×3) in flight; verdicts wait for it.
+
+## 2026-08-05 — SONNET CELL VERDICT: the authority gap replicates exactly on claude-sonnet-5
+
+Four reps on the quorum claude-sonnet5 adapter (real harness, real
+plugin, stock skills):
+
+| configuration | seeded conflicts resolved |
+|---|---|
+| spec present (cp-x10-spec) rep20/21 | **5/5, 5/5** (gauntlet pass) |
+| specless (cp-x10-consistency) rep20/21 | **0/5, 0/5** (gauntlet pass) |
+
+Hand spot-check (rep20 specless): TIMEOUT_SECONDS 30 vs 90,
+MIN_PRIORITY 2 vs 1 — genuine divergences in a fully built root tree
+(tree-resolving scan line present; non-vacuous). One adapter note:
+the codex-session-log post-check can't pass under the claude adapter
+(path artifact, disclosed by the cell's runner); substantive checks
+and gauntlet unaffected.
+
+**#2086's mechanism is now demonstrated on two model families** —
+gpt-5.6 (terra-uniform battery + composed ship battery) and
+claude-sonnet-5 (this cell): the specless wall and the spec-present
+fix reproduce identically. Combined coverage ≈ the user base's two
+largest segments. Kimi/glm cells for this mechanism remain on the
+deferred list (would ride the same quorum-static consolidation as
+sp-adjacent-breakage).
