@@ -333,3 +333,16 @@ fix reproduce identically. Combined coverage ≈ the user base's two
 largest segments. Kimi/glm cells for this mechanism remain on the
 deferred list (would ride the same quorum-static consolidation as
 sp-adjacent-breakage).
+
+## 2026-08-06 — INFRA: codex plan quota exhausted; second half dead-on-arrival, quarantined
+
+All six rebut/r1t-rebut reps died at message one: "hard usage-limit
+block (zero credits)" — the ChatGPT-plan codex quota is exhausted
+(the contention risk flagged at the codex-cell deferral, arrived as
+full exhaustion). Zero work occurred (rounds=0, all-escape scans =
+untouched fixture trees, 1 rollout/rep). Reps quarantined to
+results/.quarantine-quota-20260806/ — they carry no data and must not
+enter any table. Second half re-runs when quota resets; T9 (codex-
+gated) waits with it. The vfloor sp-adjacent-breakage battery
+proceeds NOW on its non-codex cells (claude sonnet/haiku, kimi,
+pi/GLM — 36 of 48 reps), codex cells deferred with the rest.
