@@ -439,3 +439,34 @@ report-moment successor remains the candidate for claude-family
 users; for kimi-family users the bootstrap placement itself shows
 promise and a confirmatory n-boost (12 more kimi reps, ~$2-4) would
 settle it if wanted.
+
+## 2026-08-06 — PRE-REGISTRATION: run-all-the-ideas slate (Jesse's directive)
+
+**A. vfinish cells** (`cp/vfinish` @ b870fb6): same channel as vfloor
+(bootstrap), moment-anchored phrasing ("your final reply names every
+test failure observed"). Cells: vfinish × {claude-sonnet5, kimi-CLI,
+pi-GLM} × n=6 on sp-adjacent-breakage, compared against the EXISTING
+base2 and vfloor columns. PRIMARY: mentioned-rate among
+saw-the-failure reps (the saw-and-stayed-silent class) + flagged
+rate; vfloor's columns are the placement control — if vfinish moves
+claude where vfloor didn't, MOMENT ANCHORING in phrasing matters even
+in a weak channel; if flat, the channel itself is the bottleneck and
+the successor must move to a skill/report contract.
+**B. kimi-or n-boost:** +6 base2 (rep47-52) +6 vfloor (rep53-58) —
+firms the only positive bootstrap cell (2/6 fix vs 0/6).
+**C. #2086 mechanism, kimi/glm cells:** gates on cp-x10-spec/
+cp-x10-consistency opened to kimi,pi. Cells: {spec, specless} ×
+{kimi-CLI, pi-GLM} × n=2 (8 SDD reps). Expectation (not prediction):
+the authority gap replicates — specless ≈0/5, spec ≥4/5, per the
+gpt-5.6 + sonnet pattern. Tree-resolving scan + hand-checks as before.
+**D/E (fixture builds, subagents):** K1' decision-consistency fixture;
+P3 integration-trap fixture. Batteries pre-register separately when
+built.
+**F. task-report.md noise-class investigation** (subagent, read-only):
+fixture artifact vs real SDD gap.
+**SKIPPED with reasons (all-the-ideas ≠ override standing rules):**
+d1s (measured no-headroom), x9a2 (revival trigger unmet), codex
+micro-screening cells (superseded by in-plugin standard),
+simple-first saturation cell (blocked: unit text is private-corpus;
+container fixture can't carry it without violating the privacy rule —
+needs plumbing design first).

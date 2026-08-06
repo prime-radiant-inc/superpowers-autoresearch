@@ -650,3 +650,9 @@ pre-registration in logs/2026-08-05-adjudication-battery.md).
 | arm | branch | sha |
 |-----|--------|-----|
 | VFLOOR using-superpowers scope-and-verification section | `cp/vfloor` | c31d4e2 |
+
+## 2026-08-06 run-all-the-ideas slate
+
+| Branch | Description | SHA |
+|---|---|---|
+| `cp/vfinish` | finish-anchored say-so (bootstrap; moment-anchor variable vs vfloor) | b870fb6 |
