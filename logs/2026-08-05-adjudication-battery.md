@@ -505,3 +505,10 @@ artifact paths. Until patched, adjudication discounts this finding
 class as deterministic fixture noise (it inflates finding counts in
 ~every rep of every scenario using these fixtures). Full quotes:
 scratchpad/task-report-noise-investigation.md (session 8d122618).
+
+**Fixture-patch QUEUED, not applied:** the Report-line strip across the
+10 affected fixture plans waits until the running adjudication chain
+exits — changing fixtures mid-chain would make later reps
+incomparable with earlier ones. Until then, adjudication discounts
+missing-task-report.md findings as deterministic fixture noise (per
+the diagnosis above).
