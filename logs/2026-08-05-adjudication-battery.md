@@ -842,3 +842,13 @@ hidden dirs — rollouts under `home/.codex/sessions` are invisible to
 it; two sweeps came back silently empty before os.walk found the
 records. os.walk is mandatory for codex rep dirs (already in memory;
 recurred in this session's own scoring scripts).
+
+**2026-08-06 — K1' + P3 LAUNCHED (lane A):** {base2, k1b @ 17eeb53} ×
+k1p-decision-consistency ×4, then {base2, p3ws @ 496303c} ×
+p3-integration-trap ×4, per their pre-registrations. 16 reps, codex
+lane; weekly quota at 81% used at launch (T9 chain end), resets
+2026-08-08 — headroom judged sufficient; any quota-DOA reps get
+quarantined and re-run, never entering tables. Note: these batteries
+run on the patched fixtures (task-report.md line stripped), so their
+noise floor is not comparable to pre-patch batteries on that one
+instrument.
