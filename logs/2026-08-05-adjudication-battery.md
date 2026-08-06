@@ -470,3 +470,38 @@ micro-screening cells (superseded by in-plugin standard),
 simple-first saturation cell (blocked: unit text is private-corpus;
 container fixture can't carry it without violating the privacy rule —
 needs plumbing design first).
+
+## task-report.md noise class: diagnosis (2026-08-06, item F)
+
+**Verdict: FIXTURE ARTIFACT, not an SDD gap.** The cp-x1-edit-existing
+fixture plan's Task 2 section ends with "**Report:** write your report
+to `task-report.md` when done." (credit-adjustments-plan.md:130) — a
+campaign-wide fixture template line present verbatim in 10
+cost-pathologies fixture plans. No superpowers skill in the repo's
+entire history ever names `task-report.md` (`git log --all -S` empty),
+and sim/dev2 writing-plans emits no report lines; the current SDD
+contract has the CONTROLLER name the report path
+(`.superpowers/sdd/<plan-basename>/task-N-report.md`, git-ignored
+workspace).
+
+**Mechanism:** `scripts/task-brief` copies the task's verbatim plan
+text — including the fixture's Report line — into the brief and thence
+the review package. Implementers wrote reports at the controller path
+(confirmed in rep trees: task-1/2-report.md under the workspace);
+diff-scoped reviewers then flagged plan line 130 as an unmet
+deliverable ("required `task-report.md` is absent from the branch" /
+"HEAD contains only the two internal `.superpowers` reports") in 6/7
+reps. base2-rep2's fix round 1 was purely this: "The Task 2 code
+passed review; the only blocker is report provenance ... limited to
+reconciling both report locations and commit accounting." r1t-rep1
+escaped the flag because its implementer wrote the repo-root file
+directly. The collision is deterministic: the workspace is git-ignored
+by design, so any plan-text report path always reads as absent.
+
+**Fix: scenario patch.** Strip the Report line from the 10 fixture
+plans (or point it at a tracked path and grade it deliberately). No
+SDD PR candidate; at most a future conflict-scan row for plan-mandated
+artifact paths. Until patched, adjudication discounts this finding
+class as deterministic fixture noise (it inflates finding counts in
+~every rep of every scenario using these fixtures). Full quotes:
+scratchpad/task-report-noise-investigation.md (session 8d122618).
