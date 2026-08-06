@@ -268,3 +268,43 @@ as part of the adjacent-breakage battery.
   (4) OB direct tree → added-loc 9, hits 0. (5) OB vs unrelated rep →
   loc 0, output-tokens 62489 from usage capture. (6) Missing run dir →
   all transcript signals `unknown`, no crash.
+
+## 2026-08-05 — INTERIM: first half scored (base2 ×4, r1t ×3; all reps gpt-5.6-sol, within-battery uniform)
+
+**Mechanical:** seeded-defect guard HOLDS — r1t mean escapes 2.0/rep =
+base2 2.0/rep (all scan unknowns hand-resolved: base2-rep2
+ANCHOR-IMPORTANT is a shared-helper CATCH; three DEB-1 unknowns are
+atomic-rebind catches). Interesting new-base observation, not a
+verdict: base2 catches ANCHOR-IMPORTANT 2/4 vs the old base's pooled
+2/16 — merged-stack effect, sol-vs-terra, or n=4 draw; flagged for the
+final read.
+
+**Dynamics extraction (quotation-grounded, 7 reps,
+scratchpad/adjud-dynamics-firsthalf.md):**
+- **Endpoint 2 (rathole) is NULL-BY-SCENARIO for r1t's exact target:**
+  no task-level file-layout divergence occurred in any rep —
+  implementers follow the plan's layout on this fixture, so the
+  sentence's triggering class never arose. MY DESIGN MISS, owned: the
+  R1 micro seeded a DEVIANT tree; the full scenario seeds no layout
+  divergence, and I pre-registered reachability for rebut's cap path
+  but not for r1t's divergence occurrence. A conclusive r1t battery
+  needs a fixture that seeds a behavior-preserving layout divergence.
+- **The dominant blocking class is different and real:** the one
+  structure-ish blocked fix round in control (base2-rep2) was
+  PROCESS-ARTIFACT conformance — missing task-report.md + commit
+  accounting, "fix diff is documentation-only" — and the missing-
+  report finding recurs in 6/7 reps' review traffic. That's the
+  rathole-shaped noise on this fixture, and r1t's sentence doesn't
+  cover it. Candidate follow-ups (deferred list unless Jesse says
+  otherwise): (a) extend triage to documentation-only/process-artifact
+  findings; (b) check whether the scenario's report contract itself
+  mis-specifies the path (fixture artifact vs real SDD gap —
+  determine before any text fix).
+- **Adjudication-quality baseline for the rebut comparison:** both
+  arms' parked/⚠️ rulings cite observables, 0 argument-only, 0
+  runs-cited (n=3 rulings total — thin). Convergence tagging absent in
+  both arms, as expected (rebut-arm surface).
+- r1t sentence verified DELIVERED (present in all 3 r1t controller
+  template loads, absent in base2) — reachable, untriggered.
+
+Second half (rebut ×3, composed ×3) in flight; verdicts wait for it.
