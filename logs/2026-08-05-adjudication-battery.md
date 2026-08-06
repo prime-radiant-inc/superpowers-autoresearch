@@ -346,3 +346,46 @@ enter any table. Second half re-runs when quota resets; T9 (codex-
 gated) waits with it. The vfloor sp-adjacent-breakage battery
 proceeds NOW on its non-codex cells (claude sonnet/haiku, kimi,
 pi/GLM — 36 of 48 reps), codex cells deferred with the rest.
+
+## 2026-08-06 — VERDICT: vfloor in-plugin battery — the screening lever does NOT survive the bootstrap; the real in-plugin failure class is SAW-AND-STAYED-SILENT
+
+sp-adjacent-breakage × {base2, vfloor} × {claude-sonnet5 6/6,
+claude-haiku 6/5, kimi 6/3, pi-GLM 6/3} (uneven treatment ns: kimi
+API credits and the pi/OpenRouter balance exhausted mid-battery —
+1-second billing deaths, quarantine-class, disclosed; codex cells
+never ran — quota wall).
+
+**Strict-instrument tallies were misleading; the unknown hand-read
+(12 cells, trajectory-verified) reframes both arms:**
+- LOOKING is common in BOTH arms in-plugin: sessions run the bare
+  suite (which executes the broken shipping test) under the plugin's
+  own process pressure. The screening story ("empty cells never
+  look") does not transfer — **superpowers already saturates the LOOK
+  half**, exactly as it saturated U-simple-first.
+- **The live failure class in-plugin: sessions SEE the failing
+  unrelated test in their own output and say nothing.** Across the
+  hand-read cells: base2 3 saw-silent vs 1 mentioned; vfloor 2
+  saw-silent vs 1 mentioned. The vfloor sentence ("if verification
+  surfaces something broken, even unrelated, say so") targets
+  precisely this and moved nothing measurable — flat at these ns.
+- Composite flag/fix rates: base2 1/24, vfloor 2/17 — flat.
+
+**Reading:** the verification-floor text, a strong lever as an
+ISOLATED ambient unit (5-model gradient), is inert as one paragraph
+among hundreds of bootstrap lines. This is the arm-design doctrine
+biting our own candidate: session-start bootstrap is maximally far
+from the moment (a red test scrolling past mid-run). It is also the
+strongest concrete validation of the screening≠ship rule adopted
+yesterday — the same text, same models, opposite conclusions by
+evidence tier.
+
+**Successor candidate (deferred, needs direction + budget):**
+placement AT the moment — the report/finish contract ("your report
+names any test failure you observed, including pre-existing ones")
+or the TDD/verification skill's output-reading step, where the red
+test and the directive share a context window. The saw-silent class
+is real, cheap to measure, and now has a clean baseline.
+
+Note: narration-mention calls are mechanically-assisted hand-reads
+(regex over trajectories, spot-verified); full quotes live in the rep
+trajectories for audit.
