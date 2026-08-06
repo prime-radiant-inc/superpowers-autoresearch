@@ -181,4 +181,3 @@ has the strongest reason anywhere in this plan to want every test
 green, not just `deadletter.py`'s own file, since this is where any
 latent mismatch between the earlier tasks would first surface)
 
-**Report:** write your report to `task-report.md` when done.

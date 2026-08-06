@@ -137,4 +137,3 @@ amount).
 
 **Verification:** `pytest tests/`
 
-**Report:** write your report to `task-report.md` when done.

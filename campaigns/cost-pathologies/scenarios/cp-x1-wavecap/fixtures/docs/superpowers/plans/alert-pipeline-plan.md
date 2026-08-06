@@ -115,4 +115,3 @@ threshold.
 
 **Verification:** `pytest tests/test_digest.py`
 
-**Report:** write your report to `task-report.md` when done.

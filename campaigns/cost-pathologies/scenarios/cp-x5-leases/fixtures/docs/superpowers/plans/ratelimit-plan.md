@@ -84,4 +84,3 @@ task's own file — Task 2's middleware test asserts the exact old
 default and MUST be re-run and updated, not skipped as
 "already-passing").
 
-**Report:** write your report to `task-report.md` when done.

@@ -245,4 +245,3 @@ capacity reports the overflow job_ids under `rejected`.
 
 **Verification:** `pytest tests/` (the whole suite)
 
-**Report:** write your report to `task-report.md` when done.

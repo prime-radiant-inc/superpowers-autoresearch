@@ -50,4 +50,3 @@ a small totals object.
 
 **Verification:** `npm test`
 
-**Report:** write your report to `task-report.md` when done.

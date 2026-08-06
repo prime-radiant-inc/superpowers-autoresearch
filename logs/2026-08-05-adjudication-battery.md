@@ -735,3 +735,47 @@ half. Rounds flat: rebut 4.7, composed 5.3 vs base2 ~5.25 — no
 rathole inflation from the added text. Adjudication-quality and
 convergence-tagging extraction dispatched (quotation-grounded, vs the
 first-half baseline of 0 runs-cited); verdict follows it.
+
+## 2026-08-06 — ADJUDICATION BATTERY VERDICT (all four arms, 13 sol-uniform reps)
+
+**Guard:** 2.0 escapes/rep in every arm; rounds flat; costs flat
+($4.08-7.18/rep). Neither text costs anything.
+
+**r1t (structure-triage sentence): INCONCLUSIVE-BY-SCENARIO,
+confirmed both halves** — no behavior-preserving layout divergence
+ever occurred, so the sentence's trigger never arose. Needs the
+divergence-seeded fixture (deferred entry stands).
+
+**rebut (evidence-adjudication package): SAFE, primary
+UNEXERCISED-BY-SCENARIO.** Rulings-with-runs 0/7 pooled — but every
+parked/dismissed finding was NON-runtime class (test-quality, API
+design, spec scope), where the run mandate deliberately doesn't
+apply; every genuine runtime defect claim was accepted and fixed,
+never contested. The scenario's internal reviewers simply don't
+produce the contested plausible-but-unreachable runtime findings the
+serf session's ADVERSARIAL EXTERNAL reviewer did. One near-miss
+flagged for the record: rebut-rep2 closed a cross-process race claim
+on plan-scope argument with no falsifiability statement — the one
+cell where the mandate arguably applied and did not bind.
+**Secondary surfaces, mixed uptake:** ledger class/severity tags
+appeared 2/2 non-vacuous chances under composed but 0/3 under
+rebut-alone (small ns, uptake variance); the expected-green
+vocabulary migrated into one implementer report verbatim. No early
+adjudications, no violations, no interaction effects composed.
+
+**Disposition:** neither text ships on this evidence; neither is
+harmed by it. Both go to the deferred list behind a NEW fixture
+class: an adversarial-review scenario seeding
+plausible-but-unreachable RUNTIME findings (the serf session's
+shape — "here is a window where X could happen" one level deeper
+each round) — that fixture exercises rebut's run mandate, r1t rides
+along, and real-world sightings remain an alternative trigger.
+Extraction: scratchpad/adjud-dynamics-secondhalf.md
+(quotation-grounded; codex dispatch payloads encrypted at rest,
+disclosed).
+
+**Fixture patch APPLIED post-chain:** the task-report.md Report line
+stripped from 14 fixture plans (the diagnosed 10 plus 4 more the
+sweep found, including the new k1p fixture which had inherited the
+template line). Batteries from this point run without the noise
+class; earlier batteries carried it symmetrically in all arms.

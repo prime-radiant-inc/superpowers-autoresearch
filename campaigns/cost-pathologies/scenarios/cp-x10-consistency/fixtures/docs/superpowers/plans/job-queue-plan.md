@@ -192,4 +192,3 @@ job under the threshold is not archived.
 
 **Verification:** `pytest tests/test_archiver.py`
 
-**Report:** write your report to `task-report.md` when done.

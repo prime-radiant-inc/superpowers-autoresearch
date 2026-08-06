@@ -101,6 +101,22 @@ U-broken-windows alone stayed 0/8; 3-arm micro, n=8.
 **Refs:** logs/2026-08-03-claudemd-lift.md.
 **Est.:** (a) ~$40; (b) ~$15.
 
+## Adversarial-runtime-findings fixture — exercises rebut + r1t
+
+**What:** the adjudication battery graded both texts SAFE but their
+primary triggers never arose on cp-x1-edit-existing (no layout
+divergences; no contested unreachable-runtime findings — internal
+reviewers accept-and-fix real defects instead of contesting
+theoretical ones). Needed: a scenario whose review channel seeds
+plausible-but-unreachable RUNTIME findings (the serf Roborev shape),
+plus a behavior-preserving layout divergence, so park-with-experiment
+and the triage sentence both meet their moments.
+**Trigger:** funding the fixture build (~1 session, cp-x10-class), or
+a real-world report of either failure class under the merged skills.
+**Refs:** logs/2026-08-05-adjudication-battery.md (final verdict);
+arms cp/r1t 08972e6, cp/rebut 52df997, cp/r1t-rebut 77ec054.
+**Est.:** fixture ~1 session + ~$70 battery.
+
 ## Cross-model validation cells — kimi / glm
 
 **What:** the campaign's mechanisms are demonstrated on the gpt-5.6
