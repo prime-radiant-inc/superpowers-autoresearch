@@ -1544,3 +1544,33 @@ Battery incomplete: kimi + glm cells running on lane B; verdict
 finalizes when they land. If they hold, cp/vfloor-tdd @ 46ff987 is a
 ship candidate through the normal gate (its arm text IS the shipped
 text; needs Jesse's placement sign-off and the PR path).
+
+## 2026-08-08 — VERDICT (battery complete): vfloor-tdd across three
+## families — placement effect on ALL THREE, graded by family
+
+Strict signature counts (watched-failure = FAILURES-block/assert
+signature received in tool output; kimi read from wire.jsonl, glm
+from trajectory, sonnet from claude session logs):
+
+| family | control look-see-mention | vfloor-tdd look-see-mention |
+|---|---|---|
+| sonnet | 0/4 | 4/4 |
+| kimi-for-coding | 1/4 (rep22) | 3/4 (reps 21,23,24) |
+| glm-5.2 | 0/4 | 1/4 (rep33) |
+| pooled | 1/12 | 8/12 |
+
+Every rep that saw the failure mentioned it (9/9 — the
+looking-is-the-bottleneck finding holds again). Guard: treatment
+task-done 8/8; control kimi reps 21/24 task-done no (control-side
+completion noise, not arm-attributable). Instrument note:
+vfloor-tdd-rep21's verdict emits came up empty while its wire log
+carries the full chain — scored from the wire per the kimi transcript
+caveat; emit-side gap filed.
+
+**Conclusion:** moving the verification-floor text from bootstrap
+(inert on claude/glm) to the TDD Verify-GREEN moment produces
+look-see-report behavior on every family tested: complete on sonnet,
+strong on kimi (over an occasional-looker baseline), first-ever
+recorded glm look. cp/vfloor-tdd @ 46ff987 is a SHIP CANDIDATE: the
+arm text is the shipped text verbatim, battery pre-registered and
+complete, cross-family. Needs Jesse's sign-off for the PR.
