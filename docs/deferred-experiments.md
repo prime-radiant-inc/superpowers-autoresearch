@@ -60,8 +60,14 @@ integration trap — two subsystems whose contract fails only when
 composed — so horizontal plans hit rework at the last task and skeleton
 plans at slice one. Metric: rework commits/tokens after first
 integration failure.
-**Trigger:** deciding the walking-skeleton directive on evidence rather
-than parking it.
+**Trigger:** a fixture where the integration mistake COMPOUNDS — the
+wrong convention baked into many call sites by the time a late
+integrator finds it — or a real-world trace of expensive late rework.
+The 2026-08-07 P3 battery (p3-integration-trap) ran NULL: the seeded
+contract conflict was a 1-2 commit fix whenever it was found, so no
+ordering could show a benefit, and the skeleton arm's one e2e-first
+plan cost 2-3× (integration maintenance on every task). Cheap traps
+cannot discriminate ordering rules.
 **Refs:** logs/2026-08-03-plan-decomposition-campaign.md (P3/P4
 disposition).
 **Est.:** fixture ~1 focused session (cp-x10-class effort) + ~$70

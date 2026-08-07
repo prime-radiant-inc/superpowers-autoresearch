@@ -1054,3 +1054,53 @@ k1g-ground-truth, codex lane, lane B. ~$60-90.
 (the phantom API is in the plan's own code blocks and the lib is
 immutable), so no empty-class risk this time. The open question is
 purely how the correction travels — which is the thing measured.
+
+## 2026-08-07 — VERDICT: P3 walking-skeleton cell, NULL (trap too cheap
+## to reward any ordering)
+
+Cell: base2 ×4 vs p3ws ×4 on p3-integration-trap (brainstorm→plan→
+implement session; the arm text pushes plans toward a first
+end-to-end slice). All 8 reps gpt-5.6-sol, gauntlet pass, final pass.
+
+Plain summary: the fixture seeds a contract conflict between two
+subsystems (timestamp format + sequence numbering) that only shows up
+when they're composed. The question was whether plans that integrate
+early (walking skeleton) avoid expensive late rework. The answer at
+this fixture's scale: there is no expensive rework to avoid. Every
+rep — both arms, any plan shape — hit the conflict at its first
+end-to-end run and fixed it in 1-2 commits. The conflict is caught
+by the reporter's validation the moment the two halves meet, and the
+fix is one convention change. Late integration cost ≈ early
+integration cost ≈ small.
+
+Numbers:
+- Plan shape uptake (partial): first task is a composed slice in 1/4
+  controls vs 2/4 p3ws, plus one p3ws rep with e2e at task 2. The
+  text moves plan shape sometimes, not reliably.
+- Trap outcome: 8/8 resolved (live-probe ok); conventions converged
+  everywhere (7/8 epoch-int timestamps; seq split global/per-metric
+  but internally consistent — the probe passes either way).
+- Rework after the e2e test first appears: 1-2 retouch commits in
+  every layered rep. NOTE this metric penalizes slice-first plans by
+  construction (everything after commit 3 counts), so it can't favor
+  the arm — but the layered controls' rework being tiny is the
+  decisive fact regardless.
+- Cost: base2 mean $5.61/rep; p3ws mean $8.47 — dragged by p3ws-rep2
+  ($15.23, 15 commits, 19 dispatches, an e2e-first 4-task plan that
+  paid continuous integration maintenance on every task). Even
+  excluding the outlier, p3ws ≈ $6.21. No cost benefit; some risk of
+  cost blowup when the slice plan keeps every task on the composed
+  path.
+- Instrument note: p3-first-e2e-run-step fires on plan-writing
+  mentions of the e2e test, not the first execution — its low values
+  (6-10) are not test runs. Timeline attribution above rests on
+  commit ordinals, which are unambiguous.
+
+**Disposition:** walking-skeleton directive stays unshipped — second
+null, now with a cost-risk observation attached. The discriminating
+fixture would need the integration mistake to get MORE expensive the
+later it's found (the wrong convention baked into many call sites by
+task N), where this one stays a one-line fix regardless of when it's
+found. Updating the P3 deferred entry with that requirement; the
+walking-skeleton question is closed until someone funds that fixture
+or a real-world trace shows the expensive-late-rework class.
