@@ -602,3 +602,26 @@ loaded AND the session actually allowed to implement, does the
 ambient unit still reduce overbuild/size, or does the plugin's own
 YAGNI discipline already capture it? Queue: behind the K1g census +
 vfloor-tdd on the claude lane.
+
+## 2026-08-08 — VERDICT: simple-first engaged pair — NULL, unit
+## RETIRES for claude+plugin
+
+12/12 reps implemented real code (the redo's fixture works; the
+one-shot gate stall is gone). Production-code truth, rescored after
+catching a wrong-channel instrument artifact (the ported abstraction
+regex counted unittest TEST classes as speculative infrastructure —
+test files now excluded): control mean 11 prod-LOC, sf mean 11
+prod-LOC, speculative-abstraction hits **0 in all 12 reps**. The
+plugin baseline already produces the minimal direct solution; the
+U-simple-first ambient unit changes nothing about code shape. Per the
+pre-registration's retirement clause, U-simple-first RETIRES for
+claude-with-plugin; its −31% screening result remains a
+no-plugin-context finding only.
+
+Unresolved secondary, phrased as a bound: raw output-token means
+differed (ctl ≈14.3k, sf ≈9.6k) but two control reps ran the full
+spec+plan ceremony (26k/18.5k) and no sf rep did — at n=6 this is
+not attributable to the unit; no token claim is made. Instrument
+note filed: sp-ob abstraction scan now excludes test files; the
+emit's sample field printed matched-empty-groups (cosmetic, fixed
+with the exclusion).
