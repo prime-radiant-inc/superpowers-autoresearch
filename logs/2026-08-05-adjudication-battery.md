@@ -1277,3 +1277,29 @@ the open question. The -pt control column doubles as the friction
 quantification for the original sp-adjacent columns.
 
 Both batteries queue behind the K1g census on the lanes.
+
+## 2026-08-07 — K1g census, SONNET COLUMN: forwarding CONFIRMED with
+## direct dispatch evidence (3/3)
+
+base2 × k1g-ground-truth reps 11-13, claude lane, served
+claude-sonnet-5 (3/3). Guard clean: gauntlet pass 3/3, vendor
+untouched, all four modules real-API, overwrite adaptation
+discard-then-store (rep13 belt-and-suspenders both), zero phantom
+AttributeErrors in 40 session files.
+
+The claude lane upgrades the evidence class: dispatch payloads are
+readable (unlike codex), so forwarding is mechanically instrumented —
+**k1g-dispatch-corrections 9/11, 9/12, 9/11** across the three reps.
+Spot-checked blobs are unambiguous; one dispatch verbatim: "The
+brief's Step 3 sample code calls `store.put(key, data,
+overwrite=True)`. That method does not exist. … It actually exposes:
+`store(key, data)` — … raises `KeyExistsError` …". Another cites the
+ruling channel explicitly: "The controller ruled (recorded in the
+project ledger) that the brief's literal sample code is pseudocode
+for intent … the correct way to get replace-on-reingest semantics is
+`store.discard(key)` … then `store.store`". Rule-and-continue →
+ledger → correction-in-every-dispatch, on a second model family, with
+the codex hand-read now corroborated by a readable channel.
+
+Census remaining: kimi (rep 21 running), glm (queued), luna (quota
+wait). Verdict entry stays open until those land.
