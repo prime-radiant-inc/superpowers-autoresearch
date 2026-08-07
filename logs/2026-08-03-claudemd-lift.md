@@ -533,3 +533,32 @@ moves looking. This is SCREENING (mechanism check for the vfloor
 placement decision) — no ship claim at this tier.
 
 Both cells claude-CLI host lane; quorum lanes stay on the K1g census.
+
+## 2026-08-07 — VERDICT: tier-2 cells (both scored same-day)
+
+**(b) Verification-floor 3-arm micro — MECHANISM CONFIRMED on
+sonnet.** adjacent-breakage, claude-sonnet-5, ambient tier, n=8/arm:
+flag rate control 0/8, U-broken-windows 0/8, U-verification-floor
+**3/8**; task-done 8/8 in all arms. Cost of the behavior: mean
+$0.099 → $0.136/rep (+37%), turns 4.0 → 6.5. Exactly the C3
+interrogation prediction (broken-windows inert, scope-redefinition
+moves looking). This funds the already-queued vfloor-tdd quorum
+battery: the mechanism is real on claude; the open question is
+whether the TDD Verify-GREEN placement delivers it through the
+plugin.
+
+**(a) U-simple-first marginal over the superpowers baseline —
+NULL-BY-FIXTURE-SHAPE (unmeasurable at this tier).** overbuild-bait,
+--superpowers, n=12/cell: added-lines 0 in ALL 24 reps, both cells.
+Hand-read: every session stalls at brainstorming's clarifying
+question ("Should the CSV export live in a new module…?") — the
+plugin's design gate correctly blocks one-shot code writing, so no
+overbuild can ever be observed and the runner's per-rep "PASS" lines
+are vacuous (no code = not overbuilt). Two consequences, both
+recorded as standing lessons: (1) the tier-2 host runner CANNOT
+measure task-completion probes with the plugin loaded — those cells
+need quorum-static scenarios with a scripted approval reply; (2) the
+U-simple-first marginal question moves to that route if it is ever
+funded — its −31% screening result remains screening-only. The
+deferred-experiments campaign-3 entry is updated: (a) is closed
+unmeasurable-as-designed, (b) is closed positive-and-promoted.

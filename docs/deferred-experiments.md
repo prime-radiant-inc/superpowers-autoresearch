@@ -115,9 +115,14 @@ with the plugin loaded?). (b) Verification-floor unit from the C3
 interrogation ("a scope statement bounds the deliverable, not your
 verification") — predicted to move the adjacent-breakage look rate where
 U-broken-windows alone stayed 0/8; 3-arm micro, n=8.
-**Trigger:** Jesse's direction on campaign 3 tier 2.
-**Refs:** logs/2026-08-03-claudemd-lift.md.
-**Est.:** (a) ~$40; (b) ~$15.
+**Trigger:** RESOLVED 2026-08-07 (Jesse: "run that now"). (b) ran
+positive — verification-floor moves sonnet's flag rate 0/8 → 3/8
+(+37% rep cost); promoted into the vfloor-tdd quorum battery. (a) ran
+null-by-fixture-shape — with the plugin loaded, one-shot probes stall
+at brainstorming's gate and write no code, so overbuild is
+unobservable at the host tier; the marginal question needs a
+quorum-static scenario with a scripted approval reply if ever funded.
+Verdicts: logs/2026-08-03-claudemd-lift.md.
 
 ## Adversarial-runtime-findings fixture — exercises rebut + r1t + vfinish
 
