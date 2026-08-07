@@ -1,0 +1,3 @@
+# Pin the codex model for the luna census cell (the subscription lane is
+# otherwise server-assigned; we have only ever been dealt terra and sol).
+model = "gpt-5.6-luna"

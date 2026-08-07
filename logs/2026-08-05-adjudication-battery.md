@@ -1197,3 +1197,18 @@ predominantly inherit (≥ 3/4 of later-task instances not
 re-discovering firsthand); a family whose later seats each re-derive
 the correction (or drift) is a REAL GAP and revives the forwarding
 directive for that family.
+
+**2026-08-07 — luna cell amendment (Jesse's correction):** codex DOES
+accept `-m gpt-5.6-luna` on the command line; my "not runnable on
+demand" claim was wrong about the CLI and right only about our
+adapter defaults. Wiring: scenario variant `k1g-ground-truth-luna`
+(identical fixture) carrying a `codex.config.toml` fragment with
+`model = "gpt-5.6-luna"` — the quorum codex adapter prepends
+scenario fragments to its generated config, so no adapter change.
+Codex weekly quota is exhausted as of this writing (the K1g codex
+battery consumed the remaining headroom; reset ~tonight); a
+wait-then-run chain smokes the model id hourly and launches
+base2 × k1g-ground-truth-luna × 3 when quota returns. If the smoke
+shows the model ID itself rejected (vs quota), the chain stops and
+says so — that outcome would mean luna needs a different route after
+all. Census pre-registration above extends to this cell unchanged.
