@@ -507,3 +507,29 @@ the saturation question matters before any lift decision for
 non-claude users). Follow-up cell registered as deferred: kimi/glm ×
 superpowers-loaded, pending plugin-loading support in those CLIs'
 headless modes.
+
+## 2026-08-07 — PRE-REGISTRATION: tier-2 promotions (Jesse: "run that now")
+
+Two cells from the deferred entry, host claude lane (run_tier2.py,
+/tmp workdirs, throwaway HOME, per-rep model + bootstrap-injection
+recorded):
+
+**(a) U-simple-first marginal value over the superpowers baseline.**
+Probe overbuild-bait. Cells: `--superpowers` + empty (baseline) vs
+`--superpowers` + unit:U-simple-first. 12 reps each. PRIMARY: token
+delta between cells (screening showed −31% WITHOUT the plugin; the
+question is whether the plugin's own discipline already captures it).
+Secondary: overbuild-marker rate (probe grader), guard = task-done.
+A null here RETIRES the unit (the plugin baseline already covers it);
+a reproduced saving promotes it to a quorum battery on the arm-text
+path.
+
+**(b) Verification-floor 3-arm ambient micro.** Probe
+adjacent-breakage. Cells: empty control, unit:U-broken-windows,
+unit:U-verification-floor. 8 reps each. PRIMARY: look rate (probe's
+look grader; hand-read unknowns per standing rule). Expectation from
+the C3 interrogation: broken-windows stays ~0, verification-floor
+moves looking. This is SCREENING (mechanism check for the vfloor
+placement decision) — no ship claim at this tier.
+
+Both cells claude-CLI host lane; quorum lanes stay on the K1g census.
