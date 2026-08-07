@@ -940,3 +940,23 @@ knowing when scanning tables.
 (kimi-family-confirmed, claude/glm inert at probe scale); vfinish
 moves to the deferred list behind the adversarial-runtime-findings
 fixture — not shipped, not refuted, unexercised where it was aimed.
+
+**2026-08-07 — K1' chain interruption + EARLY STOP (pre-registration
+deviation, logged openly):** the lane-A driver was killed externally
+after base2 ×4 + k1b rep1 (all rc=0; k1b rep2's container survived
+and runs to completion — a resume driver waits for its verdict,
+quarantines and reruns if it never lands). Interim mechanical read of
+the completed control cell: **base2 is at ceiling 4/4** — every
+control rep centralizes wire framing in envelope.py and Tasks 3/5
+delegate to it (k1p-task3/5-format: delegates), so consistency holds
+structurally and the seeded decision-drift class is EMPTY in
+controls. Per standing rule 5 (no battery against an empty class),
+k1b reps 3-4 are cut: the arm mechanism demonstrably binds (rep1:
+9 handoff writes, 13 reads, decision-in-handoff yes) but no outcome
+delta is attributable when controls cannot diverge. K1' verdict will
+be written as null-by-headroom once rep2 lands, with the fixture
+lesson: seeding a "binding decision" via a shared constant invites
+delegation, which *is* the consistent outcome — a drift-capable
+fixture must make centralization unavailable (e.g. two format
+consumers in different processes/languages with no shared module).
+P3 block proceeds unchanged.
