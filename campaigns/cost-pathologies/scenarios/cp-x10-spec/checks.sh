@@ -183,7 +183,13 @@ _x10_emit_defect_instruments() {
 
 post() {
     check-transcript tool-called Agent
-    file-exists "$QUORUM_RUN_DIR/home/.codex/sessions/**/rollout-*.jsonl"
+    # Session-record existence, per harness (the codex-only form failed
+    # uniformly on kimi/pi reps 2026-08-07 and polluted `final`):
+    case "${QUORUM_CODING_AGENT:-codex}" in
+        codex) file-exists "$QUORUM_RUN_DIR/home/.codex/sessions/**/rollout-*.jsonl" ;;
+        claude) file-exists "$QUORUM_RUN_DIR/home/.claude/projects/**/*.jsonl" ;;
+        *) file-exists "$QUORUM_RUN_DIR/trajectory.json" ;;
+    esac
     file-exists 'jobqueue/worker.py'
     file-exists 'jobqueue/scheduler.py'
     file-exists 'jobqueue/api.py'
