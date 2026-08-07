@@ -1439,3 +1439,46 @@ to exit codes. Worth a probe of its own if seen again; noted here as
 first sighting (2 of 86 reps). Kimi-oauth transcript caveat for
 future scorers: the pretty trajectory.json drops content after turn
 1 — read agents/main/wire.jsonl.
+
+## 2026-08-07 — RE-SCORE RESULTS: adjudication guard + K1g
+## told-vs-read (full tables in scratchpad rescore-guard-k1g.md;
+## scored with the battery's own scan_defects())
+
+**C6 — the adjudication "guard 2.0 escapes/rep uniform" claim is
+CORRECTED, and SAFE weakens further:**
+- All 9 treatment reps (r1t/rebut/r1t-rebut) escape the identical
+  pair {ANCHOR-IMPORTANT, DEBATABLE-2}. Zero treatment-side variance.
+- base2 was NOT uniform: per-rep escapes [2, 1, 4, 1]. My "2.0 in
+  every arm" was an arm-mean coincidence — and it conceals a
+  stale-tree artifact: base2-rep3's main tree is the untouched seed
+  (its fixes sit unmerged in .worktrees/credit-adjustments, which
+  itself scores the same 2). Scoring worktrees, base2's mean is 1.5.
+- Per-defect: DEBATABLE-2 escaped 13/13 — the guard is AT CEILING
+  there, zero discrimination. ANCHOR-CRITICAL and DEBATABLE-1 were
+  caught in every treatment rep (headroom existed).
+- **Wrinkle that must not be buried: ANCHOR-IMPORTANT was caught 2/4
+  in base2 and 0/9 in treatments.** At these ns that is suggestive,
+  not significant — but it means even "no arm made things worse"
+  is not cleanly supported. Corrected verdict language: the battery
+  demonstrates no guard-visible regression on defects with headroom
+  EXCEPT a possible anchor-important catch-rate drop in the
+  treatment arms that n=4-vs-9 cannot resolve. STANDING NOTE: any
+  future rebut/r1t run on cp-x1-edit-existing carries
+  anchor-important catch rate as a PRIMARY endpoint; the queued ARF
+  battery tests these texts on a different fixture and does not
+  settle this specific wrinkle.
+
+**C7 — K1g told-vs-read RESOLVED (33 later-task seats):**
+told-first 26/33; told-only (no observed lib read) 1/33;
+read-first-with-told-status-unknown 6/33 (all codex base2, where the
+dispatch payload is encrypted even in the subagent's own rollout and
+the readable briefs are verbatim phantom-API text — their pre-read
+"per the controller ruling" statements can only have come from the
+encrypted dispatch, but 6 seats stated the API only after reading).
+Sonnet: told 9/9 with dispatches that name the real API AND order
+the lib read — the reads are instructed verification, not
+re-derivation. k1b: told 12/12 via the handoff artifact, read before
+any vendor read in 11/12. read-lib overall 32/33; no seat learned
+the API via runtime error. The census claim upgrades from bound to:
+**forwarding demonstrated told-first in 26/33 later-task seats,
+unknown-not-refuted in 6, on four model families.**
