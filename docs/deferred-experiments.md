@@ -34,8 +34,14 @@ task) but bought no re-read reduction. The unmeasured axis where observed
 "## Task N integration decisions" blocks suggest value: whether a
 cross-task BINDING DECISION seeded in an early task survives into later
 tasks' implementations with vs without the handoff.
-**Trigger:** funding a correctness-axis battery; needs a fixture seeding
-one early-task decision later tasks can silently contradict.
+**Trigger:** funding a correctness-axis battery with a fixture where
+centralization is IMPOSSIBLE (two consumers in different languages or
+across a process boundary, no shared module). The 2026-08-07 K1'
+battery (k1p-decision-consistency) went null-by-headroom: given a
+shareable constant, every control rep centralized it and delegated,
+so the drift class was empty. Mechanism-binding confirmed twice
+(handoff written/read every task); outcome untestable on
+shared-module fixtures.
 **Refs:** logs/2026-08-03-plan-decomposition-campaign.md (K1 verdict);
 arm `cp/pd-k1` @ 76884ac.
 **Est.:** fixture ~1 session + ~$60 battery (6 reps, two arms).

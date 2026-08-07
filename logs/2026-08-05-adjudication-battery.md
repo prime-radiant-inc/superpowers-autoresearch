@@ -972,3 +972,34 @@ falls back to that; validated against vfinish-rep23 (resolves to
 (Moonshot's oauth coding alias); the openrouter rows remain
 `moonshotai/kimi-k2.7-code`. Whether those are the same underlying
 snapshot is NOT established — keep the two columns separate.
+
+## 2026-08-07 — VERDICT: K1' (decision-consistency), NULL-BY-HEADROOM
+
+Final cell: base2 ×4, k1b ×2 (reps 3-4 cut per the early-stop entry
+above). All 6 reps gpt-5.6-sol, gauntlet pass, final pass.
+
+Plain summary: the experiment asked whether a "handoff file" — notes
+each task writes for the next task — keeps a decision made in Task 1
+(which wire format to use) from being contradicted by Tasks 3 and 5.
+The answer is that the question never got asked: in every rep, both
+arms, the implementers put the format decision in one shared module
+(envelope.py) and had later tasks call it. With one copy of the
+decision in the code, later tasks *can't* silently contradict it.
+Consistency was 6/6 everywhere; there was nothing for the handoff to
+prevent.
+
+What we did learn: the k1b handoff mechanism binds hard (rep1: 9
+writes/13 reads, rep2: 10 writes/13 reads, decision text present in
+the handoff both times) — same as the original K1 finding
+(mechanism-binds, outcome-null). Two mechanism-binding nulls with two
+different fixtures now say the same thing: **on fixtures where good
+structure is available, sessions take it, and knowledge-forwarding
+has no failure to prevent.** A fixture that can actually measure this
+needs centralization to be impossible — e.g. the format consumed by
+two programs in different languages, or across a process boundary
+with no shared import.
+
+Disposition: K1' closes null. The knowledge-forwarding directive stays
+unshipped. docs/deferred-experiments.md K1' entry updated with the
+fixture requirement; revival trigger unchanged (fund the
+no-shared-module fixture, or a real-world drift report).
