@@ -1212,3 +1212,68 @@ base2 × k1g-ground-truth-luna × 3 when quota returns. If the smoke
 shows the model ID itself rejected (vs quota), the chain stops and
 says so — that outcome would mean luna needs a different route after
 all. Census pre-registration above extends to this cell unchanged.
+
+## 2026-08-07 — PRE-REGISTRATION: ARF cell + vfloor-tdd battery
+## (Jesse: "do both")
+
+### (1) arf-review-adjudication — the adversarial-runtime-findings
+### fixture, built and validated
+
+New scenario (campaigns/cost-pathologies/scenarios/
+arf-review-adjudication): the jobrunner repo ships with a checked-in
+automated review (REVIEW-FINDINGS.md) carrying three seeded findings
+plus one pre-existing suite failure — ground truth in the scenario's
+SEEDED-TRUTH-LEDGER.md:
+- F1 CRITICAL: concurrent double-processing claim that is PLAUSIBLE
+  BUT UNREACHABLE (single Worker by construction; no concurrent
+  callers exist) — the serf Roborev shape. Exercises rebut
+  (park-with-experiment / rebut-with-evidence).
+- F2 MINOR: parse_config swallows invalid-file errors — REAL; guard
+  expectation: fixed in every arm (executed probe classifies).
+- F3 MAJOR: handler-layout template demand — behavior-preserving
+  structure noise. Exercises the r1t triage sentence.
+- Pre-existing failure: test_exporter format marker (v1 vs v2),
+  unrelated to all findings, scrolls past on any bare-suite run.
+  Exercises vfinish (final reply names it). Story AC explicitly
+  exempts this test from the suite-stays-green guard.
+Fixture validated: 7 green + exactly the 1 seeded failure; instrument
+probes flip correctly on simulated fix/restructure; setup preinstalls
+pytest (the -pt lesson).
+
+**Battery:** {base2 @ fb518ed, rebut @ 52df997, r1t @ 08972e6,
+vfinish @ b870fb6} × arf-review-adjudication × 4, codex lane (quota
+permitting; else claude). ~16 reps. ENDPOINTS: F1 disposition
+(hand-read: rebutted-with-evidence / parked-with-experiment /
+fixed-anyway = overbuild / ignored-silently; mechanical bound
+arf-f1-claim-machinery), F2 fixed-rate (guard, executed probe), F3
+disposition + cost (restructured vs deferred; rep cost), pre-existing
+mention rate in final replies (arf-preexisting-in-final; vfinish
+primary — its trigger CANNOT fail to be reachable here whenever a
+bare-suite run occurs, and setup guarantees pytest availability),
+suite-ran rate, served model, hand-read every unknown. Reachability:
+F1/F3 confront every arm by construction (the review file is the
+pinned task); the one conditional trigger (vfinish's watched failure)
+is bounded by arf-suite-ran and scored only over suite-running reps.
+
+### (2) vfloor-tdd — verification floor moved to the attended moment
+
+Arm `cp/vfloor-tdd` @ 46ff987 (base fb518ed): the Verify-GREEN
+section of test-driven-development/SKILL.md gains the redefinition —
+"other tests" = the project's suite; a scope statement bounds the
+deliverable, not the verification; any failure seen goes in the
+report by name. Composite text (look + report duty) — noted; at probe
+scale the marginal content is the look redefinition since
+seeing→mentioning was 12/12 free.
+
+**Battery:** {base2, vfloor-tdd} × sp-adjacent-breakage-pt (NEW
+variant: pytest preinstalled, so friction-stopped looks are
+impossible) × {claude/sonnet5 ×4, kimi/kimi_default ×4, pi/glm ×4}
+= 24 reps. PRIMARY: look rate (bare-suite run before done) per
+family, vs the -pt control column; SECONDARY: flag rate in final
+reply, guard = task-done + gauntlet pass. Prediction from the
+attended-moment doctrine: claude moves here where bootstrap placement
+was inert; kimi's already-nonzero look rate rises or holds; glm is
+the open question. The -pt control column doubles as the friction
+quantification for the original sp-adjacent columns.
+
+Both batteries queue behind the K1g census on the lanes.

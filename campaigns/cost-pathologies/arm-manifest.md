@@ -725,3 +725,4 @@ integration-trap battery").
 | arm | branch | sha |
 |-----|--------|-----|
 | P3 walking-skeleton ordering rule | `cp/p3ws` | 496303c |
+| vfloor at TDD Verify-GREEN moment | `cp/vfloor-tdd` | 46ff987 |
