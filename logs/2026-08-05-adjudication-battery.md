@@ -852,3 +852,11 @@ quarantined and re-run, never entering tables. Note: these batteries
 run on the patched fixtures (task-report.md line stripped), so their
 noise floor is not comparable to pre-patch batteries on that one
 instrument.
+
+**2026-08-06 — T9 SHIP DECISION (Jesse):** Draft A (brainstorming
+design-presentation placement) chosen on the UX trade-off; empirical
+tie on binding. Opened as draft PR #2101 against dev — arm-verbatim
+text (cp/t9a @ c02e67b's one bullet, applied cleanly to origin/dev @
+5f8f500), full template, gpt-5.6-sol-only scope disclosed with
+cross-model cells offered on request. Draft B retired: its battery
+evidence stays in this log; the arm branch remains for reference.
