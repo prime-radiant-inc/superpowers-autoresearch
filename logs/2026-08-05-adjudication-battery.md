@@ -860,3 +860,83 @@ text (cp/t9a @ c02e67b's one bullet, applied cleanly to origin/dev @
 5f8f500), full template, gpt-5.6-sol-only scope disclosed with
 cross-model cells offered on request. Draft B retired: its battery
 evidence stays in this log; the arm branch remains for reference.
+
+## 2026-08-07 — VERDICT: lane-B slate (boost + vfinish + #2086 kimi/glm cells), 38/38 rc=0
+
+### #2086 cross-model cells — headline REPLICATES on kimi and glm
+
+cp-x10-spec (spec in the room): kimi-oauth reps 40-41 **5/5 + 5/5**
+seeded plan-inconsistencies resolved to spec values; glm-5.2 (pi lane)
+reps 44-45 **5/5 + 5/5**. cp-x10-consistency (specless, same seeded
+plan): kimi **0/5 + 0/5**, glm **0/5 + 0/5**. Gauntlet verdicts 8/8
+pass. The spec-artifact mechanism now holds on four model families:
+gpt-5.6 (codex), claude-sonnet-5, kimi, glm — same shape every time
+(specless ≈0, spec-present ≈5/5, ungated).
+
+Mechanical caveat, hand-resolved: every rep's `final` field reads
+`fail` because the scenario carries a codex-only post-check
+(file-exists on `home/.codex/sessions/**/rollout-*.jsonl`) that
+cannot pass on kimi/pi harnesses. The only failing check in all 8
+reps is that one. INFRA FIX QUEUED: make the rollout-existence check
+harness-conditional in cp-x10-* checks. Kimi lane still records
+served model as `__kimi_env_model__` (known instrument gap, logged
+2026-08-05).
+
+### sp-adjacent-breakage: the saw-and-stayed-silent class DID NOT
+### REPRODUCE at probe scale — the whole effect is at LOOK
+
+Hand-reads closed every `unknown` in every cell. Full table
+(flag = shipping breakage named in final reply):
+
+| arm | model | n | saw failure | mentioned/saw | look notes |
+|---|---|---|---|---|---|
+| base2 | sonnet | 6 | 0 | — | 0 full-suite runs |
+| base2 | kimi-oauth | 5 | 1 | 1/1 | rep26 built .venv |
+| base2 | kimi-or | 12 | 0 | — | |
+| base2 | glm | 6 | 0 | — | |
+| base2 | haiku | 6 | 0 | — | |
+| vfloor | sonnet | 6 | 1 | 1/1 | rep4 |
+| vfloor | kimi-oauth | 6 | 4 | 4/4 | |
+| vfloor | kimi-or | 12 | 3 | 3/3 | |
+| vfloor | glm | 6 | 0 | — | |
+| vfloor | haiku | 3 | 0 | — | |
+| vfinish | sonnet | 6 | 0 | — | 6/6 ran ONLY targeted suite |
+| vfinish | kimi-oauth | 6 | 2 | 2/2 | reps 23/26 built .venv |
+| vfinish | glm | 6 | 0 | — | |
+
+Two findings:
+1. **Every session in every arm and model that saw the failure named
+   it in its final reply — 12/12 pooled, controls included.** At this
+   scenario's scale there is no reporting failure to fix; the entire
+   arm effect is whether the session LOOKS beyond the targeted test.
+   vfloor (a looking rule) moves that on the kimi family (oauth 4/6,
+   openrouter 3/12 vs controls 1/5, 0/12) and once on sonnet (1/6);
+   vfinish (a reporting rule) is UNEXERCISED-BY-SCENARIO — its
+   trigger condition (a seen failure) occurred 0/6 times on sonnet
+   and, when it occurred on kimi, the mention was already free.
+2. **Reconciliation with the saw-silent observation that motivated
+   vfinish:** that class was observed in FULL SDD sessions
+   (cp-x1-edit-existing, suites run as part of the workflow, failures
+   scroll past mid-session and the final report omits them). The
+   quorum-static probe can't reach that state: its task is small
+   enough that seeing and reporting are adjacent. vfinish's real test
+   belongs in the SDD-scale scenario — folded into the
+   adversarial-runtime-findings fixture spec in
+   docs/deferred-experiments.md (that fixture already needs a
+   watched-failure channel; one spec now serves rebut, r1t, and
+   vfinish).
+
+**Fixture-realism note:** the container has no pytest; bare `pytest`
+attempts fail and most models move on (instrument rows that read
+look-yes/flag-no were exactly these: vfinish reps 21/25, vfloor rep
+22 — attempted, tool missing, failure never seen). Kimi's look-rate
+advantage is partly venv-building persistence. A scenario variant
+with pytest preinstalled would separate "won't look" from "tooling
+friction stopped the look." Also: sp-ab-code-files counts .py naively
+and reads 869 when a session builds a .venv — cosmetic, but worth
+knowing when scanning tables.
+
+**Disposition:** vfloor remains the live lever for the look gap
+(kimi-family-confirmed, claude/glm inert at probe scale); vfinish
+moves to the deferred list behind the adversarial-runtime-findings
+fixture — not shipped, not refuted, unexercised where it was aimed.
