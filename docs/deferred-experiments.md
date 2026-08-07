@@ -32,8 +32,10 @@ gated on the trigger reproducing the base rate.
 > Task 1 discovers the plan is wrong about reality; later tasks must
 > not re-discover it — is HANDLED by shipped superpowers on the K1g
 > fixture: the controller rules on the mismatch and carries the
-> ruling into every later dispatch (11/12 later-task seats inherited
-> the correction; one cheap leak). All 8 reps converged on the real
+> ruling into later dispatches (11/12 later-task seats show no
+> firsthand runtime re-discovery — a bound, per the 2026-08-07 audit;
+> dispatch-carry verified by hand-read sampling on codex and by the
+> readable dispatch channel on sonnet). All 8 reps converged on the real
 > API with zero drift. The handoff arm added nothing over the
 > dispatch channel. Verdict:
 > logs/2026-08-05-adjudication-battery.md. Revive only on a
@@ -67,11 +69,13 @@ integration failure.
 **Trigger:** a fixture where the integration mistake COMPOUNDS — the
 wrong convention baked into many call sites by the time a late
 integrator finds it — or a real-world trace of expensive late rework.
-The 2026-08-07 P3 battery (p3-integration-trap) ran NULL: the seeded
-contract conflict was a 1-2 commit fix whenever it was found, so no
-ordering could show a benefit, and the skeleton arm's one e2e-first
-plan cost 2-3× (integration maintenance on every task). Cheap traps
-cannot discriminate ordering rules.
+The 2026-08-07 P3 battery (p3-integration-trap) was
+INCONCLUSIVE-BY-CEILING one level up (CORRECTED per the 2026-08-07
+audit): sessions harmonized the seeded contract at spec/plan-writing
+time, the runtime trap fired 0/8, and no ordering effect of any size
+was measurable. The skeleton arm's one e2e-first plan still cost
+2-3×. A trap harmonizable at plan time cannot discriminate ordering
+rules.
 **Refs:** logs/2026-08-03-plan-decomposition-campaign.md (P3/P4
 disposition).
 **Est.:** fixture ~1 focused session (cp-x10-class effort) + ~$70
@@ -132,9 +136,10 @@ divergences; no contested unreachable-runtime findings — internal
 reviewers accept-and-fix real defects instead of contesting
 theoretical ones). The vfinish text (final-reply names any watched
 test failure) joined the same bucket 2026-08-07: at quorum-static
-probe scale the saw-and-stayed-silent class doesn't exist (12/12
-pooled saw→mentioned, controls included; the whole arm effect is at
-LOOK, which is vfloor's lever), so vfinish's trigger needs SDD-scale
+probe scale no saw-and-stayed-silent was observed (11/11 reps with
+an observed saw event mentioned it — corrected count per the
+2026-08-07 audit; the whole arm effect is at LOOK, which is vfloor's
+lever), so vfinish's trigger needs SDD-scale
 sessions where suites run mid-workflow and failures scroll past.
 One fixture serves all three: a scenario whose review channel seeds
 plausible-but-unreachable RUNTIME findings (the serf Roborev shape),

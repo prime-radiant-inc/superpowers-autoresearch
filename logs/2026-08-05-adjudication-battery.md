@@ -1303,3 +1303,84 @@ the codex hand-read now corroborated by a readable channel.
 
 Census remaining: kimi (rep 21 running), glm (queued), luna (quota
 wait). Verdict entry stays open until those land.
+
+## 2026-08-07 — CORRECTIONS from the adversarial audit (5 confirmed
+## defects in published verdicts; auditor: independent subagent,
+## verified against raw rep data)
+
+**C1 — P3 verdict RETRACTED and relabeled INCONCLUSIVE-BY-CEILING
+(one level up).** The audit searched every rollout and trajectory in
+all 8 P3 reps for the trap's runtime signature: **zero** composed
+runs ever raised SampleStreamError unexpectedly. Every occurrence is
+TDD RED-phase testing of the validator itself, spec/plan
+transcription (the p3-trap-sighting-step values 6-10 are the agent
+WRITING the spec, not running tests), or one deliberate
+break-and-restore check. My mechanism narrative — "every rep hit the
+conflict at its first end-to-end run and fixed it in 1-2 commits" —
+described an event that never occurred. Worse: p3-trap-in-plan was
+yes in 3/4 controls, and the pre-registration's own
+INCONCLUSIVE-BY-CEILING clause (trap harmonized at plan time + no
+composed failure ever) was therefore MET and should have been the
+verdict's first line; I never evaluated it. The pre-registered
+rework-tokens endpoint was also silently dropped. What survives:
+walking-skeleton stays unshipped (nothing was measurable either way)
+and the fixture-must-compound requirement. What does not survive:
+"there is no expensive rework to avoid," the 1-2-commit-fix story,
+and the NULL label.
+
+**C2 — the 2026-08-06 saw-and-stayed-silent claims are REFUTED; the
+08-06 hand-read counts are superseded and were never corrected.** The
+two reps that entry named as "watched the shipping test fail and
+shipped without a word" (base2-rep45, vfloor-rep44, kimi-or lane) did
+neither: raw trajectories show both ran/verified inventory only and
+never executed or read the shipping test — "shipping" appears once in
+each, inside an ls listing. The 08-06 counts (base2 3 saw-silent,
+vfloor 2) are irreconcilable with the 08-07 recount (0 saw-silent
+anywhere) and this line is the dated correction the log owed:
+**the 08-06 hand-reads were wrong; the 08-07 recount stands.**
+Material consequence, stated plainly: the vfinish arm (18 reps,
+three model families) was built to chase a probe-scale failure class
+that the raw data says never existed at probe scale. Its SDD-scale
+motivation (the cp-x1 observation) still stands; its probe-scale
+motivation does not.
+
+**C3 — "12/12 pooled saw→mentioned" is arithmetically wrong.** The
+entry's own table sums to 11 (base2 kimi-oauth 1, vfloor sonnet 1,
+vfloor kimi-oauth 4, vfloor kimi-or 3, vfinish kimi-oauth 2).
+Corrected claim, phrased as the bound it is: **11/11 reps with an
+observed saw-the-failure event mentioned it**; no saw-silent
+observed at probe scale. deferred-experiments inherits this fix.
+
+**C4 — K1g "11/12 later-task seats inherited the correction" is an
+absence-based bound stated as a positive.** The instrument measures
+only firsthand runtime re-discovery; it cannot distinguish
+"inherited from the dispatch" from "silently re-derived by reading
+the lib." Corrected phrasing everywhere (incl. deferred list):
+**11/12 later-task module implementations show no firsthand runtime
+re-discovery; dispatch-carry is demonstrated by hand-read sampling
+(codex) and by the readable dispatch channel at 9/11-9/12 per rep
+(sonnet).** The census PASS shape gains a counting rule:
+reading-based re-derivation, where detectable, counts as
+re-discovery for the census question.
+
+**C5 — undisclosed denominator drift in the vfloor tables.**
+kimi-oauth base2 was reported /6 on 08-06 but only 5 reps carry
+trajectories (rep24 absent); haiku vfloor walked 6→5→3 across
+entries (reps 14-16 carry no trajectory) with no dated note. The
+08-07 table's ns (5 and 3) are the correct ones; exclusions are now
+itemized here: kimi-oauth base2 excludes rep24 (no trajectory);
+haiku vfloor excludes reps 14-16 (no trajectory / indeterminate).
+
+**Audit also verified clean** (actively, against raw data): T9's
+constraints-landed hand-reads (pinned answer's shape genuinely
+landed, exclusions included), the #2086 kimi/glm cells (values
+printed, trees built, worktree-aware), tier-2 vfloor 3/8 (all three
+transcripts name the exact failing test), K1' null-by-headroom, K1g's
+quoted rollout evidence, and the emit-only-never-gates discipline
+across every audited checks.sh.
+
+**Suspects queued:** adjudication guard sensitivity (zero-variance
+2.0 escapes — pull per-rep escape identities before citing that guard
+as evidence of safety again); the "kimi family attends / claude sails
+past" family-attention claim is PROVISIONAL until the -pt battery
+separates won't-look from tool-missing.

@@ -83,3 +83,50 @@ named in the verdict hold the rollouts and trees the numbers came
 from → the scorer named in the entry reproduces the mechanical layer;
 hand-read notes are in the verdict. If any link is missing, the claim
 is defective — flag it.
+
+## Standing rules 9-16 (adopted 2026-08-07 from the adversarial audit)
+
+The audit found the program's existing habits protect against false
+mechanical gates but not against narrative overreach on top of
+correct mechanics. These rules target that gap.
+
+9. **Reachability-under-driver, stated as an event signature.** A
+   pre-registration names, per arm, the concrete raw-data event that
+   constitutes the discriminating behavior (e.g. "a tool-output
+   record showing an e2e run raising SampleStreamError"), and affirms
+   both the control's failure mode and the treatment's success mode
+   can physically occur under this driver/fixture. The verdict
+   reports the observed count of that signature per rep BEFORE any
+   mechanism narrative; a narrative about an event whose signature
+   count is zero may not be written.
+10. **Instrument validation against a positive AND a near-miss
+    negative.** Every PRIMARY-endpoint instrument is dry-run
+    validated on (a) a synthetic positive and (b) a synthetic
+    NEAR-MISS — the same tokens in the wrong channel (plan/spec text
+    for a runtime instrument, an attempted-but-failed command for an
+    execution instrument). The near-miss must classify as not-yes.
+11. **Rep-level provenance for hand-read claims; recounts are
+    corrections.** Any sentence attributing behavior to a named rep
+    cites the record. If a later entry's counts contradict an earlier
+    entry's for the same cells, the later entry carries a dated
+    CORRECTION naming the superseded entry — silent supersession is a
+    log defect.
+12. **Denominator lock.** Pre-registration fixes what counts as a
+    scoreable rep; every table states n per cell with exclusions
+    itemized by rep number; a changed denominator requires a dated
+    correction.
+13. **Pre-registered inconclusive conditions are binding gates.** If
+    a pre-registration names an INCONCLUSIVE-BY-* condition, the
+    verdict's first line evaluates it (met / not met, with instrument
+    values). Only after "not met" may any NULL/positive label be
+    assigned.
+14. **Dropped-endpoint disclosure.** Every pre-registered endpoint
+    appears in the verdict — with results, or with "DROPPED
+    because ...".
+15. **Absence-based claims are bounds.** A positive inferred from an
+    event's absence ("no error → inherited") is phrased as a bound
+    ("no firsthand re-discovery observed") in the verdict and every
+    downstream summary.
+16. **Tool-availability parity.** A scenario whose primary endpoint
+    depends on the session running a tool preinstalls that tool in
+    setup and asserts it in pre().
