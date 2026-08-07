@@ -61,17 +61,13 @@ disposition).
 **Est.:** fixture ~1 focused session (cp-x10-class effort) + ~$70
 battery.
 
-## T9 — tooling-ask placement A/B (interactive)
+## T9 — tooling-ask placement A/B (interactive) — RETIRED 2026-08-07
 
-**What:** drafted ask texts for brainstorming-batched vs writing-plans
-placements shipped as analysis (recommendation: brainstorming, batched
-into design presentation, answer recorded in spec Global Constraints).
-The empirical cell needs scripted multi-turn interaction — headless
-single-turn can't reach brainstorming's ask moment.
-**Trigger:** wanting the empirical cell before adopting either draft
-into superpowers.
-**Refs:** logs/2026-08-03-plan-decomposition-campaign.md (T9 entry).
-**Est.:** ~$40-60 on the quorum interactive path.
+**Run and shipped.** The interactive cell ran 2026-08-06 (9 reps,
+t9-tooling-ask scenario): control 0/3 ever asked, both placements
+fired 3/3 before any code with constraints landing 6/6. Jesse chose
+Draft A (brainstorming design-presentation) → superpowers draft PR
+#2101. Verdict: logs/2026-08-05-adjudication-battery.md.
 
 ## R1 — triage-classes text, verbatim battery
 
@@ -131,19 +127,17 @@ merged skills.
 cp/r1t-rebut 77ec054, cp/vfinish b870fb6.
 **Est.:** fixture ~1 session + ~$70 battery.
 
-## Cross-model validation cells — kimi / glm
+## Cross-model validation cells — kimi / glm — RETIRED 2026-08-07
 
-**What:** the campaign's mechanisms are demonstrated on the gpt-5.6
-family (unpinned: terra/sol) plus, for the #2086 spec mechanism, a
-claude-sonnet-5 cell (in flight at deferral time). User base is ~50%
-claude / ~30% codex / rest kimi, glm, and others via pi / opencode /
-serf in gauntlet. The #2086 authority-gap contrast is the priority
-mechanism for a kimi or glm cell.
-**Trigger:** wiring a pi/opencode/serf lane in gauntlet for these
-scenarios.
-**Refs:** logs/2026-08-03-plan-decomposition-campaign.md (served-model
-census correction).
-**Est.:** lane wiring unknown; ~$20-30 per model cell once wired.
+**Run.** The kimi (oauth = kimi-for-coding; openrouter =
+moonshotai/kimi-k2.7-code) and glm-5.2 (pi/openrouter) lanes were
+wired 2026-08-06 via the quorum credential seam. The priority cell —
+the #2086 spec contrast — replicated on both: spec-present 5/5×4,
+specless 0/5×4, posted to merged PR #2086. sp-adjacent-breakage also
+ran full kimi/glm columns. Verdicts:
+logs/2026-08-05-adjudication-battery.md (2026-08-07 slate entry).
+Future cross-model asks are ordinary battery config now, not a
+deferred experiment.
 
 ## Aged-session replay — first consumer
 
