@@ -46,6 +46,27 @@ def main():
                     out["served_model"] = str(m)
         except Exception:
             pass
+    # The kimi oauth lane stamps requests with the literal placeholder
+    # __kimi_env_model__; the RESPONSE side of the kimi wire log carries
+    # the real served name (e.g. kimi-for-coding). os.walk, not glob:
+    # .kimi-code is a hidden dir.
+    if out["served_model"] in ("unknown", "__kimi_env_model__"):
+        try:
+            for root, _dirs, files in os.walk(os.path.join(run_dir, "home", ".kimi-code")):
+                for fn in files:
+                    if fn != "wire.jsonl":
+                        continue
+                    with open(os.path.join(root, fn), errors="replace") as f:
+                        for line in f:
+                            for m in re.finditer(r'"model"\s*:\s*"([^"]+)"', line):
+                                name = m.group(1)
+                                if name != "__kimi_env_model__":
+                                    out["served_model"] = name
+                                    raise StopIteration
+        except StopIteration:
+            pass
+        except Exception:
+            pass
 
     calls = []
     for s in agent_steps:

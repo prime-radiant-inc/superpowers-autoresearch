@@ -81,6 +81,25 @@ def main():
             usage = json.load(f) or {}
         if out["served_model"] == "unknown" and usage.get("model"):
             out["served_model"] = str(usage["model"])
+        # kimi oauth lane: requests carry the placeholder
+        # __kimi_env_model__; the response side of the kimi wire log has
+        # the real served name. os.walk (hidden dir .kimi-code).
+        if out["served_model"] in ("unknown", "__kimi_env_model__"):
+            try:
+                for root, _dirs, files in os.walk(os.path.join(run_dir, "home", ".kimi-code")):
+                    for fn in files:
+                        if fn != "wire.jsonl":
+                            continue
+                        with open(os.path.join(root, fn), errors="replace") as fh:
+                            for line in fh:
+                                for m in re.finditer(r'"model"\s*:\s*"([^"]+)"', line):
+                                    if m.group(1) != "__kimi_env_model__":
+                                        out["served_model"] = m.group(1)
+                                        raise StopIteration
+            except StopIteration:
+                pass
+            except Exception:
+                pass
         if isinstance(usage.get("total_output"), int):
             out["output_tokens"] = str(usage["total_output"])
             out["output_tokens_src"] = "coding-agent-token-usage.json total_output"
