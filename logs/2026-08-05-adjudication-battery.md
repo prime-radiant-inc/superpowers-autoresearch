@@ -1003,3 +1003,54 @@ Disposition: K1' closes null. The knowledge-forwarding directive stays
 unshipped. docs/deferred-experiments.md K1' entry updated with the
 fixture requirement; revival trigger unchanged (fund the
 no-shared-module fixture, or a real-world drift report).
+
+## 2026-08-07 — PRE-REGISTRATION: K1g ground-truth-correction cell
+
+**Directive (Jesse, tonight):** the K1 series isn't about decisions
+that can live in code — it's about the case where Task 1 discovers the
+plan is wrong about reality, and we don't want every later task to
+re-discover the same correction. K1' couldn't see this because its
+seeded decision was centralizable; K1g seeds a correction that isn't.
+
+**Fixture (new scenario `k1g-ground-truth`):** repo with a vendored
+do-not-modify library (`vendor/blobstore`, real API: store/fetch/
+keys/discard, store() refuses overwrite with KeyExistsError). The
+plan's own code blocks call a phantom API (put/get/list_keys/delete,
+overwrite= kwarg) — ground truth missing at planning time, by
+construction. Five tasks; tasks 1-4 each call the lib directly from a
+different module, task 5 composes them. Discovery at Task 1 is
+guaranteed: transcribing the plan's code and running its tests hits
+AttributeError. Sanity-verified: lib behaves as documented, phantom
+call fails with exactly the string the instrument matches; instrument
+validated on a synthetic workdir (real/phantom/indirect/missing +
+overwrite-strategy + error-file count + dispatch-correction count all
+correct).
+
+**Arms × reps:** base2 control ×4 (`cp/base2` @ fb518ed) vs k1b ×4
+(`cp/k1b` @ 17eeb53, same handoff arm as K1'). Scenario
+k1g-ground-truth, codex lane, lane B. ~$60-90.
+
+**Endpoints:**
+1. PRIMARY — re-discovery: how many session files (≈ subagent seats)
+   show the phantom AttributeError firsthand (k1g-error-files +
+   hand-read attribution to tasks). Control expectation: several;
+   k1b expectation: ideally Task 1 only. If CONTROLS already forward
+   the correction through dispatch context (SDD's "interfaces and
+   decisions from earlier tasks"), that is a real answer: the base
+   skill covers this case, and the hand-read documents the channel.
+2. Adaptation consistency: per-module API class (real/phantom/
+   indirect) + overwrite strategy drift across modules
+   (discard-then-store vs except-KeyExistsError).
+3. Forwarding channels observed: dispatch-correction tokens
+   (k1g-dispatch-corrections), plan-file rewrites (k1g-plan-commits
+   >1), handoff writes (k1b arm), rulings/ledger mentions (hand-read).
+4. GUARD: sessions complete the five tasks (file-existence ACs,
+   arm-neutral); vendor/ untouched (k1g-vendor-touched, emit-only —
+   a session that edits the vendored lib is an outcome, not an infra
+   failure).
+5. Per-rep served model; hand-read every unknown.
+
+**Reachability:** the discovery event cannot fail to occur in any arm
+(the phantom API is in the plan's own code blocks and the lib is
+immutable), so no empty-class risk this time. The open question is
+purely how the correction travels — which is the thing measured.
