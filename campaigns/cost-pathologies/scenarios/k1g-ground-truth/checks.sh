@@ -1,4 +1,4 @@
-# coding-agents: codex, claude
+# coding-agents: codex, claude, kimi, pi
 
 pre() {
     git-repo

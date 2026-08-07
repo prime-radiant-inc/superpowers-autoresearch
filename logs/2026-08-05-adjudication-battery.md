@@ -1166,3 +1166,34 @@ path, and it held 11/12 with one cheap leak. Revival trigger: a
 real-world trace of later tasks re-discovering a ruled correction
 (any model), or a cross-model cell if claude/kimi controllers are
 suspected of not carrying rulings into dispatches.
+
+## 2026-08-07 — PRE-REGISTRATION: K1g cross-model controller census
+
+**Why (Jesse's question):** the K1g verdict — controller rules on the
+plan/reality mismatch and carries the ruling into later dispatches —
+is a codex/gpt-5.6-sol claim. Whether OTHER model families' controllers
+do the same is exactly the population question (user base ~50% claude,
+~30% codex, rest kimi/glm/etc). Note: gpt-5.6-luna (the third codex
+family member) is NOT runnable on demand — the codex subscription lane
+never pins a model and no API credential serves a pinned gpt-5.6; we
+have only ever been dealt terra and sol.
+
+**Design:** control-only census (the codex A/B showed the handoff arm
+adds nothing over the dispatch channel, so the informative cell is
+base behavior per family). Arm `cp/base2` @ fb518ed on
+k1g-ground-truth (gate opened to codex, claude, kimi, pi):
+- claude lane, sonnet5 credential ×3 (reps 11-13, lane A)
+- kimi lane, kimi_default ×2 (reps 21-22, lane B)
+- pi lane, openrouter_glm_5_2 ×2 (reps 31-32, lane B)
+~$40-70 total.
+
+**Endpoints (same as K1g):** per-module API class + overwrite
+strategy (drift), error-files (runtime re-discovery bound),
+plan-commits, vendor-touched, served model; hand-read per family: did
+the controller rule and did later seats receive the correction in
+their dispatch context (read subagent-side; controller-side payloads
+may be opaque). PASS shape per family = later-task seats
+predominantly inherit (≥ 3/4 of later-task instances not
+re-discovering firsthand); a family whose later seats each re-derive
+the correction (or drift) is a REAL GAP and revives the forwarding
+directive for that family.
