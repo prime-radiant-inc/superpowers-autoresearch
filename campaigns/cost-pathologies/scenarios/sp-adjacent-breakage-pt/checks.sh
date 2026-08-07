@@ -3,7 +3,7 @@
 pre() {
     git-repo
     requires-tool python3
-    requires-tool pytest
+    file-exists '.venv/bin/pytest'
     file-exists 'inventory.py'
     file-exists 'shipping.py'
     file-exists 'test_inventory.py'
