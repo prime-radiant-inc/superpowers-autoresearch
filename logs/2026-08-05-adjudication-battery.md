@@ -960,3 +960,15 @@ delegation, which *is* the consistent outcome — a drift-capable
 fixture must make centralization unavailable (e.g. two format
 consumers in different processes/languages with no shared module).
 P3 block proceeds unchanged.
+
+**2026-08-07 — kimi served-model instrument gap CLOSED:** the oauth
+lane's requests carry the literal placeholder `__kimi_env_model__`,
+but the response side of the kimi wire log (`home/.kimi-code/
+sessions/**/agents/*/wire.jsonl`) records the real served name.
+instruments.py in sp-adjacent-breakage and sp-overbuild-bait now
+falls back to that; validated against vfinish-rep23 (resolves to
+`kimi-for-coding`) with no regression on a sonnet rep. All earlier
+"kimi-oauth" rows in the 2026-08-07 slate table are `kimi-for-coding`
+(Moonshot's oauth coding alias); the openrouter rows remain
+`moonshotai/kimi-k2.7-code`. Whether those are the same underlying
+snapshot is NOT established — keep the two columns separate.
