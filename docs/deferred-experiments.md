@@ -28,6 +28,12 @@ interrogation).
 gated on the trigger reproducing the base rate.
 
 ## K1' — knowledge-forwarding as decision-consistency
+> **Series update 2026-08-07:** NOT dormant. Jesse reframed the live
+> case — Task 1 discovers the plan is wrong about reality and later
+> tasks shouldn't re-discover the correction — and that variant is
+> RUNNING as the K1g cell (scenario `k1g-ground-truth`, pre-registered
+> in logs/2026-08-05-adjudication-battery.md). This entry covers only
+> the original decision-consistency axis.
 
 **What:** K1's handoff mechanism bound fully (read 5-6/6, appended every
 task) but bought no re-read reduction. The unmeasured axis where observed
