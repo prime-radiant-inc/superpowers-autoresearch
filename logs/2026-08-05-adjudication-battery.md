@@ -1104,3 +1104,65 @@ task N), where this one stays a one-line fix regardless of when it's
 found. Updating the P3 deferred entry with that requirement; the
 walking-skeleton question is closed until someone funds that fixture
 or a real-world trace shows the expensive-late-rework class.
+
+## 2026-08-07 — VERDICT: K1g ground-truth-correction cell — THE BASE
+## SKILL ALREADY FORWARDS THE CORRECTION (positive control-behavior
+## finding; handoff arm adds nothing)
+
+Cell: base2 ×4 vs k1b ×4 on k1g-ground-truth. 8/8 rc=0, gauntlet
+pass, final pass, all gpt-5.6-sol. Vendored lib untouched in 8/8.
+
+Plain summary: the fixture's plan is wrong about reality (phantom
+BlobStore API in every code block). The question was whether every
+task re-discovers the correction. Answer: no — the correction is
+discovered once and forwarded, in BOTH arms, by machinery that is
+already in shipped superpowers:
+
+1. Task 1's seat discovers the mismatch (in 7/8 reps by reading the
+   vendored lib before writing — no runtime error ever fires; in
+   base2-rep1 partly via the AttributeError at test time).
+2. The controller RULES on it and ledgers it — rep2's controller,
+   verbatim: "Task 1 exposed a concrete plan/API mismatch: the
+   vendored store does not provide the plan's put(overwrite=True)
+   method." An implementer report in rep1: "Rulings I made:
+   Translated obsolete plan calls to BlobStore 2.1.0's actual API."
+   This is the merged rule-and-continue + SDD dispatch text doing
+   exactly what it says ("If the plan itself is wrong, rule on the
+   correction, ledger it, and re-dispatch with the ruling carried in
+   the dispatch").
+3. Later dispatches CARRY the correction: the Task 2 (catalog)
+   implementer's first message, before it read any file: "the only
+   adaptation is the explicitly required vendor 2.1.0 methods
+   keys(prefix) and fetch(key)" — the real API arrived with its
+   dispatch. Later seats still glance at the lib (cheap verify), but
+   write real-API code from the first line.
+4. Outcome: all 32 module instances (4 modules × 8 reps) final on the
+   real API, overwrite adaptation uniform (discard-then-store 8/8),
+   zero drift, plan file never edited (the ruling ledger, not the
+   plan, is the carrier — consistent with SDD's design).
+
+Leak rate: exactly one later-task seat in one control rep
+(base2-rep1's export implementer, 3 AttributeError hits at test time,
+then fixed) out of 12 control later-task instances. k1b's handoff was
+read alongside briefs every task (mechanism binds, third
+demonstration) but changed nothing measurable — the dispatch channel
+already carries the payload.
+
+**Instrument corrections recorded:** (a) k1g-dispatch-corrections
+read 0 everywhere because codex dispatch payloads are encrypted at
+rest on the controller side — the channel is only visible in the
+SUBAGENT's rollout (its instruction context / first messages). The
+instrument's zero is an artifact; the hand-read carries the verdict.
+(b) k1g-error-files misses discovery-by-reading (the dominant mode,
+7/8 reps) — it bounds only the runtime-error mode, as designed but
+worth restating.
+
+**Disposition:** Jesse's case — Task 1 must modify the plan's
+assumption and later tasks shouldn't re-discover it — is HANDLED by
+current shipped superpowers on this fixture (codex/gpt-5.6-sol).
+No text change needed; k1b stays unshipped. The K1 series closes
+with a positive: the forwarding channel is the ruling-in-dispatch
+path, and it held 11/12 with one cheap leak. Revival trigger: a
+real-world trace of later tasks re-discovering a ruled correction
+(any model), or a cross-model cell if claude/kimi controllers are
+suspected of not carrying rulings into dispatches.
