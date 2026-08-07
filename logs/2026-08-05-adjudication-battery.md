@@ -1511,3 +1511,36 @@ pre() gains `requires-tool pytest`, so a broken install now fails the
 rep loudly at pre-check instead of silently confounding. Battery
 relaunched on both lanes, same pre-registration, same endpoints,
 fresh reps.
+
+## 2026-08-08 — VERDICT (partial battery): vfloor-tdd SONNET cells on
+## the fixed -pt probe — the attended-moment placement BINDS 4/4
+
+Signature counts first (rule 9), all 8 reps, strict criteria
+(suite run = a pytest invocation not scoped to test_inventory that
+produced output; watched-failure = a FAILURES-block/assert-signature
+in a tool RESULT; file reads and which-probes excluded):
+
+| arm | rep | suite runs | watched-failure sigs | named in final |
+|---|---|---|---|---|
+| base2 | 1 | 0 | 0 | no |
+| base2 | 2 | 0 (one `which pytest` probe, not a run) | 0 | no |
+| base2 | 3 | 0 | 0 | no |
+| base2 | 4 | 0 | 0 | no |
+| vfloor-tdd | 1 | 2 | 1 | yes |
+| vfloor-tdd | 2 | 2 | 1 | yes |
+| vfloor-tdd | 3 | 2 | 2 | yes |
+| vfloor-tdd | 4 | 2 | 1 | yes |
+
+All 8 served claude-sonnet-5; task-done 8/8 (guard clean); shipping
+left unfixed in all (in-scope discipline held — the text asks for
+report, not fix). With tool friction removed, the control NEVER looks
+(0/4) and the TDD Verify-GREEN placement looks, sees, and reports
+4/4. Contrast with the same text at bootstrap placement (inert on
+claude, 08-06/08-07 batteries) and with the quarantined confounded
+battery (treatment 1/4): placement at the attended moment is the
+active ingredient, exactly the arm-design doctrine's prediction.
+
+Battery incomplete: kimi + glm cells running on lane B; verdict
+finalizes when they land. If they hold, cp/vfloor-tdd @ 46ff987 is a
+ship candidate through the normal gate (its arm text IS the shipped
+text; needs Jesse's placement sign-off and the PR path).
