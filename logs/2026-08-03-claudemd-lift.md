@@ -562,3 +562,43 @@ U-simple-first marginal question moves to that route if it is ever
 funded — its −31% screening result remains screening-only. The
 deferred-experiments campaign-3 entry is updated: (a) is closed
 unmeasurable-as-designed, (b) is closed positive-and-promoted.
+
+## 2026-08-07 — CORRECTION + PRE-REGISTRATION: simple-first, done right
+## (Jesse: "you fucked up your simple-first eval. go do the scenario
+## correctly")
+
+Owning the error precisely: the (a) cell was not "null-by-fixture-
+shape" as first written — it was a DESIGN ERROR. I knew the plugin's
+brainstorming gate blocks one-shot implementation (it is the plugin's
+acceptance test) and still ran a one-shot host probe with
+--superpowers. The earlier verdict entry stands as the record of the
+error; this entry replaces its disposition.
+
+**Corrected design — quorum-static → ENGAGED probe:** new scenario
+pair (campaigns/cost-pathologies/scenarios/):
+- `sp-overbuild-engaged`: same CSV-export-with-future-formats-bait
+  fixture and instruments as sp-overbuild-bait (worktree-aware diff,
+  ported abstraction regex), but the story CARRIES the session through
+  the plugin's gates with pinned neutral replies ("Whatever you'd
+  recommend — go ahead" for every design/clarifying question;
+  default/most-direct for workflow; the driver never utters a
+  simplicity or scope preference — contamination guard written into
+  the story).
+- `sp-overbuild-engaged-sf`: identical, plus fixtures/CLAUDE.md
+  carrying the U-simple-first unit verbatim. The unit file is
+  GIT-IGNORED in this public repo (constraint: unit text never
+  committed) and injected from the local units dir; the -sf setup.sh
+  fails loudly if the injection is missing, so the arm can never
+  silently run as a control.
+
+**Battery:** {sp-overbuild-engaged, sp-overbuild-engaged-sf} ×
+claude/sonnet5 × 6 reps each, cp/base2 @ fb518ed (real plugin, merged
+base). PRIMARY: added-LOC + abstraction-hit rate in the final tree
+(root diff after merge; worktrees reported separately — the story's
+integration reply carries sessions through merge). Both cells are
+expected to COMPLETE the feature now (guard: export function exists =
+AC). The simple-first question, correctly posed: with the plugin
+loaded AND the session actually allowed to implement, does the
+ambient unit still reduce overbuild/size, or does the plugin's own
+YAGNI discipline already capture it? Queue: behind the K1g census +
+vfloor-tdd on the claude lane.

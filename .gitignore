@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .DS_Store
 out*/
+campaigns/cost-pathologies/scenarios/sp-overbuild-engaged-sf/fixtures/CLAUDE.md
