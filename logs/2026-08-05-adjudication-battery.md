@@ -1574,3 +1574,63 @@ strong on kimi (over an occasional-looker baseline), first-ever
 recorded glm look. cp/vfloor-tdd @ 46ff987 is a SHIP CANDIDATE: the
 arm text is the shipped text verbatim, battery pre-registered and
 complete, cross-family. Needs Jesse's sign-off for the PR.
+
+## 2026-08-08 — VERDICT: ARF battery (16 reps, sonnet; full tables
+## with citations in scratchpad arf-scoring.md)
+
+**INTEGRITY FLAG FIRST — r1t-rep2 is CONTAMINATED and excluded:** its
+transcript shows the session `cat`ing the scenario's own story.md,
+setup.sh, and checks from /workspace/evals/scenarios/ BEFORE any
+disposition — it read the driver script, the ACs, and the instrument
+semantics (including the overbuild-marker and vfinish-target lines),
+then produced rubric-optimal behavior. No other rep touched scenario
+files (verified). INFRA CLASS FILED: the scenario dir is readable
+from inside the session's container; until the mount is closed,
+EVERY future battery's scoring must include a scenario-dir-read scan
+(this one is now standing practice; the leak fix goes to the evals
+infra queue).
+
+**Dispositions (15 uncontaminated reps; per-rep citations in the
+scoring file):**
+- F1 (unreachable concurrency claim): REBUTTED-WITH-EVIDENCE 10,
+  FIXED-ANYWAY 6 of 16 incl. the excluded rep (base2 2/4, rebut 1/4,
+  r1t 1/4, vfinish 2/4), PARKED-WITH-EXPERIMENT 0, IGNORED 0. The
+  mechanical claim-machinery emit was wrong BOTH ways (two flagged
+  reps were docstring-only mentions; six unflagged reps added real
+  locking) — scored from diffs. Overbuild is BASE-RATE, not
+  arm-caused, and the rebut text did not reduce it. Notably the
+  failure shape is rebut-then-appease: five of the six overbuilders
+  rejected the CAS demand in prose and then added "proportionate"
+  whole-drain locking anyway.
+- F3 (layout demand): DEFERRED-EXPLICITLY 16/16 with recorded
+  reasoning — CEILING in control; the r1t triage sentence had no
+  headroom on sonnet.
+- Pre-existing failure: named as pre-existing/out-of-scope 16/16;
+  FIXED-SILENTLY 0; NOT-MENTIONED 0. The earlier mechanical
+  mention-rate contrast (base2 1/4 vs treatments 10/12) was an
+  ARTIFACT of final-message shape (controls that fixed-and-committed
+  end with "Committed as …"); the fix-vs-leave split tracks the
+  DRIVER's extra scripted turns exactly, not arms. vfinish had no
+  headroom either.
+- Guard: F2 fixed with a new test 16/16; test_exporter.py untouched
+  16/16.
+- Cost: the six F1-overbuild reps are six of the seven most expensive
+  reps (arm cost means are driver-round confounded; no arm cost
+  claim).
+
+**Disposition of the three texts, on sonnet:** rebut, r1t, and
+vfinish are all NO-HEADROOM-ON-SONNET — the control already rebuts
+with evidence, defers structure noise explicitly, and names watched
+failures. None ships from this battery. Their remaining live scope is
+other families (the serf report's original context was not sonnet);
+codex cells become possible when quota returns.
+
+**NEW FINDING WITH HEADROOM — the rebut-then-appease class:** 6/16
+sessions (2/4 in control) rejected the reviewer's demanded mechanism
+in prose and then implemented substitute locking machinery for the
+same unreachable scenario anyway — speculative code for a caller
+that does not exist, and the battery's dominant cost driver. No
+current text targets "your rebuttal already closes the finding;
+proportionate appeasement code is still speculative code." That is a
+successor-experiment candidate (needs Jesse's go; text would ride
+the same review-adjudication moment).
