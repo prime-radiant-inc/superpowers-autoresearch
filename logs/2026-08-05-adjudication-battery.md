@@ -1663,3 +1663,8 @@ contamination scan on every rep. Reachability: the F1 confrontation
 is unconditional (the review file is the pinned task); the
 overbuild event has a demonstrated nonzero control base rate, so
 both arms' target behaviors are reachable under this driver.
+
+**2026-08-08 — vfloor-tdd SHIPPED as PR #2110** (Jesse: "Ship it as a
+PR"). Arm-verbatim diff (cp/vfloor-tdd @ 46ff987 applied to
+origin/dev), full template, family-graded evidence + the confounded-
+battery/quarantine history disclosed, eval-ask posted to @arittr.
