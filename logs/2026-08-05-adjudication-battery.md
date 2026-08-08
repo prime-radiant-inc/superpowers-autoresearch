@@ -1668,3 +1668,39 @@ both arms' target behaviors are reachable under this driver.
 PR"). Arm-verbatim diff (cp/vfloor-tdd @ 46ff987 applied to
 origin/dev), full template, family-graded evidence + the confounded-
 battery/quarantine history disclosed, eval-ask posted to @arittr.
+
+## 2026-08-08 — K1g census, LUNA COLUMN lands: CENSUS CLOSED, five
+## families
+
+The pinned-model route works: `k1g-ground-truth-luna` (scenario
+codex.config.toml fragment, `model = "gpt-5.6-luna"`) served
+**gpt-5.6-luna 3/3** — Jesse's -m correction confirmed end to end;
+luna is now an on-demand lane.
+
+Substantive column (3/3): all four modules real-API, overwrite
+adaptation discard-then-store 3/3, vendor untouched, plan file never
+edited, **zero phantom AttributeErrors across 51 session files**.
+gauntlet pass 3/3. The multi-agent flow demonstrably ran (18/12/21
+subagent rollouts per rep; 14+ touch task briefs, all touch the
+vendored lib).
+
+INSTRUMENT ARTIFACT (not behavioral): `final: fail` on all 3 comes
+from the `check-transcript tool-called Agent` gate — the ATIF
+normalizer does not map luna's dispatch tool records to an
+Agent-equivalent (sol reps passed the same gate), so the check reads
+"Agent never called" against 18 subagent rollouts on disk. Filed to
+the evals instrument queue; dispatch-corrections 0/0 is the same
+blindness. Told-vs-read for luna is therefore UNKNOWN (bound only:
+no runtime re-discovery).
+
+**CENSUS FINAL, phrased as bounds:** across gpt-5.6-sol,
+gpt-5.6-luna, claude-sonnet-5, kimi-for-coding, and glm-5.2 —
+5 families, 15 control reps — zero later-task seats show firsthand
+runtime re-discovery of the plan/reality mismatch, adaptations are
+uniform (discard-then-store in every rep, no drift), and the
+correction is demonstrably carried told-first in later dispatches on
+every family whose dispatch channel is readable (sonnet 9/9 seats,
+k1b-codex 12/12 via handoff, kimi and glm by token counts 9-36 per
+rep). Jesse's plan-correction case is handled by shipped superpowers
+on every family we can measure, and un-refuted on the two we can't
+fully see into.
