@@ -1634,3 +1634,32 @@ current text targets "your rebuttal already closes the finding;
 proportionate appeasement code is still speculative code." That is a
 successor-experiment candidate (needs Jesse's go; text would ride
 the same review-adjudication moment).
+
+## 2026-08-08 — PRE-REGISTRATION: anti-appeasement cell (Jesse: run it)
+
+**Target class:** rebut-then-appease (ARF verdict above): the session
+rejects the reviewer's demanded mechanism in prose, then implements
+substitute speculative machinery for the same refuted scenario.
+Sonnet base rate on arf-review-adjudication: 2/4 control, 6/16
+pooled; the battery's dominant cost driver.
+
+**Arm:** `cp/appease` @ c12ab7b (base fb518ed): one paragraph added
+to receiving-code-review's How-to-push-back — "A rebuttal you have
+evidenced closes the finding… YAGNI applies to reviewer appeasement…
+Adding both to the same finding means you don't believe your own
+rebuttal." Attended-moment placement: receiving-code-review was
+invoked 16/16 in the ARF battery.
+
+**Battery:** arf-review-adjudication, claude/sonnet5, lane B:
+base2 ×4 MORE (reps 5-8, pooling with existing reps 1-4 for control
+n=8) + appease ×8. PRIMARY (rule 9 signature): F1 FIXED-ANYWAY rate
+scored FROM DIFFS on jobrunner/worker.py + queue.py (the claim-
+machinery emit is known-unreliable both ways — hand/agent scoring
+only), control expectation ~2/4-per-4; pass = appease materially
+below pooled control. GUARDS: F2 fixed-rate (16/16 baseline),
+F1 rebut-quality unchanged (no arm may convert rebuttals into
+silent ignores), F3 defer rate, task completion. Rule 17
+contamination scan on every rep. Reachability: the F1 confrontation
+is unconditional (the review file is the pinned task); the
+overbuild event has a demonstrated nonzero control base rate, so
+both arms' target behaviors are reachable under this driver.

@@ -726,3 +726,4 @@ integration-trap battery").
 |-----|--------|-----|
 | P3 walking-skeleton ordering rule | `cp/p3ws` | 496303c |
 | vfloor at TDD Verify-GREEN moment | `cp/vfloor-tdd` | 46ff987 |
+| anti-appeasement in receiving-code-review | `cp/appease` | c12ab7b |
