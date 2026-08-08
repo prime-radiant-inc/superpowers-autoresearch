@@ -145,9 +145,16 @@ One fixture serves all three: a scenario whose review channel seeds
 plausible-but-unreachable RUNTIME findings (the serf Roborev shape),
 plus a behavior-preserving layout divergence, plus an internal suite
 whose pre-existing failure scrolls past mid-session.
-**Trigger:** funding the fixture build (~1 session, cp-x10-class), or
-a real-world report of any of the three failure classes under the
-merged skills.
+**Trigger:** RUN 2026-08-08 on sonnet (arf-review-adjudication, 16
+reps): all three texts NO-HEADROOM — the sonnet control already
+rebuts with evidence (10/16 overall), defers structure noise
+explicitly (16/16), and names watched failures (16/16). One rep
+excluded for contamination (read its own scenario checks — infra
+leak filed). Remaining scope: non-sonnet families only (codex when
+quota permits). Successor candidate with real headroom: the
+REBUT-THEN-APPEASE class (6/16 rejected the demanded mechanism in
+prose then built substitute speculative locking anyway — the
+battery's dominant cost driver; no current text targets it).
 **Refs:** logs/2026-08-05-adjudication-battery.md (final verdict +
 2026-08-07 slate verdict); arms cp/r1t 08972e6, cp/rebut 52df997,
 cp/r1t-rebut 77ec054, cp/vfinish b870fb6.

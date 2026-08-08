@@ -130,3 +130,10 @@ correct mechanics. These rules target that gap.
 16. **Tool-availability parity.** A scenario whose primary endpoint
     depends on the session running a tool preinstalls that tool in
     setup and asserts it in pre().
+17. **Scenario-visibility scan.** The session's container can
+    currently read the scenario directory (story, checks,
+    instruments) — a rep that reads its own rubric is contaminated
+    (first caught 2026-08-08, arf r1t-rep2). Until the mount is
+    closed, every battery's scoring includes a scenario-dir-read scan
+    over all transcripts, and any rep that read scenario files is
+    excluded with a dated note.
